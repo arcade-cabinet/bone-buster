@@ -278,38 +278,75 @@ export function playSkeletonDeath() {
 }
 
 /**
- * POL9 — player-death sting. Heavier than the skeleton-death two-note
- * cascade (which is a "kill confirmed" beat); player death is a slow
- * descending three-note sequence on a wider interval so the player
- * registers "this was the end" emotionally before the YOU DIED card
- * appears. Reuses deathSynth (the existing 14-voice bank ceiling
- * doesn't allow a dedicated player-death voice without dropping
- * something else, and re-pitching deathSynth is sonically distinct
- * enough).
+ * POL9-v2 — modernized-DOOM player-death sting. Layered cue:
+ *
+ *   1. Sub-bass thud — boomSynth hits A0 (deeper than the boss thud
+ *      so the player reads "I'm down", not "I won"). boomNoise
+ *      layered for body.
+ *   2. Descending tonal sequence — deathSynth E3 → B2 → E2 → A1 over
+ *      800ms (4-note descent, wider interval than the boss resolve).
+ *      Reads as life draining.
+ *   3. Reverb tail — masterReverb wet briefly pushed to 0.5 for 1.2s
+ *      then ramped back, so the descent rings out cathedral-large.
+ *
+ * The pre-v2 implementation was three isolated PluckSynth notes. The
+ * v2 layered version reads as the same caliber of death cue as DOOM
+ * Eternal's "you died" beat.
  */
 let lastPlayerDeathFireTime = 0;
 export function playPlayerDeath() {
 	const t = jitter(lastPlayerDeathFireTime);
 	lastPlayerDeathFireTime = t;
-	deathSynth?.triggerAttackRelease("E2", t);
-	setTimeout(() => deathSynth?.triggerAttackRelease("B1", jitter(lastPlayerDeathFireTime)), 140);
-	setTimeout(() => deathSynth?.triggerAttackRelease("E1", jitter(lastPlayerDeathFireTime)), 320);
+	// Layer 1 — sub-bass thud + noise body.
+	boomSynth?.triggerAttackRelease("A0", "2n", t, 0.85);
+	boomNoise?.triggerAttackRelease("4n", t, 0.65);
+	// Layer 2 — descending 4-note tonal sequence.
+	deathSynth?.triggerAttackRelease("E3", t);
+	setTimeout(() => deathSynth?.triggerAttackRelease("B2", jitter(lastPlayerDeathFireTime)), 180);
+	setTimeout(() => deathSynth?.triggerAttackRelease("E2", jitter(lastPlayerDeathFireTime)), 420);
+	setTimeout(() => deathSynth?.triggerAttackRelease("A1", jitter(lastPlayerDeathFireTime)), 680);
+	// Layer 3 — push reverb wet briefly so the tail rings cathedral-
+	// large. Manual ramp back to default 0.18 over 1.2s.
+	if (masterReverb) {
+		masterReverb.wet.rampTo(0.5, 0.1);
+		setTimeout(() => {
+			masterReverb?.wet.rampTo(0.18, 1.0);
+		}, 1200);
+	}
 }
 
 /**
- * POL10 — boss-down sting. Ascending two-note resolve (G1 → C2) on
- * the existing deathSynth, distinct from both the skeleton-death
- * cascade (A1 → D1, descending) and the player-death sequence
- * (E2 → B1 → E1, slow descending). Reads as a triumph chord — the
- * player has unlocked something. Fires in addition to the standard
- * skeleton-death sting, layered on top.
+ * POL10-v2 — modernized-DOOM boss-down sting. Layered cue, not a
+ * single sequence:
+ *
+ *   1. Sub-bass THUD — boomSynth (low MembraneSynth) hits C1, the
+ *      "weight" of the kill. boomNoise layered for body.
+ *   2. 4-note ascending tonal RESOLVE — deathSynth G1 → D2 → G2 → D3
+ *      over 480ms with decay overlap. Reads as a triumph cadence.
+ *   3. Ambient swell — ambientDrone retriggered at C2 for 1.4s with
+ *      a brief volume push so the air carries the resolve tail.
+ *
+ * Player who took down a boss reads: "weight + resolution + lingering
+ * room tone." Not three isolated notes.
  */
 let lastBossDeathFireTime = 0;
 export function playBossDeath() {
 	const t = jitter(lastBossDeathFireTime);
 	lastBossDeathFireTime = t;
+	// Layer 1 — sub-bass thud (the weight). Pitched lower than the
+	// standard boom so it doesn't read as a barrel explosion.
+	boomSynth?.triggerAttackRelease("C1", "4n", t, 0.9);
+	boomNoise?.triggerAttackRelease("8n", t, 0.55);
+	// Layer 2 — 4-note ascending tonal resolve with decay overlap.
 	deathSynth?.triggerAttackRelease("G1", t);
-	setTimeout(() => deathSynth?.triggerAttackRelease("C2", jitter(lastBossDeathFireTime)), 120);
+	setTimeout(() => deathSynth?.triggerAttackRelease("D2", jitter(lastBossDeathFireTime)), 120);
+	setTimeout(() => deathSynth?.triggerAttackRelease("G2", jitter(lastBossDeathFireTime)), 280);
+	setTimeout(() => deathSynth?.triggerAttackRelease("D3", jitter(lastBossDeathFireTime)), 480);
+	// Layer 3 — ambient swell. Retrigger the existing drone at a
+	// higher pitch so it audibly lifts under the resolve.
+	setTimeout(() => {
+		ambientDrone?.triggerAttackRelease("C2", "1n");
+	}, 240);
 }
 
 export function playPickup() {
