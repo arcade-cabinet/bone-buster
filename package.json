@@ -1,0 +1,72 @@
+{
+	"name": "objexoom",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"packageManager": "pnpm@10.2.0",
+	"description": "OBJEXOOM — a polished DOOM-flavored arcade FPS. Procedural sectors, real PSX monsters, and a flashlight you absolutely need.",
+	"homepage": "https://github.com/objexiv/objexoom",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/objexiv/objexoom.git"
+	},
+	"license": "UNLICENSED",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"build:pages": "vite build --mode github-pages",
+		"build:native": "vite build && cap sync",
+		"preview": "vite preview --port 8080",
+		"cap": "cap",
+		"cap:sync": "pnpm build && cap sync",
+		"check": "tsc --noEmit",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write .",
+		"test": "vitest run --project=unit",
+		"test:watch": "vitest --project=unit",
+		"test:browser": "vitest run --project=browser",
+		"test:e2e": "playwright test",
+		"test:e2e:screenshots": "playwright test tests/e2e/screenshots.spec.ts --workers=1",
+		"assets:fbx-to-glb": "node scripts/convert-fbx.mjs",
+		"assets:publish-screenshots": "bash scripts/publish-screenshots.sh",
+		"verify": "pnpm check && pnpm lint && pnpm test"
+	},
+	"dependencies": {
+		"@react-three/drei": "^10.7.7",
+		"@react-three/fiber": "^9.6.1",
+		"@react-three/postprocessing": "^3.0.4",
+		"framer-motion": "^12.38.0",
+		"postprocessing": "^6.39.1",
+		"react": "^19.2.5",
+		"react-dom": "^19.2.5",
+		"three": "^0.184.0",
+		"three-stdlib": "^2.36.1",
+		"tone": "^15.1.22",
+		"yuka": "^0.7.8"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.10",
+		"@capacitor/android": "8.3.1",
+		"@capacitor/cli": "8.3.1",
+		"@capacitor/core": "8.3.1",
+		"@capacitor/ios": "8.3.1",
+		"@playwright/test": "^1.59.1",
+		"@types/node": "^25.5.2",
+		"@types/react": "^19.2.14",
+		"@types/react-dom": "^19.2.3",
+		"@types/three": "^0.184.0",
+		"@vitejs/plugin-react": "^6.0.1",
+		"@vitest/browser": "^4.1.3",
+		"@vitest/coverage-v8": "^4.1.3",
+		"fbx2gltf": "0.9.7-p1",
+		"jsdom": "^27.4.0",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3",
+		"vite": "^8.0.8",
+		"vitest": "^4.1.3"
+	},
+	"engines": {
+		"node": ">=22.0.0"
+	}
+}

@@ -1,0 +1,60 @@
+{
+	"coverage_rules": [
+		{
+			"when_changed": ["src/RefLevelMap.tsx", "src/ObjexoomScene.tsx", "src/ObjexoomHUD.tsx", "src/ObjexoomLanding.tsx", "src/ObjexoomShell.tsx", "src/PlayerController.tsx", "public/models/**"],
+			"require_changed": ["docs/assets/screenshots/**", "tests/e2e/screenshots.spec.ts"],
+			"or_explicit_skip": "// no-visual-impact: <≥10 word reason>",
+			"block_message": "Render/UI/asset change without canonical screenshot update."
+		},
+		{
+			"when_changed": ["src/sfx.ts"],
+			"require_changed": ["src/__tests__/unit/objexoom-sfx.test.ts"],
+			"or_explicit_skip": "// no-audio-impact: <≥10 word reason>",
+			"block_message": "Audio change without sfx test update."
+		},
+		{
+			"when_changed": ["src/engine.ts", "src/enemyAi.ts", "src/buildMap.ts", "src/turtle.ts", "src/refLevel.ts", "src/runStats.ts", "src/settings.ts", "src/weapons.ts", "src/yukaIntegration.ts"],
+			"require_changed": ["src/__tests__/unit/**"],
+			"block_message": "Sim/engine change without unit test."
+		},
+		{
+			"when_changed": ["src/ObjexoomScene.tsx", "src/RefLevelMap.tsx", "public/models/**"],
+			"require_run": "pnpm test:e2e:screenshots",
+			"evidence_pattern": "\\d+ passed",
+			"block_message": "Render/asset change requires e2e screenshot pass."
+		},
+		{
+			"when_changed": ["capacitor.config.ts", "android/**", "ios/**"],
+			"require_run": "pnpm cap:sync",
+			"evidence_pattern": "(✔ Sync finished|Sync finished in)",
+			"block_message": "Capacitor/native change requires `pnpm cap:sync`."
+		}
+	],
+	"ban_patterns": [
+		{
+			"pattern": "Math\\.random\\(\\)",
+			"globs": ["src/engine.ts", "src/enemyAi.ts", "src/buildMap.ts", "src/turtle.ts", "src/runStats.ts"],
+			"message": "Use seedrandom or deterministic RNG — engine code must be replayable."
+		},
+		{
+			"pattern": "@objexiv/",
+			"globs": ["src/**", "app/**"],
+			"message": "No Objexiv imports — this is a standalone game."
+		},
+		{
+			"pattern": "from ['\"]next",
+			"globs": ["src/**", "app/**"],
+			"message": "No Next.js imports — this is a Vite-only project."
+		}
+	],
+	"forbidden_bash": [
+		"--no-verify",
+		"git push --force(?!-with-lease)",
+		"--admin",
+		"yarn ",
+		"npm install",
+		"package-lock\\.json",
+		"yarn\\.lock"
+	],
+	"max_lines_warn": 600
+}
