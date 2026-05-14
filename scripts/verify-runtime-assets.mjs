@@ -35,6 +35,7 @@ const SOURCE_FILES = [
 	resolve(root, "src/vehicles.ts"),
 	resolve(root, "src/kitchen.ts"),
 	resolve(root, "src/loot.ts"),
+	resolve(root, "src/nature.ts"),
 ];
 
 function categoryOf(publicPath) {
