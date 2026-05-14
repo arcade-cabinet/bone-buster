@@ -24,6 +24,7 @@ import {
 } from "./engine";
 import { addObjexoomListener, dispatch } from "./events";
 import { type LampInstance, spawnLamps } from "./lampScatter";
+import { getArchetypeLightPalette } from "./lighting/archetypePalette";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
 import { type DebrisInstance, spawnDebris } from "./scatter/debrisScatter";
@@ -129,6 +130,11 @@ export function ObjexoomScene({
 	// PRD §E13. The archetype is constant for the lifetime of the
 	// Scene mount (re-keyed on level change).
 	const archetype = useMemo(() => pickArchetype(map), [map]);
+	// E13 step-2 — per-archetype lighting palette tint. The corridor
+	// entry preserves the pre-step-2 literal colors so refLevel 0's
+	// canonical screenshots stay byte-stable; the other 4 archetypes
+	// each pull a contrasting ambient + directional pair.
+	const lightPalette = useMemo(() => getArchetypeLightPalette(archetype), [archetype]);
 	// COV4 + E3 — per-map decorative prop scatter, now using E13's
 	// per-map archetype pick instead of the hardcoded "corridor".
 	const propsRef = useRef<PropInstance[]>(spawnProps(map, archetype));
@@ -668,13 +674,13 @@ export function ObjexoomScene({
 			<ambientLight
 				ref={ambientLightRef}
 				intensity={hasFlashlight ? 0.55 : 0.12}
-				color={OBJEXOOM_PALETTE.violet}
+				color={lightPalette.ambientColor}
 			/>
 			<directionalLight
 				ref={directionalLightRef}
 				position={[10, 16, 8]}
 				intensity={hasFlashlight ? 0.9 : 0.18}
-				color={OBJEXOOM_PALETTE.parchment}
+				color={lightPalette.directionalColor}
 				castShadow
 				shadow-mapSize={[1024, 1024]}
 				shadow-camera-left={-20}
