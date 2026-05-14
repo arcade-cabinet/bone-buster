@@ -49,8 +49,47 @@ await page.waitForTimeout(220);
 await captureCDP(page, `${OUT}/04-fire.png`);
 
 console.log("PT1.5 — kill all enemies (death gibs + score)");
+// PT1C — teleport NEAR the closest enemy (3 tiles back along the
+// player→enemy vector) and face it, so the killAllEnemies fan of
+// POL16 burst + POL25 body-parts + POL14 chromatic-aberration
+// lands directly inside the flashlight cone. Enemy spawn coords
+// are state.enemySpawns[i].position (nested), not state.enemySpawns[i].
+await page.evaluate(() => {
+	const hooks = window.__objexoom;
+	const state = hooks.getState();
+	const spawns = state.enemySpawns ?? [];
+	const player = state.playerSpawn ?? { x: 4, y: 4 };
+	if (spawns.length === 0) return;
+	let best = spawns[0].position;
+	let bestD2 = Infinity;
+	for (const s of spawns) {
+		const p = s.position;
+		const d2 = (p.x - player.x) ** 2 + (p.y - player.y) ** 2;
+		if (d2 < bestD2) {
+			bestD2 = d2;
+			best = p;
+		}
+	}
+	const dx = best.x - player.x;
+	const dy = best.y - player.y;
+	const len = Math.hypot(dx, dy) || 1;
+	const ux = dx / len;
+	const uy = dy / len;
+	// Vantage 3 tiles back from the enemy along the player→enemy
+	// vector. Enemy is forward and inside flashlight cone (which
+	// reaches ~6 tiles).
+	const vx = best.x - ux * 3;
+	const vy = best.y - uy * 3;
+	const yaw = Math.atan2(ux, -uy);
+	hooks.teleport(vx, vy, yaw);
+});
+await page.waitForTimeout(400);
 await page.evaluate(() => window.__objexoom.killAllEnemies());
-await page.waitForTimeout(450);
+// Hitstop pauses sim for 80ms (POL12) / 150ms boss; lighting
+// updates can hesitate during that window. 300ms catches burst at
+// peak (POL16 lifetime is 600ms) with sim fully running and
+// shadows recomposited.
+await page.waitForTimeout(300);
 await captureCDP(page, `${OUT}/05-killall-debris.png`);
 
 console.log("PT1.6 — collect key + capture POL22 ceremony");

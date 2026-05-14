@@ -70,3 +70,4 @@
 {"ts":"2026-05-14T21:46:30.148Z","sha":"e2dac1bdbc65","subject":"feat(scene): POL23 — exit-portal pull slot","decision":"skipped the camera-dolly + white-flash + audio swell","why":null,"resolves":[],"overrides":[]}
 {"ts":"2026-05-14T21:47:23.880Z","sha":"90a059156619","subject":"docs: POL24 — flashlight battery decision (SKIP)","decision":"SKIP POL24. The 'you absolutely need the flashlight'","why":null,"resolves":[],"overrides":[]}
 {"ts":"2026-05-14T22:19:20.532Z","sha":"868e6dd5a84d","subject":"fix(scene): PT1 — debug-kill dispatches full death side-effects","decision":null,"why":null,"resolves":[],"overrides":[{"tag":"no-visual-impact","reason":"debug-hook reducer dispatch path only fires under"}]}
+{"ts":"2026-05-14T22:38:11.759Z","sha":"460dc1cb022f","subject":"feat(hud): PT1B — mission-complete ceremony overlay slot","decision":null,"why":null,"resolves":[],"overrides":[{"tag":"no-visual-impact","reason":"change introduces a NEW overlay that only"}]}
