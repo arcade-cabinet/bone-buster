@@ -32,9 +32,11 @@ describe("E13 — archetype lighting palette", () => {
 		expect(corridor.floorEmissive).toBe(OBJEXOOM_PALETTE.wallEmissive);
 		// COV3 step-7 — corridor ceiling preserves pre-step-7 literal.
 		expect(corridor.ceilingColor).toBe(OBJEXOOM_PALETTE.wallBase);
+		// E13 step-9 — lamp light color preserves canonical literal.
+		expect(corridor.lampLightColor).toBe(OBJEXOOM_PALETTE.flashlightWarm);
 	});
 
-	it("every entry has all 6 colors set as valid hex", () => {
+	it("every entry has all 7 colors set as valid hex", () => {
 		for (const name of ARCHETYPE_NAMES) {
 			const p = ARCHETYPE_LIGHT_PALETTES[name];
 			expect(p.ambientColor).toMatch(/^#[0-9a-f]{6}$/i);
@@ -43,6 +45,7 @@ describe("E13 — archetype lighting palette", () => {
 			expect(p.floorColor).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(p.floorEmissive).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(p.ceilingColor).toMatch(/^#[0-9a-f]{6}$/i);
+			expect(p.lampLightColor).toMatch(/^#[0-9a-f]{6}$/i);
 		}
 	});
 

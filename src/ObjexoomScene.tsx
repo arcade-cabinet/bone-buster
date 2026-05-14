@@ -820,7 +820,7 @@ export function ObjexoomScene({
 			{/* COV1 — PSX Mega Pack II lamp scatter. Empty on grid maps
 			    in this slice. E4 will flip a subset to `on` + wire
 			    scoped pointLights. */}
-			<LampField lamps={lampsRef.current} />
+			<LampField lamps={lampsRef.current} lightColor={lightPalette.lampLightColor} />
 
 			{/* COV4 + E3 — decorative prop scatter from PSX Mega Pack II
 			    Props pool. Step-1: "corridor" archetype default for

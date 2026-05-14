@@ -49,6 +49,12 @@ export interface ArchetypeLightPalette {
 	 * pre-step-7 literal `OBJEXOOM_PALETTE.wallBase`.
 	 */
 	readonly ceilingColor: string;
+	/**
+	 * E13 step-9 — per-archetype lit-lamp pointLight color. Corridor
+	 * preserves the pre-step-9 literal `OBJEXOOM_PALETTE.flashlightWarm`
+	 * so lamp shadows on refLevel 0 stay byte-stable.
+	 */
+	readonly lampLightColor: string;
 }
 
 /**
@@ -64,6 +70,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		floorColor: OBJEXOOM_PALETTE.ink,
 		floorEmissive: OBJEXOOM_PALETTE.wallEmissive,
 		ceilingColor: OBJEXOOM_PALETTE.wallBase,
+		lampLightColor: OBJEXOOM_PALETTE.flashlightWarm,
 	},
 	// Hot arena — reddish ambient, ember sun, ember-deep fog. Reads as
 	// a combat pit with smoke and heat haze on the depth fade.
@@ -74,6 +81,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		floorColor: SCALE.ember[900],
 		floorEmissive: SCALE.blood[700],
 		ceilingColor: SCALE.blood[900],
+		lampLightColor: SCALE.ember[300],
 	},
 	// Outdoor courtyard — cool indigo ambient, warm amber sun, indigo-
 	// deep fog (dusk). The dusk-cool fog separates this hardest from
@@ -85,6 +93,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		floorColor: SCALE.indigo[900],
 		floorEmissive: SCALE.indigo[700],
 		ceilingColor: SCALE.indigo[700],
+		lampLightColor: SCALE.amber[200],
 	},
 	// Damp sewer — desaturated parchment ambient, cool fill, parchment-
 	// deep fog with a slight green-ink mix. Reads as "underground".
@@ -95,6 +104,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		floorColor: SCALE.parchment[900],
 		floorEmissive: SCALE.parchment[700],
 		ceilingColor: SCALE.ink[700],
+		lampLightColor: SCALE.parchment[300],
 	},
 	// Library — warm parchment ambient, soft amber sun, ember-deep fog
 	// for the "paper + dust mote sunshafts" feel. Lifts away from
@@ -106,6 +116,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		floorColor: SCALE.amber[900],
 		floorEmissive: SCALE.amber[700],
 		ceilingColor: SCALE.parchment[700],
+		lampLightColor: SCALE.amber[100],
 	},
 };
 

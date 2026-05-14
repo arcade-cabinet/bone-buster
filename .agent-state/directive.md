@@ -18,6 +18,8 @@ ambiguous design question that flips scope.
 
 ## Phase 11 — continuing polish
 
+- [x] **E13 step-9 — per-archetype lit-lamp pointLight color.** Shipped. Added `lampLightColor` to `ArchetypeLightPalette`. `LampField` now takes `lightColor: string` prop and passes through to the per-instance `<pointLight color={lightColor}>`. Mount site in ObjexoomScene threads `lightPalette.lampLightColor`. Per-archetype tints: corridor → flashlightWarm (canonical), arena → ember[300] (combat heat), courtyard → amber[200] (warm dusk), sewer → parchment[300] (gloomy), library → amber[100] (reading-warm). 494 unit + 5 browser + 5 canonical green. Canonical bytes preserved (lamp shadows on refLevel 0 unchanged).
+
 - [x] **E13 step-8 — per-archetype decal density.** Shipped. New `DENSITY_MULTIPLIER` table in decalScatter.ts applies an archetype-specific multiplier to `lengthScale` before the modulo-count step. Corridor 1.0 (no-op, canonical bytes preserved). Arena/sewer 1.3 (more wall wear/grime), library 0.6 / courtyard 0.7 (cleaner). The multiplier is rounded to int after `len/2.5 * multiplier` and clamped to `[0, 2]` so the per-edge cap stays bounded. 494 unit + 5 browser + 5 canonical green.
 
 - [x] **E13 step-7 — per-archetype debris density.** Shipped. Mirror of E13 step-6 for debris. New `DENSITY_BY_ARCHETYPE` table in debrisScatter.ts: corridor `[3,5]` (canonical), arena `[4,5]` (combat carnage), courtyard `[2,4]`, sewer `[3,5]`, library `[1,3]` (clean). `spawnDebris` resolves archetype via `pickArchetype(map)` and reads the tuple. `DEBRIS_PER_SECTOR_MAX_CAP = 5` exported as the ID-stride invariant. 494 unit + 5 browser + 5 canonical green. Canonical bytes preserved (corridor preserves pre-step-7 literal).

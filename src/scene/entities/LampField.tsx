@@ -1,7 +1,6 @@
 import { useGLTF } from "@react-three/drei";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import type { LampInstance } from "../../lampScatter";
 import { LAMP_VARIANTS_OFF, LAMP_VARIANTS_ON, lampUrlFor } from "../../lampScatter";
 
@@ -12,37 +11,29 @@ import { LAMP_VARIANTS_OFF, LAMP_VARIANTS_ON, lampUrlFor } from "../../lampScatt
  * mesh. Lamps past the MAX_LIT_LAMPS cap render with the OFF variant
  * and contribute zero per-frame light cost.
  *
- * The clone-per-instance pattern matches BarrelMesh/EnemyMesh: drei's
- * useGLTF returns a shared scene graph that mutations would leak
- * across consumers; SkeletonUtils.clone gives each mount its own
- * traversable tree.
- *
- * E4 design notes:
- *  - distance=6 + decay=1.8 — the lamp pool itself is small geometry,
- *    so the light's falloff matches the visible bloom region without
- *    fighting the global ambient.
- *  - castShadow with a 512² shadow map (mobile-friendly default;
- *    matches Flashlight's stated 1024² for the more important key
- *    light).
- *  - The "don't double-light the lamp" rule: lit lamps render the ON
- *    GLB variant which has self-emissive material; the pointLight
- *    sits 1.4 units above the lamp base so it bathes the floor and
- *    walls but doesn't add to the emissive surface itself. The flashlight
- *    (a SpotLight) only adds throughput for diffuse hits, so the
- *    emissive surface stays at its natural luminance regardless of
- *    flashlight aim.
+ * E13 step-9: the pointLight color is now passed in (archetype-keyed
+ * via `palette.lampLightColor`) so each archetype's lamps bathe the
+ * scene in their own tint. Corridor still resolves to
+ * `OBJEXOOM_PALETTE.flashlightWarm` so lamp-shadow byte-stability on
+ * refLevel 0 is preserved.
  */
-export function LampField({ lamps }: { lamps: readonly LampInstance[] }) {
+export function LampField({
+	lamps,
+	lightColor,
+}: {
+	lamps: readonly LampInstance[];
+	lightColor: string;
+}) {
 	return (
 		<>
 			{lamps.map((lamp) => (
-				<LampMesh key={lamp.id} lamp={lamp} />
+				<LampMesh key={lamp.id} lamp={lamp} lightColor={lightColor} />
 			))}
 		</>
 	);
 }
 
-function LampMesh({ lamp }: { lamp: LampInstance }) {
+function LampMesh({ lamp, lightColor }: { lamp: LampInstance; lightColor: string }) {
 	const url = lampUrlFor(lamp);
 	const gltf = useGLTF(url);
 	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
@@ -52,7 +43,7 @@ function LampMesh({ lamp }: { lamp: LampInstance }) {
 			{lamp.on ? (
 				<pointLight
 					position={[0, 1.4, 0]}
-					color={OBJEXOOM_PALETTE.flashlightWarm}
+					color={lightColor}
 					intensity={1.6}
 					distance={6}
 					decay={1.8}

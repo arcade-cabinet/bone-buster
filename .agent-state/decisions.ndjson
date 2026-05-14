@@ -50,3 +50,4 @@
 {"ts":"2026-05-14T19:14:49.931Z","sha":"0220f50530b0","subject":"feat(scene): COV3 step-8 — per-archetype sector ceiling tint","decision":null,"why":null,"resolves":["directive Phase 11 COV3 step-8."],"overrides":[]}
 {"ts":"2026-05-14T19:19:01.329Z","sha":"c554d48dc164","subject":"feat(scatter): E13 step-6 — per-archetype prop density","decision":null,"why":null,"resolves":["directive Phase 11 E13 step-6."],"overrides":[]}
 {"ts":"2026-05-14T19:21:37.367Z","sha":"cd293d5af70a","subject":"feat(scatter): E13 step-7 — per-archetype debris density","decision":null,"why":null,"resolves":["directive Phase 11 E13 step-7."],"overrides":[]}
+{"ts":"2026-05-14T19:24:04.320Z","sha":"7f9339bd619f","subject":"feat(scatter): E13 step-8 — per-archetype decal density","decision":null,"why":null,"resolves":["directive Phase 11 E13 step-8."],"overrides":[]}
