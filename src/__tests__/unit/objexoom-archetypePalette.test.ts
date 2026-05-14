@@ -30,9 +30,11 @@ describe("E13 — archetype lighting palette", () => {
 		// hardcoded value.
 		expect(corridor.floorColor).toBe(OBJEXOOM_PALETTE.ink);
 		expect(corridor.floorEmissive).toBe(OBJEXOOM_PALETTE.wallEmissive);
+		// COV3 step-7 — corridor ceiling preserves pre-step-7 literal.
+		expect(corridor.ceilingColor).toBe(OBJEXOOM_PALETTE.wallBase);
 	});
 
-	it("every entry has all 5 colors set as valid hex", () => {
+	it("every entry has all 6 colors set as valid hex", () => {
 		for (const name of ARCHETYPE_NAMES) {
 			const p = ARCHETYPE_LIGHT_PALETTES[name];
 			expect(p.ambientColor).toMatch(/^#[0-9a-f]{6}$/i);
@@ -40,12 +42,18 @@ describe("E13 — archetype lighting palette", () => {
 			expect(p.fogColor).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(p.floorColor).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(p.floorEmissive).toMatch(/^#[0-9a-f]{6}$/i);
+			expect(p.ceilingColor).toMatch(/^#[0-9a-f]{6}$/i);
 		}
 	});
 
 	it("at least 3 archetypes have unique floor colors (visual separation)", () => {
 		const floors = new Set(ARCHETYPE_NAMES.map((n) => ARCHETYPE_LIGHT_PALETTES[n].floorColor));
 		expect(floors.size).toBeGreaterThanOrEqual(3);
+	});
+
+	it("at least 3 archetypes have unique ceiling colors (visual separation)", () => {
+		const ceilings = new Set(ARCHETYPE_NAMES.map((n) => ARCHETYPE_LIGHT_PALETTES[n].ceilingColor));
+		expect(ceilings.size).toBeGreaterThanOrEqual(3);
 	});
 
 	it("at least 3 archetypes have unique fog colors (visual depth-fade separation)", () => {

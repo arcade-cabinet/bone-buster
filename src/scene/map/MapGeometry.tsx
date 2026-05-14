@@ -76,7 +76,7 @@ export function MapGeometry({ map, doorOpen }: { map: ObjexoomGridMap; doorOpen:
 			</mesh>
 			<mesh rotation={[Math.PI / 2, 0, 0]} position={[floorCenter, WALL_HEIGHT, floorCenter]}>
 				<planeGeometry args={[floorSize, floorSize]} />
-				<meshStandardMaterial color={OBJEXOOM_PALETTE.wallBase} roughness={1} />
+				<meshStandardMaterial color={palette.ceilingColor} roughness={1} />
 			</mesh>
 
 			{lavaTiles.map((p) => (
