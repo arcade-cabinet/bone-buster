@@ -294,12 +294,21 @@ export function playSkeletonDeath() {
  * Eternal's "you died" beat.
  */
 let lastPlayerDeathFireTime = 0;
+let lastBoomFireTime = 0;
+let lastBoomNoiseFireTime = 0;
+let lastAmbientDroneFireTime = 0;
 export function playPlayerDeath() {
 	const t = jitter(lastPlayerDeathFireTime);
 	lastPlayerDeathFireTime = t;
-	// Layer 1 — sub-bass thud + noise body.
-	boomSynth?.triggerAttackRelease("A0", "2n", t, 0.85);
-	boomNoise?.triggerAttackRelease("4n", t, 0.65);
+	// Layer 1 — sub-bass thud + noise body. Per-voice jitter — both
+	// boom synths can be retriggered by playBossDeath or playBoom on
+	// the same audio frame.
+	const tBoom = jitter(lastBoomFireTime);
+	lastBoomFireTime = tBoom;
+	boomSynth?.triggerAttackRelease("A0", "2n", tBoom, 0.85);
+	const tNoise = jitter(lastBoomNoiseFireTime);
+	lastBoomNoiseFireTime = tNoise;
+	boomNoise?.triggerAttackRelease("4n", tNoise, 0.65);
 	// Layer 2 — descending 4-note tonal sequence.
 	deathSynth?.triggerAttackRelease("E3", t);
 	setTimeout(() => deathSynth?.triggerAttackRelease("B2", jitter(lastPlayerDeathFireTime)), 180);
@@ -334,24 +343,76 @@ export function playBossDeath() {
 	const t = jitter(lastBossDeathFireTime);
 	lastBossDeathFireTime = t;
 	// Layer 1 — sub-bass thud (the weight). Pitched lower than the
-	// standard boom so it doesn't read as a barrel explosion.
-	boomSynth?.triggerAttackRelease("C1", "4n", t, 0.9);
-	boomNoise?.triggerAttackRelease("8n", t, 0.55);
+	// standard boom so it doesn't read as a barrel explosion. Per-
+	// voice jitter — boom synths can collide with playPlayerDeath /
+	// playBoom on the same frame.
+	const tBoom = jitter(lastBoomFireTime);
+	lastBoomFireTime = tBoom;
+	boomSynth?.triggerAttackRelease("C1", "4n", tBoom, 0.9);
+	const tNoise = jitter(lastBoomNoiseFireTime);
+	lastBoomNoiseFireTime = tNoise;
+	boomNoise?.triggerAttackRelease("8n", tNoise, 0.55);
 	// Layer 2 — 4-note ascending tonal resolve with decay overlap.
 	deathSynth?.triggerAttackRelease("G1", t);
 	setTimeout(() => deathSynth?.triggerAttackRelease("D2", jitter(lastBossDeathFireTime)), 120);
 	setTimeout(() => deathSynth?.triggerAttackRelease("G2", jitter(lastBossDeathFireTime)), 280);
 	setTimeout(() => deathSynth?.triggerAttackRelease("D3", jitter(lastBossDeathFireTime)), 480);
 	// Layer 3 — ambient swell. Retrigger the existing drone at a
-	// higher pitch so it audibly lifts under the resolve.
+	// higher pitch so it audibly lifts under the resolve. Per-voice
+	// jitter — multiple boss kills inside 1.4s could collide.
 	setTimeout(() => {
-		ambientDrone?.triggerAttackRelease("C2", "1n");
+		const tDrone = jitter(lastAmbientDroneFireTime);
+		lastAmbientDroneFireTime = tDrone;
+		ambientDrone?.triggerAttackRelease("C2", "1n", tDrone);
 	}, 240);
 }
 
+let lastPickupFireTime = 0;
 export function playPickup() {
-	pickupSynth?.triggerAttackRelease("E5", "16n");
-	setTimeout(() => pickupSynth?.triggerAttackRelease("A5", "16n"), 90);
+	const t = jitter(lastPickupFireTime);
+	lastPickupFireTime = t;
+	pickupSynth?.triggerAttackRelease("E5", "16n", t);
+	setTimeout(() => {
+		const inner = jitter(lastPickupFireTime);
+		lastPickupFireTime = inner;
+		pickupSynth?.triggerAttackRelease("A5", "16n", inner);
+	}, 90);
+}
+
+/**
+ * POL21 — secret-found ceremony sting. Brighter than playPickup:
+ * 4-note ascending chime (E5 → A5 → C#6 → E6) on the pickup synth +
+ * a brief reverb push so the discovery resolves cathedral-wide.
+ * Distinct from any other sting in the sfx bank.
+ */
+export function playSecretFound() {
+	// Share the pickupSynth pool with playPickup — both fire jittered
+	// through lastPickupFireTime to prevent same-frame collisions.
+	const t = jitter(lastPickupFireTime);
+	lastPickupFireTime = t;
+	pickupSynth?.triggerAttackRelease("E5", "16n", t);
+	setTimeout(() => {
+		const inner = jitter(lastPickupFireTime);
+		lastPickupFireTime = inner;
+		pickupSynth?.triggerAttackRelease("A5", "16n", inner);
+	}, 90);
+	setTimeout(() => {
+		const inner = jitter(lastPickupFireTime);
+		lastPickupFireTime = inner;
+		pickupSynth?.triggerAttackRelease("C#6", "16n", inner);
+	}, 180);
+	setTimeout(() => {
+		const inner = jitter(lastPickupFireTime);
+		lastPickupFireTime = inner;
+		pickupSynth?.triggerAttackRelease("E6", "8n", inner);
+	}, 270);
+	// Reverb push so the discovery rings out.
+	if (masterReverb) {
+		masterReverb.wet.rampTo(0.4, 0.05);
+		setTimeout(() => {
+			masterReverb?.wet.rampTo(0.18, 0.6);
+		}, 600);
+	}
 }
 
 export function playDoor() {
@@ -437,9 +498,16 @@ export function resetAmbientStateForTesting() {
 }
 
 // K1 — explosion stinger. Membrane sub-boom + brown-noise transient.
+// POL21 fold-forward: jittered so it doesn't collide with the death
+// stings (POL9-v2 / POL10-v2) when an enemy dies + a barrel pops in
+// the same tick.
 export function playBoom() {
-	boomSynth?.triggerAttackRelease("C1", "8n");
-	boomNoise?.triggerAttackRelease("16n");
+	const tBoom = jitter(lastBoomFireTime);
+	lastBoomFireTime = tBoom;
+	boomSynth?.triggerAttackRelease("C1", "8n", tBoom);
+	const tNoise = jitter(lastBoomNoiseFireTime);
+	lastBoomNoiseFireTime = tNoise;
+	boomNoise?.triggerAttackRelease("16n", tNoise);
 }
 
 // K2 — player-hit sting. Sharp detuned bite; pairs with playHurt for

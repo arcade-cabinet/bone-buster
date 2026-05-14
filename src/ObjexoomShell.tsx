@@ -19,6 +19,7 @@ import {
 	playHitSting,
 	playPickup,
 	playPlayerDeath,
+	playSecretFound,
 	setMusicMood,
 	startAmbient,
 	startMusic,
@@ -588,6 +589,10 @@ export function ObjexoomShell() {
 	useEffect(() => {
 		return addObjexoomListener("secretTriggered", () => {
 			setState((prev) => ({ ...prev, run: runStatsReducer(prev.run, { type: "secretFound" }) }));
+			// POL21 — secret-found audio sting. Distinct 4-note ascending
+			// chime + brief reverb push so the discovery moment is
+			// audible even with the eyes elsewhere.
+			playSecretFound();
 		});
 	}, []);
 

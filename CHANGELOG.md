@@ -13,10 +13,12 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- **POL21 Secret-found ceremony.** New `SecretFoundFlash` HUD component mounts a brief screen flash (white at 0.12 opacity, mixBlendMode screen) + centered "✦ SECRET FOUND" pulse card (spring-eased entry, amber on translucent ink with amber glow). New `playSecretFound()` audio sting: 4-note ascending chime (E5 → A5 → C#6 → E6) + reverb wet push (0.4 for 600ms then ramp back) so the discovery resolves cathedral-wide.
 - **POL19 Enemy hit reactions.** New optional `Enemy.staggerUntil` field set by fireResolution on every non-killing hit (70ms regular, 100ms boss; kill-blows leave POL12 hitstop to handle the beat instead). enemyTickLoop lerps the AI move target toward the enemy's current position by 0.2× inside the window so the enemy visibly absorbs the hit before resuming advance. EnemyMesh per-instance clones the cached GLB materials and modulates color + emissive + emissiveIntensity on an ease-out-quad curve over the first 140ms — the hit reads as a white-flash tint with blood-red emissive bloom, distinct from the standard combat state.
 
 ### Fixed
 
+- **Tone.js audio-time collisions on pickup / boom / ambient drone.** POL8 originally jittered chaingun / flamethrower / aggro / hurt / death voices. POL21 surfaced that `pickupSynth`, `boomSynth`, `boomNoise`, and `ambientDrone` could still collide when secret-found stings layered with pickups, or when boss-death (POL10-v2) layered boom + drone + death on the same audio frame. Per-voice `last*FireTime` jitter applied to all four; `playBoom` now also reads / writes the shared boom/noise timers.
 - **POL14 runtime regression.** First-cut implementation tried to mutate `effectRef.current.offset` via `.set(x, y)`, but drei's `wrapEffect` attaches the ref to a dynamically-extended JSX intrinsic, not to the underlying `ChromaticAberrationEffect`. Replaced with an owned `Vector2` instance passed by reference into the effect's `offset` prop and mutated each frame — both simpler and version-stable.
 
 ### Added
