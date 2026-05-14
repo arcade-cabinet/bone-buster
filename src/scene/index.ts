@@ -3,6 +3,7 @@
 // the folder layout — drop-in moves of individual components stay
 // internal.
 export { WALL_HEIGHT } from "./constants";
+export { AdaptiveResolution } from "./effects/AdaptiveResolution";
 export { BodyPartField } from "./effects/BodyPartField";
 export { BulletField } from "./effects/BulletField";
 export { Flashlight } from "./effects/Flashlight";

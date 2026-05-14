@@ -229,7 +229,58 @@ export function ObjexoomHUD({
 					)}
 				</div>
 			)}
+			<AdaptiveResolutionReadout />
 		</section>
+	);
+}
+
+// E12/PA16 — only mounts when ?objexoomDebug is in the URL. Listens to
+// the `objexoom:fpsUpdate` event dispatched from inside the Canvas and
+// renders a tiny FPS + DPR readout in the bottom-left corner.
+function AdaptiveResolutionReadout() {
+	const [info, setInfo] = useState<{ fps: number; pixelRatio: number } | null>(null);
+	const [enabled, setEnabled] = useState(false);
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		try {
+			setEnabled(new URL(window.location.href).searchParams.has("objexoomDebug"));
+		} catch {
+			setEnabled(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		if (!enabled) return;
+		const onFps = (event: Event) => {
+			const detail = (event as CustomEvent<{ fps: number; pixelRatio: number }>).detail;
+			if (detail) setInfo(detail);
+		};
+		window.addEventListener("objexoom:fpsUpdate", onFps);
+		return () => window.removeEventListener("objexoom:fpsUpdate", onFps);
+	}, [enabled]);
+
+	if (!enabled || !info) return null;
+	return (
+		<div
+			data-testid="objexoom-fps-readout"
+			style={{
+				position: "absolute",
+				left: 12,
+				bottom: 12,
+				fontFamily: FONT_FAMILY.body,
+				fontSize: 11,
+				letterSpacing: LETTER_SPACING.hudLabel,
+				color: ROLE.accentPrimary,
+				background: `${OBJEXOOM_PALETTE.ink}cc`,
+				padding: "4px 8px",
+				borderRadius: 4,
+				border: `1px solid ${ROLE.accentPrimary}55`,
+				pointerEvents: "none",
+			}}
+		>
+			FPS {info.fps.toFixed(0)} • DPR {info.pixelRatio.toFixed(2)}
+		</div>
 	);
 }
 

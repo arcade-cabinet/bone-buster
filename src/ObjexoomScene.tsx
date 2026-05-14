@@ -4,7 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Bloom, ChromaticAberration, EffectComposer, Vignette } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import type { RefObject } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type * as Yuka from "yuka";
 import {
@@ -35,6 +35,7 @@ import {
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
 import {
+	AdaptiveResolution,
 	BodyPartField,
 	BulletField,
 	EnemyMesh,
@@ -672,6 +673,13 @@ export function ObjexoomScene({
 		}
 	});
 
+	// E12/PA16 — bridge AdaptiveResolution → HUD via a window event.
+	// useCallback so the prop identity is stable across renders and the
+	// hook inside AdaptiveResolution doesn't re-attach each frame.
+	const onAdaptiveUpdate = useCallback((info: { fps: number; pixelRatio: number }) => {
+		window.dispatchEvent(new CustomEvent("objexoom:fpsUpdate", { detail: info }));
+	}, []);
+
 	return (
 		<>
 			{/* J1 — when the player owns the flashlight the world reads in
@@ -747,6 +755,10 @@ export function ObjexoomScene({
 			<WeaponViewmodel weapon={weapon} />
 
 			<PlayerController map={map} active={active} hasKey={hasKey} settings={settings} />
+
+			{/* E12/PA16 — adaptive pixel ratio. Lives inside Canvas so it
+			    can call useFrame + useThree.gl.setPixelRatio directly. */}
+			<AdaptiveResolution onUpdate={onAdaptiveUpdate} />
 
 			<EffectComposer>
 				<Bloom intensity={0.45} luminanceThreshold={0.55} luminanceSmoothing={0.2} />
