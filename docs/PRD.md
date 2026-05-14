@@ -47,47 +47,34 @@ library:
 
 ## Status at a glance
 
-**Shipped on this branch (52 commits since 624d7ae):**
+**Shipped on this branch (200+ commits since 624d7ae):**
 
 - Full repository extraction from objexiv/objexiv (archive tag preserved)
 - Visual: design tokens, horror-tactical typography (Black Ops One +
   Rajdhani), 5 canonical screenshots, polygon-contains fix
-- Engine: ObjexoomScene decomposition (1900→758 LOC orchestrator),
+- Engine: ObjexoomScene decomposition (1900→<800 LOC orchestrator),
   yuka pursuit, sector + grid maps, lava damage, going-back phase
-- Audio: 14-voice procedural Tone.js bank + 6-voice procedural music
-- AI: per-enemy GameEntity registry, FSM
-- Assets: 22 GLB URLs wired (14 enemies, 4 weapons, 4 props),
-  8.01 MB on-disk total, BASE_URL-aware `A()` helper
-- Test harness: 163 unit tests, 5 real-Chromium browser tests, 5
-  e2e screenshot poses, ANGLE-GL launch args
+- Audio: 14-voice procedural Tone.js bank + per-archetype ambient bed (E11)
+- AI: per-enemy GameEntity registry, FSM, per-archetype enemy mix (E13 step-3)
+- Assets: 163 GLB URLs wired (enemies, weapons, props, structures);
+  ~81 MB on-disk total, BASE_URL-aware `A()` helper
+- Test harness: 498+ unit tests, 6 real-Chromium browser tests, 5
+  canonical e2e screenshots, 5 per-archetype e2e screenshots, ANGLE-GL launch args
 - Infra: pinned ports (5191/8191), Vitest 2-project setup,
   Capacitor scaffold, dependabot grouped, release-please wired
 - Reference parity: **100% reached** (E12 closed the last gap)
-- Persistence: sql.js run history (E9)
-- Weapons: BLADE melee slot (E1) — 4-weapon roster
+- Persistence: sql.js run history (E9) + secrets persistence (POL5)
+- Weapons: BLADE melee slot (E1), chaingun + shotgun + flamethrower (E8) — 5-weapon roster
+- All standalone hardening shipped: B1.7, B2.1, B2.4, DS.7, AO.4, AO.5, AO.6, PA9b, PA-MOD7, INF2
+- All elevation phases shipped: E2-E13 inclusive
+- All COV phases shipped: COV1-COV14 plus COV3 steps 2-8 (modular structures end-to-end)
+- Polish phase POL1-POL7 shipped: score field, secrets HUD + history, archetype HUD label,
+  best-run chip on landing, transitioning + died cards show run stats
 
-**Not yet shipped (this doc covers):**
-
-- B1.7 — local FBX→GLB regeneration verification
-- B2.1 — Capacitor Android APK
-- B2.4 — Pages CD deploy on release tag
-- DS.7 — design tokens in scene materials
-- AO.4 — slasher weapon bundle reorg
-- AO.5 — PWA manifest
-- AO.6 — favicon set + index.html head
-- PA9b — chaingun shell ejection
-- PA-MOD7 — gltfjsx typed GLB components
-- E2 — bosses
-- E3 — decorative sector scatter
-- E4 — lit lamps with shadow projection
-- E5 — destructible barrels
-- E6 — switches + secret walls
-- E7 — animated water / sewer biome
-- E8 — flamethrower weapon
-- E10 — 3D HUD elements
-- E11 — per-level ambient creature SFX
-- E13 — procedural archetype deepening
-- INF2 — build-time copy-public-assets
+**Remaining work:** procedural-archetype identity is now exhaustively
+keyed across 15+ axes; outstanding gaps are exploratory rather than
+"reach feature parity" items. See the directive for the current
+forward-sweep queue.
 
 ## Dependency DAG
 
