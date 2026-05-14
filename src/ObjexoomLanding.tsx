@@ -28,6 +28,11 @@ const TIPS = [
 	"The portal opens at the key.",
 	"Imps explode. Take cover.",
 	"Skeletons are slow. Wraiths phase walls.",
+	"Each run picks one of five archetypes from its seed.",
+	"Arena enemies hit harder; library books reward exploration.",
+	"Shoot the wall switch — secrets stack across the whole run.",
+	"Bottles +HP, books +ammo, treasure +score.",
+	"Lava floors damage you over time. So does water if you wade too long.",
 ] as const;
 
 type Pane = "main" | "difficulty" | "level" | "options" | "help";
