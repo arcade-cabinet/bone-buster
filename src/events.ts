@@ -151,6 +151,14 @@ export interface SecretTriggeredEvent {
 	y: number;
 }
 
+/**
+ * POL22 — fires when the player picks up the key. Consumed by the
+ * KeyPickupCeremony HUD overlay slot.
+ */
+export interface KeyPickedUpEvent {
+	type: "keyPickedUp";
+}
+
 export type ObjexoomEvent =
 	| BurstEvent
 	| BodyPartsEvent
@@ -167,7 +175,8 @@ export type ObjexoomEvent =
 	| FellToDeathEvent
 	| TeleportEvent
 	| SecretTriggeredEvent
-	| DamageNumberEvent;
+	| DamageNumberEvent
+	| KeyPickedUpEvent;
 
 export type ObjexoomEventType = ObjexoomEvent["type"];
 

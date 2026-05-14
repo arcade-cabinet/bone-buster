@@ -356,6 +356,9 @@ export function ObjexoomShell() {
 			playPickup();
 			triggerFadeRef.current("key");
 			setState((prev) => ({ ...prev, hasKey: true }));
+			// POL22 — fire the typed event consumed by the
+			// KeyPickupCeremony HUD overlay slot.
+			dispatch({ type: "keyPickedUp" });
 		},
 		onWin: () => {
 			// H8 — first "win" trigger (player crossed the RealDoor) flips
