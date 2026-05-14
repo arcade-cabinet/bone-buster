@@ -22,7 +22,11 @@ const root = resolve(import.meta.dirname, "..");
 // Source files that contribute A("/assets/models/...") references.
 // Lives as an explicit allowlist rather than a glob so additions are
 // deliberate.
-const SOURCE_FILES = [resolve(root, "src/models.ts"), resolve(root, "src/lampScatter.ts")];
+const SOURCE_FILES = [
+	resolve(root, "src/models.ts"),
+	resolve(root, "src/lampScatter.ts"),
+	resolve(root, "src/scatter/propPool.ts"),
+];
 
 function categoryOf(publicPath) {
 	const m = publicPath.match(/\/assets\/models\/([^/]+)\//);

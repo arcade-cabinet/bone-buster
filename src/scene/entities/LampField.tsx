@@ -26,8 +26,8 @@ import { LAMP_VARIANTS_OFF, LAMP_VARIANTS_ON, lampUrlFor } from "../../lampScatt
  *    light).
  *  - The "don't double-light the lamp" rule: lit lamps render the ON
  *    GLB variant which has self-emissive material; the pointLight
- *    sits 0.6 units above the lamp so it bathes the floor and walls
- *    but doesn't add to the emissive surface itself. The flashlight
+ *    sits 1.4 units above the lamp base so it bathes the floor and
+ *    walls but doesn't add to the emissive surface itself. The flashlight
  *    (a SpotLight) only adds throughput for diffuse hits, so the
  *    emissive surface stays at its natural luminance regardless of
  *    flashlight aim.

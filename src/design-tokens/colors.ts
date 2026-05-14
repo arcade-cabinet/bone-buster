@@ -216,7 +216,7 @@ export const OBJEXOOM_PALETTE = {
 	wallVariantNeutral: "#1a1e3b", // neutral mid wall variant
 	wallEmissive: "#1a1f3a", // floor emissive cool blue
 	door: "#231a3f", // locked-door darker indigo
-	flashlightWarm: SCALE.parchment[50], // "#fef3c7" — flashlight + amber lens
+	flashlightWarm: "#fef3c7", // amber-lens warm — flashlight + lit-lamp pointLights + pickup glow
 	weaponMetalLight: "#3a3a48", // pistol untextured metal
 	weaponMetalDark: "#1f2230", // chaingun/shotgun untextured metal
 	ammoBrass: "#b16a14", // shotgun shell brass

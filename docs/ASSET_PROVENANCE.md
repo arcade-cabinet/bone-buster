@@ -73,3 +73,18 @@ A teammate cloning the repo gets a working `public/assets/models/` tree out of t
 ## Non-FBX sources
 
 Pre-built GLBs (skeleton, imp, wraith, sewerfiend, horned, nun, abomination[2], anomaly, alien, pistol/chaingun/shotgun, doors, lamps, barrels) ship directly from their upstream packs — no conversion in this pipeline. Their provenance is in [`ASSET_INVENTORY.md`](./ASSET_INVENTORY.md).
+
+### PSX Mega Pack II — direct copies (no conversion)
+
+The 10 lamp GLBs (COV1) and 30 props GLBs (COV4) were copied verbatim
+from `/Volumes/home/assets/3DPSX/PSX Mega Pack II v1.8/` (NAS-mounted
+local asset library) — they ship pre-built. Recipe to re-extract from
+a fresh checkout:
+
+1. Mount the NAS at `/Volumes/home` (SMB to `192.168.1.200`).
+2. `cp "/Volumes/home/assets/3DPSX/PSX Mega Pack II v1.8/Light Sources/lamp_mx_"*.glb public/assets/models/props/lamps/`
+3. Copy each of the 30 props listed as keys of `PROP_CATALOGUE` in `src/scatter/propPool.ts` from `Props/` → `public/assets/models/props/scatter/`.
+4. `pnpm assets:verify-runtime` (asserts every URL in `src/models.ts`, `src/lampScatter.ts`, `src/scatter/propPool.ts` resolves).
+
+The pack license (PSX Mega Pack II v1.8) lives in the pack's bundled
+`LICENSE.txt` on the NAS.

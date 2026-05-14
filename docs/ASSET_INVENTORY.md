@@ -59,8 +59,10 @@ The rest is opportunity — features for the elevation track.
 | --- | --- |
 | `door.glb` | grid-map door (unwired — current door is procedural box) |
 | `door_locked.glb` | locked-state variant (unwired) |
-| `lamp_on.glb` | lit lamp (unwired) |
-| `lamp_off.glb` | dark lamp (unwired) |
+| `lamp_on.glb` | lit lamp (legacy single-variant — superseded by `lamps/` pool) |
+| `lamp_off.glb` | dark lamp (legacy single-variant — superseded by `lamps/` pool) |
+| `lamps/lamp_mx_*.glb` (×10) | COV1+E4 — 5 shapes × off/on PSX Mega Pack II scatter pool |
+| `scatter/<30 GLBs>` | COV4 — props scatter pool curated for E3 (per-archetype buckets) |
 
 ## Untapped — local references (`references/`)
 
