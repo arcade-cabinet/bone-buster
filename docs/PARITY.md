@@ -59,7 +59,7 @@ every reference mechanic and whether OBJEXOOM matches it.
 | Cooldown | Per-weapon | Per-weapon | ✅ Present |
 | Recoil | Yes (`chaingun.recoil`) | Yes (`RECOIL_DISTANCE` per weapon, sine-eased) | 🚀 Elevated |
 | Muzzle flash | `LightFlash` class | `pointLight` w/ envelope in scene root | ✅ Present |
-| Shell ejection | `Shell` class (chaingun shells) | `ShellEjectField` (shotgun only currently) | ⚠️ Partial — extend to chaingun |
+| Shell ejection | `Shell` class (chaingun shells) | `ShellEjectField` accepts both — shotgun ejects one large shell per pull, chaingun ejects a smaller (0.6× scale) shell on every pulse | 🚀 Elevated |
 | Ammo cost | None (chaingun unlimited) | Per-weapon (chaingun infinite, shotgun consumes) | 🚀 Elevated |
 | Viewmodel | Hand-mesh `chaingun = [...]` | Real GLB per weapon, auto-bbox normalized | 🚀 Elevated |
 | Melee | None | BLADE slot (machete viewmodel, 1.6-tile range, 55 dmg, infinite ammo, whoosh sfx). 4 additional melee GLBs staged for future tuning. | 🚀 Elevated |
@@ -174,10 +174,11 @@ every reference mechanic and whether OBJEXOOM matches it.
 
 ## Outstanding gaps (failures to fix)
 
-1. ⚠️ **Shell ejection only on shotgun (PA9b)** — extend `ShellEjectField` to chaingun fires (reference ejects on every chaingun shot). Acceptance criterion + asset list lives in [`docs/PRD.md` § PA9b](./PRD.md#pa9b).
-2. ⚠️ **Test 5 visual quality** — `mission-complete.png` currently captures mid-transition (the loop ran out of debug-hook stability before reaching the actual WIN overlay). Re-record after PARITY items below land.
+1. ⚠️ **Test 5 visual quality** — `mission-complete.png` currently captures mid-transition (the loop ran out of debug-hook stability before reaching the actual WIN overlay). Re-record after the next visual change lands.
 
-The first one is "partial → full" not "missing", which is why the parity-reached banner at the top stands.
+All reference-clone mechanics are now matched or elevated — including
+shell ejection (PA9b shipped). The parity-reached banner at the top
+fully stands.
 
 ## Elevation queue (beyond parity)
 

@@ -612,20 +612,29 @@ export function ObjexoomScene({
 			else if (weapon === "chaingun") playChaingun();
 			else playShotgun();
 
-			// I10 — shotgun shell ejection. One brass shell ejects to the
-			// camera's right with random spin; gravity + ground bounce; 4 s
-			// despawn. Driven by the ShellEjectField listener.
-			if (weapon === "shotgun") {
+			// I10 / PA9b — shell ejection. Shotgun ejects one large brass
+			// shell per trigger pull; chaingun ejects a smaller shell on
+			// every individual pulse (~11/sec at 90ms cooldown). Both
+			// flick to the camera's right with random spin; gravity +
+			// ground bounce; 4 s despawn via ShellEjectField.
+			if (weapon === "shotgun" || weapon === "chaingun") {
+				const isChaingun = weapon === "chaingun";
 				const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+				// Chaingun shells lateral velocity is a touch lower so the
+				// dense stream doesn't fling shells halfway across the room.
+				const lateral = isChaingun ? 1.0 : 1.6;
+				const upward = isChaingun ? 0.9 : 1.2;
+				const scale = isChaingun ? 0.6 : 1.0;
 				window.dispatchEvent(
 					new CustomEvent("objexoom:shellEject", {
 						detail: {
 							x: camera.position.x + right.x * 0.3,
 							y: camera.position.y - 0.3,
 							z: camera.position.z + right.z * 0.3,
-							vx: right.x * 1.6 + (Math.random() - 0.5) * 0.4,
-							vy: 1.2,
-							vz: right.z * 1.6 + (Math.random() - 0.5) * 0.4,
+							vx: right.x * lateral + (Math.random() - 0.5) * 0.4,
+							vy: upward,
+							vz: right.z * lateral + (Math.random() - 0.5) * 0.4,
+							scale,
 						},
 					}),
 				);

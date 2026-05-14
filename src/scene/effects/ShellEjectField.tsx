@@ -11,17 +11,27 @@ type Shell = {
 	spin: { x: number; y: number; z: number };
 	createdAt: number;
 	bounced: boolean;
+	// PA9b — chaingun ejects ~11 shells/sec; smaller scale reads correctly
+	// against the slower shotgun shells.
+	scale: number;
 };
 
 const SHELL_TTL_MS = 4000;
-const MAX_SHELLS = 40;
+// PA9b — chaingun rate raises the steady-state shell count. 80 covers
+// 2s of continuous chaingun fire (~11 shells/sec) plus headroom for
+// concurrent shotgun shots before the oldest shells start recycling.
+const MAX_SHELLS = 80;
 
 /**
- * I10 — shotgun shell ejection. Listens for `objexoom:shellEject`
- * events (dispatched by the fire handler on shotgun shots only) and
- * spawns one brass-tipped cylinder shell at the eject point. Each
- * shell has random spin, gravity, a single ground bounce, and fades
- * out over the final 750 ms of its `SHELL_TTL_MS` lifetime.
+ * I10 / PA9b — weapon shell ejection. Listens for `objexoom:shellEject`
+ * events (dispatched by the fire handler on shotgun AND chaingun
+ * shots) and spawns one brass-tipped cylinder shell at the eject
+ * point. Each shell has random spin, gravity, a single ground bounce,
+ * and fades out over the final 750 ms of its `SHELL_TTL_MS` lifetime.
+ *
+ * The optional `scale` field on the event lets the fire handler pick
+ * a smaller shell for chaingun fires (matches the reference clone's
+ * smaller chaingun shell vs the bigger shotgun shell).
  */
 export function ShellEjectField() {
 	const shellsRef = useRef<Shell[]>([]);
@@ -38,6 +48,7 @@ export function ShellEjectField() {
 				vx: number;
 				vy: number;
 				vz: number;
+				scale?: number;
 			}>;
 			const d = ev.detail;
 			shellsRef.current.push({
@@ -51,6 +62,7 @@ export function ShellEjectField() {
 				},
 				createdAt: performance.now(),
 				bounced: false,
+				scale: d.scale ?? 1,
 			});
 			while (shellsRef.current.length > MAX_SHELLS) shellsRef.current.shift();
 		};
@@ -96,6 +108,7 @@ export function ShellEjectField() {
 						transparent: true,
 					}),
 				);
+				m.scale.setScalar(shell.scale);
 				groupRef.current.add(m);
 				meshes.current.set(shell.id, m);
 				mesh = m;

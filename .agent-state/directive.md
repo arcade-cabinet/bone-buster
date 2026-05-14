@@ -92,7 +92,7 @@ Full audit: [`docs/PARITY.md`](../docs/PARITY.md).
 - [x] **PA11** Body-part physics: gravity arc + spin on death (`BodyPartField` active).
 - [x] **PA-FULL** End-to-end deep dive — complete; result captured in `docs/PARITY.md`.
 - [x] **PA16 / E12** Adaptive resolution via `gl.setPixelRatio` on low FPS. Shipped 57dd8fa. **100% reference parity reached.**
-- [ ] **PA9b** Extend shell ejection to chaingun fires (reference ejects on every chaingun shot). Acceptance: every chaingun pulse spawns one brass shell via `ShellEjectField`; visual + per-shell despawn budget preserved.
+- [x] **PA9b** Extended shell ejection to chaingun fires. Shotgun ejects one large shell per pull; chaingun ejects a smaller (0.6× scale) shell on every pulse. `ShellEjectField` per-shell despawn cap raised to 80 to handle the chaingun rate.
 - [ ] **PA-MOD7** Wire `gltfjsx` to auto-generate typed React components per GLB. Acceptance: muzzle bones become addressable as named refs; viewmodel can attach the muzzle light to the actual barrel tip rather than camera-relative.
 
 ### ELEVATION — beyond reference parity
