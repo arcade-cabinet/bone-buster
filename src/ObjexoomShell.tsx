@@ -4,7 +4,8 @@ import { Canvas } from "@react-three/fiber";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildMap } from "./buildMap";
-import { OBJEXOOM_PALETTE, PLAYER_MAX_HP } from "./constants";
+import { PLAYER_MAX_HP } from "./constants";
+import { ROLE, SCALE } from "./design-tokens";
 import type { ObjexoomMap, PickupKind } from "./engine";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
@@ -181,10 +182,10 @@ export function ObjexoomShell() {
 	const triggerFadeRef = useRef<(kind: FadeKind, intensity?: number) => void>(() => undefined);
 	const triggerFade = useCallback((kind: FadeKind, intensity = 1) => {
 		const colorByKind: Record<FadeKind, string> = {
-			damage: "rgba(220, 38, 38, 1)",
-			key: "rgba(34, 197, 94, 1)",
-			flash: "rgba(229, 231, 235, 1)",
-			win: "rgba(255, 255, 255, 1)",
+			damage: ROLE.actionDamage,
+			key: SCALE.amber[400],
+			flash: SCALE.parchment[50],
+			win: SCALE.parchment[50],
 		};
 		const peakByKind: Record<FadeKind, number> = {
 			damage: 0.55,
@@ -627,7 +628,7 @@ export function ObjexoomShell() {
 				position: "fixed",
 				inset: 0,
 				zIndex: 2000,
-				background: `radial-gradient(circle at 50% 30%, ${OBJEXOOM_PALETTE.ink} 0%, #000 100%)`,
+				background: `radial-gradient(circle at 50% 30%, ${ROLE.bgWorld} 0%, ${SCALE.ink[950]} 100%)`,
 				display: "grid",
 				placeItems: "center",
 				padding:
@@ -645,8 +646,8 @@ export function ObjexoomShell() {
 					overflow: "hidden",
 					boxShadow: touchMode
 						? "none"
-						: "0 30px 80px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(167,139,250,0.18)",
-					background: OBJEXOOM_PALETTE.ink,
+						: `0 30px 80px -20px ${SCALE.ink[950]}b3, 0 0 0 1px ${ROLE.borderSoft}`,
+					background: ROLE.bgWorld,
 				}}
 			>
 				<AnimatePresence mode="wait">
