@@ -155,11 +155,16 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		hemisphereSky: SCALE.parchment[600],
 		hemisphereGround: SCALE.ink[700],
 		waterColor: SCALE.parchment[700],
-		// Underground — DARK. Heavy darkness pass: ambient halved,
-		// directional dropped to 30% (no sun underground), fog pulls
-		// in to 8 tiles so the flashlight cone is the practical
-		// sight-distance.
-		ambientMul: 0.5,
+		// Underground — DARK, but readable. PT2A — the first cut
+		// (ambient 0.5 / directional 0.3) left the navigable floor
+		// nearly invisible even within the flashlight cone, while
+		// courtyard (ambient 0.85) and library (0.8) both struck a
+		// "dark but readable" balance. Lift ambient to 0.65 so the
+		// concrete tile pattern reads as a dim surface, not pure void
+		// — keep directional dim (0.3) for "no sun underground"
+		// atmosphere, keep fogFarTiles=8 so the flashlight cone
+		// remains the practical sight-line.
+		ambientMul: 0.65,
 		directionalMul: 0.3,
 		fogFarTiles: 8,
 	},
