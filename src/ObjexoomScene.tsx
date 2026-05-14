@@ -91,9 +91,11 @@ import { type Secret, spawnSecrets } from "./secrets";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 import {
 	playBoom,
+	playBossDeath,
 	playHurt,
 	playPickup,
 	playPortal,
+	playSkeletonDeath,
 	setAmbientArchetype,
 	setAmbientPhase,
 	stopAmbient,
@@ -653,12 +655,16 @@ export function ObjexoomScene({
 	const debugKilledSpawnsRef = useRef<Set<string>>(new Set());
 	useEffect(() => {
 		const onDebugKillAll = () => {
+			let killsThisTick = 0;
+			let bossKillsThisTick = 0;
 			for (const enemy of enemiesRef.current) {
 				const tag = `${enemy.id}@${enemy.position.x.toFixed(3)},${enemy.position.y.toFixed(3)}`;
 				if (debugKilledSpawnsRef.current.has(tag)) continue;
 				if (enemy.dead) continue;
 				debugKilledSpawnsRef.current.add(tag);
 				enemy.dead = true;
+				killsThisTick += 1;
+				if (enemy.tier === "boss") bossKillsThisTick += 1;
 				const mesh = enemyMeshes.current.get(enemy.id);
 				if (mesh) mesh.visible = false;
 				// Y1 — debug-kill also drops the enemy's yuka GameEntity so the
@@ -668,7 +674,35 @@ export function ObjexoomScene({
 					removeYukaEntity(yukaEntity);
 					yukaEntitiesRef.current.delete(enemy.id);
 				}
+				// PT1 fold-forward — debug kill now dispatches the same
+				// death side-effects as the real fire path so playtest
+				// captures see POL16 layered burst + POL25 body-part
+				// settle + POL12 hitstop. Previously debug-kill just
+				// hid the mesh, which meant playtest screenshots couldn't
+				// verify these polish items end-to-end.
+				dispatch({
+					type: "burst",
+					x: enemy.position.x,
+					y: enemy.position.y,
+					kind: enemy.kind === "imp" ? "explode" : "damage",
+				});
+				dispatch({
+					type: "bodyParts",
+					x: enemy.position.x,
+					y: enemy.position.y,
+					kind: enemy.kind,
+				});
 				gameRef.current.onKill();
+			}
+			if (killsThisTick > 0) {
+				// POL12 hitstop window — debug-kills should feel the same
+				// punch as real kills.
+				const hitstopMs = bossKillsThisTick > 0 ? 150 : 80;
+				hitstopUntilRef.current = performance.now() + hitstopMs;
+				// POL10-v2 boss death + skeleton death audio.
+				playSkeletonDeath();
+				if (bossKillsThisTick > 0) playBossDeath();
+				if (settings.soundEnabled) playBoom();
 			}
 		};
 		const onDebugCollectPickups = () => {
@@ -686,7 +720,7 @@ export function ObjexoomScene({
 			teardownKill();
 			teardownCollect();
 		};
-	}, [gameRef]);
+	}, [gameRef, settings.soundEnabled]);
 
 	// E5 — barrel explosion handler. Lives behind a ref so the fire-path
 	// (also a ref-closure) can call it without re-subscribing the
