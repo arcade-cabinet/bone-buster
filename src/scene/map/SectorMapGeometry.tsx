@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import type { ObjexoomSectorMap } from "../../engine";
+import { WaterSurface } from "./WaterSurface";
 
 /**
  * Renders an ObjexoomSectorMap (decoded reference level) as r3f
@@ -51,6 +52,9 @@ export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 							/>
 						</mesh>
 					) : null}
+					{/* E7 — animated water surface layered just above the floor
+					    when this sector is flagged `isWater: true`. */}
+					{sector.isWater ? <WaterSurface sector={sector} /> : null}
 					{/* Ceiling */}
 					<mesh rotation={[Math.PI / 2, 0, 0]} position={[0, sector.ceilingHeight, 0]}>
 						<shapeGeometry args={[shape]} />

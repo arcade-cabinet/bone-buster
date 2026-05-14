@@ -100,6 +100,12 @@ export type MapSector = Readonly<{
 	vertices: readonly Vec2[];
 	floorHeight: number;
 	ceilingHeight: number;
+	/**
+	 * E7 — when true, this sector renders with the UV-scrolled water
+	 * surface mesh and applies WATER_SPEED_MULTIPLIER to player movement
+	 * while overlapping. Defaults to false (regular floor).
+	 */
+	isWater?: boolean;
 }>;
 
 export type ObjexoomMap = ObjexoomGridMap | ObjexoomSectorMap;
@@ -811,6 +817,20 @@ export function getSectorAtPoint(
 export function getFloorHeightAt(map: ObjexoomSectorMap, point: Vec2, cache?: SectorCache): number {
 	const sector = getSectorAtPoint(map, point, cache);
 	return sector ? sector.floorHeight : -100;
+}
+
+/** E7 — multiplier applied to PLAYER_MOVE_SPEED when player overlaps a water sector. */
+export const WATER_SPEED_MULTIPLIER = 0.6;
+
+/**
+ * E7 — true if `point` lies inside a water-flagged sector. Used by
+ * PlayerController to apply the wading slowdown. Returns false for
+ * grid maps + for points outside any sector.
+ */
+export function isInWaterAt(map: ObjexoomMap, point: Vec2, cache?: SectorCache): boolean {
+	if (map.kind !== "sectors") return false;
+	const sector = getSectorAtPoint(map, point, cache);
+	return sector?.isWater === true;
 }
 
 export function getCeilingHeightAt(

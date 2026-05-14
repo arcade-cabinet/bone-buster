@@ -54,12 +54,22 @@ export function loadRefLevel(
 	const difficultyIdx = DIFFICULTY_INDEX[difficulty];
 	let manyEnemiesCount = 0;
 
-	const sectors: MapSector[] = decoded.polygons.map((poly, i) => ({
+	const baseSectors = decoded.polygons.map((poly, i) => ({
 		id: i,
 		vertices: poly.vertices.map(scalePoint),
 		floorHeight: poly.floorHeight * REF_TO_RUNTIME_SCALE,
 		ceilingHeight: poly.ceilingHeight * REF_TO_RUNTIME_SCALE,
 	}));
+
+	// E7 step-1: flag one sector per level as water — pick the sector
+	// whose centroid is farthest from index 0 (the player-spawn-anchor
+	// sector typically) but isn't the largest/exit-bearing sector.
+	// Deterministic per refLevel index. Provides at least one water
+	// tile on every map so the wading slowdown is exercised.
+	const waterSectorId = pickWaterSectorId(baseSectors);
+	const sectors: MapSector[] = baseSectors.map((s) =>
+		s.id === waterSectorId ? { ...s, isWater: true } : s,
+	);
 
 	const enemySpawns: EnemySpawn[] = [];
 	const pickupSpawns: PickupSpawn[] = [];
@@ -228,3 +238,25 @@ export function loadRefLevel(
 }
 
 export { REF_TO_RUNTIME_SCALE };
+
+/**
+ * E7 step-1 — pick which sector becomes water in a ref level.
+ * Strategy: choose the sector whose centroid is farthest from sector
+ * 0's centroid, but not sector 0 itself. Deterministic given the
+ * sector geometry. Returns -1 if there are fewer than 2 sectors.
+ */
+function pickWaterSectorId(sectors: readonly MapSector[]): number {
+	if (sectors.length < 2) return -1;
+	const anchor = polygonCentroid(sectors[0].vertices);
+	let bestId = -1;
+	let bestDistSq = Number.NEGATIVE_INFINITY;
+	for (let i = 1; i < sectors.length; i += 1) {
+		const c = polygonCentroid(sectors[i].vertices);
+		const d2 = (c.x - anchor.x) ** 2 + (c.y - anchor.y) ** 2;
+		if (d2 > bestDistSq) {
+			bestDistSq = d2;
+			bestId = sectors[i].id;
+		}
+	}
+	return bestId;
+}

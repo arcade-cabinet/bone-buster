@@ -4,8 +4,10 @@ import { PLAYER_HEIGHT, PLAYER_MOVE_SPEED, PLAYER_TURN_SENSITIVITY } from "./con
 import {
 	computePortalEdges,
 	getFloorHeightAtAny,
+	isInWaterAt,
 	type ObjexoomMap,
 	resolveCollisionAny,
+	WATER_SPEED_MULTIPLIER,
 } from "./engine";
 import { addObjexoomListener, dispatch } from "./events";
 import type { ObjexoomSettings } from "./settings";
@@ -212,7 +214,12 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 			const cos = Math.cos(yaw.current);
 			const wx = fx * cos + fz * sin;
 			const wz = -fx * sin + fz * cos;
-			const step = PLAYER_MOVE_SPEED * dt;
+			// E7 — water slowdown. Check the current camera position (pre-
+			// step) so the slowdown takes effect immediately on water entry.
+			const waterMul = isInWaterAt(map, { x: camera.position.x, y: camera.position.z })
+				? WATER_SPEED_MULTIPLIER
+				: 1;
+			const step = PLAYER_MOVE_SPEED * waterMul * dt;
 			const desired = {
 				x: camera.position.x + wx * step,
 				y: camera.position.z + wz * step,
