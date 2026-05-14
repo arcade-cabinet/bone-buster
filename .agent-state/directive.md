@@ -2,6 +2,21 @@
 
 **Status:** ACTIVE
 
+## Phase 7 — visual self-judgement infra + archetype coverage
+
+Forward-sweep from Phase 6: E13 step-2 tinted lights per archetype,
+COV10 step-2 placed a wreck in courtyard archetype, but neither
+appears on the refLevel-0 canonical screenshots (which use corridor
+archetype). Right now the agent has no way to visually self-judge
+the 4 non-corridor archetypes — CLAUDE.md's "screenshot, read your
+own screenshot, compare to spec" loop can't run for them. That
+is itself a process bug. Phase 7 fixes the infra first, then sweeps
+the resulting visual evidence for regressions.
+
+- [x] **INF3 — `?objexoomArchetype=<name>` URL override.** Shipped. ObjexoomShell now reads `?objexoomArchetype=<name>` and applies `applyArchetypeOverride(baseSeed, archetype)` on top of the base seed (which may itself come from `?objexoomSeed`). The rewrite uses `seed - (seed % 5) + ARCHETYPE_NAMES.indexOf(name)` so `pickArchetype(map) === name` for every input seed. Unknown / absent archetype names fall through unchanged. The function is exported from ObjexoomShell so the unit test can pin the invariant. 4 new unit tests: seed-unchanged-when-null, seed-unchanged-when-unknown, `pickArchetype === name` for every (5 archetypes × 9 seeds) combination, and idempotency (applying twice is a no-op). CLAUDE.md "Notes" gained a one-paragraph entry describing the flag, the stacking-with-objexoomSeed semantics, and when to use it (visual self-judgement of the 4 non-canonical archetypes). 407 unit + 5 browser + 5 e2e screenshots green. Canonicals byte-stable (the override only fires when the URL param is present; the default seed path is unchanged).
+- [ ] **INF4 — per-archetype canonical screenshots.** Extend `tests/e2e/screenshots.spec.ts` to capture 5 additional "ingame — archetype: <name>" poses (one per archetype) via the new `?objexoomArchetype=<name>` flag. These become canonical refs. The first run lays them down; subsequent runs diff. Sets the visual baseline that future palette / scatter / wreck changes are judged against.
+- [ ] **E13 step-3 — per-archetype enemy mix.** PRD §E13 calls for "lighting palette + enemy mix + SFX ambient bed" — lighting + SFX are wired; enemy mix is the remaining axis. A new `pickEnemyMix(archetype)` returns a per-archetype weight map over the existing enemy kinds, consumed by `spawnEnemies` so arena maps lean heavy/melee, library leans skirmisher/ranged, etc. Preserves total enemy count per map.
+
 ## Phase 6 — gameplay extensions for staged pools
 
 The asset-pool step-1 commits shipped data but no gameplay hooks. The

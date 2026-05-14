@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ARCHETYPE_NAMES } from "./archetype";
 import { buildMap } from "./buildMap";
 import { PLAYER_MAX_HP } from "./constants";
 import { ROLE, SCALE } from "./design-tokens";
@@ -119,6 +120,11 @@ const ammoIncrement: Record<
 };
 
 function readSeedFromUrl(): number {
+	const base = readBaseSeedFromUrl();
+	return applyArchetypeOverride(base, readArchetypeFromUrl());
+}
+
+function readBaseSeedFromUrl(): number {
 	if (typeof window === "undefined") return Date.now() & 0xffffffff;
 	try {
 		const url = new URL(window.location.href);
@@ -130,6 +136,33 @@ function readSeedFromUrl(): number {
 		// fall through
 	}
 	return Date.now() & 0xffffffff;
+}
+
+function readArchetypeFromUrl(): string | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const url = new URL(window.location.href);
+		return url.searchParams.get("objexoomArchetype");
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * INF3 — rewrite a seed so `pickArchetype(map)` lands on the requested
+ * archetype. The mapping in `archetype.ts` is `seed % 5`, so we shift
+ * `seed` by `-(seed % 5) + wantedIndex`. Returns the seed unchanged
+ * when `archetype` is null / unknown.
+ *
+ * Exported for the unit test that pins the invariant: after override
+ * the seed satisfies `seed % 5 === wantedIndex` for every input seed.
+ */
+export function applyArchetypeOverride(seed: number, archetype: string | null): number {
+	if (!archetype) return seed;
+	const idx = ARCHETYPE_NAMES.indexOf(archetype as (typeof ARCHETYPE_NAMES)[number]);
+	if (idx < 0) return seed;
+	const s = seed >>> 0;
+	return ((s - (s % ARCHETYPE_NAMES.length) + idx) >>> 0) & 0xffffffff;
 }
 
 function debugHooksEnabled(): boolean {
