@@ -277,6 +277,25 @@ export function playSkeletonDeath() {
 	}, 80);
 }
 
+/**
+ * POL9 — player-death sting. Heavier than the skeleton-death two-note
+ * cascade (which is a "kill confirmed" beat); player death is a slow
+ * descending three-note sequence on a wider interval so the player
+ * registers "this was the end" emotionally before the YOU DIED card
+ * appears. Reuses deathSynth (the existing 14-voice bank ceiling
+ * doesn't allow a dedicated player-death voice without dropping
+ * something else, and re-pitching deathSynth is sonically distinct
+ * enough).
+ */
+let lastPlayerDeathFireTime = 0;
+export function playPlayerDeath() {
+	const t = jitter(lastPlayerDeathFireTime);
+	lastPlayerDeathFireTime = t;
+	deathSynth?.triggerAttackRelease("E2", t);
+	setTimeout(() => deathSynth?.triggerAttackRelease("B1", jitter(lastPlayerDeathFireTime)), 140);
+	setTimeout(() => deathSynth?.triggerAttackRelease("E1", jitter(lastPlayerDeathFireTime)), 320);
+}
+
 export function playPickup() {
 	pickupSynth?.triggerAttackRelease("E5", "16n");
 	setTimeout(() => pickupSynth?.triggerAttackRelease("A5", "16n"), 90);

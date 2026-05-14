@@ -18,6 +18,7 @@ import {
 	ensureSfx,
 	playHitSting,
 	playPickup,
+	playPlayerDeath,
 	setMusicMood,
 	startAmbient,
 	startMusic,
@@ -311,6 +312,13 @@ export function ObjexoomShell() {
 				if (prev.status !== "playing") return prev;
 				const finalDamage = Math.round(damage * tuning.enemyDamageMultiplier);
 				const hp = Math.max(0, prev.hp - finalDamage);
+				// POL9 — player-death sting fires exactly once on the HP→0
+				// transition. Inside the setState updater so React 19 strict-
+				// mode's double-invoke doesn't double-play; we read prev.hp
+				// (was > 0) and current hp (now 0) as the gate.
+				if (prev.hp > 0 && hp === 0 && settings.soundEnabled) {
+					playPlayerDeath();
+				}
 				return {
 					...prev,
 					hp,
@@ -564,13 +572,14 @@ export function ObjexoomShell() {
 	// status to dead so the YOU DIED card surfaces.
 	useEffect(() => {
 		return addObjexoomListener("fellToDeath", () => {
-			setState((prev) =>
-				prev.status === "playing"
-					? { ...prev, status: "dead", hp: 0, damageFlashAt: performance.now() }
-					: prev,
-			);
+			setState((prev) => {
+				if (prev.status !== "playing") return prev;
+				// POL9 — player-death sting also on fall-to-death.
+				if (settings.soundEnabled) playPlayerDeath();
+				return { ...prev, status: "dead", hp: 0, damageFlashAt: performance.now() };
+			});
 		});
-	}, []);
+	}, [settings.soundEnabled]);
 
 	// POL4 — increment the run's secret count on every secretTriggered event.
 	// The event itself is fired by fireResolution when the player shoots a
