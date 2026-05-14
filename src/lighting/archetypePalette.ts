@@ -70,6 +70,24 @@ export interface ArchetypeLightPalette {
 	 * keeps cool indigo, library is still-amber, arena is ember-tinged.
 	 */
 	readonly waterColor: string;
+	/**
+	 * POL27 — atmospheric darkness multipliers. Per-archetype scaling
+	 * for ambient + directional intensity AND fog-far distance so
+	 * archetypes can be tuned to read as "you absolutely need the
+	 * flashlight" vs "the room has natural light." All values are
+	 * multipliers against the baseline; corridor preserves 1.0 across
+	 * the board for canonical byte-stability.
+	 *
+	 *   ambientMul        scales `<ambientLight intensity>` (both
+	 *                     flashlight-on and flashlight-off branches)
+	 *   directionalMul    scales `<directionalLight intensity>`
+	 *   fogFarTiles       overrides the fog far-plane distance in
+	 *                     tiles (was hardcoded 12). Lower = closer
+	 *                     fade-out = more claustrophobic.
+	 */
+	readonly ambientMul: number;
+	readonly directionalMul: number;
+	readonly fogFarTiles: number;
 }
 
 /**
@@ -89,6 +107,10 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		hemisphereSky: OBJEXOOM_PALETTE.indigo,
 		hemisphereGround: OBJEXOOM_PALETTE.ink,
 		waterColor: OBJEXOOM_PALETTE.indigo,
+		// Canonical defaults — preserves refLevel 0 bytes exactly.
+		ambientMul: 1.0,
+		directionalMul: 1.0,
+		fogFarTiles: 12,
 	},
 	arena: {
 		ambientColor: SCALE.blood[300],
@@ -101,6 +123,10 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		hemisphereSky: SCALE.ember[400],
 		hemisphereGround: SCALE.blood[900],
 		waterColor: SCALE.ember[700],
+		// Arenas are well-lit combat spaces — full brightness, normal fog.
+		ambientMul: 1.1,
+		directionalMul: 1.0,
+		fogFarTiles: 14,
 	},
 	courtyard: {
 		ambientColor: SCALE.indigo[300],
@@ -113,6 +139,10 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		hemisphereSky: SCALE.indigo[200],
 		hemisphereGround: SCALE.indigo[900],
 		waterColor: SCALE.indigo[300],
+		// Outdoor dusk — long sightlines, slightly dim ambient.
+		ambientMul: 0.85,
+		directionalMul: 1.1,
+		fogFarTiles: 16,
 	},
 	sewer: {
 		ambientColor: SCALE.parchment[600],
@@ -125,6 +155,13 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		hemisphereSky: SCALE.parchment[600],
 		hemisphereGround: SCALE.ink[700],
 		waterColor: SCALE.parchment[700],
+		// Underground — DARK. Heavy darkness pass: ambient halved,
+		// directional dropped to 30% (no sun underground), fog pulls
+		// in to 8 tiles so the flashlight cone is the practical
+		// sight-distance.
+		ambientMul: 0.5,
+		directionalMul: 0.3,
+		fogFarTiles: 8,
 	},
 	library: {
 		ambientColor: SCALE.parchment[300],
@@ -137,6 +174,10 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		hemisphereSky: SCALE.amber[200],
 		hemisphereGround: SCALE.amber[900],
 		waterColor: SCALE.amber[700],
+		// Warm reading-room — slightly dim ambient, lamps carry it.
+		ambientMul: 0.8,
+		directionalMul: 0.7,
+		fogFarTiles: 11,
 	},
 };
 

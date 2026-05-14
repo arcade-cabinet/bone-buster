@@ -514,14 +514,17 @@ export function ObjexoomScene({
 		}
 
 		// H8 — light strobe during going_back. 200-frame cycle, 10 frames bright.
+		// POL27 — strobe levels respect per-archetype darkness multipliers
+		// so a dark-sewer going_back still flickers proportionally to the
+		// archetype's lighting baseline rather than blasting bright.
 		if (currentPhase === "going_back") {
 			strobeFrameRef.current = (strobeFrameRef.current + 1) % 200;
 			const bright = strobeFrameRef.current < 10;
 			if (ambientLightRef.current) {
-				ambientLightRef.current.intensity = bright ? 1.4 : 0.2;
+				ambientLightRef.current.intensity = (bright ? 1.4 : 0.2) * lightPalette.ambientMul;
 			}
 			if (directionalLightRef.current) {
-				directionalLightRef.current.intensity = bright ? 2.0 : 0.35;
+				directionalLightRef.current.intensity = (bright ? 2.0 : 0.35) * lightPalette.directionalMul;
 			}
 		}
 
@@ -785,13 +788,13 @@ export function ObjexoomScene({
 			    the flashlight spotlight is the only practical fill. */}
 			<ambientLight
 				ref={ambientLightRef}
-				intensity={hasFlashlight ? 0.55 : 0.12}
+				intensity={(hasFlashlight ? 0.55 : 0.12) * lightPalette.ambientMul}
 				color={lightPalette.ambientColor}
 			/>
 			<directionalLight
 				ref={directionalLightRef}
 				position={[10, 16, 8]}
-				intensity={hasFlashlight ? 0.9 : 0.18}
+				intensity={(hasFlashlight ? 0.9 : 0.18) * lightPalette.directionalMul}
 				color={lightPalette.directionalColor}
 				castShadow
 				shadow-mapSize={[1024, 1024]}
@@ -810,7 +813,7 @@ export function ObjexoomScene({
 			{/* E13 step-4 — per-archetype fog tint. Dominant depth-fade
 			    signal in low-lit play; biggest visual lever for archetype-
 			    distinctness. Corridor still resolves to OBJEXOOM_PALETTE.ink. */}
-			<fog attach="fog" args={[lightPalette.fogColor, 6, TILE * 12]} />
+			<fog attach="fog" args={[lightPalette.fogColor, 6, TILE * lightPalette.fogFarTiles]} />
 			<color attach="background" args={[lightPalette.fogColor]} />
 
 			{map.kind === "grid" ? (
