@@ -15,10 +15,9 @@
 		"skipLibCheck": true,
 		"noEmit": true,
 		"types": ["vite/client", "node"],
-		"baseUrl": ".",
 		"paths": {
-			"@/*": ["src/*"],
-			"@app/*": ["app/*"]
+			"@/*": ["./src/*"],
+			"@app/*": ["./app/*"]
 		}
 	},
 	"include": [
