@@ -43,7 +43,7 @@ jobs:
           cache: pnpm
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '21' }
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
       - run: pnpm install --frozen-lockfile
       - name: Build web bundle
         run: pnpm build
