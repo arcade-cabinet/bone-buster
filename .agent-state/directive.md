@@ -124,6 +124,34 @@ Full roadmap: [`docs/ELEVATION.md`](../docs/ELEVATION.md). Specs in [`docs/PRD.m
 - [ ] **E11** Per-level ambient creature SFX layers. Acceptance: each refLevel ships an ambient-bed track of distant growls/drips/wind; volume reactive to `phase === "going_back"`.
 - [ ] **E10** 3D HUD elements (floating key mini-model, etc). Acceptance: when player has key, a small spinning key GLB renders in screen-space top-right; on take damage, the model flashes red.
 
+### COV — 3DPSX asset coverage maximization (user directive 2026-05-14)
+
+> "I want as much possible value from ALL the PSX assets — anything
+> that makes sense in a level."
+
+Every category below is a directive item: wire at least one
+gameplay-meaningful feature that consumes a multi-variant pool from
+that category. Seeded id picks the variant so the same instance is
+visually consistent across reloads.
+
+- [ ] **COV1** PSX Mega Pack II "Light Sources" (10 GLBs). Acceptance: ≥2 lamp variants spawn as scatter in dim sectors, each emitting a scoped pointLight; pairs with E4. Caps lit-lamp count at 8 for shadow-map budget.
+- [ ] **COV2** PSX Mega Pack II "Large Props & Machinery" (52 GLBs). Acceptance: ≥6 props scattered into level archetypes (cranes, generators, pipes); some are collision-blocking, some pass-through; per-archetype filter chooses which.
+- [ ] **COV3** PSX Mega Pack II "Modular Structures" (210 GLBs). Acceptance: at least one refLevel rebuilt to use these as wall/floor tile primitives instead of the procedural box-extrusion; unlocks E13 archetype identity.
+- [ ] **COV4** PSX Mega Pack II "Props" (137 GLBs). Acceptance: ≥10 prop variants in the E3 scatter pool. Per-archetype curation (kitchen/factory/temple/sewer).
+- [ ] **COV5** PSX Mega Pack II "Debris & Misc" (34 GLBs). Acceptance: ≥5 destroyed-prop variants spawn in the body of every sector; reads as "this place has been overrun."
+- [ ] **COV6** PSX Mega Pack II "Decals" (12 GLBs). Acceptance: wall-decals (blood, scorch, faction marks) seeded onto wall faces by tile hash; ≥3 per sector.
+- [ ] **COV7** PSX Mega Pack II "Doors & Gates" (6 GLBs). Acceptance: RealDoor + LockedDoor cycle through ≥3 variants by seed; current `door.glb`/`door_locked.glb` becomes one of several.
+- [ ] **COV8** Props/Traps (20 GLBs). Acceptance: spike traps, swinging blades, pressure-plate triggers as level hazards; tick damage when player overlaps; pairs with E6 (switches disarm).
+- [ ] **COV9** Props/Weapons additional viewmodels (3 swords, 5 knives, 5 revolvers, baseball bats, katana). Acceptance: post-E1 melee variant cycling — `pickMeleeSkin(level.seed)` rotates BLADE between machete/katana/cleaver/bat per run.
+- [ ] **COV10** Vehicles/PS1-RVS (3 GLBs). Acceptance: at least one wrecked-vehicle prop spawns as a permanent piece of set-dressing in the courtyard archetype.
+- [ ] **COV11** Environment/Nature — bushes (5 seasons × ~40), trees (44), grass (12). Acceptance: outdoor/courtyard archetype seeds at least one seasonal pass; trees + grass tufts as collision-flat scatter.
+- [ ] **COV12** Fantasy/Bottles/Books/Scrolls/Loot pack. Acceptance: rare bonus pickup spawns (XP-equivalent, score boost, ammo cache) using these meshes.
+- [ ] **COV13** Props/Kitchen (48 GLBs). Acceptance: kitchen-archetype sector uses these as set-dressing (knife blocks, pots, sinks).
+- [ ] **COV14** Characters/ChibiCharacters (14) + individuals (66). Acceptance: hub-area NPCs (non-hostile) using these meshes; could be vendors/mission-givers in a future hub level.
+
+These are sequenced by gameplay value (light/structures/props first
+because they yield the biggest visual ROI). Re-order any time.
+
 ### INFRA — supporting infrastructure
 
 - [x] **INF1** WASM/asset sync per arcade-cabinet pattern. `scripts/prepare-web-wasm.mjs` runs at postinstall + prebuild; sql.js WASM copies to `public/assets/wasm/`. Shipped 81ed15d.

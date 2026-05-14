@@ -46,6 +46,30 @@ preference, the standards win.
   Visual blindness is a process bug — fix the harness if you can't
   capture.
 
+## Asset coverage maximization (user directive 2026-05-14)
+
+> "I want as much possible value from ALL the PSX assets — anything
+> that makes sense in a level."
+
+The 3DPSX library is ~1,400+ GLBs across `PSX Mega Pack II v1.8`,
+`Props/*`, `Fantasy/*`, `Vehicles/*`, `Environment/*`, and
+`Characters/*`. The bar for wiring an asset is **"does it make sense
+in a level?"**, not "is it cheap enough to fit a synthetic byte
+budget."
+
+- Every new mechanic (E5 barrels, E4 lamps, E2 bosses, E6 switches,
+  E3 scatter) MUST exploit a variant pool of multiple PSX skins,
+  seeded by id so the same instance always renders the same skin.
+- Prefer the richer variant when it exists (e.g. metal_barrel_hr_*
+  over the 6.8 KB Farm barrel). Asset weight is a per-asset tuning
+  decision, NOT a CI gate.
+- `scripts/verify-runtime-assets.mjs` reports per-category totals
+  but does NOT enforce arbitrary budgets — those were removed in
+  688104d after they cost quality on barrel.glb.
+- New asset categories surface tasks: when a new pack is mounted
+  (Vehicles, Light Sources, Traps, Debris), open a directive item
+  for wiring at least one feature that uses them.
+
 ## Design tokens
 
 - Component code references the semantic `ROLE.*` layer from

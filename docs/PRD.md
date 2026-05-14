@@ -20,6 +20,31 @@ NOT yet shipped on `feat/objexoom-game-buildout` has:
 catalogues. This PRD is the executable plan; the
 `.agent-state/directive.md` is its checklist mirror.
 
+## Top-level principle — 3DPSX asset coverage maximization
+
+User directive 2026-05-14: **"I want as much possible value from ALL
+the PSX assets — anything that makes sense in a level."**
+
+The 3DPSX library on the NAS is ~1,400+ GLBs across PSX Mega Pack II
+v1.8 (520+ assets in Buildings/Debris/Decals/Doors/Large Props/Light
+Sources/Masks/Modular Props/Modular Structures/Props/Structures/
+Weapons), Props (Farm/Kitchen/Tools/Traps/Weapons/Electrical/Misc),
+Fantasy (Knight/Skeleton/Bat/Loot/Mine/Buildings/Weapons), Vehicles,
+Environment (Nature/Buildings), and Characters.
+
+Every gameplay feature in this PRD MUST take maximum advantage of the
+library:
+
+- Multi-variant pools by default. A "barrel" is 5 GLBs cycled by id,
+  not one. A "lamp" is ≥2 variants. A "decoration" is ≥6 variants per
+  archetype.
+- Asset weight is a deliberate per-asset tuning decision — never an
+  arbitrary CI gate. The 6.8 KB Farm barrel was the wrong choice over
+  the 408 KB Mega Pack II metal barrel; the verify-script no longer
+  enforces those budgets.
+- New asset categories surface dedicated work items. The COV* queue
+  in the directive tracks one task per category.
+
 ## Status at a glance
 
 **Shipped on this branch (52 commits since 624d7ae):**
@@ -604,6 +629,91 @@ archetype, making the world feel inhabited offscreen.
 **Dependencies.** **E13** (archetype config carries the ambient name).
 
 **Estimated commits.** 2.
+
+## COV — 3DPSX asset coverage tasks
+
+Each item is a directive checkbox in `.agent-state/directive.md`
+(COV1-COV14). User stories below; acceptance criteria mirror those
+in the directive. These can run in parallel with the E*/PA*/etc.
+lanes — they're per-category coverage drives, not architectural
+features. Many of them naturally fold into E3 (scatter), E4 (lit
+lamps), E6 (traps via switches), and the archetype work (E13).
+
+### COV1 — Light Sources
+
+10 GLBs in PSX Mega Pack II/Light Sources. Wire ≥2 lamp variants as
+scatter in dim sectors; each emits a scoped `pointLight`. Pairs
+directly with E4 (real shadow projection). Performance: cap active
+lit lamps at 8.
+
+### COV2 — Large Props & Machinery
+
+52 GLBs of cranes, generators, pipes, machinery. ≥6 scattered into
+archetype-appropriate sectors. Some collision-block, some pass-through;
+per-archetype filter.
+
+### COV3 — Modular Structures
+
+210 GLBs. Rebuild at least one refLevel using these as wall/floor
+tile primitives instead of the procedural box extrusion. This is the
+biggest visual ROI item in the whole COV queue — unlocks the E13
+archetype identity story.
+
+### COV4 — Props (Mega Pack II)
+
+137 GLBs. ≥10 prop variants in the E3 scatter pool, curated per
+archetype (kitchen/factory/temple/sewer).
+
+### COV5 — Debris & Misc
+
+34 destroyed-prop variants. ≥5 spawn per sector body; reads as "this
+place has been overrun." Acts as ambient scatter background.
+
+### COV6 — Decals
+
+12 wall-decals (blood, scorch, faction marks). Seeded onto wall faces
+by tile hash; ≥3 per sector.
+
+### COV7 — Doors & Gates
+
+6 variants. RealDoor + LockedDoor cycle through ≥3 by seed. Adds
+visual variety to the key-door moment that currently feels uniform.
+
+### COV8 — Traps
+
+20 trap GLBs (spike, swinging blade, pressure plate). Treat as level
+hazards with tick damage on player overlap. Pairs with E6 (switches
+disarm).
+
+### COV9 — Melee viewmodel variants
+
+3 swords, 5 knives, 5 revolvers, baseball bats, katana, cleaver.
+Post-E1, `pickMeleeSkin(level.seed)` rotates BLADE between
+machete/katana/cleaver/bat per run.
+
+### COV10 — Vehicles (PS1-RVS, 3 GLBs)
+
+Wrecked-vehicle props as permanent set-dressing in courtyard
+archetype.
+
+### COV11 — Environment/Nature
+
+5 seasons × ~40 bushes, 44 trees, 12 grass tufts. Outdoor archetype
+seeds one seasonal pass; trees + grass as collision-flat scatter.
+
+### COV12 — Fantasy loot
+
+Bottles, books, scrolls, dungeon loot pack. Rare bonus pickups
+(XP/score/ammo cache).
+
+### COV13 — Kitchen
+
+48 GLBs. Kitchen-archetype sector uses these as set-dressing.
+
+### COV14 — Characters (Chibi + individuals)
+
+14 + 66 GLBs. Non-hostile hub NPCs for a future vendor/mission-giver
+hub area.
 
 ## Acceptance checklist (cross-cutting)
 
