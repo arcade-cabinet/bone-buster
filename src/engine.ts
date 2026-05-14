@@ -22,7 +22,15 @@ export type PickupKind =
 	| "shotgunAmmo"
 	// J1 — flashlight pickup. Carrying it grants a forward cone of
 	// directional light; without it the level reads as dark.
-	| "flashlight";
+	| "flashlight"
+	// COV12 step-2 — rare hero-tier bonus drop. Exactly one per map,
+	// placed at the centroid of the sector farthest from playerSpawn.
+	// On collect, dispatches a kind-specific bonus picked from the COV12
+	// LootKind via `pickLootKind(map.seed)`:
+	//   bottles  → +5 health (potion stash)
+	//   books    → +chaingun + shotgun ammo (knowledge → reload)
+	//   treasure → +score (shipped as a 50-point one-shot bonus)
+	| "loot";
 
 export type PickupSpawn = Readonly<{
 	kind: PickupKind;

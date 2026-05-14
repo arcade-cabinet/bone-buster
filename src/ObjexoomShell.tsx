@@ -7,6 +7,7 @@ import { PLAYER_MAX_HP } from "./constants";
 import { ROLE, SCALE } from "./design-tokens";
 import type { ObjexoomMap, PickupKind } from "./engine";
 import { addObjexoomListener, dispatch } from "./events";
+import { pickLootKind } from "./loot";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
@@ -110,13 +111,17 @@ const baseOwnedWeapons = (): Record<WeaponId, boolean> => ({
 
 const ammoIncrement: Record<
 	PickupKind,
-	{ weapon: WeaponId; amount: number } | "health" | "flashlight"
+	{ weapon: WeaponId; amount: number } | "health" | "flashlight" | "loot"
 > = {
 	health: "health",
 	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
 	shotgunAmmo: { weapon: "shotgun", amount: WEAPONS.shotgun.pickupAmmo },
 	// J1 — flashlight is a binary owned/not-owned switch on GameState.
 	flashlight: "flashlight",
+	// COV12 step-2 — sentinel; per-lootKind bonus resolution happens at
+	// collect time using `pickLootKind(seed)` because the discriminator
+	// lives on the map seed, not on the PickupKind itself.
+	loot: "loot",
 };
 
 function readSeedFromUrl(): number {
@@ -401,6 +406,34 @@ export function ObjexoomShell() {
 				if (action === "flashlight") {
 					triggerFadeRef.current("flash");
 					return { ...prev, hasFlashlight: true };
+				}
+				if (action === "loot") {
+					// COV12 step-2 — kind-specific bonus driven by the map seed
+					// (pickLootKind(seed) resolved the variant at spawn time).
+					// We don't have seed access here; resolve via the current
+					// map's seed which is stable for the duration of this call.
+					const lootKind = pickLootKind(seed);
+					if (lootKind === "bottles") {
+						// +5 HP (potion stash) — clamp to maxHp.
+						return { ...prev, hp: Math.min(prev.maxHp, prev.hp + 5) };
+					}
+					if (lootKind === "books") {
+						// Knowledge → bonus ammo across both ranged weapons.
+						return {
+							...prev,
+							ammo: {
+								...prev.ammo,
+								chaingun: prev.ammo.chaingun + WEAPONS.chaingun.pickupAmmo,
+								shotgun: prev.ammo.shotgun + WEAPONS.shotgun.pickupAmmo,
+							},
+						};
+					}
+					// treasure → +50 to total kills proxy (no dedicated score
+					// field on GameState yet; kills doubles as the win-screen
+					// counter). Treat the loot bonus as a kill-equivalent
+					// bounty so the HUD's "0/N" reads as progress without a
+					// new state field. Future step adds a real score field.
+					return { ...prev, kills: prev.kills + 5 };
 				}
 				return {
 					...prev,

@@ -1,8 +1,11 @@
+import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type * as THREE from "three";
+import { SkeletonUtils } from "three-stdlib";
 import { OBJEXOOM_PALETTE, ROLE } from "../../design-tokens";
 import type { Pickup } from "../../engine";
+import { LOOT_URL_LIST, LOOT_URLS, type LootKind, pickLootKind } from "../../loot";
 
 /**
  * Floating pickup mesh — bobs + spins. Each `pickup.kind` renders as a
@@ -17,9 +20,15 @@ import type { Pickup } from "../../engine";
 export function PickupMesh({
 	pickup,
 	register,
+	mapSeed,
 }: {
 	pickup: Pickup;
 	register: (group: THREE.Group | null) => void;
+	/**
+	 * COV12 step-2 — used to resolve `lootKind` for `kind === "loot"`
+	 * pickups via `pickLootKind(mapSeed)`. Other kinds ignore it.
+	 */
+	mapSeed: number;
 }) {
 	const ref = useRef<THREE.Group | null>(null);
 	useEffect(() => {
@@ -130,6 +139,7 @@ export function PickupMesh({
 					</mesh>
 				</group>
 			)}
+			{pickup.kind === "loot" && <LootPickupMesh lootKind={pickLootKind(mapSeed)} />}
 			{pickup.kind === "flashlight" && (
 				/* J1 — flashlight pickup: parchment cylinder w/ amber lens */
 				<group>
@@ -156,3 +166,24 @@ export function PickupMesh({
 		</group>
 	);
 }
+
+/**
+ * COV12 step-2 — loot pickup body. Renders the COV12 GLB matching the
+ * resolved `lootKind`. The GLBs are scene-aggregate exports (Bottles,
+ * Books and Scrolls, Treasure) — we scale them down to ~0.6 world
+ * units so they read as a single hero pickup rather than a stage of
+ * props. SkeletonUtils.clone for the standard per-mount tree-isolation
+ * pattern.
+ */
+function LootPickupMesh({ lootKind }: { lootKind: LootKind }) {
+	const url = LOOT_URLS[lootKind];
+	const gltf = useGLTF(url);
+	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
+	return (
+		<group scale={[0.6, 0.6, 0.6]}>
+			<primitive object={cloned} />
+		</group>
+	);
+}
+
+for (const url of LOOT_URL_LIST) useGLTF.preload(url);

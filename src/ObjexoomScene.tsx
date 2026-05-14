@@ -36,6 +36,7 @@ import {
 	type LargePropInstance,
 	spawnLargeProps,
 } from "./scatter/largePropScatter";
+import { lootPickupSpawn } from "./scatter/lootScatter";
 import { type PropInstance, spawnProps } from "./scatter/propScatter";
 import {
 	disarmSector,
@@ -130,7 +131,20 @@ export function ObjexoomScene({
 		return { ...e, hp: scaledHp, maxHp: scaledHp };
 	});
 	const enemiesRef = useRef<Enemy[]>(initialEnemies);
-	const pickupsRef = useRef<Pickup[]>(spawnPickups(map));
+	// COV12 step-2 — exactly 1 loot pickup per sector map at the far-
+	// centroid. Appended to the base spawnPickups output with a stable
+	// id derived from the base length so collected/un-collected tracking
+	// stays consistent across reloads of the same seed.
+	const initialPickups = ((): Pickup[] => {
+		const base = spawnPickups(map);
+		const loot = lootPickupSpawn(map);
+		if (loot === null) return base;
+		return [
+			...base,
+			{ id: base.length, kind: loot.kind, position: { ...loot.position }, collected: false },
+		];
+	})();
+	const pickupsRef = useRef<Pickup[]>(initialPickups);
 	const barrelsRef = useRef<Barrel[]>(spawnBarrels(map));
 	// E6 — secret switches/walls for the current map. Grid maps don't
 	// carry secrets in this slice; sector maps may have a `secrets` field
@@ -838,6 +852,7 @@ export function ObjexoomScene({
 				<PickupMesh
 					key={pickup.id}
 					pickup={pickup}
+					mapSeed={map.seed}
 					register={(group) => {
 						if (group) pickupMeshes.current.set(pickup.id, group);
 						else pickupMeshes.current.delete(pickup.id);
