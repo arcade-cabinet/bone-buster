@@ -16,6 +16,7 @@ import { advanceLevel, makeInitialRunStats, type RunStats, runStatsReducer } fro
 import { DEFAULT_SETTINGS, DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 import {
 	ensureSfx,
+	playFlashlightClick,
 	playHitSting,
 	playKlaxon,
 	playPickup,
@@ -426,6 +427,11 @@ export function ObjexoomShell() {
 				}
 				if (action === "flashlight") {
 					triggerFadeRef.current("flash");
+					// POL28 — flashlight click-on sting + typed event.
+					// Distinct from the pickup chime; reads as the
+					// flashlight literally being turned on.
+					playFlashlightClick();
+					dispatch({ type: "flashlightAcquired" });
 					return { ...prev, hasFlashlight: true };
 				}
 				if (action === "loot") {

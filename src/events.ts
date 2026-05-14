@@ -159,6 +159,14 @@ export interface KeyPickedUpEvent {
 	type: "keyPickedUp";
 }
 
+/**
+ * POL28 — fires when the player picks up the flashlight. Used for
+ * the click-on audio sting + future brighten effects.
+ */
+export interface FlashlightAcquiredEvent {
+	type: "flashlightAcquired";
+}
+
 export type ObjexoomEvent =
 	| BurstEvent
 	| BodyPartsEvent
@@ -176,7 +184,8 @@ export type ObjexoomEvent =
 	| TeleportEvent
 	| SecretTriggeredEvent
 	| DamageNumberEvent
-	| KeyPickedUpEvent;
+	| KeyPickedUpEvent
+	| FlashlightAcquiredEvent;
 
 export type ObjexoomEventType = ObjexoomEvent["type"];
 

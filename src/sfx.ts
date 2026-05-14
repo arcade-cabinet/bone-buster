@@ -414,6 +414,20 @@ export function playKlaxon() {
 	}, 660);
 }
 
+/**
+ * POL28 — flashlight click-on sting. Short metallic tick on the door-
+ * tick MetalSynth (already a sharp transient, perfect for "click").
+ * Fires once on flashlight pickup. Separate channel from playDoorTick
+ * via the jitter pool so a near-simultaneous door event doesn't
+ * collide.
+ */
+let lastFlashlightClickFireTime = 0;
+export function playFlashlightClick() {
+	const t = jitter(lastFlashlightClickFireTime);
+	lastFlashlightClickFireTime = t;
+	doorTickSynth?.triggerAttackRelease("16n", t, 0.6);
+}
+
 export function playSecretFound() {
 	// Share the pickupSynth pool with playPickup — both fire jittered
 	// through lastPickupFireTime to prevent same-frame collisions.
