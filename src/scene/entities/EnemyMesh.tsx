@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
-import type { Enemy } from "../../engine";
+import { BOSS_VISUAL_SCALE, type Enemy } from "../../engine";
 import { ENEMY_MODELS, pickEnemySkin } from "../../models";
 
 /**
@@ -45,8 +45,11 @@ export function EnemyMesh({
 		const size = new THREE.Vector3();
 		bbox.getSize(size);
 		const longest = Math.max(size.x, size.y, size.z, 1e-3);
-		return skin.heightTiles / longest;
-	}, [cloned, skin.heightTiles]);
+		// E2 — bosses render at BOSS_VISUAL_SCALE × the kind's normal size
+		// so they read as bigger/scarier at a glance.
+		const tierMultiplier = enemy.tier === "boss" ? BOSS_VISUAL_SCALE : 1;
+		return (skin.heightTiles / longest) * tierMultiplier;
+	}, [cloned, skin.heightTiles, enemy.tier]);
 	const { actions, mixer } = useAnimations(gltf.animations, cloned);
 	const hasNamedAnims = useMemo(
 		() => Boolean(skin.anims.idle && actions[skin.anims.idle]),

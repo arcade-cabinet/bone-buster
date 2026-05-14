@@ -514,6 +514,8 @@ export type Enemy = {
 	fsmState: EnemyFsmState;
 	patrolBearing: number; // radians; only used in state 0
 	lastShotAt: number;
+	/** E2 — when "boss", HP is BOSS_HP_MULTIPLIER × base and the portal stays locked until dead. */
+	tier?: "boss";
 };
 
 function enemyBaseHp(kind: EnemyKind): number {
@@ -527,9 +529,39 @@ function enemyBaseHp(kind: EnemyKind): number {
 	}
 }
 
+/** E2 — boss HP scaling factor over the kind's base HP (PRD §E2: "3-5×"). */
+export const BOSS_HP_MULTIPLIER = 4;
+
+/** E2 — visual scale applied to boss meshes so they read as bigger/scarier. */
+export const BOSS_VISUAL_SCALE = 1.6;
+
+/**
+ * E2 — pick which spawn becomes the boss. Returns the spawn-index
+ * farthest from `map.playerSpawn` (the "final sector" per PRD §E2).
+ * Returns -1 if there are no spawns. Deterministic given the map.
+ */
+export function pickBossSpawnIndex(map: ObjexoomMap): number {
+	if (map.enemySpawns.length === 0) return -1;
+	let bestIdx = 0;
+	let bestDistSq = -1;
+	for (let i = 0; i < map.enemySpawns.length; i += 1) {
+		const dx = map.enemySpawns[i].position.x - map.playerSpawn.x;
+		const dy = map.enemySpawns[i].position.y - map.playerSpawn.y;
+		const d2 = dx * dx + dy * dy;
+		if (d2 > bestDistSq) {
+			bestDistSq = d2;
+			bestIdx = i;
+		}
+	}
+	return bestIdx;
+}
+
 export function spawnEnemies(map: ObjexoomMap): Enemy[] {
+	const bossIdx = pickBossSpawnIndex(map);
 	return map.enemySpawns.map((spawn, i) => {
-		const hp = enemyBaseHp(spawn.kind);
+		const isBoss = i === bossIdx;
+		const baseHp = enemyBaseHp(spawn.kind);
+		const hp = isBoss ? baseHp * BOSS_HP_MULTIPLIER : baseHp;
 		// Patrol bearings deterministic from spawn index — same seed → same
 		// patrol pattern, which keeps headed e2e + screenshots reproducible.
 		const bearing = (i * 1.732) % (Math.PI * 2);
@@ -544,6 +576,7 @@ export function spawnEnemies(map: ObjexoomMap): Enemy[] {
 			fsmState: 0 as const,
 			patrolBearing: bearing,
 			lastShotAt: 0,
+			...(isBoss ? { tier: "boss" as const } : {}),
 		};
 	});
 }

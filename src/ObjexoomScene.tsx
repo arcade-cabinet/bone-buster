@@ -278,7 +278,10 @@ export function ObjexoomScene({
 		if (currentPhase === "out") {
 			const dxExit = px - map.exitPosition.x;
 			const dyExit = py - map.exitPosition.y;
-			if (hasKey && dxExit * dxExit + dyExit * dyExit < TILE * TILE * 0.4) {
+			// E2 — portal stays locked until every boss enemy is dead, even
+			// if the key has been collected.
+			const allBossesDead = enemiesRef.current.every((e) => e.tier !== "boss" || e.dead);
+			if (hasKey && allBossesDead && dxExit * dxExit + dyExit * dyExit < TILE * TILE * 0.4) {
 				if (!lastWonAt.current) {
 					lastWonAt.current = true;
 					gameRef.current.onWin();
