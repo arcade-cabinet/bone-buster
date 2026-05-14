@@ -205,6 +205,7 @@ declare global {
 			fire: () => void;
 			killAllEnemies: () => void;
 			killBoss: () => void;
+			selectWeapon: (weapon: WeaponId) => void;
 			collectKey: () => void;
 			collectAllPickups: () => void;
 			triggerWin: () => void;
@@ -745,6 +746,22 @@ export function ObjexoomShell() {
 			// PT3A — boss-only kill for isolated boss-tier visual capture.
 			killBoss: () => {
 				dispatch({ type: "debugKillBoss" });
+			},
+			// E8 step-2 / PT4 — debug weapon switch so playtest can frame
+			// individual weapon visuals without going through pickup +
+			// keyboard 1-5 swap. Also grants pickupAmmo for the weapon
+			// so a debug fire isn't a no-op for weapons with
+			// startingAmmo=0 (chaingun/shotgun/flamethrower).
+			selectWeapon: (weapon: WeaponId) => {
+				setState((prev) => ({
+					...prev,
+					weapon,
+					ownedWeapons: { ...prev.ownedWeapons, [weapon]: true },
+					ammo: {
+						...prev.ammo,
+						[weapon]: Math.max(prev.ammo[weapon], WEAPONS[weapon].pickupAmmo),
+					},
+				}));
 			},
 			collectKey: () => {
 				gameRef.current.onPickupKey();

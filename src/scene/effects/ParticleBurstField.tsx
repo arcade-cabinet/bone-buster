@@ -61,7 +61,82 @@ export function ParticleBurstField() {
 	useEffect(() => {
 		return addObjexoomListener("burst", (detail) => {
 			const now = performance.now();
-			if (detail.kind === "damage") {
+			if (detail.kind === "flameStream") {
+				// E8 step-2 — directional flame cone stream. Emits a wave
+				// of orange/yellow particles forward along the muzzle
+				// direction (dirX, dirY in world XZ), with a small spread
+				// cone. Each pellet trigger dispatches once; the wave
+				// reads as a flame jet rather than a generic burst.
+				const dx = detail.dirX ?? 0;
+				const dy = detail.dirY ?? 1;
+				const dlen = Math.hypot(dx, dy) || 1;
+				const ux = dx / dlen;
+				const uy = dy / dlen;
+				const px = -uy;
+				const py = ux;
+				// Player camera height is ~1.7; spawn the stream at 1.5
+				// (slightly below eye-line so it reads as "from the
+				// muzzle" rather than "from the forehead").
+				const FLAME_Y = 1.5;
+				// Layer 1: bright yellow core — fastest, shortest TTL.
+				for (let i = 0; i < 8; i += 1) {
+					const spread = (Math.random() - 0.5) * 0.45;
+					const speed = 12 + Math.random() * 5;
+					const vx = ux * speed + px * spread * speed;
+					const vz = uy * speed + py * spread * speed;
+					motesRef.current.push({
+						id: nextId.current++,
+						pos: { x: detail.x, y: FLAME_Y, z: detail.y },
+						vel: { x: vx, y: 0.2 + Math.random() * 0.3, z: vz },
+						color: COLOR_SPARK,
+						createdAt: now,
+						ttlMs: 220,
+						radius: 0.12,
+						gravity: -1.0, // flame rises slowly
+						emissiveIntensity: 4.5,
+					});
+				}
+				// Layer 2: orange mid — broader cone, mid TTL.
+				for (let i = 0; i < 10; i += 1) {
+					const spread = (Math.random() - 0.5) * 0.8;
+					const speed = 8 + Math.random() * 4;
+					const vx = ux * speed + px * spread * speed;
+					const vz = uy * speed + py * spread * speed;
+					motesRef.current.push({
+						id: nextId.current++,
+						pos: {
+							x: detail.x + (Math.random() - 0.5) * 0.12,
+							y: FLAME_Y + (Math.random() - 0.5) * 0.12,
+							z: detail.y + (Math.random() - 0.5) * 0.12,
+						},
+						vel: { x: vx, y: 0.4 + Math.random() * 0.3, z: vz },
+						color: COLOR_EMBER,
+						createdAt: now,
+						ttlMs: 320,
+						radius: 0.18,
+						gravity: -1.2,
+						emissiveIntensity: 3.2,
+					});
+				}
+				// Layer 3: smoke trail — wide cone, slowest, longest TTL.
+				for (let i = 0; i < 6; i += 1) {
+					const spread = (Math.random() - 0.5) * 1.1;
+					const speed = 3.0 + Math.random() * 2.0;
+					const vx = ux * speed + px * spread * speed;
+					const vz = uy * speed + py * spread * speed;
+					motesRef.current.push({
+						id: nextId.current++,
+						pos: { x: detail.x, y: FLAME_Y + 0.2, z: detail.y },
+						vel: { x: vx, y: 0.9 + Math.random() * 0.4, z: vz },
+						color: COLOR_SMOKE,
+						createdAt: now,
+						ttlMs: 700,
+						radius: 0.22,
+						gravity: -1.5,
+						emissiveIntensity: 0.3,
+					});
+				}
+			} else if (detail.kind === "damage") {
 				// POL16 — layered impact burst.
 				// Layer 1: hot impact sparks — tight cone, fast, short TTL.
 				for (let i = 0; i < 8; i += 1) {

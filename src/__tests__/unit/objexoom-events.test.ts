@@ -129,3 +129,33 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 		expect(received[0]).toEqual({ type: "burst", x: 9, y: 8, kind: "playerHit" });
 	});
 });
+
+describe("E8 step-2 — flameStream BurstKind", () => {
+	it("BurstEvent.kind includes 'flameStream' and carries optional dirX/dirY", () => {
+		const received: BurstEvent[] = [];
+		const teardown = addObjexoomListener("burst", (e) => received.push(e));
+		dispatch({
+			type: "burst",
+			kind: "flameStream",
+			x: 5,
+			y: 10,
+			dirX: 0.7,
+			dirY: 0.7,
+		});
+		teardown();
+		expect(received).toHaveLength(1);
+		expect(received[0].kind).toBe("flameStream");
+		expect(received[0].dirX).toBeCloseTo(0.7);
+		expect(received[0].dirY).toBeCloseTo(0.7);
+	});
+
+	it("other BurstKind events work without dirX/dirY (back-compat)", () => {
+		const received: BurstEvent[] = [];
+		const teardown = addObjexoomListener("burst", (e) => received.push(e));
+		dispatch({ type: "burst", kind: "damage", x: 1, y: 2 });
+		teardown();
+		expect(received[0].kind).toBe("damage");
+		expect(received[0].dirX).toBeUndefined();
+		expect(received[0].dirY).toBeUndefined();
+	});
+});

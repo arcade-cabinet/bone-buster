@@ -143,6 +143,24 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	const forwardBase = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
 	const origin = { x: camera.position.x, y: camera.position.z };
 
+	// E8 step-2 — flamethrower emits a distinct directional cone stream
+	// once per trigger pull (not per pellet — the layered particle
+	// effect in ParticleBurstField already spreads with its own spread
+	// cone). Position is ~1 tile forward of the muzzle so the spawn
+	// origin reads as "out of the barrel" rather than "around the
+	// camera"; direction is the forward unit vector in the XZ plane.
+	if (weapon === "flamethrower") {
+		const muzzleOffset = 0.6;
+		dispatch({
+			type: "burst",
+			kind: "flameStream",
+			x: origin.x + forwardBase.x * muzzleOffset,
+			y: origin.y + forwardBase.z * muzzleOffset,
+			dirX: forwardBase.x,
+			dirY: forwardBase.z,
+		});
+	}
+
 	let killsThisShot = 0;
 	let bossKillsThisShot = 0;
 	for (let pelletIdx = 0; pelletIdx < spec.pellets; pelletIdx += 1) {

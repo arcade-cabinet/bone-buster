@@ -78,6 +78,7 @@ describe("ObjexoomShell — landing surface", () => {
 					fire: () => void;
 					killAllEnemies: () => void;
 					killBoss: () => void;
+					selectWeapon: (weapon: string) => void;
 					collectKey: () => void;
 					collectAllPickups: () => void;
 					triggerWin: () => void;
@@ -93,6 +94,7 @@ describe("ObjexoomShell — landing surface", () => {
 		expect(typeof hooks?.fire).toBe("function");
 		expect(typeof hooks?.killAllEnemies).toBe("function");
 		expect(typeof hooks?.killBoss).toBe("function");
+		expect(typeof hooks?.selectWeapon).toBe("function");
 		expect(typeof hooks?.collectKey).toBe("function");
 		expect(typeof hooks?.collectAllPickups).toBe("function");
 		expect(typeof hooks?.triggerWin).toBe("function");

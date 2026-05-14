@@ -29,13 +29,20 @@
  */
 
 /** Camera/world bursts emitted into the particle fanout. */
-export type BurstKind = "damage" | "pickup" | "playerHit" | "explode";
+export type BurstKind = "damage" | "pickup" | "playerHit" | "explode" | "flameStream";
 
 export interface BurstEvent {
 	type: "burst";
 	x: number;
 	y: number;
 	kind: BurstKind;
+	/**
+	 * E8 step-2 — optional unit direction vector (x,z in world plane). Used
+	 * only by `flameStream` today to orient the cone away from the
+	 * camera/muzzle. Other burst kinds ignore it.
+	 */
+	dirX?: number;
+	dirY?: number;
 }
 
 export interface BodyPartsEvent {
