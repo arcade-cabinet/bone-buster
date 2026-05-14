@@ -16,6 +16,7 @@ export { EnemyMesh } from "./entities/EnemyMesh";
 export { ExitPortal } from "./entities/ExitPortal";
 export { FloorTileField } from "./entities/FloorTileField";
 export { KeyMarker } from "./entities/KeyMarker";
+export { KitchenField } from "./entities/KitchenField";
 export { LampField } from "./entities/LampField";
 export { LargePropField } from "./entities/LargePropField";
 export { PickupMesh } from "./entities/PickupMesh";

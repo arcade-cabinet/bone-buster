@@ -31,6 +31,7 @@ import { PlayerController } from "./PlayerController";
 import { type DebrisInstance, spawnDebris } from "./scatter/debrisScatter";
 import { type DecalInstance, spawnDecals } from "./scatter/decalScatter";
 import { type FloorTileInstance, spawnFloorTiles } from "./scatter/floorTiles";
+import { type KitchenInstance, spawnKitchen } from "./scatter/kitchenScatter";
 import {
 	blockerCirclesOf,
 	type LargePropInstance,
@@ -61,6 +62,7 @@ import {
 	Flashlight,
 	FloorTileField,
 	KeyMarker,
+	KitchenField,
 	LampField,
 	LargePropField,
 	MapGeometry,
@@ -184,6 +186,9 @@ export function ObjexoomScene({
 	// circle collision via the blockers list fed to resolveCollisionAny.
 	const largePropsRef = useRef<LargePropInstance[]>(spawnLargeProps(map));
 	const largePropBlockers = useMemo(() => blockerCirclesOf(largePropsRef.current), []);
+	// COV13 step-2 — library-archetype kitchen scatter. Empty list on
+	// non-library maps. 20% of library sectors get 1-3 kitchen props.
+	const kitchenRef = useRef<KitchenInstance[]>(spawnKitchen(map));
 	// COV8 step-2 — per-map trap scatter (hazards + triggers per sector).
 	// Tick damage + lever-disarm-sector handled in the main per-frame loop.
 	const trapsRef = useRef<TrapInstance[]>(spawnTraps(map));
@@ -819,6 +824,10 @@ export function ObjexoomScene({
 			    sector, archetype-biased). Tick damage + lever-disarm
 			    flow lives in the per-frame loop in ObjexoomScene. */}
 			<TrapField traps={trapsRef.current} />
+
+			{/* COV13 step-2 — library-archetype kitchen scatter.
+			    Empty on non-library archetypes. */}
+			<KitchenField props={kitchenRef.current} />
 
 			{/* COV3 step-1 — modular asphalt floor tiles. Empty unless
 			    the map opts in via `useModularFloor: true`. */}
