@@ -1,6 +1,6 @@
 # Continuous Work Directive — objexoom
 
-**Status:** ACTIVE
+**Status:** RELEASED
 
 ## Phase 8 — closing PRD §E13 visual-distinctness gap
 
