@@ -247,6 +247,23 @@ export type WeaponModel = {
 	rotation: [number, number, number];
 	/** Offset in screen-relative camera space (right, up, -forward). */
 	offset: [number, number, number];
+	/**
+	 * Muzzle anchor in bbox-fraction space (PA-MOD7 / D11). Each
+	 * component ∈ [0, 1]: 0 = bbox.min on that axis, 1 = bbox.max,
+	 * 0.5 = bbox center. The viewmodel anchors an empty `<group>` at
+	 * `lerp(bboxMin, bboxMax, muzzleBboxFrac)` in the GLB's native
+	 * coordinate frame (before autoScale + rotation), then propagates
+	 * its world transform up so the muzzle-flash point light originates
+	 * at the visible barrel tip instead of the camera position.
+	 *
+	 * Authoring: open the GLB in any viewer, identify which axis is
+	 * "barrel forward" (the long axis of the bbox in most cases), set
+	 * that axis's fraction to ~0.95–1.0, leave the other two at ~0.5.
+	 *
+	 * Melee weapons use the same anchor convention — the "muzzle" is
+	 * conceptually the blade tip for any future glow effect.
+	 */
+	muzzleBboxFrac: [number, number, number];
 };
 
 /**
@@ -268,21 +285,36 @@ export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
 		url: A("/assets/models/weapons/melee_machete.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.22, -0.16, -0.3],
+		// Machete: bbox long axis varies by skinned-mesh pose; runtime
+		// Box3 resolves the true span. Tip is at the far +Z of the
+		// blade in the native rig.
+		muzzleBboxFrac: [0.5, 0.5, 0.97],
 	},
 	pistol: {
 		url: A("/assets/models/weapons/pistol.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.18, -0.16, -0.38],
+		// Pistol: bbox size 0.33 × 0.65 × 1.47, barrel forward = +Z;
+		// muzzle is slightly above the bbox Y center (the barrel sits
+		// above the grip) and just shy of the +Z max.
+		muzzleBboxFrac: [0.5, 0.6, 0.97],
 	},
 	chaingun: {
 		url: A("/assets/models/weapons/chaingun.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.18, -0.16, -0.38],
+		// Chaingun (Uzi/Flamethrower body): bbox size 1.19 × 0.37 × 0.13,
+		// long axis is +X in native frame (the rotation_Y=π in the
+		// viewmodel flips it to -X = camera-forward). Muzzle near +X max.
+		muzzleBboxFrac: [0.97, 0.55, 0.5],
 	},
 	shotgun: {
 		url: A("/assets/models/weapons/shotgun.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.18, -0.16, -0.38],
+		// Shotgun: bbox size 0.1 × 0.23 × 1.39, barrel forward = +Z.
+		// Muzzle at the +Z tip, mid-X, mid-Y.
+		muzzleBboxFrac: [0.5, 0.55, 0.97],
 	},
 };
 

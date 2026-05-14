@@ -126,11 +126,19 @@ export function ObjexoomScene({
 		phaseRef.current = phase;
 	}, [phase]);
 
-	// I11 — muzzle-flash light. Fires on every shot at the camera position
-	// in the weapon's muzzleColor; intensity decays over ~80 ms.
+	// I11 — muzzle-flash light. Fires on every shot at the weapon's
+	// barrel tip (PA-MOD7 / D11) in the weapon's muzzleColor; intensity
+	// decays over ~80 ms.
 	const muzzleLightRef = useRef<THREE.PointLight | null>(null);
 	const muzzleFlashUntil = useRef(0);
 	const muzzleColorRef = useRef<THREE.Color>(new THREE.Color("#6172f3"));
+	// PA-MOD7 — the WeaponViewmodel registers its muzzle-anchor group
+	// here; per-frame we copy its world-position into muzzleLightRef so
+	// the flash bloom originates from the barrel tip rather than the
+	// camera. Falls back to camera.position when the ref is null (very
+	// first frame after weapon swap, or in test harnesses with no GLB).
+	const muzzleAnchorRef = useRef<THREE.Group | null>(null);
+	const muzzleWorldPos = useMemo(() => new THREE.Vector3(), []);
 
 	// I7 — track which enemies have already fired their aggro alert so we
 	// don't re-play it on every re-entry to chase state. Reset implicitly
@@ -281,15 +289,27 @@ export function ObjexoomScene({
 		}
 
 		// I11 — muzzle flash decay. Stays bright until muzzleFlashUntil, then
-		// linearly fades to 0 over the remaining window. The light position
-		// follows the camera 1:1 (it lives in world space attached to camera).
+		// linearly fades to 0 over the remaining window. PA-MOD7 / D11:
+		// position tracks the WeaponViewmodel's muzzle anchor (the actual
+		// barrel tip in the GLB), falling back to camera.position when no
+		// anchor is registered yet.
 		if (muzzleLightRef.current) {
 			const muzzleNow = now;
 			const remaining = muzzleFlashUntil.current - muzzleNow;
 			const intensity = remaining > 0 ? Math.min(4, remaining / 20) : 0;
 			muzzleLightRef.current.intensity = intensity;
 			muzzleLightRef.current.color.copy(muzzleColorRef.current);
-			muzzleLightRef.current.position.set(camera.position.x, camera.position.y, camera.position.z);
+			const anchor = muzzleAnchorRef.current;
+			if (anchor) {
+				anchor.getWorldPosition(muzzleWorldPos);
+				muzzleLightRef.current.position.copy(muzzleWorldPos);
+			} else {
+				muzzleLightRef.current.position.set(
+					camera.position.x,
+					camera.position.y,
+					camera.position.z,
+				);
+			}
 		}
 
 		// H8 — light strobe during going_back. 200-frame cycle, 10 frames bright.
@@ -844,7 +864,12 @@ export function ObjexoomScene({
 			<ParticleBurstField />
 			<BodyPartField />
 			<ShellEjectField />
-			<WeaponViewmodel weapon={weapon} />
+			<WeaponViewmodel
+				weapon={weapon}
+				onMuzzleAnchor={(group) => {
+					muzzleAnchorRef.current = group;
+				}}
+			/>
 
 			<PlayerController map={map} active={active} hasKey={hasKey} settings={settings} />
 

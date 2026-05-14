@@ -8,6 +8,14 @@ import { WEAPON_MODELS } from "../../models";
 import { WEAPONS, type WeaponId } from "../../weapons";
 
 /**
+ * PA-MOD7 / D11 — callback the viewmodel invokes once the muzzle-anchor
+ * `<group>` is mounted. Consumers (ObjexoomScene's muzzle-light loop)
+ * keep this ref and read `getWorldPosition` each frame so the flash
+ * originates from the barrel tip rather than the camera position.
+ */
+export type MuzzleAnchorCallback = (group: THREE.Group | null) => void;
+
+/**
  * I9 — per-weapon recoil distance (m along camera-forward). Pistol
  * snappier than chaingun, shotgun snappier than both.
  */
@@ -50,8 +58,21 @@ const VIEWMODEL_TARGET_LENGTH = 0.32;
  * `MeshBasicMaterial`/`MeshStandardMaterial`-with-no-map with a dark
  * metal tinted by the weapon's muzzle color.
  */
-export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
+export function WeaponViewmodel({
+	weapon,
+	onMuzzleAnchor,
+}: {
+	weapon: WeaponId;
+	/**
+	 * PA-MOD7 / D11 — invoked with the muzzle-anchor group once it mounts
+	 * (and with `null` on unmount). The world-position of this group is
+	 * the actual barrel tip of the wired GLB; ObjexoomScene reads it
+	 * each frame for the muzzle-flash point light.
+	 */
+	onMuzzleAnchor?: MuzzleAnchorCallback;
+}) {
 	const groupRef = useRef<THREE.Group | null>(null);
+	const muzzleRef = useRef<THREE.Group | null>(null);
 	const camera = useThree((s) => s.camera);
 	const recoilUntil = useRef(0);
 	const model = WEAPON_MODELS[weapon];
@@ -61,13 +82,24 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 	// leak to every other consumer and would not be disposed on unmount.
 	const scene = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
 
-	const { autoScale, center, replacedMaterials } = useMemo(() => {
+	const { autoScale, center, muzzleNative, replacedMaterials } = useMemo(() => {
 		const bbox = new THREE.Box3().setFromObject(scene);
 		const size = new THREE.Vector3();
 		bbox.getSize(size);
 		const c = new THREE.Vector3();
 		bbox.getCenter(c);
 		const longest = Math.max(size.x, size.y, size.z, 1e-3);
+		// PA-MOD7 — resolve `muzzleBboxFrac` against the real bbox.
+		// Native muzzle position lives in the same coordinate frame as
+		// the GLB's root; the inner re-center group offsets by -center
+		// so the anchor lands at `muzzleNative - center` inside the
+		// re-center group.
+		const [fx, fy, fz] = model.muzzleBboxFrac;
+		const muzzleN = new THREE.Vector3(
+			bbox.min.x + (bbox.max.x - bbox.min.x) * fx,
+			bbox.min.y + (bbox.max.y - bbox.min.y) * fy,
+			bbox.min.z + (bbox.max.z - bbox.min.z) * fz,
+		);
 		const replaced: THREE.MeshStandardMaterial[] = [];
 		scene.traverse((node) => {
 			if (!(node instanceof THREE.Mesh)) return;
@@ -89,9 +121,10 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 		return {
 			autoScale: VIEWMODEL_TARGET_LENGTH / longest,
 			center: c,
+			muzzleNative: muzzleN,
 			replacedMaterials: replaced,
 		};
-	}, [scene, weapon]);
+	}, [scene, weapon, model.muzzleBboxFrac]);
 
 	useEffect(
 		() => () => {
@@ -107,6 +140,10 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 		window.addEventListener("objexoom:fire", onFire);
 		return () => window.removeEventListener("objexoom:fire", onFire);
 	}, []);
+
+	// PA-MOD7 / D11 — release the muzzle anchor on unmount so a stale
+	// weapon ref doesn't keep a swapped-out weapon's group alive.
+	useEffect(() => () => onMuzzleAnchor?.(null), [onMuzzleAnchor]);
 
 	useFrame(() => {
 		const group = groupRef.current;
@@ -155,6 +192,20 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 				    pose. */}
 				<group position={[-center.x, -center.y, -center.z]}>
 					<primitive object={scene} />
+					{/* PA-MOD7 / D11 — muzzle anchor at the barrel tip
+					    (per-weapon `muzzleBboxFrac` lerped over the GLB
+					    bbox). Sits in the same re-center frame as the
+					    primitive, so it inherits autoScale + rotation
+					    naturally. ObjexoomScene reads the world-position
+					    of this group each frame to position the muzzle-
+					    flash point light. */}
+					<group
+						ref={(node) => {
+							muzzleRef.current = node;
+							onMuzzleAnchor?.(node);
+						}}
+						position={[muzzleNative.x, muzzleNative.y, muzzleNative.z]}
+					/>
 				</group>
 			</group>
 		</group>
