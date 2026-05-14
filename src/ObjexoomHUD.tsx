@@ -260,7 +260,7 @@ export function ObjexoomHUD({
 					{state.status === "dead" && (
 						<OverlayCard
 							title="YOU DIED"
-							body=""
+							body={formatRunStats(state)}
 							primary={{ label: "TRY AGAIN", onClick: onReturnToLanding }}
 							secondary={{ label: "QUIT", onClick: onQuit }}
 						/>
