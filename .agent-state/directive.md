@@ -2,6 +2,26 @@
 
 **Status:** ACTIVE
 
+## Phase 8 — closing PRD §E13 visual-distinctness gap
+
+Forward-sweep from Phase 7: I screenshotted all 5 archetypes (INF4)
+and judged them "tinted variants of the same place," not "structurally
+different places" as PRD §E13 demands ("Visual identity test: a
+screenshot of each archetype is distinct to the eye"). E13 step-2
+only changed `<ambientLight>` + `<directionalLight>` colors — the
+fog still pulls from a single literal `OBJEXOOM_PALETTE.ink` across
+every archetype. Fog is the dominant depth-fade signal in low-lit
+play; tinting it per-archetype gives a much larger visual delta than
+the ambient/directional tweaks did.
+
+PRD §E13 lists 5 axes per archetype. Phase 8 closes the remaining
+visual gaps (fog tint + sector density). The other axes (props,
+enemies, lighting palette, SFX) are already shipped — these two
+are the diff between "distinct to the eye" and what I shipped.
+
+- [x] **E13 step-4 — per-archetype fog tint.** Shipped. Extended `ArchetypeLightPalette` with a third color: `fogColor`. The corridor entry preserves `OBJEXOOM_PALETTE.ink` for canonical byte-stability. The 4 other archetypes pick fog colors that match identity: arena `SCALE.ember[900]` (smoke/heat haze on depth fade), courtyard `SCALE.indigo[900]` (dusk-cool, separates hardest from corridor), sewer `SCALE.parchment[900]` (damp underground, parchment-deep), library `SCALE.amber[900]` (paper/dust mote sepia depth fade). ObjexoomScene's `<fog>` element now reads `lightPalette.fogColor`. Self-judgement after re-capture: arena reads ember-rim with smoke fade, library reads cool-warm sepia split, sewer reads as a clear wider corridor with warm-haze vanishing point, courtyard reads dusk-blue, corridor stays the canonical violet+parchment+ink. Visually distinct to the eye — closes the PRD §E13 "Visual identity test" acceptance criterion. Two new test assertions: corridor's fogColor preserves `OBJEXOOM_PALETTE.ink`, and ≥3 archetypes have unique fog colors (depth-fade separation). Also extended the existing "every entry has valid hex" test to cover fog. 418 unit + 5 browser + 5 e2e canonical + 5 e2e archetype screenshots green. Canonicals byte-stable (corridor's fogColor unchanged).
+- [ ] **E13 step-5 — per-archetype sector density / size.** The procedural `generateMap` builds grid maps with a single `MIN_ROOM=3 / MAX_ROOM=6` range. Per PRD §E13 acceptance: each archetype should vary "sector-density / size range." Step-5 plumbs the archetype name into `generateMap` so corridor = tight (small rooms, more corridors), arena = sparse big rooms, courtyard = mixed open + tight, sewer = winding narrow with dead-ends, library = grid-like with stacked smaller rooms. Each archetype config carries `{minRoom, maxRoom, roomTries}` overrides. Preserve refLevel-0 (loadRefLevel, NOT generateMap) so canonicals stay byte-stable.
+
 ## Phase 7 — visual self-judgement infra + archetype coverage
 
 Forward-sweep from Phase 6: E13 step-2 tinted lights per archetype,

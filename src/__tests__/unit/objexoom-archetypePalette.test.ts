@@ -21,14 +21,23 @@ describe("E13 — archetype lighting palette", () => {
 		const corridor = getArchetypeLightPalette("corridor");
 		expect(corridor.ambientColor).toBe(OBJEXOOM_PALETTE.violet);
 		expect(corridor.directionalColor).toBe(OBJEXOOM_PALETTE.parchment);
+		// E13 step-4 — fog also preserves the pre-step-4 literal for
+		// refLevel 0 canonical byte-stability.
+		expect(corridor.fogColor).toBe(OBJEXOOM_PALETTE.ink);
 	});
 
-	it("every entry has both ambient + directional colors set", () => {
+	it("every entry has ambient + directional + fog colors set as valid hex", () => {
 		for (const name of ARCHETYPE_NAMES) {
 			const p = ARCHETYPE_LIGHT_PALETTES[name];
 			expect(p.ambientColor).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(p.directionalColor).toMatch(/^#[0-9a-f]{6}$/i);
+			expect(p.fogColor).toMatch(/^#[0-9a-f]{6}$/i);
 		}
+	});
+
+	it("at least 3 archetypes have unique fog colors (visual depth-fade separation)", () => {
+		const fogs = new Set(ARCHETYPE_NAMES.map((n) => ARCHETYPE_LIGHT_PALETTES[n].fogColor));
+		expect(fogs.size).toBeGreaterThanOrEqual(3);
 	});
 
 	it("ambient + directional differ within each archetype (no flat-look)", () => {

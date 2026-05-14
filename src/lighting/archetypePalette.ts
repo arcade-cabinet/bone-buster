@@ -25,6 +25,13 @@ export interface ArchetypeLightPalette {
 	readonly ambientColor: string;
 	/** Directional ("sun") light tint — a warmer/cooler key cast. */
 	readonly directionalColor: string;
+	/**
+	 * E13 step-4 — fog tint. The dominant depth-fade signal in low-lit
+	 * play; biggest visual lever for archetype-distinctness. The
+	 * corridor entry preserves the pre-step-4 literal `OBJEXOOM_PALETTE.ink`
+	 * for canonical byte-stability.
+	 */
+	readonly fogColor: string;
 }
 
 /**
@@ -36,28 +43,37 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 	corridor: {
 		ambientColor: OBJEXOOM_PALETTE.violet,
 		directionalColor: OBJEXOOM_PALETTE.parchment,
+		fogColor: OBJEXOOM_PALETTE.ink,
 	},
-	// Hot arena — reddish ambient, ember sun. Reads as a combat pit.
+	// Hot arena — reddish ambient, ember sun, ember-deep fog. Reads as
+	// a combat pit with smoke and heat haze on the depth fade.
 	arena: {
 		ambientColor: SCALE.blood[300],
 		directionalColor: SCALE.ember[300],
+		fogColor: SCALE.ember[900],
 	},
-	// Outdoor courtyard — cool indigo ambient, warm amber sun.
+	// Outdoor courtyard — cool indigo ambient, warm amber sun, indigo-
+	// deep fog (dusk). The dusk-cool fog separates this hardest from
+	// corridor's ink fog.
 	courtyard: {
 		ambientColor: SCALE.indigo[300],
 		directionalColor: SCALE.amber[200],
+		fogColor: SCALE.indigo[900],
 	},
-	// Damp sewer — green-tinged ambient (via desaturated parchment 700
-	// against ink mix) + a cool fill. Reads as "underground".
+	// Damp sewer — desaturated parchment ambient, cool fill, parchment-
+	// deep fog with a slight green-ink mix. Reads as "underground".
 	sewer: {
 		ambientColor: SCALE.parchment[600],
 		directionalColor: SCALE.indigo[200],
+		fogColor: SCALE.parchment[900],
 	},
-	// Library — warm parchment ambient + soft amber sun. Reads as
-	// "wood + paper + dust mote sunshafts".
+	// Library — warm parchment ambient, soft amber sun, ember-deep fog
+	// for the "paper + dust mote sunshafts" feel. Lifts away from
+	// corridor's cool ink toward a warm sepia depth fade.
 	library: {
 		ambientColor: SCALE.parchment[300],
 		directionalColor: SCALE.amber[100],
+		fogColor: SCALE.amber[900],
 	},
 };
 

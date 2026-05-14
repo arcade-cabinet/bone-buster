@@ -711,7 +711,10 @@ export function ObjexoomScene({
 			{/* I11 — muzzle-flash point light. Lives at camera position,
 			    driven by useFrame so it can decay between renders. */}
 			<pointLight ref={muzzleLightRef} intensity={0} distance={8} decay={1.5} />
-			<fog attach="fog" args={[OBJEXOOM_PALETTE.ink, 6, TILE * 12]} />
+			{/* E13 step-4 — per-archetype fog tint. Dominant depth-fade
+			    signal in low-lit play; biggest visual lever for archetype-
+			    distinctness. Corridor still resolves to OBJEXOOM_PALETTE.ink. */}
+			<fog attach="fog" args={[lightPalette.fogColor, 6, TILE * 12]} />
 			<color attach="background" args={[OBJEXOOM_PALETTE.ink]} />
 
 			{map.kind === "grid" ? (
