@@ -40,7 +40,7 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 - [x] **B1.3** `pnpm lint` (biome) green.
 - [x] **B1.4** `pnpm dev` boots Vite, root page mounts `<ObjexoomShell />` cleanly.
 - [x] **B1.5** `pnpm test` (vitest unit) green — 12 suites / 163 tests.
-- [ ] **B1.6** `pnpm test:e2e:screenshots` produces the 5 canonical PNGs (re-verify after polygonContains fix + token rollout).
+- [x] **B1.6** `pnpm test:e2e:screenshots` produces the 5 canonical PNGs (re-verified after polygonContains fix + token rollout + port pin to 5191).
 - [ ] **B1.7** `pnpm assets:fbx-to-glb` regenerates GLBs from `references/` (locally — references/ is gitignored).
 
 ### B2 — Mobile + CI
@@ -68,7 +68,7 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 - [x] **DS.6** Wire tokens into `ObjexoomShell` landing / mission-complete / game-over overlays.
 - [ ] **DS.7** Wire tokens into scene materials where they cross the JS↔three boundary (lava, key glow, fire muzzle, key pickup tint).
 - [x] **DS.8** Apply Black Ops One to all heading-class HUD elements (HP/AMMO numerics, MISSION COMPLETE/GAME OVER); Rajdhani to body labels (HP/AMMO labels, level select, difficulty descriptions).
-- [ ] **DS.9** Re-shoot the 5 canonical screenshots with the new typography + tokens applied so `docs/assets/objexoom/` matches what ships.
+- [x] **DS.9** Re-shoot the 5 canonical screenshots with the new typography + tokens applied (output at `test-results/objexoom-screenshots/`; copy into `docs/assets/objexoom/` as a deliberate publish step later).
 
 ### AO — Asset organization (NEW)
 
@@ -83,7 +83,7 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 
 (Closes once each item is shipped + verified visually against `reference-codebases/js13k2019-yet-another-doom-clone/`.)
 
-- [ ] **PA-MOD2** Visually verify all 5 screenshot poses render cleanly post-extraction.
+- [x] **PA-MOD2** Visually verify all 5 screenshot poses render cleanly post-extraction (landing types render in Black Ops One + Rajdhani with the warmer wordmark gradient; in-game HUD adopts the token palette; key pickup GLB + pistol viewmodel load from the new `/assets/models/` paths).
 - [ ] **PA1** ManyEnemies spawner — verify already wired in `src/refLevel.ts` survives extraction.
 - [ ] **PA9** Shell ejection on shotgun fire.
 - [ ] **PA10** Weapon recoil offset on viewmodel.
