@@ -575,6 +575,14 @@ export type Enemy = {
 	lastShotAt: number;
 	/** E2 — when "boss", HP is BOSS_HP_MULTIPLIER × base and the portal stays locked until dead. */
 	tier?: "boss";
+	/**
+	 * POL19 — non-killing-hit stagger. Set to `now + 70ms` (or 100ms
+	 * for bosses) on every damage event the enemy survives. enemyTickLoop
+	 * scales the enemy's per-frame movement by STAGGER_SPEED_FACTOR
+	 * while `now < staggerUntil`. EnemyMesh reads it for the tint flash.
+	 * 0 when not staggered.
+	 */
+	staggerUntil?: number;
 };
 
 function enemyBaseHp(kind: EnemyKind): number {

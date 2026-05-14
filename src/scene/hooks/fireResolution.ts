@@ -210,6 +210,16 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		}
 		if (bestEnemy) {
 			bestEnemy.hp -= spec.damage;
+			// POL19 — non-killing-hit stagger window. Only set when the
+			// hit doesn't kill (the kill path uses POL12 hitstop + body-
+			// parts spawn instead — a dead enemy doesn't flinch). Bosses
+			// stagger 100ms (heavier "feel" but less so than the kill);
+			// regular enemies 70ms — both inside any weapon cooldown so
+			// the stagger never blocks the next shot.
+			if (bestEnemy.hp > 0) {
+				const staggerMs = bestEnemy.tier === "boss" ? 100 : 70;
+				bestEnemy.staggerUntil = now + staggerMs;
+			}
 			dispatch({
 				type: "burst",
 				x: bestEnemy.position.x,

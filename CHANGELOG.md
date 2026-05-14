@@ -13,6 +13,14 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- **POL19 Enemy hit reactions.** New optional `Enemy.staggerUntil` field set by fireResolution on every non-killing hit (70ms regular, 100ms boss; kill-blows leave POL12 hitstop to handle the beat instead). enemyTickLoop lerps the AI move target toward the enemy's current position by 0.2× inside the window so the enemy visibly absorbs the hit before resuming advance. EnemyMesh per-instance clones the cached GLB materials and modulates color + emissive + emissiveIntensity on an ease-out-quad curve over the first 140ms — the hit reads as a white-flash tint with blood-red emissive bloom, distinct from the standard combat state.
+
+### Fixed
+
+- **POL14 runtime regression.** First-cut implementation tried to mutate `effectRef.current.offset` via `.set(x, y)`, but drei's `wrapEffect` attaches the ref to a dynamically-extended JSX intrinsic, not to the underlying `ChromaticAberrationEffect`. Replaced with an owned `Vector2` instance passed by reference into the effect's `offset` prop and mutated each frame — both simpler and version-stable.
+
+### Added
+
 - **POL3-v2 Per-archetype PBR floor textures.** New `floorTextures.ts` declares per-archetype Color + Normal map URLs (1K JPGs sourced from the 2DPhotorealistic asset library): arena → MetalPlates006 (cracked metal grating), sewer → Concrete032 (wet stone), library → Wood035 (wood plank), courtyard → PavingStones070 (cobble pavers). Corridor preserved as flat-color (canonical bytes). MapGeometry's floor mesh wraps the textured branch in `<Suspense>` with the flat-color mesh as fallback; `TexturedFloorInner` configures `RepeatWrapping` + per-archetype repeat factor + sRGB color space. `verify-runtime-assets` extended to also crawl `/assets/textures/` URLs. 11.5 MB texture payload.
 - **POL12 Hitstop on enemy kills.** `enemyTickLoop` reads an optional `hitstopUntilRef`; when within the window, scales its `dt` to 5% so enemy AI/movement/bullet-spawn appears to freeze. `fireResolution` sets `until = now + 80ms` on any enemy kill (150ms for bosses). Player camera, particle ticks, weapon cooldowns unaffected (independent loops). Reads as a "weighty kill" punch.
 - **POL16 Layered impact particles.** Pre-POL16 damage bursts were 15 violet monocolor motes (visually a single puff). Replaced with 3-layer system: 8 hot impact sparks (3.5-5.5 u/s, 220ms TTL, emissive 3.2×) + 6 gray smoke puffs (slow upward via negative gravity, 700ms TTL, larger radius) + 8 orange ember trails (mid-velocity, 500ms TTL, emissive 2.4×). `Mote` type extended with per-mote TTL/radius/gravity/emissiveIntensity. Other burst kinds (pickup/playerHit/explode) keep pre-POL16 shape; canonical bytes preserved.

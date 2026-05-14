@@ -176,9 +176,20 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 		}
 
 		if (out.moveTarget) {
+			// POL19 — stagger scaling. If the enemy was hit recently and is
+			// still inside the stagger window, scale the move delta down so
+			// the enemy "absorbs the hit" before resuming advance.
+			let moveTarget = out.moveTarget;
+			if (enemy.staggerUntil !== undefined && now < enemy.staggerUntil) {
+				const STAGGER_SPEED_FACTOR = 0.2;
+				moveTarget = {
+					x: enemy.position.x + (moveTarget.x - enemy.position.x) * STAGGER_SPEED_FACTOR,
+					y: enemy.position.y + (moveTarget.y - enemy.position.y) * STAGGER_SPEED_FACTOR,
+				};
+			}
 			enemy.position = wraith
-				? out.moveTarget
-				: resolveCollisionAny(out.moveTarget, map, collisionCtxRef.current, 0.5);
+				? moveTarget
+				: resolveCollisionAny(moveTarget, map, collisionCtxRef.current, 0.5);
 		}
 
 		if (out.fireBullet) {
