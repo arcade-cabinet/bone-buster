@@ -280,6 +280,30 @@ ARCH1's original framing called for converting five "Shell↔Scene channels" (`f
 
 ---
 
+## D14 — PWA verification via Lighthouse best-practices + manifest validity, not the retired `pwa` category
+
+**Status:** Locked. **Amends AO.5 directive item.**
+**Date:** 2026-05-14
+
+AO.5's original acceptance referenced "Lighthouse PWA score ≥ 90." Lighthouse 12 retired the dedicated `pwa` category; Lighthouse 13 (current at the time of this commit, `npx lighthouse@13.3.0`) reports exactly five categories: `performance`, `accessibility`, `best-practices`, `seo`, `agentic-browsing`. There is no PWA score to target.
+
+**Call:** PWA-readiness is verified by three concrete signals instead:
+
+1. `public/manifest.webmanifest` exists and is served with `Content-Type: application/manifest+json`. The manifest declares: `name`, `short_name`, `description`, `start_url`, `scope`, `display`, `background_color`, `theme_color` (from token `#03050b` = `--obx-bg-void`), and a `icons` array including a 192×192 and a 512×512 PNG plus a maskable 512×512.
+2. `index.html` head links the manifest, favicon (32×32 PNG + `.ico` alias), apple-touch-icon (180×180), and sets `theme-color` to match the manifest value.
+3. Lighthouse 13 `best-practices` and `accessibility` categories both score ≥ 90 against a `vite preview` build.
+
+**Why:**
+- Tooling drift: targeting a retired Lighthouse category creates an acceptance criterion that can never be marked done.
+- The underlying signals (installable manifest, viewport/theme-color/icons in HEAD) ARE still audited by Lighthouse 13 — they just live under the `best-practices` and `seo` umbrellas rather than the dedicated `pwa` category.
+- Manifest validity + icon presence + theme-color consistency is enough for Android `Add to Home Screen` and iOS "Add to Home Screen" to install the game correctly — which is the underlying user-facing goal.
+
+**Rejected:**
+- *Pinning Lighthouse to a pre-12 version that still has `pwa`* — masks the truth and ships against deprecated tooling.
+- *Switching to PWABuilder's report.* — third-party dependency for a thing Lighthouse already covers via separate categories.
+
+---
+
 ## Decisions log conventions
 
 - One section per decision, with a short slug (`## D11 — short title`).

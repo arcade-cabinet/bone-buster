@@ -132,8 +132,8 @@ All complete on 2026-05-13. `objexiv/objexoom` is the canonical home of OBJEXOOM
 - [x] **AO.2** Move every existing GLB under `public/assets/models/{enemies,weapons,props}/`.
 - [x] **AO.3** Bundle horror enemy GLBs (sewerfiend, plague_doctor, elk_demon, abomination ×2, anomaly, horned, nun, alien, clown ×2) under `public/assets/models/enemies/horror/`.
 - [x] **AO.4** Bundled 5 slasher weapon GLBs under `public/assets/models/weapons/slasher/`. Updated `src/models.ts` melee URL to `slasher/melee_machete.glb`, updated all 5 jobs in `scripts/convert-fbx.mjs`, updated provenance + inventory docs. `pnpm assets:verify-runtime` resolves all 27 URLs; canonical screenshots unchanged.
-- [ ] **AO.5** Add PWA manifest + favicon set. Acceptance: `public/manifest.webmanifest` declares name, theme_color from `--obx-bg-void`, 192/512/maskable icons; `public/favicon.ico` + apple-touch-icon present; Lighthouse PWA score ≥ 90.
-- [ ] **AO.6** Verify `index.html` head references the manifest + favicons (rel="manifest", rel="apple-touch-icon", theme-color meta).
+- [x] **AO.5** Shipped PWA manifest + favicon set. `public/manifest.webmanifest` declares name/short_name/description/start_url/scope, `display: fullscreen`, `theme_color`+`background_color`=`#03050b` (`--obx-bg-void`), 192×192 + 512×512 + maskable-512 icons; `public/favicon.ico` + `favicon-32.png` + `apple-touch-icon.png` (180×180). `scripts/generate-pwa-icons.mjs` rasterizes the OBJEXOOM stacked-wordmark SVG via Playwright Chromium (idempotent, runs via `pnpm assets:pwa-icons`). **D14 amends original Lighthouse PWA-category criterion** — Lighthouse 12 retired that category. Verified via current Lighthouse 13: best-practices=100, accessibility=100, seo=91, performance=38 (FPS game, expected). Best-practices + a11y both ≥ 90 per D14.
+- [x] **AO.6** `index.html` head references the manifest + all favicon sizes + apple-touch-icon + apple-mobile-web-app-* meta + theme-color synced to `#03050b`. Verified via `curl http://localhost:5191/manifest.webmanifest` returns `Content-Type: application/manifest+json`.
 
 ### PARITY — DOOM reference clone
 

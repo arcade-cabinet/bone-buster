@@ -41,6 +41,7 @@
 		"test:e2e": "playwright test",
 		"test:e2e:screenshots": "playwright test tests/e2e/screenshots.spec.ts --workers=1",
 		"assets:fbx-to-glb": "node scripts/convert-fbx.mjs",
+		"assets:pwa-icons": "node scripts/generate-pwa-icons.mjs",
 		"assets:publish-screenshots": "bash scripts/publish-screenshots.sh",
 		"assets:verify-runtime": "node scripts/verify-runtime-assets.mjs",
 		"assets:prepare-wasm": "node scripts/prepare-web-wasm.mjs",
