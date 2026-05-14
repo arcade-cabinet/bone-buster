@@ -30,6 +30,7 @@ const SOURCE_FILES = [
 	resolve(root, "src/doors.ts"),
 	resolve(root, "src/decals.ts"),
 	resolve(root, "src/debris.ts"),
+	resolve(root, "src/largeProps.ts"),
 ];
 
 function categoryOf(publicPath) {
