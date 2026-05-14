@@ -48,3 +48,4 @@
 {"ts":"2026-05-14T19:00:54.051Z","sha":"bbfd9f0553f8","subject":"feat(scene): COV3 step-6 — per-archetype procedural floor tint","decision":"tint a single plane vs. per-cell GLB scatter (400 cells per","why":null,"resolves":["directive Phase 11 COV3 step-6."],"overrides":[]}
 {"ts":"2026-05-14T19:12:42.750Z","sha":"6b25ed1861b3","subject":"feat(scene): COV3 step-7 — per-archetype procedural ceiling tint","decision":null,"why":null,"resolves":["directive Phase 11 COV3 step-7."],"overrides":[]}
 {"ts":"2026-05-14T19:14:49.931Z","sha":"0220f50530b0","subject":"feat(scene): COV3 step-8 — per-archetype sector ceiling tint","decision":null,"why":null,"resolves":["directive Phase 11 COV3 step-8."],"overrides":[]}
+{"ts":"2026-05-14T19:19:01.329Z","sha":"c554d48dc164","subject":"feat(scatter): E13 step-6 — per-archetype prop density","decision":null,"why":null,"resolves":["directive Phase 11 E13 step-6."],"overrides":[]}

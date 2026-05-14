@@ -15,15 +15,31 @@
  *    floorTiles (FLRT) sequences.
  */
 
+import { pickArchetype } from "../archetype";
 import { DEBRIS_VARIANTS, pickDebrisUrl } from "../debris";
 import type { ObjexoomMap, Vec2 } from "../engine";
 import { polygonContains } from "../engine";
+import type { PropArchetype } from "./propPool";
 
 const SKIP_RADIUS = 4;
-const DEBRIS_PER_SECTOR_MIN = 3;
-const DEBRIS_PER_SECTOR_MAX = 5;
+/** Hard upper bound for ID-stride invariant. Per-archetype max stays ≤ this. */
+export const DEBRIS_PER_SECTOR_MAX_CAP = 5;
 const MAX_SAMPLE_ATTEMPTS = 12;
 const ID_STRIDE = 1000;
+
+/**
+ * E13 step-7 — per-archetype debris density. Combat-heavy archetypes
+ * (arena) get more debris ("evidence of carnage"); library cleaner;
+ * corridor preserves the pre-step-7 literal `[3, 5]` for canonical
+ * byte-stability (refLevel 0 = corridor by seed%5 invariant).
+ */
+const DENSITY_BY_ARCHETYPE: Readonly<Record<PropArchetype, readonly [number, number]>> = {
+	corridor: [3, 5],
+	arena: [4, 5],
+	courtyard: [2, 4],
+	sewer: [3, 5],
+	library: [1, 3],
+};
 
 export interface DebrisInstance {
 	readonly id: number;
@@ -48,6 +64,8 @@ export function spawnDebris(map: ObjexoomMap): DebrisInstance[] {
 	const out: DebrisInstance[] = [];
 	const rng = mulberry32((map.seed >>> 0) ^ 0x44455242);
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
+	const archetype = pickArchetype(map);
+	const [minPerSector, maxPerSector] = DENSITY_BY_ARCHETYPE[archetype];
 
 	for (const sector of map.sectors) {
 		if (sector.vertices.length < 3) continue;
@@ -62,9 +80,7 @@ export function spawnDebris(map: ObjexoomMap): DebrisInstance[] {
 			if (v.y > maxY) maxY = v.y;
 		}
 
-		const target =
-			DEBRIS_PER_SECTOR_MIN +
-			Math.floor(rng() * (DEBRIS_PER_SECTOR_MAX - DEBRIS_PER_SECTOR_MIN + 1));
+		const target = minPerSector + Math.floor(rng() * (maxPerSector - minPerSector + 1));
 
 		let placedInSector = 0;
 		for (let i = 0; i < target; i += 1) {
