@@ -95,7 +95,7 @@ All other COV* items have no E* pair and run standalone.
 - [x] **B1.4** `pnpm dev` boots Vite, root page mounts `<ObjexoomShell />` cleanly.
 - [x] **B1.5** `pnpm test` (vitest unit) green — 12 suites / 163 tests.
 - [x] **B1.6** `pnpm test:e2e:screenshots` produces the 5 canonical PNGs.
-- [ ] **B1.7** `pnpm assets:fbx-to-glb` regenerates GLBs from `references/` (a gitignored directory at repo root containing source FBX/zip assets). Acceptance: script runs end-to-end against the `references/` directory; every GLB referenced in `models.ts` is reproducible from a documented FBX source recorded in `docs/ASSET_PROVENANCE.md`.
+- [x] **B1.7** `pnpm assets:fbx-to-glb` regenerates GLBs from `references/`. Shipped: fixed stale `public/objexoom/models/` output paths → `public/assets/models/` (matches AO.2 reorg); created `docs/ASSET_PROVENANCE.md` documenting all 10 FBX→GLB jobs with pack origin + license + re-extraction recipe; script runs idempotent (10/10 skipped on second run, 0 failed); `pnpm assets:verify-runtime` confirms all 27 wired URLs resolve.
 
 ### B2 — Mobile + CI
 
