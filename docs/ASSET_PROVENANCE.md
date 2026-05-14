@@ -31,7 +31,7 @@ references/                              (gitignored, repo-root directory)
        ▼
 public/assets/models/                    (tracked in git)
 ├── enemies/horror/{abomination_rigged,plague_doctor,elk_demon,clown_1,clown_3}.glb
-└── weapons/{melee_axe,melee_chainsaw,melee_knife,melee_machete,melee_meathook}.glb
+└── weapons/slasher/{melee_axe,melee_chainsaw,melee_knife,melee_machete,melee_meathook}.glb
 ```
 
 The script is **idempotent** — re-running it skips outputs newer than their FBX source. Used as a one-shot regen when an upstream pack updates.
@@ -45,11 +45,11 @@ The script is **idempotent** — re-running it skips outputs newer than their FB
 | `horror_rigged/PSX Horror-Fantasy Megapack/elkdemon/final_rigged.fbx` | `enemies/horror/elk_demon.glb` | same | same |
 | `horror_rigged/PSX Horror-Fantasy Megapack/clowns pack/1/final_rigged.fbx` | `enemies/horror/clown_1.glb` | same | same |
 | `horror_rigged/PSX Horror-Fantasy Megapack/clowns pack/3/final_rigged.fbx` | `enemies/horror/clown_3.glb` | same | same |
-| `slasher/Axe/Axe.fbx` | `weapons/melee_axe.glb` | Slasher Weapon Pack (itch.io) | itch.io commercial; bundled `Read me.txt` |
-| `slasher/Chainsaw/Chainsaw.fbx` | `weapons/melee_chainsaw.glb` | same | same |
-| `slasher/Kitchen Knife/kitchenKnife.fbx` | `weapons/melee_knife.glb` | same | same |
-| `slasher/Machete/Machete.fbx` | `weapons/melee_machete.glb` | same | same |
-| `slasher/Meat Hook/MeatHook.fbx` | `weapons/melee_meathook.glb` | same | same |
+| `slasher/Axe/Axe.fbx` | `weapons/slasher/melee_axe.glb` | Slasher Weapon Pack (itch.io) | itch.io commercial; bundled `Read me.txt` |
+| `slasher/Chainsaw/Chainsaw.fbx` | `weapons/slasher/melee_chainsaw.glb` | same | same |
+| `slasher/Kitchen Knife/kitchenKnife.fbx` | `weapons/slasher/melee_knife.glb` | same | same |
+| `slasher/Machete/Machete.fbx` | `weapons/slasher/melee_machete.glb` | same | same |
+| `slasher/Meat Hook/MeatHook.fbx` | `weapons/slasher/melee_meathook.glb` | same | same |
 
 10 conversion jobs; each output is referenced (directly or via the cycling roster) from `src/models.ts`.
 

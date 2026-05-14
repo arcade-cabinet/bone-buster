@@ -58,27 +58,27 @@ const JOBS = [
 	// Slasher melee weapons — bonus melee viewmodel options.
 	{
 		fbx: "references/_extracted/slasher/Axe/Axe.fbx",
-		glb: "public/assets/models/weapons/melee_axe.glb",
+		glb: "public/assets/models/weapons/slasher/melee_axe.glb",
 		label: "axe",
 	},
 	{
 		fbx: "references/_extracted/slasher/Chainsaw/Chainsaw.fbx",
-		glb: "public/assets/models/weapons/melee_chainsaw.glb",
+		glb: "public/assets/models/weapons/slasher/melee_chainsaw.glb",
 		label: "chainsaw",
 	},
 	{
 		fbx: "references/_extracted/slasher/Kitchen Knife/kitchenKnife.fbx",
-		glb: "public/assets/models/weapons/melee_knife.glb",
+		glb: "public/assets/models/weapons/slasher/melee_knife.glb",
 		label: "kitchen knife",
 	},
 	{
 		fbx: "references/_extracted/slasher/Machete/Machete.fbx",
-		glb: "public/assets/models/weapons/melee_machete.glb",
+		glb: "public/assets/models/weapons/slasher/melee_machete.glb",
 		label: "machete",
 	},
 	{
 		fbx: "references/_extracted/slasher/Meat Hook/MeatHook.fbx",
-		glb: "public/assets/models/weapons/melee_meathook.glb",
+		glb: "public/assets/models/weapons/slasher/melee_meathook.glb",
 		label: "meat hook",
 	},
 ];

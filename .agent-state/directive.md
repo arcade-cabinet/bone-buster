@@ -131,7 +131,7 @@ All complete on 2026-05-13. `objexiv/objexoom` is the canonical home of OBJEXOOM
 - [x] **AO.1** Inventory current `public/` layout, document the convention in `public/README.md`.
 - [x] **AO.2** Move every existing GLB under `public/assets/models/{enemies,weapons,props}/`.
 - [x] **AO.3** Bundle horror enemy GLBs (sewerfiend, plague_doctor, elk_demon, abomination ×2, anomaly, horned, nun, alien, clown ×2) under `public/assets/models/enemies/horror/`.
-- [ ] **AO.4** Bundle slasher weapon GLBs under `public/assets/models/weapons/slasher/`. Acceptance: melee_axe, melee_chainsaw, melee_knife, melee_machete, melee_meathook moved (or symlinked) into `weapons/slasher/`; references in `models.ts` updated; `verify-runtime-assets` still passes.
+- [x] **AO.4** Bundled 5 slasher weapon GLBs under `public/assets/models/weapons/slasher/`. Updated `src/models.ts` melee URL to `slasher/melee_machete.glb`, updated all 5 jobs in `scripts/convert-fbx.mjs`, updated provenance + inventory docs. `pnpm assets:verify-runtime` resolves all 27 URLs; canonical screenshots unchanged.
 - [ ] **AO.5** Add PWA manifest + favicon set. Acceptance: `public/manifest.webmanifest` declares name, theme_color from `--obx-bg-void`, 192/512/maskable icons; `public/favicon.ico` + apple-touch-icon present; Lighthouse PWA score ≥ 90.
 - [ ] **AO.6** Verify `index.html` head references the manifest + favicons (rel="manifest", rel="apple-touch-icon", theme-color meta).
 
