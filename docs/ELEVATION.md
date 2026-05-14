@@ -30,10 +30,12 @@ BLADE slot (machete viewmodel), 1.6-tile range, 55 dmg, 420ms
 cooldown, infinite ammo. Procedural white-noise whoosh + tail SFX
 via `playMelee` in `sfx.ts`. `baseOwnedWeapons()` helper consolidates
 the per-run loadout. 4 extra melee GLBs (axe, knife, chainsaw,
-meathook) stay staged for future variant cycling.
+meathook) stay staged in `public/assets/models/weapons/`; COV9 wires
+them via a seeded `pickMeleeSkin(level.seed)` rotation.
 
-Open follow-ups: per-skin seeded cycling (axe vs machete by level
-seed), explicit melee-hit SFX distinct from the swing whoosh.
+Tracked-onward (each a discrete directive item, not an open thread):
+- **COV9** — per-skin seeded `pickMeleeSkin(level.seed)` rotation (axe/machete/cleaver/bat/meathook).
+- **MELEE-HIT-SFX** — distinct hit SFX vs the swing whoosh (track as a new directive item under PA when E5 lands fully). Audio asset choice: synthesized in `sfx.ts` (Tone.NoiseSynth shorter envelope, lower pitch).
 
 ## E2 — Bosses with rigged horror animations
 
@@ -183,8 +185,10 @@ Public API: `insert(record, now)`, `listRecent(limit)`, `bestRun()`,
 status transition (`dead | won`), gated by a `runStartAt` ref to
 avoid double-insert under React 19 strict-mode.
 
-Open follow-ups: landing-screen "best run" chip, debug-HUD recent-runs
-list, per-difficulty leaderboards.
+Tracked-onward (each a discrete directive item, not an open thread):
+- **E9-CHIP** — landing-screen "best run" chip reading `bestRun()`.
+- **E9-RECENT** — debug-HUD recent-runs list under `?objexoomDebug`.
+- **E9-DIFFLEADER** — per-difficulty leaderboard, sliced by `levelSet`.
 
 ## E10 — 3D HUD elements
 

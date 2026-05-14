@@ -21,6 +21,20 @@
 
 while queue has [ ] items: implement → verify → commit → dispatch reviewers → mark [x] → next.
 
+## Lane priority (read this before picking any item)
+
+Pick the topmost `[ ]` item from the highest-priority lane that has remaining work:
+
+1. **PARITY** — reference-clone gaps (all currently `[x]`; if any regress, fix first).
+2. **ELEVATION Phase 2** — mechanical (E5 ✅ shipped; E6 next).
+3. **ELEVATION Phase 3** — visual (PA-MOD7 → E4 → E3 → E2).
+4. **ELEVATION Phase 4** — polish (E13, E7, E8, E11, E10).
+5. **COV*** — 3DPSX coverage. **REQUIRES `/Volumes/home/assets/3DPSX/` mounted.** If detached, skip the whole lane and pick next.
+6. **INFRA** — INF2 (build-time asset copy).
+7. **Standalone hardening** — B1.7, B2.1, B2.4, AO.4, AO.5, AO.6, DS.* (all parallel; pick any).
+
+Within a lane, pick the topmost unchecked. Inside each item's checkbox the acceptance criterion is a one-liner; long-form spec is [`docs/PRD.md`](../docs/PRD.md).
+
 ## Forbidden phrases
 
 "deferred" | "v2+" | "out of scope" | "future work" | "tracked separately" | "follow-up"
@@ -107,7 +121,7 @@ Full roadmap: [`docs/ELEVATION.md`](../docs/ELEVATION.md). Specs in [`docs/PRD.m
 **Phase 2 — Mechanical elevation:**
 
 - [x] **E1** Full melee weapon slot — wired BLADE/machete viewmodel + whoosh sfx + DRY'd ownedWeapons. Shipped 8d71475.
-- [ ] **E5** Destructible barrels with AoE damage. Acceptance: barrel pickups/props spawn in sectors, take N hits, on death emit `objexoom:burst` + AoE radius damage to adjacent enemies + the player; uses `barrel.glb` from 3DPSX Mega Pack II.
+- [x] **E5** Destructible barrels with AoE damage. Shipped 688104d. 5-variant skin pool (4 metal + 1 wooden), HP=3, 2.5-tile AoE, 35dmg to enemies / 3dmg to player, chain reactions via queue. 14 unit tests in `objexoom-barrels.test.ts`.
 - [ ] **E6** Switches + secret walls + hidden rooms. Acceptance: at least one secret area per refLevel, gated by a wall-mounted switch; switch interaction via fire while pointed at, plays the door SFX, raises the wall.
 
 **Phase 3 — Visual elevation:**
@@ -147,7 +161,7 @@ visually consistent across reloads.
 - [ ] **COV11** Environment/Nature — bushes (5 seasons × ~40), trees (44), grass (12). Acceptance: outdoor/courtyard archetype seeds at least one seasonal pass; trees + grass tufts as collision-flat scatter.
 - [ ] **COV12** Fantasy/Bottles/Books/Scrolls/Loot pack. Acceptance: rare bonus pickup spawns (XP-equivalent, score boost, ammo cache) using these meshes.
 - [ ] **COV13** Props/Kitchen (48 GLBs). Acceptance: kitchen-archetype sector uses these as set-dressing (knife blocks, pots, sinks).
-- [ ] **COV14** Characters/ChibiCharacters (14) + individuals (66). Acceptance: hub-area NPCs (non-hostile) using these meshes; could be vendors/mission-givers in a future hub level.
+- [ ] **COV14** Characters/ChibiCharacters (14) + individuals (66). Acceptance: hub-area NPCs (non-hostile) using these meshes as set-dressing in a HUB sector type. Spec: a new `EnemyKind = "npc"` variant that the FSM treats as ambient (no aggro, no LOS, no attack). Pairs with E13 (HUB archetype = the 6th archetype joining corridor/arena/courtyard/sewer/library).
 
 These are sequenced by gameplay value (light/structures/props first
 because they yield the biggest visual ROI). Re-order any time.
@@ -156,7 +170,7 @@ because they yield the biggest visual ROI). Re-order any time.
 
 - [x] **INF1** WASM/asset sync per arcade-cabinet pattern. `scripts/prepare-web-wasm.mjs` runs at postinstall + prebuild; sql.js WASM copies to `public/assets/wasm/`. Shipped 81ed15d.
 - [ ] **INF2** Build-time `scripts/copy-public-assets.mjs` mirror. Acceptance: build-step copies `public/assets/` to `dist/assets/` (or equivalent) and reports per-category totals. NO arbitrary byte budgets — asset weight is tuned deliberately per pickup, not enforced by an arbitrary CI threshold.
-- [x] **INF3** CI gate `scripts/verify-runtime-assets.mjs` — every GLB referenced by `models.ts` exists at the resolved path. Shipped 81ed15d; byte-budget enforcement removed in a follow-up commit after the budgets cost us a quality downgrade on barrel.glb.
+- [x] **INF3** CI gate `scripts/verify-runtime-assets.mjs` — every GLB referenced by `models.ts` exists at the resolved path. Shipped 81ed15d; byte-budget enforcement was removed in 688104d because the budgets cost us a quality downgrade on barrel.glb (the 6.8 KB Farm barrel got chosen over the 408 KB PSX Mega Pack II metal barrel).
 
 ## Verification
 

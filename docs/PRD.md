@@ -580,7 +580,7 @@ crowd control.
 - Asset: `Flamethrower.glb` (shipped).
 
 **Asset paths.** `public/assets/models/weapons/Flamethrower.glb`
-(shipped). Fuel canister: TBD (3DPSX has canister GLBs available).
+(shipped). Fuel canister: use `/Volumes/home/assets/3DPSX/PSX Mega Pack II v1.8/Props/canister_*.glb` (search `mcp__assets-library__search_assets` for "canister" when NAS is mounted; pick the rust-tinted variant for palette fit).
 
 **Dependencies.** None directly. E1's `WeaponId` widening + base
 records pattern is the template.
@@ -712,8 +712,10 @@ Bottles, books, scrolls, dungeon loot pack. Rare bonus pickups
 
 ### COV14 — Characters (Chibi + individuals)
 
-14 + 66 GLBs. Non-hostile hub NPCs for a future vendor/mission-giver
-hub area.
+14 + 66 GLBs. Non-hostile hub NPCs as set-dressing in the HUB sector
+type (6th archetype joining corridor/arena/courtyard/sewer/library
+per E13). New `EnemyKind = "npc"` variant the FSM treats as ambient
+(no aggro, no LOS, no attack). Spec lives at `.agent-state/directive.md` §COV14.
 
 ## Acceptance checklist (cross-cutting)
 

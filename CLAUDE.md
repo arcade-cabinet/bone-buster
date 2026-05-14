@@ -3,6 +3,40 @@
 
 OBJEXOOM — a polished DOOM-flavored arcade FPS. Procedural sectors, real PSX monsters, and a flashlight you absolutely need.
 
+## START HERE (any new agent, every session)
+
+Read these in order, then pick the next item without asking:
+
+1. This file (you're here).
+2. [`.agent-state/directive.md`](.agent-state/directive.md) — the queue. Every `[ ]` line has a one-line acceptance criterion. **Pick the topmost unchecked item in this lane order: PARITY → ELEVATION Phase 2 → ELEVATION Phase 3 → ELEVATION Phase 4 → COV* → INFRA → standalone-hardening (B*, AO*, DS*).**
+3. [`docs/PRD.md`](docs/PRD.md) — long-form spec per item (user story + acceptance + assets + deps).
+4. [`docs/PARITY.md`](docs/PARITY.md) — reference-clone parity (100% reached). Don't regress.
+5. [`docs/ELEVATION.md`](docs/ELEVATION.md) — historical catalogue of E1-E13.
+6. `git status && git log --oneline -10`.
+
+**Single source of truth chain when docs disagree:**
+DESIGN > ARCHITECTURE > DECISIONS > PRD > directive > ROADMAP.
+
+**Operating mandate (user verbatim, persistent):**
+- "I want a FULLY POLISHED PLAYABLE GAME PORTED FROM THE REFERENCE DOOM CLONE"
+- "I want as much possible value from ALL the PSX assets — anything that makes sense in a level"
+- "ZERO ambiguity, ZERO deferments, ZERO chance the next agent doesn't understand what to do"
+
+**Forbidden output phrases** (also enforced by directive §"Forbidden phrases"):
+deferred, v2+, out of scope, future work, tracked separately, follow-up, TODO, FIXME, stub, placeholder, mock for now, pause point, fresh session, next session, stopping point, clean handoff.
+
+**Run loop (no exceptions):**
+```
+while directive has [ ] items in priority order:
+    pick the topmost
+    read its acceptance criterion in the directive (and PRD if it links there)
+    implement → pnpm verify → commit → push → flip [ ]→[x] in same/next commit
+done
+# the only legitimate stops: user halt | red CI on main blocking | NAS unmounted blocking a COV item (skip to next non-blocked item)
+```
+
+If `/Volumes/home/assets/3DPSX/` is detached, the COV* items are blocked but everything else is local-only. Skip COV* and pick the next non-blocked item.
+
 ## Profiles loaded
 
 @/Users/jbogaty/.claude/profiles/arcade-game.md
