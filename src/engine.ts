@@ -368,7 +368,19 @@ export function generateMap(seed: number, shape?: GenerateMapShape): ObjexoomGri
 		const j = Math.floor(rand() * (i + 1));
 		[enemyCandidates[i], enemyCandidates[j]] = [enemyCandidates[j], enemyCandidates[i]];
 	}
-	const totalEnemies = Math.min(12, Math.max(6, Math.floor(rooms.length * 1.2)));
+	// E13 step-10 — per-archetype enemy-count multiplier. Resolved
+	// inline as `(seed >>> 0) % 5` because `pickArchetype` operates
+	// on a built map and we're still building it here. Index order
+	// MUST match ARCHETYPE_NAMES: 0=corridor, 1=arena, 2=courtyard,
+	// 3=sewer, 4=library. Corridor multiplier is 1.0 — canonical
+	// byte-stability for the procedural-corridor path.
+	const ARCHETYPE_ENEMY_MULTIPLIER = [1.0, 1.4, 0.9, 1.1, 0.8] as const;
+	const archetypeIdx = (seed >>> 0) % 5;
+	const baseEnemyCount = Math.max(6, Math.floor(rooms.length * 1.2));
+	const totalEnemies = Math.min(
+		16,
+		Math.max(4, Math.round(baseEnemyCount * ARCHETYPE_ENEMY_MULTIPLIER[archetypeIdx])),
+	);
 	const enemySpawns: EnemySpawn[] = enemyCandidates.slice(0, totalEnemies).map((position, idx) => ({
 		kind: idx % 3 === 2 ? "wraith" : "skeleton",
 		position,
