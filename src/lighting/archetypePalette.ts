@@ -63,6 +63,13 @@ export interface ArchetypeLightPalette {
 	 */
 	readonly hemisphereSky: string;
 	readonly hemisphereGround: string;
+	/**
+	 * E13 step-13 — water-surface tint (sector maps with `isWater: true`).
+	 * Corridor preserves the pre-step-13 literal `OBJEXOOM_PALETTE.indigo`
+	 * for canonical byte-stability. Sewer goes sickly-amber, courtyard
+	 * keeps cool indigo, library is still-amber, arena is ember-tinged.
+	 */
+	readonly waterColor: string;
 }
 
 /**
@@ -81,6 +88,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		lampLightColor: OBJEXOOM_PALETTE.flashlightWarm,
 		hemisphereSky: OBJEXOOM_PALETTE.indigo,
 		hemisphereGround: OBJEXOOM_PALETTE.ink,
+		waterColor: OBJEXOOM_PALETTE.indigo,
 	},
 	arena: {
 		ambientColor: SCALE.blood[300],
@@ -92,6 +100,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		lampLightColor: SCALE.ember[300],
 		hemisphereSky: SCALE.ember[400],
 		hemisphereGround: SCALE.blood[900],
+		waterColor: SCALE.ember[700],
 	},
 	courtyard: {
 		ambientColor: SCALE.indigo[300],
@@ -103,6 +112,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		lampLightColor: SCALE.amber[200],
 		hemisphereSky: SCALE.indigo[200],
 		hemisphereGround: SCALE.indigo[900],
+		waterColor: SCALE.indigo[300],
 	},
 	sewer: {
 		ambientColor: SCALE.parchment[600],
@@ -114,6 +124,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		lampLightColor: SCALE.parchment[300],
 		hemisphereSky: SCALE.parchment[600],
 		hemisphereGround: SCALE.ink[700],
+		waterColor: SCALE.parchment[700],
 	},
 	library: {
 		ambientColor: SCALE.parchment[300],
@@ -125,6 +136,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		lampLightColor: SCALE.amber[100],
 		hemisphereSky: SCALE.amber[200],
 		hemisphereGround: SCALE.amber[900],
+		waterColor: SCALE.amber[700],
 	},
 };
 

@@ -1,7 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import type { MapSector } from "../../engine";
 
 /**
@@ -19,7 +18,7 @@ import type { MapSector } from "../../engine";
  * re-render of every sector. Per-water-sector component scoping
  * isolates the cost.
  */
-export function WaterSurface({ sector }: { sector: MapSector }) {
+export function WaterSurface({ sector, color }: { sector: MapSector; color: string }) {
 	const shape = useMemo(() => {
 		return new THREE.Shape(sector.vertices.map((v) => new THREE.Vector2(v.x, v.y)));
 	}, [sector.vertices]);
@@ -68,8 +67,8 @@ export function WaterSurface({ sector }: { sector: MapSector }) {
 			<meshStandardMaterial
 				ref={materialRef}
 				map={tex}
-				color={OBJEXOOM_PALETTE.indigo}
-				emissive={OBJEXOOM_PALETTE.indigo}
+				color={color}
+				emissive={color}
 				emissiveIntensity={0.15}
 				roughness={0.25}
 				transparent

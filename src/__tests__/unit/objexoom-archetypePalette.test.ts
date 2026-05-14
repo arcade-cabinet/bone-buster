@@ -37,9 +37,11 @@ describe("E13 — archetype lighting palette", () => {
 		// E13 step-12 — hemisphere preserves canonical literals.
 		expect(corridor.hemisphereSky).toBe(OBJEXOOM_PALETTE.indigo);
 		expect(corridor.hemisphereGround).toBe(OBJEXOOM_PALETTE.ink);
+		// E13 step-13 — water preserves canonical literal.
+		expect(corridor.waterColor).toBe(OBJEXOOM_PALETTE.indigo);
 	});
 
-	it("every entry has all 9 colors set as valid hex", () => {
+	it("every entry has all 10 colors set as valid hex", () => {
 		for (const name of ARCHETYPE_NAMES) {
 			const p = ARCHETYPE_LIGHT_PALETTES[name];
 			expect(p.ambientColor).toMatch(/^#[0-9a-f]{6}$/i);
@@ -51,6 +53,7 @@ describe("E13 — archetype lighting palette", () => {
 			expect(p.lampLightColor).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(p.hemisphereSky).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(p.hemisphereGround).toMatch(/^#[0-9a-f]{6}$/i);
+			expect(p.waterColor).toMatch(/^#[0-9a-f]{6}$/i);
 		}
 	});
 

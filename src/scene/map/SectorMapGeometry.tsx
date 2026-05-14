@@ -74,7 +74,7 @@ export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 					) : null}
 					{/* E7 — animated water surface layered just above the floor
 					    when this sector is flagged `isWater: true`. */}
-					{sector.isWater ? <WaterSurface sector={sector} /> : null}
+					{sector.isWater ? <WaterSurface sector={sector} color={palette.waterColor} /> : null}
 					{/* Ceiling */}
 					<mesh rotation={[Math.PI / 2, 0, 0]} position={[0, sector.ceilingHeight, 0]}>
 						<shapeGeometry args={[shape]} />

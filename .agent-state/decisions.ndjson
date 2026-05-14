@@ -54,3 +54,4 @@
 {"ts":"2026-05-14T19:27:21.850Z","sha":"b39b49e57663","subject":"feat(scene): E13 step-9 — per-archetype lit-lamp pointLight color","decision":null,"why":null,"resolves":["directive Phase 11 E13 step-9."],"overrides":[]}
 {"ts":"2026-05-14T19:29:55.658Z","sha":"f711b6ee4fcb","subject":"feat(engine): E13 step-10 — per-archetype enemy-count multiplier","decision":null,"why":null,"resolves":["directive Phase 11 E13 step-10."],"overrides":[]}
 {"ts":"2026-05-14T19:31:50.064Z","sha":"67b25d40e5c3","subject":"feat(engine): E13 step-11 — per-archetype pickup-count multiplier","decision":null,"why":null,"resolves":["directive Phase 11 E13 step-11."],"overrides":[]}
+{"ts":"2026-05-14T19:34:22.815Z","sha":"f0b479e99f12","subject":"feat(scene): E13 step-12 — per-archetype hemisphere light","decision":null,"why":null,"resolves":["directive Phase 11 E13 step-12."],"overrides":[]}
