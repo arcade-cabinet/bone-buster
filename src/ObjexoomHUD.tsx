@@ -1,9 +1,14 @@
-"use client";
-
 import { motion } from "framer-motion";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { OBJEXOOM_PALETTE } from "./constants";
+import {
+	FONT_FAMILY,
+	FONT_WEIGHT,
+	LETTER_SPACING,
+	OBJEXOOM_PALETTE,
+	ROLE,
+	SCALE,
+} from "./design-tokens";
 import type { GameState } from "./ObjexoomShell";
 import { LEVEL_LABEL, type LevelChoice } from "./settings";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "./weapons";
@@ -39,8 +44,8 @@ export function ObjexoomHUD({
 				position: "absolute",
 				inset: 0,
 				pointerEvents: "none",
-				fontFamily: '"Inter", system-ui, sans-serif',
-				color: OBJEXOOM_PALETTE.parchment,
+				fontFamily: FONT_FAMILY.body,
+				color: ROLE.textPrimary,
 			}}
 		>
 			<div style={cornerStyle("top-left")}>
@@ -50,12 +55,13 @@ export function ObjexoomHUD({
 					<div
 						data-testid="objexoom-level"
 						style={{
+							fontFamily: FONT_FAMILY.display,
 							fontSize: 13,
-							fontWeight: 700,
-							letterSpacing: "0.18em",
-							color: OBJEXOOM_PALETTE.violet,
+							fontWeight: FONT_WEIGHT.regular,
+							letterSpacing: LETTER_SPACING.hudLabel,
+							color: ROLE.accentPrimary,
 							marginBottom: 8,
-							textShadow: `0 0 10px ${OBJEXOOM_PALETTE.violet}66`,
+							textShadow: `0 0 10px ${ROLE.accentPrimary}66`,
 						}}
 					>
 						{LEVEL_LABEL[level]}
@@ -84,7 +90,12 @@ export function ObjexoomHUD({
 				<div style={hudLabelStyle}>KILLS</div>
 				<motion.div
 					data-testid="objexoom-kills"
-					style={{ fontSize: 22, fontWeight: 700 }}
+					style={{
+						fontFamily: FONT_FAMILY.display,
+						fontSize: 24,
+						fontWeight: FONT_WEIGHT.regular,
+						letterSpacing: LETTER_SPACING.display,
+					}}
 					key={state.kills}
 					initial={{ scale: 1.2 }}
 					animate={{ scale: 1 }}
@@ -97,8 +108,8 @@ export function ObjexoomHUD({
 					style={{
 						marginTop: 6,
 						fontSize: 11,
-						letterSpacing: "0.18em",
-						color: state.hasKey ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.parchment,
+						letterSpacing: LETTER_SPACING.hudLabel,
+						color: state.hasKey ? ROLE.actionKey : ROLE.textPrimary,
 					}}
 				>
 					{state.hasKey ? "KEY ACQUIRED" : "FIND THE KEY"}
@@ -116,7 +127,7 @@ export function ObjexoomHUD({
 					gap: 8,
 					alignItems: "center",
 					padding: "6px 10px",
-					background: "rgba(6, 9, 18, 0.55)",
+					background: ROLE.bgPanelAlpha,
 					borderRadius: 14,
 					pointerEvents: touchMode ? "auto" : "none",
 				}}
@@ -156,12 +167,12 @@ export function ObjexoomHUD({
 					left: "50%",
 					transform: "translateX(-50%)",
 					padding: "8px 16px",
-					background: "rgba(6, 9, 18, 0.65)",
+					background: ROLE.bgPanelAlpha,
 					borderRadius: 12,
-					fontFamily: '"Poppins", system-ui, sans-serif',
-					fontWeight: 700,
+					fontFamily: FONT_FAMILY.display,
+					fontWeight: FONT_WEIGHT.regular,
 					fontSize: 22,
-					letterSpacing: "0.05em",
+					letterSpacing: LETTER_SPACING.display,
 					color: currentSpec.muzzleColor,
 				}}
 			>
@@ -216,7 +227,52 @@ export function ObjexoomHUD({
 					)}
 				</div>
 			)}
+			<AdaptiveResolutionReadout />
 		</section>
+	);
+}
+
+// E12/PA16 — only mounts when ?objexoomDebug is in the URL. Listens to
+// the `objexoom:fpsUpdate` event dispatched from inside the Canvas and
+// renders a tiny FPS + DPR readout in the bottom-left corner.
+function AdaptiveResolutionReadout() {
+	const [info, setInfo] = useState<{ fps: number; pixelRatio: number } | null>(null);
+	const [enabled] = useState(
+		() =>
+			typeof window !== "undefined" &&
+			new URLSearchParams(window.location.search).has("objexoomDebug"),
+	);
+
+	useEffect(() => {
+		if (!enabled) return;
+		const onFps = (event: Event) => {
+			setInfo((event as CustomEvent<{ fps: number; pixelRatio: number }>).detail);
+		};
+		window.addEventListener("objexoom:fpsUpdate", onFps);
+		return () => window.removeEventListener("objexoom:fpsUpdate", onFps);
+	}, [enabled]);
+
+	if (!enabled || !info) return null;
+	return (
+		<div
+			data-testid="objexoom-fps-readout"
+			style={{
+				position: "absolute",
+				left: 12,
+				bottom: 12,
+				fontFamily: FONT_FAMILY.body,
+				fontSize: 11,
+				letterSpacing: LETTER_SPACING.hudLabel,
+				color: ROLE.accentPrimary,
+				background: `${OBJEXOOM_PALETTE.ink}cc`,
+				padding: "4px 8px",
+				borderRadius: 4,
+				border: `1px solid ${ROLE.accentPrimary}55`,
+				pointerEvents: "none",
+			}}
+		>
+			FPS {info.fps.toFixed(0)} • DPR {info.pixelRatio.toFixed(2)}
+		</div>
 	);
 }
 
@@ -314,8 +370,8 @@ function VirtualStick({
 				width: STICK_RADIUS * 2,
 				height: STICK_RADIUS * 2,
 				borderRadius: "50%",
-				background: "rgba(6, 9, 18, 0.45)",
-				border: `1px solid ${OBJEXOOM_PALETTE.violet}55`,
+				background: ROLE.bgPanelAlpha,
+				border: `1px solid ${ROLE.accentPrimary}55`,
 				pointerEvents: "auto",
 				touchAction: "none",
 				userSelect: "none",
@@ -331,7 +387,7 @@ function VirtualStick({
 					marginLeft: -STICK_KNOB / 2,
 					marginTop: -STICK_KNOB / 2,
 					borderRadius: "50%",
-					background: `linear-gradient(135deg, ${OBJEXOOM_PALETTE.indigo}, ${OBJEXOOM_PALETTE.violet})`,
+					background: ROLE.heroGradientCool,
 					transform: `translate(${knob.x}px, ${knob.y}px)`,
 					transition: pointerId.current === null ? "transform 120ms ease-out" : "none",
 				}}
@@ -360,15 +416,15 @@ function FireButton() {
 				height: 72,
 				borderRadius: "50%",
 				border: "none",
-				background: `linear-gradient(135deg, ${OBJEXOOM_PALETTE.violet}, ${OBJEXOOM_PALETTE.amber})`,
-				color: OBJEXOOM_PALETTE.parchment,
-				fontFamily: '"Poppins", system-ui, sans-serif',
-				fontWeight: 700,
+				background: ROLE.heroGradientHot,
+				color: ROLE.textHighContrast,
+				fontFamily: FONT_FAMILY.display,
+				fontWeight: FONT_WEIGHT.regular,
 				fontSize: 14,
-				letterSpacing: "0.05em",
+				letterSpacing: LETTER_SPACING.display,
 				pointerEvents: "auto",
 				touchAction: "none",
-				boxShadow: "0 8px 24px rgba(168,85,247,0.45)",
+				boxShadow: `0 8px 24px ${ROLE.accentPrimary}73`,
 			}}
 		>
 			FIRE
@@ -439,24 +495,26 @@ const cornerStyle = (corner: "top-left" | "top-right"): CSSProperties => ({
 	left: corner === "top-left" ? 16 : undefined,
 	right: corner === "top-right" ? 16 : undefined,
 	padding: "10px 14px",
-	background: "rgba(6, 9, 18, 0.55)",
+	background: ROLE.bgPanelAlpha,
 	borderRadius: 12,
 	backdropFilter: "blur(6px)",
 	minWidth: 140,
 });
 
 const hudLabelStyle: CSSProperties = {
+	fontFamily: FONT_FAMILY.body,
 	fontSize: 10,
-	letterSpacing: "0.25em",
+	fontWeight: FONT_WEIGHT.semibold,
+	letterSpacing: LETTER_SPACING.hudLabel,
 	opacity: 0.8,
 	marginBottom: 4,
 };
 
 const hudReadoutStyle: CSSProperties = {
-	fontSize: 11,
+	fontFamily: FONT_FAMILY.display,
+	fontSize: 13,
 	marginTop: 4,
-	fontFamily: '"Poppins", system-ui, sans-serif',
-	letterSpacing: "0.1em",
+	letterSpacing: LETTER_SPACING.display,
 };
 
 const crosshairStyle: CSSProperties = {
@@ -467,8 +525,8 @@ const crosshairStyle: CSSProperties = {
 	height: 6,
 	transform: "translate(-50%, -50%)",
 	borderRadius: "50%",
-	background: OBJEXOOM_PALETTE.indigo,
-	boxShadow: `0 0 0 2px ${OBJEXOOM_PALETTE.violet}`,
+	background: ROLE.accentCool,
+	boxShadow: `0 0 0 2px ${ROLE.accentPrimary}`,
 };
 
 const hintStyle: CSSProperties = {
@@ -477,7 +535,7 @@ const hintStyle: CSSProperties = {
 	left: "50%",
 	transform: "translateX(-50%)",
 	fontSize: 11,
-	letterSpacing: "0.18em",
+	letterSpacing: LETTER_SPACING.hudLabel,
 	opacity: 0.6,
 	whiteSpace: "nowrap",
 };
@@ -487,28 +545,30 @@ const overlayStyle: CSSProperties = {
 	inset: 0,
 	display: "grid",
 	placeItems: "center",
-	background: "rgba(6, 9, 18, 0.78)",
+	// scale-step: overlay scrim wants the deepest-ink available (ink[950]) at
+	// ~78% alpha — there is no semantic ROLE for "modal scrim" yet.
+	background: `${SCALE.ink[950]}c7`,
 	pointerEvents: "auto",
 	padding: 24,
 	textAlign: "center",
 };
 
 const cardStyle: CSSProperties = {
-	background: "rgba(17, 24, 39, 0.92)",
-	border: "1px solid rgba(167, 139, 250, 0.35)",
+	background: ROLE.bgPanel,
+	border: `1px solid ${ROLE.borderSoft}`,
 	borderRadius: 16,
 	padding: 36,
-	color: OBJEXOOM_PALETTE.parchment,
+	color: ROLE.textPrimary,
 	textAlign: "center",
 };
 
 const overlayTitleStyle: CSSProperties = {
-	fontFamily: '"Poppins", system-ui, sans-serif',
-	fontWeight: 800,
-	letterSpacing: "-0.04em",
-	fontSize: "clamp(40px, 7vw, 64px)",
+	fontFamily: FONT_FAMILY.display,
+	fontWeight: FONT_WEIGHT.regular,
+	letterSpacing: LETTER_SPACING.display,
+	fontSize: "clamp(40px, 7vw, 72px)",
 	margin: 0,
-	background: `linear-gradient(135deg, ${OBJEXOOM_PALETTE.indigo}, ${OBJEXOOM_PALETTE.violet}, ${OBJEXOOM_PALETTE.amber})`,
+	background: ROLE.wordmarkGradient,
 	WebkitBackgroundClip: "text",
 	WebkitTextFillColor: "transparent",
 	lineHeight: 0.95,
@@ -518,13 +578,13 @@ function ctaButton(bg: string, primary: boolean): CSSProperties {
 	return {
 		padding: "12px 22px",
 		borderRadius: 10,
-		border: primary ? "none" : "1px solid rgba(255,255,255,0.2)",
+		border: primary ? "none" : `1px solid ${ROLE.borderSoft}`,
 		background: bg,
-		color: primary ? OBJEXOOM_PALETTE.ink : OBJEXOOM_PALETTE.parchment,
-		fontFamily: '"Poppins", system-ui, sans-serif',
-		fontWeight: 700,
-		fontSize: 13,
-		letterSpacing: "0.18em",
+		color: primary ? OBJEXOOM_PALETTE.ink : ROLE.textPrimary,
+		fontFamily: FONT_FAMILY.display,
+		fontWeight: FONT_WEIGHT.regular,
+		fontSize: 14,
+		letterSpacing: LETTER_SPACING.hudLabel,
 		cursor: "pointer",
 	};
 }
@@ -533,16 +593,20 @@ function weaponChipStyle(active: boolean, owned: boolean, accent: string): CSSPr
 	return {
 		padding: "6px 10px",
 		borderRadius: 10,
+		fontFamily: FONT_FAMILY.body,
 		fontSize: 11,
-		fontWeight: 700,
-		letterSpacing: "0.05em",
+		fontWeight: FONT_WEIGHT.semibold,
+		letterSpacing: LETTER_SPACING.hudChip,
 		border: active ? `1px solid ${accent}` : "1px solid transparent",
 		background: active
 			? `${accent}22`
 			: owned
-				? "rgba(255,255,255,0.05)"
-				: "rgba(255,255,255,0.02)",
-		color: owned ? OBJEXOOM_PALETTE.parchment : `${OBJEXOOM_PALETTE.parchment}55`,
+				? // scale-step: weapon-row backgrounds use highest-contrast
+					// parchment (50) at tiny alpha (0d/05) for a subtle off-state
+					// fill — no semantic ROLE captures "weapon-slot row tint".
+					`${SCALE.parchment[50]}0d`
+				: `${SCALE.parchment[50]}05`,
+		color: owned ? ROLE.textPrimary : ROLE.textMuted,
 		opacity: owned ? 1 : 0.5,
 		cursor: owned ? "pointer" : "not-allowed",
 		pointerEvents: "auto",
@@ -581,10 +645,10 @@ function HpPipRow({ hp, maxHp }: { hp: number; maxHp: number }) {
 							width: 14,
 							height: 14,
 							borderRadius: 3,
-							background: lit ? OBJEXOOM_PALETTE.amber : "rgba(167,139,250,0.18)",
+							background: lit ? ROLE.actionKey : `${SCALE.violet[300]}2e`,
 							boxShadow: lit
-								? `0 0 6px ${OBJEXOOM_PALETTE.amber}aa`
-								: "inset 0 0 0 1px rgba(255,255,255,0.06)",
+								? `0 0 6px ${ROLE.actionKey}aa`
+								: `inset 0 0 0 1px ${SCALE.parchment[50]}0f`,
 						}}
 					/>
 				);
@@ -595,11 +659,12 @@ function HpPipRow({ hp, maxHp }: { hp: number; maxHp: number }) {
 
 const lowHealthWarningStyle: CSSProperties = {
 	marginTop: 4,
+	fontFamily: FONT_FAMILY.display,
 	fontSize: 11,
-	fontWeight: 700,
-	letterSpacing: "0.1em",
-	color: "#dc2626",
-	textShadow: "0 0 6px rgba(220, 38, 38, 0.45)",
+	fontWeight: FONT_WEIGHT.regular,
+	letterSpacing: LETTER_SPACING.hudLabel,
+	color: ROLE.actionHurt,
+	textShadow: `0 0 6px ${ROLE.actionDamage}73`,
 };
 
 // M4 — "Click to engage" prompt. Watches document.pointerLockElement
@@ -639,14 +704,15 @@ function ClickToEngagePrompt() {
 				transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
 				style={{
 					padding: "14px 24px",
-					background: "rgba(6, 9, 18, 0.7)",
+					background: `${SCALE.ink[950]}b3`,
 					borderRadius: 14,
-					border: `1px solid ${OBJEXOOM_PALETTE.violet}55`,
-					fontWeight: 700,
-					letterSpacing: "0.18em",
+					border: `1px solid ${ROLE.accentPrimary}55`,
+					fontFamily: FONT_FAMILY.display,
+					fontWeight: FONT_WEIGHT.regular,
+					letterSpacing: LETTER_SPACING.hudLabel,
 					fontSize: 13,
-					color: OBJEXOOM_PALETTE.parchment,
-					textShadow: `0 0 8px ${OBJEXOOM_PALETTE.violet}88`,
+					color: ROLE.textPrimary,
+					textShadow: `0 0 8px ${ROLE.accentPrimary}88`,
 				}}
 			>
 				CLICK TO ENGAGE — ESC RELEASES MOUSE

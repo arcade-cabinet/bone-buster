@@ -109,7 +109,8 @@ test.beforeAll(async () => {
 });
 
 test.describe("OBJEXOOM screenshots (N1)", () => {
-	test("01 landing — DOOM menu", async (_fixtures, testInfo) => {
+	test("01 landing — DOOM menu", async () => {
+		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -122,7 +123,8 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("02 ingame — flashlight ON (full lighting)", async (_fixtures, testInfo) => {
+	test("02 ingame — flashlight ON (full lighting)", async () => {
+		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -143,7 +145,8 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("03 ingame — flashlight OFF (dark mode)", async (_fixtures, testInfo) => {
+	test("03 ingame — flashlight OFF (dark mode)", async () => {
+		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -160,7 +163,8 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("04 going-back strobe — H8/J5", async (_fixtures, testInfo) => {
+	test("04 going-back strobe — H8/J5", async () => {
+		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -206,7 +210,8 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("05 mission complete — full run cleared", async (_fixtures, testInfo) => {
+	test("05 mission complete — full run cleared", async () => {
+		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -218,25 +223,24 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
+			// Clear N levels: each level needs killAllEnemies + collectKey
+			// + triggerWin (flips phase to going_back) + teleport-to-spawn
+			// (engine fires onReachSpawn → status="transitioning" →
+			// next level mounts). One full cycle per iteration.
 			for (let i = 0; i < 6; i += 1) {
 				await page.evaluate(() => {
-					const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
+					const hooks = (window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom;
+					if (!hooks) return;
 					hooks.killAllEnemies();
 					hooks.collectKey();
 					hooks.triggerWin();
+					const state = hooks.getState() as { playerSpawn?: { x: number; y: number } };
+					if (state.playerSpawn) {
+						hooks.teleport(state.playerSpawn.x, state.playerSpawn.y, 0);
+					}
 				});
 				await page.waitForTimeout(900);
 			}
-			await page.evaluate(() => {
-				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
-				const state = hooks.getState() as {
-					playerSpawn?: { x: number; y: number };
-				};
-				if (state.playerSpawn) {
-					hooks.teleport(state.playerSpawn.x, state.playerSpawn.y, 0);
-				}
-			});
-			await page.waitForTimeout(800);
 			await captureViaCDP(page, `${OUT_DIR}/mission-complete.png`);
 		});
 	});

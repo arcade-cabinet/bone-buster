@@ -1,0 +1,105 @@
+/* OBJEXOOM CSS custom properties — kept in sync with
+   `src/design-tokens/`. Reference these from any non-React style
+   (e.g. `index.html` <style>, CSS modules, third-party CSS overrides).
+
+   If you change a token value in src/design-tokens/, run
+   `node scripts/sync-css-tokens.mjs` to regenerate this file.
+   (The script is opt-in — direct hex edits are fine, the canonical
+   source is still the TS file.) */
+
+:root {
+	/* Scales — ink */
+	--obx-ink-50: #e7e9f3;
+	--obx-ink-100: #c6cae0;
+	--obx-ink-200: #959cc2;
+	--obx-ink-300: #646da3;
+	--obx-ink-400: #3f4880;
+	--obx-ink-500: #252e5e;
+	--obx-ink-600: #171f47;
+	--obx-ink-700: #0e1432;
+	--obx-ink-800: #080c20;
+	--obx-ink-900: #060912;
+	--obx-ink-950: #03050b;
+
+	/* Scales — indigo (Objexiv lineage chrome accent) */
+	--obx-indigo-300: #7c89f8;
+	--obx-indigo-400: #6172f3;
+	--obx-indigo-500: #4f52e7;
+	--obx-indigo-700: #372cad;
+
+	/* Scales — violet (Objexiv lineage hero accent) */
+	--obx-violet-300: #b681fb;
+	--obx-violet-400: #a855f7;
+	--obx-violet-500: #9333ea;
+
+	/* Scales — amber (pickups, key, fire) */
+	--obx-amber-300: #fab436;
+	--obx-amber-400: #f59e0b;
+
+	/* Scales — blood (NEW: damage, low-hp, enemy emissive) */
+	--obx-blood-300: #ef5e5e;
+	--obx-blood-500: #b91c1c;
+	--obx-blood-600: #991b1b;
+
+	/* Scales — ember (NEW: lava + going-back-strobe) */
+	--obx-ember-400: #ff7518;
+	--obx-ember-500: #e5570d;
+
+	/* Scales — parchment (text) */
+	--obx-parchment-50: #fafbff;
+	--obx-parchment-100: #f3eedd;
+	--obx-parchment-300: #c8c2b0;
+	--obx-parchment-500: #878270;
+
+	/* Roles */
+	--obx-bg-void: var(--obx-ink-950);
+	--obx-bg-world: var(--obx-ink-900);
+	--obx-bg-wall: var(--obx-ink-700);
+	--obx-bg-panel: var(--obx-ink-800);
+	--obx-bg-panel-alpha: rgba(8, 12, 32, 0.78);
+
+	--obx-text-primary: var(--obx-parchment-100);
+	--obx-text-secondary: var(--obx-parchment-300);
+	--obx-text-muted: var(--obx-parchment-500);
+
+	--obx-accent-cool: var(--obx-indigo-400);
+	--obx-accent-primary: var(--obx-violet-400);
+
+	--obx-action-fire: var(--obx-blood-500);
+	--obx-action-damage: var(--obx-blood-600);
+	--obx-action-hurt: var(--obx-blood-300);
+	--obx-action-key: var(--obx-amber-400);
+	--obx-action-pickup: var(--obx-amber-300);
+	--obx-action-lava: var(--obx-ember-400);
+	--obx-action-going-back: var(--obx-ember-500);
+	--obx-action-win: var(--obx-indigo-300);
+
+	--obx-border-soft: rgba(124, 137, 248, 0.18);
+	--obx-border-hard: var(--obx-indigo-700);
+
+	/* Gradients */
+	--obx-grad-hero: linear-gradient(135deg, #6172f3 0%, #a855f7 50%, #f59e0b 100%);
+	--obx-grad-cool: linear-gradient(135deg, #6172f3 0%, #a855f7 100%);
+	--obx-grad-hot: linear-gradient(135deg, #a855f7 0%, #f59e0b 60%, #dc2626 100%);
+	--obx-grad-wordmark: linear-gradient(95deg, #7c89f8 0%, #b681fb 35%, #f59e0b 75%, #ff7518 100%);
+
+	/* Typography */
+	--obx-font-body:
+		"Rajdhani", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	--obx-font-display: "Black Ops One", "Rajdhani", ui-sans-serif, system-ui, sans-serif;
+	--obx-font-mono: ui-monospace, "Menlo", "Monaco", "Consolas", monospace;
+
+	/* Elevation / glow */
+	--obx-glow-wordmark: 0 0 24px rgba(124, 137, 248, 0.25), 0 0 48px rgba(182, 129, 251, 0.18);
+	--obx-glow-hud-card: 0 8px 24px rgba(6, 9, 18, 0.55);
+	--obx-glow-damage: 0 0 0 4px rgba(220, 38, 38, 0.45), 0 0 24px rgba(220, 38, 38, 0.6);
+	--obx-glow-pickup: 0 0 16px rgba(245, 158, 11, 0.6);
+	--obx-glow-strobe: 0 0 32px rgba(255, 117, 24, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	/* All the dread-pacing transitions snap to flow under reduced motion. */
+	:root {
+		--obx-strobe-min: 0.7;
+	}
+}

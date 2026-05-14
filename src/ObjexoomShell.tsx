@@ -1,14 +1,14 @@
-"use client";
-
 import { Canvas } from "@react-three/fiber";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildMap } from "./buildMap";
-import { OBJEXOOM_PALETTE, PLAYER_MAX_HP } from "./constants";
+import { PLAYER_MAX_HP } from "./constants";
+import { ROLE, SCALE } from "./design-tokens";
 import type { ObjexoomMap, PickupKind } from "./engine";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
+import { openRunHistory, type RunHistory } from "./runHistory";
 import { advanceLevel, makeInitialRunStats, type RunStats, runStatsReducer } from "./runStats";
 import { DEFAULT_SETTINGS, DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 import {
@@ -88,9 +88,20 @@ const isCoarsePointer = () =>
 	window.matchMedia("(pointer: coarse)").matches;
 
 const baseAmmo = (): Record<WeaponId, number> => ({
+	melee: WEAPONS.melee.startingAmmo,
 	pistol: WEAPONS.pistol.startingAmmo,
 	chaingun: WEAPONS.chaingun.startingAmmo,
 	shotgun: WEAPONS.shotgun.startingAmmo,
+});
+
+// E1 — every fresh run starts with the blade + pistol; chaingun and
+// shotgun are world pickups. Centralized so adding a weapon to the
+// default loadout is a one-line change.
+const baseOwnedWeapons = (): Record<WeaponId, boolean> => ({
+	melee: true,
+	pistol: true,
+	chaingun: false,
+	shotgun: false,
 });
 
 const ammoIncrement: Record<
@@ -166,7 +177,7 @@ export function ObjexoomShell() {
 		hasFlashlight: false,
 		weapon: "pistol",
 		ammo: baseAmmo(),
-		ownedWeapons: { pistol: true, chaingun: false, shotgun: false },
+		ownedWeapons: baseOwnedWeapons(),
 		damageFlashAt: 0,
 		run: makeInitialRunStats(0),
 		phase: "out",
@@ -181,10 +192,10 @@ export function ObjexoomShell() {
 	const triggerFadeRef = useRef<(kind: FadeKind, intensity?: number) => void>(() => undefined);
 	const triggerFade = useCallback((kind: FadeKind, intensity = 1) => {
 		const colorByKind: Record<FadeKind, string> = {
-			damage: "rgba(220, 38, 38, 1)",
-			key: "rgba(34, 197, 94, 1)",
-			flash: "rgba(229, 231, 235, 1)",
-			win: "rgba(255, 255, 255, 1)",
+			damage: ROLE.actionDamage,
+			key: SCALE.amber[400],
+			flash: SCALE.parchment[50],
+			win: SCALE.parchment[50],
 		};
 		const peakByKind: Record<FadeKind, number> = {
 			damage: 0.55,
@@ -382,9 +393,9 @@ export function ObjexoomShell() {
 			hasFlashlight: false,
 			weapon: "pistol",
 			ammo: baseAmmo(),
-			ownedWeapons: { pistol: true, chaingun: false, shotgun: false },
+			ownedWeapons: baseOwnedWeapons(),
 			damageFlashAt: 0,
-			run: makeInitialRunStats(performance.now()),
+			run: makeInitialRunStats(Date.now()),
 			phase: "out",
 		});
 	}, [settings.soundEnabled, maxHp, map.enemySpawns.length]);
@@ -478,6 +489,37 @@ export function ObjexoomShell() {
 		return () => window.removeEventListener("objexoom:fellToDeath", onFellToDeath);
 	}, []);
 
+	// E9 — persist run history on terminal status transitions. The handle is
+	// lazily opened once per shell lifetime; sql.js init is a few hundred ms
+	// of WASM compile so we don't want it on every record. The recorded-ref
+	// gate keeps a single status flip from inserting twice if React 19's
+	// strict-mode double-invokes the effect.
+	const runHistoryRef = useRef<RunHistory | null>(null);
+	const recordedRunRef = useRef<number>(0);
+	useEffect(() => {
+		if (state.status !== "dead" && state.status !== "won") return;
+		if (recordedRunRef.current === state.run.runStartAt) return;
+		recordedRunRef.current = state.run.runStartAt;
+		void (async () => {
+			try {
+				if (!runHistoryRef.current) runHistoryRef.current = await openRunHistory();
+				runHistoryRef.current.insert(
+					{
+						startedAt: state.run.runStartAt,
+						levelsCleared: state.run.runLevelsCleared,
+						totalKills: state.run.runTotalKills,
+						totalDamageTaken: state.run.runTotalDamageTaken,
+						level: settings.level,
+						outcome: state.status === "won" ? "won" : "died",
+					},
+					Date.now(),
+				);
+			} catch {
+				// run-history is a nice-to-have; never block gameplay on it
+			}
+		})();
+	}, [state.status, state.run, settings.level]);
+
 	// B1/B4 — when a level is cleared on a chained run, hold for
 	// TRANSITION_HOLD_MS to let the fade play, then advance settings.level
 	// (or re-roll the seed for procedural mode) and flip back to "playing"
@@ -502,7 +544,7 @@ export function ObjexoomShell() {
 				hasFlashlight: false,
 				weapon: "pistol",
 				ammo: baseAmmo(),
-				ownedWeapons: { pistol: true, chaingun: false, shotgun: false },
+				ownedWeapons: baseOwnedWeapons(),
 				damageFlashAt: 0,
 			}));
 		}, TRANSITION_HOLD_MS);
@@ -513,20 +555,36 @@ export function ObjexoomShell() {
 	// present AND not in production. The contract is the only stable way to
 	// drive the game from Playwright — pointer-lock + canvas-keyed input are
 	// hostile to scripted automation.
+	// Mirror state + map into refs so the debug-hook installer below can
+	// install ONCE per game session instead of re-installing on every
+	// state/map change. Re-install caused a tiny window where the global
+	// was undefined; e2e loops calling start → triggerWin → next-level
+	// six times in a row hit that window often enough to flake.
+	const stateRef = useRef(state);
+	stateRef.current = state;
+	const mapRef = useRef(map);
+	mapRef.current = map;
+	const onStartGameRef = useRef(onStartGame);
+	onStartGameRef.current = onStartGame;
+
 	useEffect(() => {
 		if (!debugHooksEnabled()) return;
 		window.__objexoom = {
-			getState: () => ({
-				...state,
-				mapKind: map.kind,
-				playerSpawn: map.playerSpawn,
-				keyPosition: map.keyPosition,
-				exitPosition: map.exitPosition,
-				enemySpawns: map.enemySpawns,
-				totalEnemies: state.totalEnemies,
-			}),
+			getState: () => {
+				const s = stateRef.current;
+				const m = mapRef.current;
+				return {
+					...s,
+					mapKind: m.kind,
+					playerSpawn: m.playerSpawn,
+					keyPosition: m.keyPosition,
+					exitPosition: m.exitPosition,
+					enemySpawns: m.enemySpawns,
+					totalEnemies: s.totalEnemies,
+				};
+			},
 			start: () => {
-				onStartGame();
+				onStartGameRef.current();
 			},
 			teleport: (x, y, yawRad) => {
 				window.dispatchEvent(
@@ -554,7 +612,7 @@ export function ObjexoomShell() {
 		return () => {
 			delete window.__objexoom;
 		};
-	}, [state, map, onStartGame]);
+	}, []);
 
 	const onSelectWeapon = useCallback(
 		(weapon: WeaponId) => {
@@ -627,7 +685,7 @@ export function ObjexoomShell() {
 				position: "fixed",
 				inset: 0,
 				zIndex: 2000,
-				background: `radial-gradient(circle at 50% 30%, ${OBJEXOOM_PALETTE.ink} 0%, #000 100%)`,
+				background: `radial-gradient(circle at 50% 30%, ${ROLE.bgWorld} 0%, ${SCALE.ink[950]} 100%)`,
 				display: "grid",
 				placeItems: "center",
 				padding:
@@ -645,8 +703,8 @@ export function ObjexoomShell() {
 					overflow: "hidden",
 					boxShadow: touchMode
 						? "none"
-						: "0 30px 80px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(167,139,250,0.18)",
-					background: OBJEXOOM_PALETTE.ink,
+						: `0 30px 80px -20px ${SCALE.ink[950]}b3, 0 0 0 1px ${ROLE.borderSoft}`,
+					background: ROLE.bgWorld,
 				}}
 			>
 				<AnimatePresence mode="wait">

@@ -4,19 +4,31 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     groups:
-      minor-and-patch:
+      # Roll every non-major bump into one PR per ecosystem per week.
+      # Keeps the PR queue short — review one big diff instead of N
+      # one-line bumps.
+      non-major:
         update-types:
           - minor
           - patch
-      react-three:
-        patterns:
-          - "@react-three/*"
-          - "three"
-          - "three-stdlib"
-          - "postprocessing"
+      # Majors land as one batched PR too; the diff is bigger so it
+      # gets a more careful review pass, but it stays a single ticket.
+      major:
+        update-types:
+          - major
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      non-major:
+        update-types:
+          - minor
+          - patch
+      major:
+        update-types:
+          - major

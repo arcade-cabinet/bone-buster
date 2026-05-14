@@ -1,9 +1,7 @@
-"use client";
-
 import { motion, useReducedMotion } from "framer-motion";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
-import { OBJEXOOM_PALETTE } from "./constants";
+import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "./design-tokens";
 import {
 	DIFFICULTY_BLURB,
 	DIFFICULTY_LABEL,
@@ -414,9 +412,9 @@ const rootStyle: CSSProperties = {
 	inset: 0,
 	display: "grid",
 	gridTemplateRows: "auto 1fr auto",
-	color: OBJEXOOM_PALETTE.parchment,
-	fontFamily: '"Inter", system-ui, sans-serif',
-	background: OBJEXOOM_PALETTE.ink,
+	color: ROLE.textPrimary,
+	fontFamily: FONT_FAMILY.body,
+	background: ROLE.bgWorld,
 	overflow: "hidden",
 };
 
@@ -428,22 +426,22 @@ const headerStyle: CSSProperties = {
 
 const eyebrowStyle: CSSProperties = {
 	fontSize: 11,
-	letterSpacing: "0.25em",
-	color: OBJEXOOM_PALETTE.amber,
+	letterSpacing: LETTER_SPACING.hudLabel,
+	color: ROLE.actionKey,
 	marginBottom: 8,
 };
 
 const titleStyle: CSSProperties = {
 	margin: 0,
-	fontFamily: '"Poppins", system-ui, sans-serif',
-	fontWeight: 800,
-	letterSpacing: "-0.06em",
+	fontFamily: FONT_FAMILY.display,
+	fontWeight: FONT_WEIGHT.regular,
+	letterSpacing: LETTER_SPACING.display,
 	fontSize: "clamp(56px, 14vw, 144px)",
 	lineHeight: 0.9,
-	background: `linear-gradient(135deg, ${OBJEXOOM_PALETTE.indigo}, ${OBJEXOOM_PALETTE.violet} 55%, ${OBJEXOOM_PALETTE.amber})`,
+	background: ROLE.wordmarkGradient,
 	WebkitBackgroundClip: "text",
 	WebkitTextFillColor: "transparent",
-	textShadow: `0 4px 48px ${OBJEXOOM_PALETTE.violet}33`,
+	textShadow: `0 4px 48px ${ROLE.accentPrimary}33`,
 };
 
 const tagStyle: CSSProperties = {
@@ -475,9 +473,10 @@ const paneStyle: CSSProperties = {
 };
 
 const paneHeadingStyle: CSSProperties = {
-	fontSize: 12,
-	letterSpacing: "0.3em",
-	color: OBJEXOOM_PALETTE.amber,
+	fontFamily: FONT_FAMILY.display,
+	fontSize: 13,
+	letterSpacing: LETTER_SPACING.display,
+	color: ROLE.actionKey,
 	textTransform: "uppercase",
 	margin: "0 0 8px 4px",
 };
@@ -502,11 +501,11 @@ function menuItemStyle(primary?: boolean): CSSProperties {
 		padding: "12px 16px",
 		background: "transparent",
 		border: "none",
-		color: primary ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.parchment,
-		fontFamily: '"Poppins", system-ui, sans-serif',
-		fontWeight: 700,
-		fontSize: 18,
-		letterSpacing: "0.15em",
+		color: primary ? ROLE.actionKey : ROLE.textPrimary,
+		fontFamily: FONT_FAMILY.display,
+		fontWeight: FONT_WEIGHT.regular,
+		fontSize: 22,
+		letterSpacing: LETTER_SPACING.display,
 		cursor: "pointer",
 		textAlign: "left",
 		borderRadius: 4,
@@ -515,8 +514,9 @@ function menuItemStyle(primary?: boolean): CSSProperties {
 
 function menuItemArrowStyle(primary?: boolean): CSSProperties {
 	return {
+		fontFamily: FONT_FAMILY.display,
 		fontSize: 22,
-		color: primary ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.violet,
+		color: primary ? ROLE.actionKey : ROLE.accentPrimary,
 		width: 16,
 	};
 }
@@ -527,10 +527,10 @@ function difficultyChip(active: boolean): CSSProperties {
 		textAlign: "left",
 		padding: "10px 14px",
 		borderRadius: 8,
-		border: active ? `1px solid ${OBJEXOOM_PALETTE.amber}` : "1px solid rgba(255,255,255,0.08)",
-		background: active ? `${OBJEXOOM_PALETTE.amber}1a` : "rgba(255,255,255,0.03)",
-		color: OBJEXOOM_PALETTE.parchment,
-		fontFamily: '"Inter", system-ui, sans-serif',
+		border: active ? `1px solid ${ROLE.actionKey}` : `1px solid ${SCALE.parchment[50]}14`,
+		background: active ? `${ROLE.actionKey}1a` : `${SCALE.parchment[50]}08`,
+		color: ROLE.textPrimary,
+		fontFamily: FONT_FAMILY.body,
 		cursor: "pointer",
 	};
 }
@@ -539,13 +539,13 @@ function levelChip(active: boolean): CSSProperties {
 	return {
 		padding: "16px 12px",
 		borderRadius: 8,
-		border: active ? `1px solid ${OBJEXOOM_PALETTE.violet}` : "1px solid rgba(255,255,255,0.08)",
-		background: active ? `${OBJEXOOM_PALETTE.violet}22` : "rgba(255,255,255,0.03)",
-		color: OBJEXOOM_PALETTE.parchment,
-		fontFamily: '"Poppins", system-ui, sans-serif',
-		fontWeight: 700,
-		fontSize: 14,
-		letterSpacing: "0.15em",
+		border: active ? `1px solid ${ROLE.accentPrimary}` : `1px solid ${SCALE.parchment[50]}14`,
+		background: active ? `${ROLE.accentPrimary}22` : `${SCALE.parchment[50]}08`,
+		color: ROLE.textPrimary,
+		fontFamily: FONT_FAMILY.display,
+		fontWeight: FONT_WEIGHT.regular,
+		fontSize: 15,
+		letterSpacing: LETTER_SPACING.display,
 		cursor: "pointer",
 	};
 }
@@ -557,27 +557,29 @@ const optionRowStyle: CSSProperties = {
 	gap: 12,
 	padding: "10px 12px",
 	borderRadius: 8,
-	background: "rgba(255,255,255,0.03)",
-	border: "1px solid rgba(255,255,255,0.06)",
+	background: `${SCALE.parchment[50]}08`,
+	border: `1px solid ${SCALE.parchment[50]}0f`,
 };
 
 const optionLabelStyle: CSSProperties = {
 	fontSize: 12,
-	letterSpacing: "0.18em",
+	letterSpacing: LETTER_SPACING.hudLabel,
 	textTransform: "uppercase",
 	opacity: 0.85,
 };
 
 const optionValueStyle: CSSProperties = {
-	fontSize: 12,
-	opacity: 0.75,
+	fontFamily: FONT_FAMILY.display,
+	fontSize: 13,
+	letterSpacing: LETTER_SPACING.display,
+	opacity: 0.85,
 	minWidth: 32,
 	textAlign: "right",
 };
 
 const sliderStyle: CSSProperties = {
 	width: "min(220px, 50vw)",
-	accentColor: OBJEXOOM_PALETTE.violet,
+	accentColor: ROLE.accentPrimary,
 };
 
 function toggleStyle(on: boolean): CSSProperties {
@@ -585,12 +587,12 @@ function toggleStyle(on: boolean): CSSProperties {
 		padding: "4px 14px",
 		borderRadius: 6,
 		border: "none",
-		background: on ? OBJEXOOM_PALETTE.violet : "rgba(255,255,255,0.08)",
-		color: OBJEXOOM_PALETTE.parchment,
-		fontFamily: '"Poppins", system-ui, sans-serif',
-		fontWeight: 700,
+		background: on ? ROLE.accentPrimary : `${SCALE.parchment[50]}14`,
+		color: ROLE.textPrimary,
+		fontFamily: FONT_FAMILY.display,
+		fontWeight: FONT_WEIGHT.regular,
 		fontSize: 12,
-		letterSpacing: "0.18em",
+		letterSpacing: LETTER_SPACING.hudLabel,
 		cursor: "pointer",
 	};
 }
@@ -604,11 +606,11 @@ const helpGridStyle: CSSProperties = {
 };
 
 const helpActionStyle: CSSProperties = {
-	fontFamily: '"Poppins", system-ui, sans-serif',
-	fontWeight: 700,
-	letterSpacing: "0.15em",
-	color: OBJEXOOM_PALETTE.amber,
-	fontSize: 12,
+	fontFamily: FONT_FAMILY.display,
+	fontWeight: FONT_WEIGHT.regular,
+	letterSpacing: LETTER_SPACING.display,
+	color: ROLE.actionKey,
+	fontSize: 13,
 };
 
 const helpDetailStyle: CSSProperties = {
@@ -621,7 +623,7 @@ const helpDetailStyle: CSSProperties = {
 const objectiveStyle: CSSProperties = {
 	fontSize: 13,
 	lineHeight: 1.5,
-	color: `${OBJEXOOM_PALETTE.parchment}cc`,
+	color: ROLE.textSecondary,
 	padding: "0 4px",
 };
 
@@ -632,8 +634,8 @@ const footerStyle: CSSProperties = {
 	alignItems: "center",
 	padding: "12px 16px max(12px, env(safe-area-inset-bottom))",
 	fontSize: 11,
-	letterSpacing: "0.18em",
-	color: `${OBJEXOOM_PALETTE.parchment}66`,
+	letterSpacing: LETTER_SPACING.hudLabel,
+	color: ROLE.textMuted,
 	zIndex: 1,
 };
 
@@ -647,15 +649,15 @@ const backdropStyle: CSSProperties = {
 const backdropGridStyle: CSSProperties = {
 	position: "absolute",
 	inset: 0,
-	backgroundImage: `linear-gradient(rgba(167,139,250,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(167,139,250,0.05) 1px, transparent 1px)`,
+	backgroundImage: `linear-gradient(${SCALE.violet[300]}0d 1px, transparent 1px), linear-gradient(90deg, ${SCALE.violet[300]}0d 1px, transparent 1px)`,
 	backgroundSize: "40px 40px",
-	maskImage: "radial-gradient(ellipse at 50% 30%, black 40%, transparent 75%)",
+	maskImage: `radial-gradient(ellipse at 50% 30%, ${SCALE.ink[950]} 40%, transparent 75%)`,
 };
 
 const backdropGlowStyle: CSSProperties = {
 	position: "absolute",
 	inset: 0,
-	background: `radial-gradient(ellipse at 50% 30%, ${OBJEXOOM_PALETTE.violet}22, transparent 65%), radial-gradient(ellipse at 80% 80%, ${OBJEXOOM_PALETTE.amber}11, transparent 60%)`,
+	background: `radial-gradient(ellipse at 50% 30%, ${ROLE.accentPrimary}22, transparent 65%), radial-gradient(ellipse at 80% 80%, ${ROLE.actionKey}11, transparent 60%)`,
 };
 
 // K6 — audio loading indicator. After the player triggers a START

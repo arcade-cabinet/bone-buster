@@ -1,11 +1,11 @@
-"use client";
-
 import * as Tone from "tone";
 
 let initialized = false;
 let pistolSynth: Tone.MembraneSynth | null = null;
 let chaingunSynth: Tone.MetalSynth | null = null;
 let shotgunSynth: Tone.NoiseSynth | null = null;
+// E1 — short whoosh + click for the melee swing.
+let meleeSynth: Tone.NoiseSynth | null = null;
 let hurtSynth: Tone.Synth | null = null;
 let deathSynth: Tone.PluckSynth | null = null;
 let pickupSynth: Tone.Synth | null = null;
@@ -72,6 +72,14 @@ export async function ensureSfx() {
 		noise: { type: "brown" },
 		envelope: { attack: 0.002, decay: 0.18, sustain: 0, release: 0.08 },
 		volume: -6,
+	}).connect(masterReverb);
+
+	meleeSynth = new Tone.NoiseSynth({
+		// White-noise whoosh tail. Faster attack than the shotgun + far
+		// shorter decay so it reads as a swing, not a blast.
+		noise: { type: "white" },
+		envelope: { attack: 0.01, decay: 0.08, sustain: 0, release: 0.04 },
+		volume: -14,
 	}).connect(masterReverb);
 
 	hurtSynth = new Tone.Synth({
@@ -204,6 +212,10 @@ export function playChaingun() {
 
 export function playShotgun() {
 	shotgunSynth?.triggerAttackRelease("8n");
+}
+
+export function playMelee() {
+	meleeSynth?.triggerAttackRelease("16n");
 }
 
 export function playHurt() {

@@ -20,10 +20,15 @@ export default defineConfig(({ mode }) => ({
 	},
 	server: {
 		host: true,
-		port: 5173,
+		// Pinned away from Vite's default 5173 so OBJEXOOM doesn't
+		// collide with other arcade dev servers running in parallel
+		// (the playwright config pins to the same port).
+		port: 5191,
+		strictPort: true,
 	},
 	preview: {
 		host: true,
-		port: 8080,
+		port: 8191,
+		strictPort: true,
 	},
 }));

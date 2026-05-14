@@ -11,6 +11,7 @@
  * of each ENEMY_MODELS entry for the full list each rig ships.
  */
 
+import { A } from "./assetUrl";
 import type { EnemyKind } from "./engine";
 import type { WeaponId } from "./weapons";
 
@@ -23,7 +24,7 @@ export type EnemyAnimSet = {
 };
 
 export type EnemySkin = {
-	/** Public URL (served from `public/objexoom/models/enemies/`). */
+	/** Public URL (served from `public/assets/models/enemies/`). */
 	url: string;
 	/** Target world-space height of the rendered mesh, in OBJEXOOM tiles. */
 	heightTiles: number;
@@ -91,7 +92,7 @@ const NO_ANIMS: EnemyAnimSet = {
 
 const SKELETON_SKINS: EnemySkin[] = [
 	{
-		url: "/objexoom/models/enemies/skeleton.glb",
+		url: A("/assets/models/enemies/skeleton.glb"),
 		heightTiles: 1.6,
 		yawOffsetRad: 0,
 		floorOffset: 0,
@@ -105,7 +106,7 @@ const SKELETON_SKINS: EnemySkin[] = [
 	},
 	{
 		// Sewerfiend — rigged horror creature, perfect melee enemy.
-		url: "/objexoom/models/enemies/horror/sewerfiend.glb",
+		url: A("/assets/models/enemies/horror/sewerfiend.glb"),
 		heightTiles: 1.5,
 		yawOffsetRad: 0,
 		floorOffset: 0,
@@ -119,7 +120,7 @@ const SKELETON_SKINS: EnemySkin[] = [
 	},
 	{
 		// Horned creature — wide static silhouette, no anims (procedural bob).
-		url: "/objexoom/models/enemies/horror/horned.glb",
+		url: A("/assets/models/enemies/horror/horned.glb"),
 		heightTiles: 1.7,
 		yawOffsetRad: 0,
 		floorOffset: 0,
@@ -127,7 +128,7 @@ const SKELETON_SKINS: EnemySkin[] = [
 	},
 	{
 		// Nun — narrow vertical silhouette, no anims.
-		url: "/objexoom/models/enemies/horror/nun.glb",
+		url: A("/assets/models/enemies/horror/nun.glb"),
 		heightTiles: 1.8,
 		yawOffsetRad: 0,
 		floorOffset: 0,
@@ -137,7 +138,7 @@ const SKELETON_SKINS: EnemySkin[] = [
 
 const IMP_SKINS: EnemySkin[] = [
 	{
-		url: "/objexoom/models/enemies/imp.glb",
+		url: A("/assets/models/enemies/imp.glb"),
 		heightTiles: 1.7,
 		yawOffsetRad: 0,
 		floorOffset: 0,
@@ -154,7 +155,7 @@ const IMP_SKINS: EnemySkin[] = [
 		// names collapsed to "mixamo.com" during conversion. Renderer
 		// falls back to static-with-bob via NO_ANIMS until we resolve
 		// proper track-renaming.
-		url: "/objexoom/models/enemies/horror/plague_doctor.glb",
+		url: A("/assets/models/enemies/horror/plague_doctor.glb"),
 		heightTiles: 1.8,
 		yawOffsetRad: 0,
 		floorOffset: 0,
@@ -162,42 +163,42 @@ const IMP_SKINS: EnemySkin[] = [
 	},
 	{
 		// Elk demon — same mixamo collapse; static render for now.
-		url: "/objexoom/models/enemies/horror/elk_demon.glb",
+		url: A("/assets/models/enemies/horror/elk_demon.glb"),
 		heightTiles: 1.9,
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
 	},
 	{
-		url: "/objexoom/models/enemies/horror/abomination.glb",
+		url: A("/assets/models/enemies/horror/abomination.glb"),
 		heightTiles: 1.7,
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
 	},
 	{
-		url: "/objexoom/models/enemies/horror/abomination2.glb",
+		url: A("/assets/models/enemies/horror/abomination2.glb"),
 		heightTiles: 1.4,
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
 	},
 	{
-		url: "/objexoom/models/enemies/horror/anomaly.glb",
+		url: A("/assets/models/enemies/horror/anomaly.glb"),
 		heightTiles: 1.4,
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
 	},
 	{
-		url: "/objexoom/models/enemies/horror/clown_1.glb",
+		url: A("/assets/models/enemies/horror/clown_1.glb"),
 		heightTiles: 1.5,
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
 	},
 	{
-		url: "/objexoom/models/enemies/horror/clown_3.glb",
+		url: A("/assets/models/enemies/horror/clown_3.glb"),
 		heightTiles: 1.5,
 		yawOffsetRad: 0,
 		floorOffset: 0,
@@ -207,7 +208,7 @@ const IMP_SKINS: EnemySkin[] = [
 
 const WRAITH_SKINS: EnemySkin[] = [
 	{
-		url: "/objexoom/models/enemies/wraith.glb",
+		url: A("/assets/models/enemies/wraith.glb"),
 		// Bat is tiny; render larger so it reads at gameplay scale.
 		heightTiles: 1.1,
 		yawOffsetRad: 0,
@@ -222,7 +223,7 @@ const WRAITH_SKINS: EnemySkin[] = [
 	},
 	{
 		// Alien invader — tall thin silhouette, floats well as a wraith.
-		url: "/objexoom/models/enemies/horror/alien.glb",
+		url: A("/assets/models/enemies/horror/alien.glb"),
 		heightTiles: 1.6,
 		yawOffsetRad: 0,
 		floorOffset: 0.6,
@@ -260,29 +261,54 @@ export type WeaponModel = {
  * "hip-hold" DOOM tilt.
  */
 export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
+	melee: {
+		// E1 — machete silhouette reads cleanly at FPS scale + camera tilt.
+		// The 3DPSX kitchen knife / cleaver are too short to read on-screen
+		// without an unnatural offset.
+		url: A("/assets/models/weapons/melee_machete.glb"),
+		rotation: [0.15, Math.PI, 0],
+		offset: [0.22, -0.16, -0.3],
+	},
 	pistol: {
-		url: "/objexoom/models/weapons/pistol.glb",
+		url: A("/assets/models/weapons/pistol.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.18, -0.16, -0.38],
 	},
 	chaingun: {
-		url: "/objexoom/models/weapons/chaingun.glb",
+		url: A("/assets/models/weapons/chaingun.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.18, -0.16, -0.38],
 	},
 	shotgun: {
-		url: "/objexoom/models/weapons/shotgun.glb",
+		url: A("/assets/models/weapons/shotgun.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.18, -0.16, -0.38],
 	},
 };
 
 export const PROP_MODELS = {
-	door: "/objexoom/models/props/door.glb",
-	doorLocked: "/objexoom/models/props/door_locked.glb",
-	lampOn: "/objexoom/models/props/lamp_on.glb",
-	lampOff: "/objexoom/models/props/lamp_off.glb",
+	door: A("/assets/models/props/door.glb"),
+	doorLocked: A("/assets/models/props/door_locked.glb"),
+	lampOn: A("/assets/models/props/lamp_on.glb"),
+	lampOff: A("/assets/models/props/lamp_off.glb"),
 } as const;
+
+/**
+ * E5 — destructible barrel pool. Five PSX Mega Pack II variants
+ * (four metal w/ different weathering, one wooden) seeded per-id so
+ * the same barrel always renders with the same skin across reloads.
+ */
+export const BARREL_MODEL_URLS: readonly string[] = [
+	A("/assets/models/props/barrel_metal_1.glb"),
+	A("/assets/models/props/barrel_metal_2.glb"),
+	A("/assets/models/props/barrel_metal_3.glb"),
+	A("/assets/models/props/barrel_metal_4.glb"),
+	A("/assets/models/props/barrel_wood.glb"),
+];
+
+export function pickBarrelModelUrl(id: number): string {
+	return BARREL_MODEL_URLS[Math.abs(id) % BARREL_MODEL_URLS.length];
+}
 
 /**
  * Preload list — caller can pass these to drei's `useGLTF.preload`
@@ -293,6 +319,7 @@ export const ALL_MODEL_URLS: readonly string[] = [
 	...Object.values(ENEMY_MODELS).flatMap((m) => m.roster.map((s) => s.url)),
 	...Object.values(WEAPON_MODELS).map((m) => m.url),
 	...Object.values(PROP_MODELS),
+	...BARREL_MODEL_URLS,
 ];
 
 /**

@@ -1,4 +1,6 @@
-export type WeaponId = "pistol" | "chaingun" | "shotgun";
+import { LINEAGE, ROLE, SCALE } from "./design-tokens";
+
+export type WeaponId = "melee" | "pistol" | "chaingun" | "shotgun";
 
 export type WeaponSpec = Readonly<{
 	id: WeaponId;
@@ -16,6 +18,25 @@ export type WeaponSpec = Readonly<{
 }>;
 
 export const WEAPONS: Record<WeaponId, WeaponSpec> = {
+	melee: {
+		id: "melee",
+		label: "BLADE",
+		// E1 — slow swing (no skill ceiling matching the pistol). Tuned so
+		// you'd rather draw the pistol against anything that isn't already
+		// at point-blank, but you reach for the blade when ammo runs dry.
+		cooldownMs: 420,
+		damage: 55,
+		pellets: 1,
+		spreadRad: 0.08,
+		rangeTiles: 1.6,
+		ammoCostPerShot: 0,
+		startingAmmo: Number.POSITIVE_INFINITY,
+		pickupAmmo: 0,
+		// scale-step: muzzle-flash hue wants a slightly lighter red than
+		// ROLE.actionFire (blood[500]) so the BLADE swing reads warm-but-not-arterial.
+		muzzleColor: SCALE.blood[400],
+		hudHotkey: "1",
+	},
 	pistol: {
 		id: "pistol",
 		label: "PISTOL",
@@ -27,8 +48,8 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		ammoCostPerShot: 0,
 		startingAmmo: Number.POSITIVE_INFINITY,
 		pickupAmmo: 0,
-		muzzleColor: "#6172f3",
-		hudHotkey: "1",
+		muzzleColor: LINEAGE.objexivIndigo,
+		hudHotkey: "2",
 	},
 	chaingun: {
 		id: "chaingun",
@@ -43,8 +64,8 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		ammoCostPerShot: 0,
 		startingAmmo: Number.POSITIVE_INFINITY,
 		pickupAmmo: 0,
-		muzzleColor: "#a855f7",
-		hudHotkey: "2",
+		muzzleColor: ROLE.accentPrimary,
+		hudHotkey: "3",
 	},
 	shotgun: {
 		id: "shotgun",
@@ -57,9 +78,9 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		ammoCostPerShot: 1,
 		startingAmmo: 0,
 		pickupAmmo: 8,
-		muzzleColor: "#f59e0b",
-		hudHotkey: "3",
+		muzzleColor: ROLE.actionKey,
+		hudHotkey: "4",
 	},
 };
 
-export const WEAPON_ORDER: readonly WeaponId[] = ["pistol", "chaingun", "shotgun"];
+export const WEAPON_ORDER: readonly WeaponId[] = ["melee", "pistol", "chaingun", "shotgun"];
