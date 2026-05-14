@@ -39,6 +39,7 @@ import {
 } from "./scatter/largePropScatter";
 import { lootPickupSpawn } from "./scatter/lootScatter";
 import { type NatureInstance, spawnNature } from "./scatter/natureScatter";
+import { type NpcInstance, spawnNpcs } from "./scatter/npcScatter";
 import { type PropInstance, spawnProps } from "./scatter/propScatter";
 import {
 	disarmSector,
@@ -68,6 +69,7 @@ import {
 	LargePropField,
 	MapGeometry,
 	NatureField,
+	NpcField,
 	ParticleBurstField,
 	PickupMesh,
 	PropField,
@@ -195,6 +197,10 @@ export function ObjexoomScene({
 	// non-courtyard maps. Each instance is a scaled-down clone of the
 	// Mega_Nature.glb aggregate (4-8 per sector, varied yaw + scale).
 	const natureRef = useRef<NatureInstance[]>(spawnNature(map));
+	// COV14 step-2 — library-archetype ambient NPC scatter. Empty list on
+	// non-library maps. NPCs are pure set-dressing (no AI, no LOS, no
+	// damage). 0-2 chibis per library sector picked deterministically.
+	const npcsRef = useRef<NpcInstance[]>(spawnNpcs(map));
 	// COV8 step-2 — per-map trap scatter (hazards + triggers per sector).
 	// Tick damage + lever-disarm-sector handled in the main per-frame loop.
 	const trapsRef = useRef<TrapInstance[]>(spawnTraps(map));
@@ -838,6 +844,10 @@ export function ObjexoomScene({
 			{/* COV11 step-2 — courtyard-archetype nature scatter.
 			    Empty on non-courtyard archetypes. */}
 			<NatureField instances={natureRef.current} />
+
+			{/* COV14 step-2 — library-archetype ambient NPCs. Pure
+			    set-dressing; no AI/LOS/damage tracks. */}
+			<NpcField instances={npcsRef.current} />
 
 			{/* COV3 step-1 — modular asphalt floor tiles. Empty unless
 			    the map opts in via `useModularFloor: true`. */}

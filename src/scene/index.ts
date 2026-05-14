@@ -20,6 +20,7 @@ export { KitchenField } from "./entities/KitchenField";
 export { LampField } from "./entities/LampField";
 export { LargePropField } from "./entities/LargePropField";
 export { NatureField } from "./entities/NatureField";
+export { NpcField } from "./entities/NpcField";
 export { PickupMesh } from "./entities/PickupMesh";
 export { PropField } from "./entities/PropField";
 export { RealDoor } from "./entities/RealDoor";
