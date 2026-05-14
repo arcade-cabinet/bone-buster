@@ -26,6 +26,7 @@ const SOURCE_FILES = [
 	resolve(root, "src/models.ts"),
 	resolve(root, "src/lampScatter.ts"),
 	resolve(root, "src/scatter/propPool.ts"),
+	resolve(root, "src/scatter/floorTiles.ts"),
 ];
 
 function categoryOf(publicPath) {

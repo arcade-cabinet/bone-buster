@@ -25,6 +25,7 @@ import { addObjexoomListener, dispatch } from "./events";
 import { type LampInstance, spawnLamps } from "./lampScatter";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
+import { type FloorTileInstance, spawnFloorTiles } from "./scatter/floorTiles";
 import { type PropInstance, spawnProps } from "./scatter/propScatter";
 import {
 	AdaptiveResolution,
@@ -34,6 +35,7 @@ import {
 	EnemyMesh,
 	ExitPortal,
 	Flashlight,
+	FloorTileField,
 	KeyMarker,
 	LampField,
 	MapGeometry,
@@ -105,6 +107,10 @@ export function ObjexoomScene({
 	// gets the "corridor" archetype default; E13 will pick archetypes
 	// per map.seed once it ships.
 	const propsRef = useRef<PropInstance[]>(spawnProps(map, "corridor"));
+	// COV3 step-1 — modular asphalt floor tiles. Empty unless the map
+	// opts in via `useModularFloor: true`. Currently only refLevel 0
+	// sets the flag; the procedural floor stays everywhere else.
+	const floorTilesRef = useRef<FloorTileInstance[]>(spawnFloorTiles(map));
 	const enemyMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const pickupMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const barrelMeshes = useRef<Map<number, THREE.Group>>(new Map());
@@ -613,6 +619,10 @@ export function ObjexoomScene({
 			    Props pool. Step-1: "corridor" archetype default for
 			    every sector; E13 will pick archetypes per map.seed. */}
 			<PropField props={propsRef.current} />
+
+			{/* COV3 step-1 — modular asphalt floor tiles. Empty unless
+			    the map opts in via `useModularFloor: true`. */}
+			<FloorTileField tiles={floorTilesRef.current} />
 
 			{enemiesRef.current.map((enemy) => (
 				<EnemyMesh

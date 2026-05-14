@@ -221,6 +221,9 @@ export function loadRefLevel(
 		exitPosition,
 		bounds: scaledBounds,
 		secrets,
+		// COV3 step-1: only refLevel 0 opts into modular asphalt floors.
+		// Other levels keep the procedural floor until step-2+ ships.
+		useModularFloor: index === 0,
 	};
 }
 

@@ -12,8 +12,16 @@ import type { ObjexoomSectorMap } from "../../engine";
  *
  * Sectors with `floorHeight < 0` render lava-tinted to match the
  * reference clone's hot-floor convention.
+ *
+ * COV3 step-1: when `map.useModularFloor` is true, the procedural
+ * floor `<shapeGeometry>` is OMITTED — the per-sector floor is
+ * rendered by `FloorTileField` instead (mounted by ObjexoomScene).
+ * Lava floors keep the procedural shape even when the flag is set
+ * (the molten emissive surface is visually load-bearing and there's
+ * no lava-tile asset in the modular pack).
  */
 export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
+	const useModularFloor = map.useModularFloor === true;
 	const shapes = useMemo(() => {
 		return map.sectors.map((sector) => {
 			const shape = new THREE.Shape(sector.vertices.map((v) => new THREE.Vector2(v.x, v.y)));
@@ -27,17 +35,22 @@ export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 		<group>
 			{shapes.map(({ sector, shape, lava, sectorKey }) => (
 				<group key={`sec-${sectorKey}`}>
-					{/* Floor */}
-					<mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, sector.floorHeight, 0]}>
-						<shapeGeometry args={[shape]} />
-						<meshStandardMaterial
-							color={lava ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.wallVariantCool}
-							emissive={lava ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.wallBase}
-							emissiveIntensity={lava ? 1.4 : 0.18}
-							roughness={lava ? 0.4 : 0.95}
-							side={THREE.DoubleSide}
-						/>
-					</mesh>
+					{/* Floor — omitted when COV3 modular floor tiles are active
+					    (FloorTileField in ObjexoomScene renders the surface).
+					    Lava sectors keep the procedural emissive shape since
+					    there's no lava-tile asset in the modular pack. */}
+					{!useModularFloor || lava ? (
+						<mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, sector.floorHeight, 0]}>
+							<shapeGeometry args={[shape]} />
+							<meshStandardMaterial
+								color={lava ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.wallVariantCool}
+								emissive={lava ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.wallBase}
+								emissiveIntensity={lava ? 1.4 : 0.18}
+								roughness={lava ? 0.4 : 0.95}
+								side={THREE.DoubleSide}
+							/>
+						</mesh>
+					) : null}
 					{/* Ceiling */}
 					<mesh rotation={[Math.PI / 2, 0, 0]} position={[0, sector.ceilingHeight, 0]}>
 						<shapeGeometry args={[shape]} />

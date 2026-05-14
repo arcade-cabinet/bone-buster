@@ -85,6 +85,14 @@ export type ObjexoomSectorMap = ObjexoomMapBase &
 		 * Grid maps don't carry secrets in this slice.
 		 */
 		secrets?: readonly import("./secrets").SecretSpec[];
+		/**
+		 * COV3 step-1 — when true, SectorMapGeometry OMITS the procedural
+		 * floor shape and FloorTileField renders modular asphalt tiles
+		 * instead. Walls + ceiling stay procedural until COV3 step-2.
+		 * Default false; only refLevel 0 sets this true in the current
+		 * slice.
+		 */
+		useModularFloor?: boolean;
 	}>;
 
 export type MapSector = Readonly<{

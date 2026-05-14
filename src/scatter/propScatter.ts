@@ -100,38 +100,23 @@ export function spawnProps(map: ObjexoomMap, archetype: PropArchetype): PropInst
 
 		const placed: Vec2[] = [];
 		for (let i = 0; i < target; i += 1) {
-			let accepted: Vec2 | null = null;
-			for (let attempt = 0; attempt < MAX_SAMPLE_ATTEMPTS_PER_PROP; attempt += 1) {
-				const x = minX + rng() * (maxX - minX);
-				const y = minY + rng() * (maxY - minY);
-				const candidate: Vec2 = { x, y };
-
-				if (!polygonContains(candidate, sector.vertices)) continue;
-				let tooClose = false;
-				for (const sp of skipPoints) {
-					if (Math.hypot(sp.x - x, sp.y - y) < SKIP_RADIUS) {
-						tooClose = true;
-						break;
-					}
-				}
-				if (tooClose) continue;
-				for (const p of placed) {
-					if (Math.hypot(p.x - x, p.y - y) < MIN_PROP_SPACING) {
-						tooClose = true;
-						break;
-					}
-				}
-				if (tooClose) continue;
-				accepted = candidate;
-				break;
-			}
+			const accepted = sampleAcceptablePoint(
+				rng,
+				sector.vertices,
+				minX,
+				maxX,
+				minY,
+				maxY,
+				skipPoints,
+				placed,
+			);
 			if (accepted === null) continue; // sector too crowded or too small — move on.
 
 			placed.push(accepted);
 			const prop = pool[Math.floor(rng() * pool.length)];
 			const yaw = rng() * Math.PI * 2;
 			out.push({
-				id: sector.id * 1000 + placed.length - 1,
+				id: sector.id * ID_STRIDE + placed.length - 1,
 				position: accepted,
 				yaw,
 				prop,
@@ -141,3 +126,42 @@ export function spawnProps(map: ObjexoomMap, archetype: PropArchetype): PropInst
 
 	return out;
 }
+
+/**
+ * Sample a point inside the sector polygon that's clear of skip-anchors
+ * and already-placed siblings. Returns null when all attempts fail
+ * (sector too crowded or too small). Predicate extraction was a fold-
+ * forward from the COV4 simplifier review.
+ */
+function sampleAcceptablePoint(
+	rng: () => number,
+	vertices: readonly Vec2[],
+	minX: number,
+	maxX: number,
+	minY: number,
+	maxY: number,
+	skipPoints: readonly Vec2[],
+	placed: readonly Vec2[],
+): Vec2 | null {
+	for (let attempt = 0; attempt < MAX_SAMPLE_ATTEMPTS_PER_PROP; attempt += 1) {
+		const candidate: Vec2 = {
+			x: minX + rng() * (maxX - minX),
+			y: minY + rng() * (maxY - minY),
+		};
+		if (!polygonContains(candidate, vertices)) continue;
+		if (nearAny(candidate, skipPoints, SKIP_RADIUS)) continue;
+		if (nearAny(candidate, placed, MIN_PROP_SPACING)) continue;
+		return candidate;
+	}
+	return null;
+}
+
+function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean {
+	for (const o of others) {
+		if (Math.hypot(o.x - point.x, o.y - point.y) < radius) return true;
+	}
+	return false;
+}
+
+/** Max props per sector for id-collision safety. `PROPS_PER_SECTOR_MAX <= ID_STRIDE`. */
+const ID_STRIDE = 1000;
