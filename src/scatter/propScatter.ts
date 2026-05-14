@@ -31,9 +31,28 @@ import { POOLS } from "./propPool";
 
 const SKIP_RADIUS = 4;
 const MIN_PROP_SPACING = 1.4;
-const PROPS_PER_SECTOR_MIN = 2;
-const PROPS_PER_SECTOR_MAX = 5;
+/** Hard upper bound for ID-stride invariant. Per-archetype max stays ≤ this. */
+export const PROPS_PER_SECTOR_MAX = 5;
 const MAX_SAMPLE_ATTEMPTS_PER_PROP = 12;
+
+/**
+ * E13 step-6 — per-archetype prop density. Closes the remaining
+ * §E13 axis: each archetype reads differently because the prop
+ * count per sector differs. Corridor preserves the pre-step-6
+ * literal `[2, 5]` for canonical byte-stability (refLevel 0 is
+ * corridor by canonical seed%5 invariant).
+ *
+ * Library is densest (study-hall-feel), arena sparsest (combat-
+ * space-feel), sewer sparse (oppressive empty), courtyard mid,
+ * corridor unchanged.
+ */
+const DENSITY_BY_ARCHETYPE: Readonly<Record<PropArchetype, readonly [number, number]>> = {
+	corridor: [2, 5],
+	arena: [1, 3],
+	courtyard: [2, 4],
+	sewer: [1, 3],
+	library: [3, 5],
+};
 
 export interface PropInstance {
 	/** Stable per-map id — `sectorId * 1000 + indexInSector`. */
@@ -90,13 +109,13 @@ export function spawnProps(map: ObjexoomMap, archetype: PropArchetype): PropInst
 	const out: PropInstance[] = [];
 	const rng = mulberry32((map.seed >>> 0) ^ 0x50524f50);
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
+	const [minPerSector, maxPerSector] = DENSITY_BY_ARCHETYPE[archetype];
 
 	for (const sector of map.sectors) {
 		if (sector.vertices.length < 3) continue;
 		const { minX, maxX, minY, maxY } = bboxOf(sector.vertices);
-		// Target prop count for this sector — uniform in [MIN, MAX].
-		const target =
-			PROPS_PER_SECTOR_MIN + Math.floor(rng() * (PROPS_PER_SECTOR_MAX - PROPS_PER_SECTOR_MIN + 1));
+		// Target prop count for this sector — uniform in archetype's [min, max].
+		const target = minPerSector + Math.floor(rng() * (maxPerSector - minPerSector + 1));
 
 		const placed: Vec2[] = [];
 		for (let i = 0; i < target; i += 1) {
