@@ -18,6 +18,8 @@ ambiguous design question that flips scope.
 
 ## Phase 11 — continuing polish
 
+- [x] **POL8 — Tone.js audio-time collision fix.** Shipped. Added shared `jitter(prevTime)` helper in sfx.ts that bumps `Tone.now()` by 1ms whenever a second `triggerAttackRelease` lands in the same audio frame as the previous one. Protected voices: chaingun, flamethrower, aggro, hurt, skeleton-death. Cooldown-gated voices (pistol, shotgun, melee, hurt) that can't collide stay simple. Fixes the "Start time must be strictly greater than previous start time" runtime errors that were appearing when multiple enemies aggro on the same frame at level start.
+
 - [x] **POL7 — HUD shows archetype label.** Shipped. `ObjexoomHUD` gains an `archetype: PropArchetype` prop. Top-left readout now reads `LEVEL · ARCHETYPE` (e.g. "RANDOM · SEWER", "M1 · CORRIDOR") so the player learns the 5 archetype names through play. ObjexoomShell threads `pickArchetype(map)` via the existing JSX site (HUD mount is inside the active-map scope so the map is in lexical reach). 498 unit + 6 browser + 5 canonical + 5 archetype green.
 
 - [x] **POL6 — best-run chip on landing.** Shipped. New `BestRunChip` component in `ObjexoomLanding.tsx` mounts on the main pane. On mount, asynchronously opens runHistory, reads `bestRun()` + `runCount()`, and renders a single-line chip below the menu items: `BEST {N}L · {N}K · {WON/DIED} · {N} SECRET[S] · {N} RUN[S]`. Hidden while async load is pending AND when no runs have been persisted yet (so fresh installs / canonical screenshots stay byte-identical). 496 unit + 5 browser + 5 canonical green.
