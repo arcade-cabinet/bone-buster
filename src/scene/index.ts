@@ -22,6 +22,7 @@ export { PickupMesh } from "./entities/PickupMesh";
 export { PropField } from "./entities/PropField";
 export { RealDoor } from "./entities/RealDoor";
 export { SecretField } from "./entities/SecretField";
+export { TrapField } from "./entities/TrapField";
 export { TreasureChest } from "./entities/TreasureChest";
 export { VehicleWreck } from "./entities/VehicleWreck";
 export { LockedDoor } from "./map/LockedDoor";

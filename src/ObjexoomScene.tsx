@@ -38,6 +38,17 @@ import {
 } from "./scatter/largePropScatter";
 import { type PropInstance, spawnProps } from "./scatter/propScatter";
 import {
+	disarmSector,
+	spawnTraps,
+	TRAP_OVERLAP_RADIUS,
+	TRAP_TICK_COOLDOWN_MS,
+	TRAP_TICK_DAMAGE,
+	TRIGGER_OVERLAP_RADIUS,
+	type TrapInstance,
+	trapAt,
+	triggerAt,
+} from "./scatter/trapScatter";
+import {
 	AdaptiveResolution,
 	BarrelMesh,
 	BodyPartField,
@@ -59,6 +70,7 @@ import {
 	SecretField,
 	SectorMapGeometry,
 	ShellEjectField,
+	TrapField,
 	TreasureChest,
 	VehicleWreck,
 	WeaponViewmodel,
@@ -158,6 +170,12 @@ export function ObjexoomScene({
 	// circle collision via the blockers list fed to resolveCollisionAny.
 	const largePropsRef = useRef<LargePropInstance[]>(spawnLargeProps(map));
 	const largePropBlockers = useMemo(() => blockerCirclesOf(largePropsRef.current), []);
+	// COV8 step-2 — per-map trap scatter (hazards + triggers per sector).
+	// Tick damage + lever-disarm-sector handled in the main per-frame loop.
+	const trapsRef = useRef<TrapInstance[]>(spawnTraps(map));
+	// Per-trap last-tick timestamp so the player takes one damage pulse
+	// per TRAP_TICK_COOLDOWN_MS while overlapping a hazard.
+	const lastTrapTickAt = useRef<Map<number, number>>(new Map());
 	// COV6 step-2 — wall-face decal scatter. 0-2 decals per sector edge
 	// via tile hash, aggregate ≥3 per sector across edges.
 	const decalsRef = useRef<DecalInstance[]>(spawnDecals(map));
@@ -483,6 +501,30 @@ export function ObjexoomScene({
 			playHurt();
 		}
 
+		// COV8 step-2 — trap tick damage + lever-disarm-sector.
+		// First check for trigger overlap (disarms the whole sector).
+		const trigger = triggerAt(trapsRef.current, { x: px, y: py }, TRIGGER_OVERLAP_RADIUS);
+		if (trigger) {
+			trigger.disarmed = true;
+			const count = disarmSector(trapsRef.current, trigger.sectorId);
+			if (count > 1) playPickup();
+		}
+		// Then check for hazard overlap (per-trap ticked damage).
+		const hazard = trapAt(trapsRef.current, { x: px, y: py }, TRAP_OVERLAP_RADIUS);
+		if (hazard) {
+			const lastTick = lastTrapTickAt.current.get(hazard.id) ?? 0;
+			if (now - lastTick > TRAP_TICK_COOLDOWN_MS) {
+				lastTrapTickAt.current.set(hazard.id, now);
+				const kind = hazard.def.kind;
+				const damage =
+					kind === "spike" || kind === "blade" || kind === "rolling" ? TRAP_TICK_DAMAGE[kind] : 0;
+				if (damage > 0) {
+					gameRef.current.onHit(damage);
+					playHurt();
+				}
+			}
+		}
+
 		// Pickup collection
 		for (const pickup of pickupsRef.current) {
 			if (pickup.collected) continue;
@@ -758,6 +800,11 @@ export function ObjexoomScene({
 			    sector). Blocking entries (machinery, shipping container)
 			    push the player out via the collision blocker list. */}
 			<LargePropField props={largePropsRef.current} />
+
+			{/* COV8 step-2 — trap scatter (0-2 hazards + 1 trigger per
+			    sector, archetype-biased). Tick damage + lever-disarm
+			    flow lives in the per-frame loop in ObjexoomScene. */}
+			<TrapField traps={trapsRef.current} />
 
 			{/* COV3 step-1 — modular asphalt floor tiles. Empty unless
 			    the map opts in via `useModularFloor: true`. */}
