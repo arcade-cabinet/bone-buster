@@ -47,3 +47,4 @@ public/assets/wasm/
 .env.*
 !.env.example
 .claude/state/
+.claude/scheduled_tasks.lock
