@@ -13,6 +13,7 @@ export { BarrelMesh } from "./entities/BarrelMesh";
 export { EnemyMesh } from "./entities/EnemyMesh";
 export { ExitPortal } from "./entities/ExitPortal";
 export { KeyMarker } from "./entities/KeyMarker";
+export { LampField } from "./entities/LampField";
 export { PickupMesh } from "./entities/PickupMesh";
 export { RealDoor } from "./entities/RealDoor";
 export { SecretField } from "./entities/SecretField";

@@ -22,6 +22,7 @@ import {
 	stepEnemyBullet,
 } from "./engine";
 import { addObjexoomListener, dispatch } from "./events";
+import { type LampInstance, spawnLamps } from "./lampScatter";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
 import {
@@ -33,6 +34,7 @@ import {
 	ExitPortal,
 	Flashlight,
 	KeyMarker,
+	LampField,
 	MapGeometry,
 	ParticleBurstField,
 	PickupMesh,
@@ -93,6 +95,10 @@ export function ObjexoomScene({
 	const secretsRef = useRef<Secret[]>(
 		isSectorMap(map) && map.secrets ? spawnSecrets(map.secrets) : [],
 	);
+	// COV1 — per-map lamp scatter from PSX Mega Pack II Light Sources.
+	// Sector maps only in this slice; grid maps return []. E4 will flip
+	// the lit-subset's `on` flag and wire pointLights.
+	const lampsRef = useRef<LampInstance[]>(spawnLamps(map));
 	const enemyMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const pickupMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const barrelMeshes = useRef<Map<number, THREE.Group>>(new Map());
@@ -591,6 +597,11 @@ export function ObjexoomScene({
 			    current map has no `secrets` field (grid maps + future
 			    secret-free ref levels). */}
 			<SecretField secretsRef={secretsRef} />
+
+			{/* COV1 — PSX Mega Pack II lamp scatter. Empty on grid maps
+			    in this slice. E4 will flip a subset to `on` + wire
+			    scoped pointLights. */}
+			<LampField lamps={lampsRef.current} />
 
 			{enemiesRef.current.map((enemy) => (
 				<EnemyMesh
