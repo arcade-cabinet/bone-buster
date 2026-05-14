@@ -614,6 +614,12 @@ export function spawnPickups(map: ObjexoomMap): Pickup[] {
 export type CollisionContext = Readonly<{
 	portals?: Set<string>;
 	doorOpen?: boolean;
+	/**
+	 * COV2 step-2 — circle blockers from large-prop anchor pieces.
+	 * Each entry pushes the actor out by `radius + actorRadius` if it
+	 * overlaps. Optional; absent → no extra blockers (back-compat).
+	 */
+	blockers?: readonly { position: Vec2; radius: number }[];
 }>;
 
 export function resolveCollisionAny(
@@ -623,12 +629,55 @@ export function resolveCollisionAny(
 	radius: number = PLAYER_RADIUS,
 ): Vec2 {
 	if (map.kind === "grid") {
-		return resolveCollision(desired, map, ctx.doorOpen ?? false, radius);
+		const resolved = resolveCollision(desired, map, ctx.doorOpen ?? false, radius);
+		return ctx.blockers && ctx.blockers.length > 0
+			? pushOutBlockers(resolved, ctx.blockers, radius)
+			: resolved;
 	}
 	if (!ctx.portals) {
 		throw new Error("resolveCollisionAny: sector map requires portals set");
 	}
-	return resolveCollisionSectors(desired, map, ctx.portals, radius);
+	const resolved = resolveCollisionSectors(desired, map, ctx.portals, radius);
+	return ctx.blockers && ctx.blockers.length > 0
+		? pushOutBlockers(resolved, ctx.blockers, radius)
+		: resolved;
+}
+
+/**
+ * COV2 step-2 — push the actor out of each circular blocker. Walks
+ * the blocker list (O(n), n ≤ 2 * sectors in practice) and applies a
+ * radial pushout. Used after the wall-pushout so the actor never ends
+ * up inside a blocker even on a corner-into-blocker desired move.
+ */
+function pushOutBlockers(
+	desired: Vec2,
+	blockers: readonly { position: Vec2; radius: number }[],
+	actorRadius: number,
+): Vec2 {
+	let { x, y } = desired;
+	for (let iter = 0; iter < 3; iter += 1) {
+		let moved = false;
+		for (const b of blockers) {
+			const dx = x - b.position.x;
+			const dy = y - b.position.y;
+			const min = b.radius + actorRadius;
+			const d2 = dx * dx + dy * dy;
+			if (d2 >= min * min) continue;
+			if (d2 < EPS) {
+				// Actor exactly on the blocker centre — pop east by min.
+				x = b.position.x + min;
+				y = b.position.y;
+			} else {
+				const d = Math.sqrt(d2);
+				const push = min - d;
+				x += (dx / d) * push;
+				y += (dy / d) * push;
+			}
+			moved = true;
+		}
+		if (!moved) break;
+	}
+	return { x, y };
 }
 
 export function hasLineOfSightAny(

@@ -21,39 +21,75 @@ export interface LargePropDef {
 	readonly id: string;
 	readonly url: string;
 	readonly blocking: boolean;
+	/**
+	 * COV2 step-2 — collision radius in world units, used when
+	 * `blocking === true`. Walked into via a circle pushout in
+	 * resolveCollisionSectors. Non-blocking entries ignore this.
+	 */
+	readonly blockingRadius: number;
 }
 
 export const LARGE_PROPS: readonly LargePropDef[] = [
-	{ id: "cage_mx_1", url: A("/assets/models/props/large/cage_mx_1.glb"), blocking: false },
-	{ id: "chimney_a_1", url: A("/assets/models/props/large/chimney_a_1.glb"), blocking: false },
+	{
+		id: "cage_mx_1",
+		url: A("/assets/models/props/large/cage_mx_1.glb"),
+		blocking: false,
+		blockingRadius: 0,
+	},
+	{
+		id: "chimney_a_1",
+		url: A("/assets/models/props/large/chimney_a_1.glb"),
+		blocking: false,
+		blockingRadius: 0,
+	},
 	{
 		id: "distillery_mx_1",
 		url: A("/assets/models/props/large/distillery_mx_1.glb"),
 		blocking: false,
+		blockingRadius: 0,
 	},
 	{
 		id: "electrical_equipment_1",
 		url: A("/assets/models/props/large/electrical_equipment_1.glb"),
 		blocking: false,
+		blockingRadius: 0,
 	},
 	{
 		id: "electrical_equipment_2",
 		url: A("/assets/models/props/large/electrical_equipment_2.glb"),
 		blocking: false,
+		blockingRadius: 0,
 	},
 	{
 		id: "machinery_mx_1",
 		url: A("/assets/models/props/large/machinery_mx_1.glb"),
 		blocking: true,
+		blockingRadius: 0.8,
 	},
-	{ id: "portal_mx_1", url: A("/assets/models/props/large/portal_mx_1.glb"), blocking: false },
-	{ id: "pipe_ax_1", url: A("/assets/models/props/large/pipe_ax_1.glb"), blocking: false },
+	{
+		id: "portal_mx_1",
+		url: A("/assets/models/props/large/portal_mx_1.glb"),
+		blocking: false,
+		blockingRadius: 0,
+	},
+	{
+		id: "pipe_ax_1",
+		url: A("/assets/models/props/large/pipe_ax_1.glb"),
+		blocking: false,
+		blockingRadius: 0,
+	},
 	{
 		id: "shipping_container_mx_1_1",
 		url: A("/assets/models/props/large/shipping_container_mx_1_1.glb"),
 		blocking: true,
+		blockingRadius: 0.9,
 	},
-	{ id: "pipes_hr_1", url: A("/assets/models/props/large/pipes_hr_1.glb"), blocking: false },
+	{
+		id: "pipes_hr_1",
+		url: A("/assets/models/props/large/pipes_hr_1.glb"),
+		blocking: false,
+		blockingRadius: 0,
+	},
 ];
 
 /** Deterministic large-prop pick by hash. */

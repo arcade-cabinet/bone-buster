@@ -17,6 +17,7 @@ export { ExitPortal } from "./entities/ExitPortal";
 export { FloorTileField } from "./entities/FloorTileField";
 export { KeyMarker } from "./entities/KeyMarker";
 export { LampField } from "./entities/LampField";
+export { LargePropField } from "./entities/LargePropField";
 export { PickupMesh } from "./entities/PickupMesh";
 export { PropField } from "./entities/PropField";
 export { RealDoor } from "./entities/RealDoor";

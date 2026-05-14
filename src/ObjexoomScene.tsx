@@ -29,6 +29,11 @@ import { PlayerController } from "./PlayerController";
 import { type DebrisInstance, spawnDebris } from "./scatter/debrisScatter";
 import { type DecalInstance, spawnDecals } from "./scatter/decalScatter";
 import { type FloorTileInstance, spawnFloorTiles } from "./scatter/floorTiles";
+import {
+	blockerCirclesOf,
+	type LargePropInstance,
+	spawnLargeProps,
+} from "./scatter/largePropScatter";
 import { type PropInstance, spawnProps } from "./scatter/propScatter";
 import {
 	AdaptiveResolution,
@@ -43,6 +48,7 @@ import {
 	FloorTileField,
 	KeyMarker,
 	LampField,
+	LargePropField,
 	MapGeometry,
 	ParticleBurstField,
 	PickupMesh,
@@ -134,6 +140,11 @@ export function ObjexoomScene({
 	// sector, 4-tile skip-radius from anchors. Reads as "this place has
 	// been overrun."
 	const debrisRef = useRef<DebrisInstance[]>(spawnDebris(map));
+	// COV2 step-2 — anchor-piece large-prop scatter. 1-2 per sector,
+	// sparser than props/debris. The 2 blocking variants opt into
+	// circle collision via the blockers list fed to resolveCollisionAny.
+	const largePropsRef = useRef<LargePropInstance[]>(spawnLargeProps(map));
+	const largePropBlockers = useMemo(() => blockerCirclesOf(largePropsRef.current), []);
 	// COV6 step-2 — wall-face decal scatter. 0-2 decals per sector edge
 	// via tile hash, aggregate ≥3 per sector across edges.
 	const decalsRef = useRef<DecalInstance[]>(spawnDecals(map));
@@ -312,10 +323,10 @@ export function ObjexoomScene({
 		() => (map.kind === "sectors" ? computePortalEdges(map) : new Set<string>()),
 		[map],
 	);
-	const collisionCtxRef = useRef({ portals, doorOpen: hasKey });
+	const collisionCtxRef = useRef({ portals, doorOpen: hasKey, blockers: largePropBlockers });
 	useEffect(() => {
-		collisionCtxRef.current = { portals, doorOpen: hasKey };
-	}, [portals, hasKey]);
+		collisionCtxRef.current = { portals, doorOpen: hasKey, blockers: largePropBlockers };
+	}, [portals, hasKey, largePropBlockers]);
 
 	useEffect(() => {
 		camera.position.set(map.playerSpawn.x, PLAYER_HEIGHT, map.playerSpawn.y);
@@ -717,6 +728,11 @@ export function ObjexoomScene({
 			    Props pool. Step-1: "corridor" archetype default for
 			    every sector; E13 will pick archetypes per map.seed. */}
 			<PropField props={propsRef.current} />
+
+			{/* COV2 step-2 — anchor-piece large-prop scatter (1-2 per
+			    sector). Blocking entries (machinery, shipping container)
+			    push the player out via the collision blocker list. */}
+			<LargePropField props={largePropsRef.current} />
 
 			{/* COV3 step-1 — modular asphalt floor tiles. Empty unless
 			    the map opts in via `useModularFloor: true`. */}
