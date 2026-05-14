@@ -97,4 +97,3 @@ describe("ObjexoomShell — landing surface", () => {
 		expect(typeof hooks?.forceMissionComplete).toBe("function");
 	});
 });
-

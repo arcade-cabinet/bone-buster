@@ -18,9 +18,6 @@ function haloColorFor(kind: Pickup["kind"]): string {
 			return OBJEXOOM_PALETTE.indigo;
 		case "loot":
 			return OBJEXOOM_PALETTE.amber; // treasure-tier glow
-		case "flashlight":
-		case "health":
-		case "shotgunAmmo":
 		default:
 			return ROLE.actionPickup;
 	}

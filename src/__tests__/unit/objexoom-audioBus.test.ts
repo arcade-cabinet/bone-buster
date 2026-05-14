@@ -29,7 +29,7 @@ describe("AUDIO1 — audio bus", () => {
 			captured = t;
 		});
 		expect(captured).not.toBeNull();
-		expect(captured!).toBeGreaterThanOrEqual(0);
+		expect(captured as number).toBeGreaterThanOrEqual(0);
 	});
 
 	it("second fire on the same channel produces a strictly greater t", () => {
@@ -41,7 +41,7 @@ describe("AUDIO1 — audio bus", () => {
 		fire("pickup", (t) => {
 			second = t;
 		});
-		expect(second!).toBeGreaterThan(first!);
+		expect(second as number).toBeGreaterThan(first as number);
 	});
 
 	it("third fire continues strictly increasing", () => {
@@ -71,8 +71,8 @@ describe("AUDIO1 — audio bus", () => {
 		// pickup advanced 3 times; death fired once after, but its
 		// timer should be independent — starts from 0 (Tone.now mock),
 		// not from pickup's 0.003.
-		expect(bossT!).toBe(0);
-		expect(pickupT!).toBeGreaterThan(bossT!);
+		expect(bossT as number).toBe(0);
+		expect(pickupT as number).toBeGreaterThan(bossT as number);
 	});
 
 	it("resetForTest clears all channel timers", () => {

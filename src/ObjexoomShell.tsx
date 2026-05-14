@@ -679,10 +679,7 @@ export function ObjexoomShell() {
 			// player stuck at spawn with phase=going_back +
 			// lastReachedSpawnAt=true on the final map (no remount
 			// since level didn't advance, key didn't change).
-			const nextStatus = nextStatusAfterTransition(
-				settings.level,
-				state.run.runLevelsCleared,
-			);
+			const nextStatus = nextStatusAfterTransition(settings.level, state.run.runLevelsCleared);
 			setState((prev) => ({
 				...prev,
 				status: nextStatus,
