@@ -18,6 +18,8 @@ ambiguous design question that flips scope.
 
 ## Phase 11 — continuing polish
 
+- [x] **POL10 — boss-down sting.** Shipped. New `playBossDeath()` plays an ascending G1 → C2 sequence on the deathSynth — sonically distinct from both skeleton-death (descending A1 → D1) and player-death (descending E2 → B1 → E1). Fires layered on top of the standard skeleton-death sting when at least one boss-tier enemy died in the current shot (`bossKillsThisShot > 0`). AoE shots that down a boss + standard enemies read as a richer audio event. 498 unit + 6 browser + 5 canonical green.
+
 - [x] **POL9 — player-death sting.** Shipped. New `playPlayerDeath()` in sfx.ts plays a 3-note descending sequence (E2 → B1 → E1) on the existing deathSynth. Distinct from the skeleton-death two-note cascade so the player can sonically distinguish "kill confirmed" from "you died." Fires on two paths: (1) onHit transition `prev.hp > 0 && hp === 0`, guarded inside setState to avoid React 19 strict-mode double-play; (2) fellToDeath listener. 498 unit + 6 browser + 5 canonical green.
 
 - [x] **POL8 — Tone.js audio-time collision fix.** Shipped. Added shared `jitter(prevTime)` helper in sfx.ts that bumps `Tone.now()` by 1ms whenever a second `triggerAttackRelease` lands in the same audio frame as the previous one. Protected voices: chaingun, flamethrower, aggro, hurt, skeleton-death. Cooldown-gated voices (pistol, shotgun, melee, hurt) that can't collide stay simple. Fixes the "Start time must be strictly greater than previous start time" runtime errors that were appearing when multiple enemies aggro on the same frame at level start.

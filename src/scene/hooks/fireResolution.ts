@@ -31,6 +31,7 @@ import { pickRaySwitch, type Secret } from "../../secrets";
 import type { ObjexoomSettings } from "../../settings";
 import {
 	playBoom,
+	playBossDeath,
 	playChaingun,
 	playFlamethrower,
 	playMelee,
@@ -128,6 +129,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	const origin = { x: camera.position.x, y: camera.position.z };
 
 	let killsThisShot = 0;
+	let bossKillsThisShot = 0;
 	for (let pelletIdx = 0; pelletIdx < spec.pellets; pelletIdx += 1) {
 		const spreadX = (Math.random() - 0.5) * spec.spreadRad;
 		const spreadY = (Math.random() - 0.5) * spec.spreadRad;
@@ -202,6 +204,9 @@ export function resolveFire(ctx: FireResolutionContext): void {
 			if (bestEnemy.hp <= 0) {
 				bestEnemy.dead = true;
 				killsThisShot += 1;
+				// POL10 — track boss kills in this shot so we can layer the
+				// boss-down sting on top of the standard skeleton-death cue.
+				if (bestEnemy.tier === "boss") bossKillsThisShot += 1;
 				const mesh = enemyMeshesRef.current.get(bestEnemy.id);
 				if (mesh) mesh.visible = false;
 				if (bestEnemy.kind === "imp") {
@@ -226,6 +231,11 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	if (killsThisShot > 0) {
 		for (let i = 0; i < killsThisShot; i += 1) gameRef.current.onKill();
 		playSkeletonDeath();
+		// POL10 — layer the boss-down sting on top when at least one boss
+		// died in this shot. Players hear both the "kill confirmed" cascade
+		// and the "boss down" resolve, so AoE shots that take down a boss
+		// + standard enemies read as a richer audio event.
+		if (bossKillsThisShot > 0) playBossDeath();
 		if (settings.soundEnabled) playBoom();
 	}
 }

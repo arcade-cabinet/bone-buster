@@ -296,6 +296,22 @@ export function playPlayerDeath() {
 	setTimeout(() => deathSynth?.triggerAttackRelease("E1", jitter(lastPlayerDeathFireTime)), 320);
 }
 
+/**
+ * POL10 — boss-down sting. Ascending two-note resolve (G1 → C2) on
+ * the existing deathSynth, distinct from both the skeleton-death
+ * cascade (A1 → D1, descending) and the player-death sequence
+ * (E2 → B1 → E1, slow descending). Reads as a triumph chord — the
+ * player has unlocked something. Fires in addition to the standard
+ * skeleton-death sting, layered on top.
+ */
+let lastBossDeathFireTime = 0;
+export function playBossDeath() {
+	const t = jitter(lastBossDeathFireTime);
+	lastBossDeathFireTime = t;
+	deathSynth?.triggerAttackRelease("G1", t);
+	setTimeout(() => deathSynth?.triggerAttackRelease("C2", jitter(lastBossDeathFireTime)), 120);
+}
+
 export function playPickup() {
 	pickupSynth?.triggerAttackRelease("E5", "16n");
 	setTimeout(() => pickupSynth?.triggerAttackRelease("A5", "16n"), 90);
