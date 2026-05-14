@@ -13,7 +13,8 @@ import { describe, expect, it } from "vitest";
 import { ALL_PROPS, POOLS, PROP_ARCHETYPES, PROP_CATALOGUE } from "../../scatter/propPool";
 
 describe("COV4 — prop catalogue", () => {
-	it("ships at least 10 unique props (acceptance: ≥10 variants)", () => {
+	it("ships exactly 30 unique props (≥10 satisfies acceptance; pinned to catch accidental deletions)", () => {
+		expect(ALL_PROPS.length).toBe(30);
 		expect(ALL_PROPS.length).toBeGreaterThanOrEqual(10);
 	});
 

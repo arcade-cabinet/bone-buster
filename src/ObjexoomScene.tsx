@@ -25,6 +25,7 @@ import { addObjexoomListener, dispatch } from "./events";
 import { type LampInstance, spawnLamps } from "./lampScatter";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
+import { type PropInstance, spawnProps } from "./scatter/propScatter";
 import {
 	AdaptiveResolution,
 	BarrelMesh,
@@ -38,6 +39,7 @@ import {
 	MapGeometry,
 	ParticleBurstField,
 	PickupMesh,
+	PropField,
 	RealDoor,
 	SecretField,
 	SectorMapGeometry,
@@ -99,6 +101,10 @@ export function ObjexoomScene({
 	// Sector maps only in this slice; grid maps return []. E4 will flip
 	// the lit-subset's `on` flag and wire pointLights.
 	const lampsRef = useRef<LampInstance[]>(spawnLamps(map));
+	// COV4 + E3 — per-map decorative prop scatter. Step-1: every sector
+	// gets the "corridor" archetype default; E13 will pick archetypes
+	// per map.seed once it ships.
+	const propsRef = useRef<PropInstance[]>(spawnProps(map, "corridor"));
 	const enemyMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const pickupMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const barrelMeshes = useRef<Map<number, THREE.Group>>(new Map());
@@ -602,6 +608,11 @@ export function ObjexoomScene({
 			    in this slice. E4 will flip a subset to `on` + wire
 			    scoped pointLights. */}
 			<LampField lamps={lampsRef.current} />
+
+			{/* COV4 + E3 — decorative prop scatter from PSX Mega Pack II
+			    Props pool. Step-1: "corridor" archetype default for
+			    every sector; E13 will pick archetypes per map.seed. */}
+			<PropField props={propsRef.current} />
 
 			{enemiesRef.current.map((enemy) => (
 				<EnemyMesh

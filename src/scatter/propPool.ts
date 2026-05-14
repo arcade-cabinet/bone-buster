@@ -2,24 +2,12 @@
  * COV4 — PSX Mega Pack II Props scatter pool.
  *
  * Stages the asset-enabler for E3 (decorative sector prop scatter).
- * COV4 ships the curated pool + per-archetype buckets; E3 wires the
- * per-sector rejection-sampled placement.
- *
- * 30 GLBs picked from the 137-file PSX Mega Pack II Props pack,
- * sorted into the five PRD §E13 archetypes (corridor / arena /
- * courtyard / sewer / library). Each prop carries the data E3 needs:
- * URL (BASE_URL-aware via A()), blocking flag (collision opt-in,
- * default flat), and an optional scale hint.
- *
- * Buckets overlap intentionally — a metal barrel reads correctly in
- * corridor, sewer, and courtyard contexts. The total *distinct* prop
- * count is 30; each bucket pulls 10-14 entries from the shared pool.
- *
- * Archetype names match `docs/PRD.md §E13`. The directive's COV4 line
- * spelled the archetypes as "kitchen/factory/temple/sewer" — that was
- * the early-draft taxonomy. PRD is authoritative per the
- * DESIGN > ARCHITECTURE > DECISIONS > PRD > directive single-source
- * chain. The directive has been re-aligned in the same commit.
+ * 30 GLBs from the PSX Mega Pack II Props pack, sorted into the five
+ * `docs/PRD.md §E13` archetypes (corridor / arena / courtyard / sewer
+ * / library). Each prop carries `id`, BASE_URL-resolved `url`, and a
+ * `blocking` flag (collision opt-in, default flat). Buckets overlap
+ * intentionally — a metal barrel reads correctly in corridor, sewer,
+ * and courtyard contexts.
  */
 
 import { A } from "../assetUrl";
@@ -33,8 +21,6 @@ export interface PropDef {
 	readonly url: string;
 	/** When true, E3 should register a collider; default-flat scatter walks through. */
 	readonly blocking: boolean;
-	/** Optional uniform scale multiplier; omitted = 1.0. */
-	readonly scale?: number;
 }
 
 /**
@@ -261,11 +247,5 @@ export const POOLS: Record<PropArchetype, readonly PropDef[]> = {
 /** All distinct props across every archetype bucket — used by tests + asset verifier. */
 export const ALL_PROPS: readonly PropDef[] = Object.values(PROP_CATALOGUE);
 
-/** All archetype keys for iteration. */
-export const PROP_ARCHETYPES: readonly PropArchetype[] = [
-	"corridor",
-	"arena",
-	"courtyard",
-	"sewer",
-	"library",
-];
+/** All archetype keys for iteration. Derived from POOLS so adding a key in one place suffices. */
+export const PROP_ARCHETYPES: readonly PropArchetype[] = Object.keys(POOLS) as PropArchetype[];
