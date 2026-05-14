@@ -30,6 +30,7 @@ import {
 	type ObjexoomGridMap,
 	type ObjexoomMap,
 	type Pickup,
+	polygonContains,
 	resolveCollisionAny,
 	spawnEnemies,
 	spawnPickups,
@@ -305,22 +306,13 @@ export function ObjexoomScene({
 			standingOnLava = standingCell === "lava";
 		} else {
 			// Sector map: floorHeight < 0 == lava (renderer's heuristic).
+			// Use the canonical polygonContains from engine.ts — the prior
+			// inline copy had drifted (missing the 1e-30 epsilon in the
+			// denominator) and caused subtle false-negatives on horizontal
+			// sector edges that lined up exactly with the player's y.
 			for (const sector of map.sectors) {
 				if (sector.floorHeight >= 0) continue;
-				// polygonContains test, inlined to avoid an engine import roundtrip.
-				const verts = sector.vertices;
-				let inside = false;
-				const py2 = py + 1e-6;
-				for (let i = 0, j = verts.length - 1; i < verts.length; j = i, i += 1) {
-					const xi = verts[i].x;
-					const yi = verts[i].y;
-					const xj = verts[j].x;
-					const yj = verts[j].y;
-					if (yi > py2 !== yj > py2 && px < ((xj - xi) * (py2 - yi)) / (yj - yi) + xi) {
-						inside = !inside;
-					}
-				}
-				if (inside) {
+				if (polygonContains({ x: px, y: py + 1e-6 }, sector.vertices)) {
 					standingOnLava = true;
 					break;
 				}

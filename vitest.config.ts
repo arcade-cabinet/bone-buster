@@ -1,5 +1,6 @@
 import path from "node:path";
 import react from "@vitejs/plugin-react";
+import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -13,7 +14,9 @@ export default defineConfig({
 	test: {
 		// Two-project setup keeps fast unit tests separate from heavy
 		// browser-mode tests. Unit runs in jsdom; browser drives a real
-		// Chromium via @vitest/browser-playwright.
+		// Chromium via @vitest/browser-playwright (the dedicated provider
+		// package — vitest 4 made the inline `provider: "playwright"`
+		// string form a type-error, so we use the factory).
 		projects: [
 			{
 				extends: true,
@@ -33,11 +36,7 @@ export default defineConfig({
 					browser: {
 						enabled: true,
 						headless: true,
-						// vitest 4's browser type requires the provider as a
-						// brand object; cast to keep the config minimal —
-						// the wired-up @vitest/browser is the playwright
-						// provider in practice.
-						provider: "playwright" as never,
+						provider: playwright(),
 						instances: [{ browser: "chromium" }],
 					},
 				},

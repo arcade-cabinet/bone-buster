@@ -23,11 +23,13 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 ## Queue — Standalone repo bring-up
 
 ### B0 — Initial commit + remote
+
 - [x] **B0.1** First commit on `main` capturing the extracted source + scaffolding.
 - [x] **B0.2** Create `objexiv/objexoom` GitHub repo (internal visibility).
 - [x] **B0.3** Push `main` to origin.
 
 ### B1 — Verify it actually runs
+
 - [x] **B1.1** `pnpm install` succeeds.
 - [x] **B1.2** `pnpm check` (tsc no-emit) green.
 - [x] **B1.3** `pnpm lint` (biome) green — after auto-fix + bumping schema 2.4.10→2.4.15 + fixing 6 real issues (non-null assertion, meter→progressbar a11y role, 5 empty-object Playwright patterns).
@@ -37,20 +39,35 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 - [ ] **B1.7** `pnpm assets:fbx-to-glb` regenerates GLBs from `references/` (locally — references/ is gitignored).
 
 ### B2 — Mobile + CI
+
 - [ ] **B2.1** `cap add android` and verify `pnpm build:native` produces an APK.
-- [ ] **B2.2** `.github/workflows/ci.yml` runs lint + check + test + build on PRs.
-- [ ] **B2.3** `.github/workflows/release.yml` runs release-please on push to main.
-- [ ] **B2.4** `.github/workflows/cd.yml` deploys `pnpm build:pages` to GitHub Pages on release tag.
-- [ ] **B2.5** `.github/dependabot.yml` weekly group minor/patch.
+- [ ] [WAIT-CI] **B2.2** `.github/workflows/ci.yml` runs lint + check + test + build on PRs (running on PR #10 now).
+- [x] **B2.3** `.github/workflows/release.yml` runs release-please on push to main (release-please opened release PR #1 on first push).
+- [ ] **B2.4** `.github/workflows/cd.yml` deploys `pnpm build:pages` to GitHub Pages on release tag (verifies once #1 merges).
+- [x] **B2.5** `.github/dependabot.yml` weekly group minor/patch (already opened 8 update PRs: #2-#9).
+
+### B-PR — In-flight PRs
+
+The enterprise ruleset on `objexiv` requires PRs + squash-merge to `main`. The dependabot + release-please bots opened:
+
+- [ ] [WAIT-REVIEW] **B-PR1** #10: chore: bring scaffolding to a green tsc + lint + unit baseline (mine, waiting on CI)
+- [ ] **B-PR2** #9: bump typescript 5.9.3 → 6.0.3 (TS6 has potential breaking changes — defer until base is stable)
+- [ ] **B-PR3** #8: bump jsdom 27.4.0 → 29.1.1 (review for breaking changes)
+- [ ] **B-PR4** #7: bump the minor-and-patch group with 4 updates (merge after CI green)
+- [ ] **B-PR5** #6-#2: GitHub Actions bumps (low-risk, merge after CI green)
+- [ ] **B-PR6** #1: chore(main): release 0.2.0 (release-please; gates the first published version + tag — review carefully)
 
 ### B3 — Cut OBJEXOOM out of Objexiv
+
 - [ ] **B3.1** In `objexiv/objexiv` on `feat/objexoom-easter-egg`, delete `src/client/easter-eggs/objexoom/`, `public/objexoom/`, `references/`, `scripts/objexoom-*`, all `objexoom-*` tests, the easter-egg spec.
 - [ ] **B3.2** Prune deps no longer needed (three, @react-three/*, postprocessing, tone, yuka, fbx2gltf, sharp).
 - [ ] **B3.3** Open a PR titled "chore(objexoom): extract to standalone repo" referencing the new `objexiv/objexoom` repo.
 - [ ] **B3.4** Merge once green.
 
 ### PARITY — carried over from the Objexiv directive
+
 (Closes once each item is shipped + verified visually.)
+
 - [ ] **PA-MOD2** Visually verify all 5 screenshot poses render cleanly post-extraction.
 - [ ] **PA1** ManyEnemies spawner — verify already wired in `src/refLevel.ts` survives extraction.
 - [ ] **PA9** Shell ejection on shotgun fire.
