@@ -1,5 +1,10 @@
 /* OBJEXOOM standalone — global resets so the canvas fills the
-   viewport with no chrome, scrollbar, or font defaults bleeding in. */
+   viewport with no chrome, scrollbar, or font defaults bleeding in.
+   Loads the design tokens first so every other rule can reference
+   `var(--obx-*)` instead of hardcoding hex. */
+
+@import "./fonts.css";
+@import "./tokens.css";
 
 *,
 *::before,
@@ -14,9 +19,9 @@ body,
 	padding: 0;
 	width: 100%;
 	height: 100%;
-	background: #07060f;
-	color: #f3eedd;
-	font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	background: var(--obx-bg-void);
+	color: var(--obx-text-primary);
+	font-family: var(--obx-font-body);
 	overflow: hidden;
 	-webkit-font-smoothing: antialiased;
 }
@@ -25,4 +30,19 @@ body,
 ::-webkit-scrollbar {
 	width: 0;
 	height: 0;
+}
+
+/* Respect the user's motion preference at the global level — the
+   game's heavier visual flourishes (strobe, screen shake, going-back
+   ramp) check this in TypeScript too, but CSS animations get muted
+   here for any element that uses `transition`/`animation` directly. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
 }
