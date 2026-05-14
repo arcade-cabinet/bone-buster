@@ -8,6 +8,7 @@ export { BodyPartField } from "./effects/BodyPartField";
 export { BulletField } from "./effects/BulletField";
 export { DamageNumberField } from "./effects/DamageNumberField";
 export { Flashlight } from "./effects/Flashlight";
+export { HitChromaticAberration } from "./effects/HitChromaticAberration";
 export { ParticleBurstField } from "./effects/ParticleBurstField";
 export { ShellEjectField } from "./effects/ShellEjectField";
 export { BarrelMesh } from "./entities/BarrelMesh";

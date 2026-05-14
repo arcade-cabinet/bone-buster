@@ -1,6 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { Bloom, ChromaticAberration, EffectComposer, Vignette } from "@react-three/postprocessing";
-import { BlendFunction } from "postprocessing";
+import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
@@ -63,6 +62,7 @@ import {
 	ExitPortal,
 	Flashlight,
 	FloorTileField,
+	HitChromaticAberration,
 	KeyMarker,
 	KitchenField,
 	LampField,
@@ -924,7 +924,7 @@ export function ObjexoomScene({
 
 			<EffectComposer>
 				<Bloom intensity={0.45} luminanceThreshold={0.55} luminanceSmoothing={0.2} />
-				<ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={[0.0015, 0.0015]} />
+				<HitChromaticAberration />
 				<Vignette eskil={false} offset={0.25} darkness={0.7} />
 			</EffectComposer>
 		</>
