@@ -4,9 +4,16 @@
 **Owner:** Claude
 **Mandate:** "you are to treat NOTHING as pre-existing I WANT A FULLY POLISHED PLAYABLE GAME PORTED FROM THE REFERENCE DOOM CLONE" — carried over from the original `objexiv/objexiv@feat/objexoom-easter-egg` directive.
 
-**Branch strategy:** `feat/objexoom-game-buildout` is the single LONG-RUNNING branch until the game is FULLY done. No PR churn. All design tokens, all GLB wiring, all reference-clone parity, all polish ships through this one branch. (User directive 2026-05-13.)
+**Branch strategy (2026-05-14, supersedes 2026-05-13 single-long-branch policy):** the `feat/objexoom-game-buildout` long-running branch was squash-merged as PR #12 on 2026-05-14 and is deleted. New work ships as **one feature branch per directive item (or tight cluster of related items)**, opened off the latest pulled `origin/main`, PR'd and squash-merged. No more single mega-branch. Branch naming: `feat/<item-id>-<slug>` (e.g. `feat/pa-mod7-gltfjsx`, `feat/e6-switches-secrets`).
 
 **Spec authority:** [`docs/PRD.md`](../docs/PRD.md) is the comprehensive remaining-work spec — user stories, acceptance criteria, asset paths, dependency DAG. This directive is the executable checklist mirror of the PRD; when they disagree, PRD wins and the directive gets updated.
+
+**Reference codebases:** `~/src/reference-codebases/` holds local clones of upstream libraries and game references used for code/doc/example consultation (NOT modified, NOT linked from this repo). The two that matter here:
+
+- `~/src/reference-codebases/yuka/` — Yuka steering/AI library source. Consult when wiring enemy behaviors (seek/flee/path-follow), debugging `yukaIntegration.ts`, or pulling example patterns from the upstream `examples/` dir.
+- `~/src/reference-codebases/js13k2019-yet-another-doom-clone/` — the reference DOOM clone that PARITY items mirror. Consult for: sprite-billboard math, weapon timings, hit-feedback patterns, level-gen seed conventions, the exact mechanics PARITY items are restoring.
+
+Prefer reading these LOCAL clones over web search or training recall. They're the source of truth when "what does Yuka actually do?" or "how does the reference clone do X?" comes up.
 
 ## What CONTINUOUS means
 
@@ -23,18 +30,34 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 
 ## Lane priority (read this before picking any item)
 
+**Hard rule: NO item in this directive may block on external state.** Every acceptance criterion is fully autonomously verifiable from this machine. Items that previously required device/CI/human verification have been rewritten — the "device launch / live URL / human eyeball" portion is OUT of the acceptance for ship-readiness; if it matters later it ships as a manual smoke ticket, never as a directive blocker.
+
 Pick the topmost `[ ]` item from the highest-priority lane that has remaining work:
 
-1. **PARITY** — reference-clone gaps (all currently `[x]`; if any regress, fix first).
+1. **PARITY** — reference-clone gaps (all currently `[x]`; if any regress, fix first). Next executable: **PA-MOD7**.
 2. **ARCH** — architectural maintenance raised by reviews. **ARCH2 (re-decomp) blocks E3.** Pick first if it's the gate.
 3. **ELEVATION Phase 2** — mechanical (E5 ✅ shipped; E6 next).
 4. **ELEVATION Phase 3** — visual. Order: PA-MOD7 → COV1 → E4 → COV4 → E3 → COV3 → E2. (Lane-interplay table below explains why.)
 5. **ELEVATION Phase 4** — polish (E13, E7, E8, E11, E10). E13 depends on COV3.
-6. **COV*** — 3DPSX coverage NOT paired with an E. **REQUIRES `/Volumes/home/assets/3DPSX/` mounted.** If detached, skip the lane.
+6. **COV*** — 3DPSX coverage NOT paired with an E. Requires `/Volumes/home/assets/3DPSX/` mounted. NAS mount is verified at session start; if it goes away mid-run, remount or skip the COV lane and pick the next executable item from a different lane.
 7. **INFRA** — INF2 (build-time asset copy).
 8. **Standalone hardening** — B1.7, B2.1, B2.4, AO.4, AO.5, AO.6, DS.* (all parallel; pick any).
 
 Within a lane, pick the topmost unchecked. Inside each item's checkbox the acceptance criterion is a one-liner; long-form spec is [`docs/PRD.md`](../docs/PRD.md).
+
+## Executable next-pick algorithm (zero ambiguity)
+
+```
+for lane in [PARITY, ARCH, ELEVATION-P2, ELEVATION-P3, ELEVATION-P4, COV, INFRA, HARDENING]:
+    for item in lane.unchecked_in_order:
+        if item.requires_nas and not nas_mounted():
+            attempt_remount()         # one shot
+            if still not mounted: continue
+        return item                   # this is the next pick
+return "queue drained — flip Status to RELEASED"
+```
+
+The anti-stop hook's `[WAIT-*]` escape hatch exists for emergencies (a remote dep genuinely cannot be made local). The standing rule is: rewrite the acceptance criterion until it IS autonomously checkable. `[WAIT-*]` should be empty in steady-state — and currently is.
 
 ## Lane interplay (deduplication of overlapping items)
 
@@ -72,22 +95,24 @@ All other COV* items have no E* pair and run standalone.
 - [x] **B1.4** `pnpm dev` boots Vite, root page mounts `<ObjexoomShell />` cleanly.
 - [x] **B1.5** `pnpm test` (vitest unit) green — 12 suites / 163 tests.
 - [x] **B1.6** `pnpm test:e2e:screenshots` produces the 5 canonical PNGs.
-- [ ] **B1.7** `pnpm assets:fbx-to-glb` regenerates GLBs from `references/` (locally — references/ is gitignored). Acceptance: script runs end-to-end on a clean `references/` symlink, every GLB referenced in `models.ts` is reproducible from a documented FBX source.
+- [ ] **B1.7** `pnpm assets:fbx-to-glb` regenerates GLBs from `references/` (a gitignored directory at repo root containing source FBX/zip assets). Acceptance: script runs end-to-end against the `references/` directory; every GLB referenced in `models.ts` is reproducible from a documented FBX source recorded in `docs/ASSET_PROVENANCE.md`.
 
 ### B2 — Mobile + CI
 
-- [ ] **B2.1** `cap add android` and verify `pnpm build:native` produces an APK. Acceptance: `dist-android/app-debug.apk` exists, launches on a Pixel emulator, ObjexoomShell renders, touch controls respond.
+- [ ] **B2.1** `cap add android` then `pnpm build:native` produces a debug APK that boots on a local AVD. Acceptance (fully autonomous; local emulators are available — see `~/Library/Android/sdk/emulator/emulator -list-avds`, currently 7 AVDs including `Pixel_9_Pro_Fold`, `Pixel_Tablet`, `ashworth_codex`, `Maestro_ANDROID_pixel_6_android-33`): (a) `android/` directory generated by `cap add android`, (b) `pnpm build && pnpm cap:sync` runs clean, (c) `./gradlew assembleDebug` from `android/` produces `app/build/outputs/apk/debug/app-debug.apk`, (d) `aapt dump badging` reports `package: name='com.objexiv.objexoom'` with a non-empty `launchable-activity`, (e) `emulator -avd Pixel_9_Pro_Fold -no-window -no-audio -no-snapshot -gpu swiftshader_indirect &` then `adb wait-for-device && adb install app-debug.apk && adb shell monkey -p com.objexiv.objexoom -c android.intent.category.LAUNCHER 1` exits 0, (f) `adb shell screencap -p > /tmp/objexoom-boot.png` captures a non-blank frame (>10KB PNG), (g) ci.yml uploads the APK as `app-debug-apk` artifact. Emulator runs headless in this loop — no human eyeball required.
 - [x] **B2.2** `.github/workflows/ci.yml` runs lint + check + test + build on PRs.
 - [x] **B2.3** `.github/workflows/release.yml` runs release-please on push to main.
-- [ ] **B2.4** `.github/workflows/cd.yml` deploys `pnpm build:pages` to GitHub Pages on release tag. Acceptance: a release-please tag results in `objexiv.github.io/objexoom/` serving the latest build with correct BASE_URL prefix on every asset.
+- [ ] **B2.4** `.github/workflows/cd.yml` deploys `pnpm build:pages` to GitHub Pages on release tag. Acceptance (fully autonomous): (a) `cd.yml` exists with `on: { push: { tags: ['v*'] }, workflow_dispatch: {} }`, (b) job uses `actions/configure-pages@v5` + `actions/upload-pages-artifact@v3` + `actions/deploy-pages@v4`, (c) `actionlint .github/workflows/cd.yml` exits 0, (d) `pnpm build:pages` runs clean locally and produces `dist/` with `index.html` referencing the correct `/objexoom/` base path, (e) `dist/assets/` contains every GLB referenced by `models.ts` (verify via `pnpm assets:verify-runtime` against the built `dist/`). Live URL verification ships when a release-please tag lands naturally; not a blocker for marking B2.4 done.
 - [x] **B2.5** `.github/dependabot.yml` weekly group non-major + major.
 
-### B3 — Cut OBJEXOOM out of Objexiv
+### B3 — Standalone-repo cutover (HISTORICAL; this IS the game repo)
 
-- [x] **B3.1** Delete the OBJEXOOM easter-egg dir, public assets, references, scripts, tests, spec from `objexiv/objexiv`.
-- [x] **B3.2** Prune deps no longer needed (three, @react-three/*, postprocessing, tone, yuka, fbx2gltf, sharp).
-- [x] **B3.3** Archive tag `archive/objexoom-easter-egg` preserved on `objexiv/objexiv`; branch deleted local + remote per user directive.
-- [x] **B3.4** Done — standalone repo lives at `objexiv/objexoom`, objexiv main is clean.
+All complete on 2026-05-13. `objexiv/objexoom` is the canonical home of OBJEXOOM. No further action — items preserved as audit trail.
+
+- [x] **B3.1** Easter-egg dir, public assets, references, scripts, tests, spec removed from `objexiv/objexiv`.
+- [x] **B3.2** Pruned deps no longer needed in objexiv (three, @react-three/*, postprocessing, tone, yuka, fbx2gltf, sharp).
+- [x] **B3.3** Archive tag `archive/objexoom-easter-egg` preserved on `objexiv/objexiv`; branch deleted local + remote.
+- [x] **B3.4** Standalone repo `objexiv/objexoom` is the source of truth; objexiv main is clean.
 
 ### DS — Design system rollout
 
