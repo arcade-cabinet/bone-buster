@@ -1,6 +1,23 @@
 # Continuous Work Directive — objexoom
 
-**Status:** RELEASED
+**Status:** ACTIVE
+
+## Phase 9 — wire the remaining staged COV pools
+
+Step-1 of COV8 / COV11 / COV12 / COV13 / COV14 each staged an asset
+pool + a `pickXxx(hash)` deterministic picker. None are mounted in
+the renderer or consumed by gameplay yet — all 5 are dormant data.
+Phase 9 wires each to a real game-loop use.
+
+- [ ] **COV8 step-2 — trap tick-damage + E6 lever pairing.** Add a `TrapInstance` runtime type + per-map `spawnTraps(map)` scatter (sparse, 0-2 per sector, sewer/arena leans). Player-overlap tick: 5 HP / 500ms when on a spike or blade tile; rolling/log hazards apply 10 HP knockback. New `<TrapField>` renderer. Lever-class traps (the trigger sub-pool) pair with the E6 secret-switch mechanism: hitting a lever disarms every trap in the same sector for the rest of the level. 12+ unit tests pin: scatter determinism, kind distribution, damage cooldown, lever-disarm propagation.
+
+- [ ] **COV12 step-2 — rare loot pickup spawns.** Extend `PickupKind` with `"loot"` (single new variant, kind-tag stays sortable in the HUD). New `LootInstance` + per-map `spawnLoot(map)` — exactly 1 loot pickup per ref level, placed at the centroid of the sector farthest from spawn (mirror COV10's pattern). On collect: +50 score (treasure) / +10 health (bottles) / +1 ammo across all weapons (books — readable spellbook trope). New `<LootPickup>` renderer wraps `pickLootKind(map.seed)` to choose which of the 3 GLBs renders. 8+ unit tests pin determinism, single-per-map, far-from-spawn placement, on-collect effect.
+
+- [ ] **COV13 step-2 — kitchen archetype scatter.** The kitchen prop pool was sized for set-dressing — wire it as a 6th archetype OR as a sector-level dressing layer for library/courtyard. Pragmatic call: add it as a new sub-scatter that fires on ~20% of library-archetype sectors (food/dining areas in a library make sense — break room, study hall). New `spawnKitchen(map)` deterministic scatter (1-3 props per opted-in sector); `<KitchenField>` renderer; sits alongside PropField. 8+ unit tests.
+
+- [ ] **COV11 step-2 — courtyard nature scatter.** `Mega_Nature.glb` is a single aggregate scene. Use `SkeletonUtils.clone` to extract 3-4 named sub-meshes (a tree, a shrub, a rock, etc — identify via Object3D.name traversal). New `spawnNature(map)` deterministic scatter: only fires on courtyard-archetype maps; places 4-8 nature instances per sector (denser than other scatters — courtyard reads as "outdoors"). `<NatureField>` renderer mounts the cloned sub-meshes. 8+ unit tests pin: archetype gating, named-mesh resolution, determinism, sector-containment.
+
+- [ ] **COV14 step-2 — ambient NPC spawns.** Extend `EnemyKind` with `"npc"` (no aggro, no LOS, no attack; FSM short-circuits in state 0 patrol forever). `spawnEnemies` opt-in: ~15% of enemy slots in library archetype become NPCs instead of skeletons/wraiths/imps (the "library is inhabited by quiet researchers" read). NPC variants picked via `pickNpcKind(seed XOR slotIndex)`. 10+ unit tests pin: spawn ratio, kind distribution, FSM-stays-patrol invariant, no-damage invariant.
 
 ## Phase 8 — closing PRD §E13 visual-distinctness gap
 
@@ -64,7 +81,7 @@ asset pools enable.
 **Owner:** Claude
 **Mandate:** "you are to treat NOTHING as pre-existing I WANT A FULLY POLISHED PLAYABLE GAME PORTED FROM THE REFERENCE DOOM CLONE" — carried over from the original `objexiv/objexiv@feat/objexoom-easter-egg` directive.
 
-**Branch strategy (2026-05-14, supersedes 2026-05-13 single-long-branch policy):** the `feat/objexoom-game-buildout` long-running branch was squash-merged as PR #12 on 2026-05-14 and is deleted. New work ships as **one feature branch per directive item (or tight cluster of related items)**, opened off the latest pulled `origin/main`, PR'd and squash-merged. No more single mega-branch. Branch naming: `feat/<item-id>-<slug>` (e.g. `feat/pa-mod7-gltfjsx`, `feat/e6-switches-secrets`).
+**Branch strategy (2026-05-14, user-directed, supersedes the per-item-branch experiment):** all work stays on the current long-running branch. Commit freely; never open a new branch to "isolate" a directive item. Never open a new PR while one is already in flight for this work — fold reviewer feedback into the next forward commit on the same branch. The user will squash-merge the whole branch when ready. **Do NOT:** create new branches, open new PRs, suggest splitting work across branches, or stop work to "wait for review." Reviewer feedback is folded forward on the same branch and the loop continues.
 
 **Spec authority:** [`docs/PRD.md`](../docs/PRD.md) is the comprehensive remaining-work spec — user stories, acceptance criteria, asset paths, dependency DAG. This directive is the executable checklist mirror of the PRD; when they disagree, PRD wins and the directive gets updated.
 
