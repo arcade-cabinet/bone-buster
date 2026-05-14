@@ -169,13 +169,24 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 		};
 	}, []);
 
-	// I6 — listen for damage shake events. Shell dispatches this on every
-	// onHit() call with the damage amount; we accumulate into shakeRef.
+	// I6 + POL15 — listen for damage shake events. The pre-POL15
+	// implementation scaled linearly (0.15 per hp). Modernized DOOM
+	// uses a non-linear curve so light taps feel quiet and heavy hits
+	// hit HARD — small damages stay subtle, big damages punch above
+	// the linear baseline.
+	//
+	// Curve: add = 0.08 * amount + 0.018 * amount^1.7
+	//   1 hp → 0.098 (was 0.15 — quieter)
+	//   3 hp → 0.34  (was 0.45 — quieter)
+	//   6 hp → 0.79 → clamps to SHAKE_MAX (was 0.90 → clamped)
+	//   9 hp → 1.45 → clamps to SHAKE_MAX (was 1.35 → clamped)
+	// Net effect: small hits feel ambient, big hits saturate the cap
+	// faster (so a chaingun spray taps quietly but a shotgun pellet
+	// barrage snaps the camera). Decay rate unchanged.
 	useEffect(() => {
 		return addObjexoomListener("shake", ({ amount }) => {
-			// L1 — damage is on a 0-9 scale; 0.15 per hp gives reasonable shake
-			// (1 hp → ~0.15, 3 hp big hit → ~0.45, capped at SHAKE_MAX).
-			const add = Math.max(0, amount) * 0.15;
+			const a = Math.max(0, amount);
+			const add = 0.08 * a + 0.018 * a ** 1.7;
 			shakeRef.current = Math.min(SHAKE_MAX, shakeRef.current + add);
 		});
 	}, []);

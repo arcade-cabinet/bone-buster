@@ -279,6 +279,9 @@ export function ObjexoomScene({
 	const muzzleLightRef = useRef<THREE.PointLight | null>(null);
 	const muzzleFlashUntil = useRef(0);
 	const muzzleColorRef = useRef<THREE.Color>(new THREE.Color("#6172f3"));
+	// POL13 — per-weapon bloom tier multiplier set on every shot by
+	// fireResolution; muzzle decay block applies it to base intensity.
+	const muzzleIntensityScaleRef = useRef(1.0);
 	// PA-MOD7 — the WeaponViewmodel registers its muzzle-anchor group
 	// here; per-frame we copy its world-position into muzzleLightRef so
 	// the flash bloom originates from the barrel tip rather than the
@@ -468,7 +471,12 @@ export function ObjexoomScene({
 		if (muzzleLightRef.current) {
 			const muzzleNow = now;
 			const remaining = muzzleFlashUntil.current - muzzleNow;
-			const intensity = remaining > 0 ? Math.min(4, remaining / 20) : 0;
+			// POL13 — bloom-tier scale per weapon. Baseline intensity
+			// (remaining / 20) hits 4.0 at fresh-flash; the per-weapon
+			// scale multiplies that so pistol reads 2.4 max, chaingun
+			// 3.6, shotgun 5.6, flamethrower 4.4, melee 0.
+			const baseIntensity = remaining > 0 ? Math.min(4, remaining / 20) : 0;
+			const intensity = baseIntensity * muzzleIntensityScaleRef.current;
 			muzzleLightRef.current.intensity = intensity;
 			muzzleLightRef.current.color.copy(muzzleColorRef.current);
 			const anchor = muzzleAnchorRef.current;
@@ -738,6 +746,7 @@ export function ObjexoomScene({
 				lastFireAtRef: lastFireAt,
 				muzzleFlashUntilRef: muzzleFlashUntil,
 				muzzleColorRef,
+				muzzleIntensityScaleRef,
 				explodeBarrel: (b) => explodeBarrelRef.current(b),
 			});
 		};

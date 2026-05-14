@@ -59,6 +59,8 @@ export interface FireResolutionContext {
 	lastFireAtRef: { current: number };
 	muzzleFlashUntilRef: { current: number };
 	muzzleColorRef: { current: THREE.Color };
+	/** POL13 — muzzle-flash bloom tier per weapon (0=melee, 0.6=pistol, 0.9=chaingun, 1.4=shotgun, 1.1=flamethrower). */
+	muzzleIntensityScaleRef: { current: number };
 	explodeBarrel: (barrel: Barrel) => void;
 }
 
@@ -80,6 +82,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		lastFireAtRef,
 		muzzleFlashUntilRef,
 		muzzleColorRef,
+		muzzleIntensityScaleRef,
 		explodeBarrel,
 	} = ctx;
 
@@ -99,6 +102,10 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	// decays in the per-frame block and tracks the muzzle anchor (PA-MOD7).
 	muzzleFlashUntilRef.current = now + 80;
 	muzzleColorRef.current.set(spec.muzzleColor);
+	// POL13 — per-weapon bloom tier. Drives the muzzleLight intensity
+	// multiplier in ObjexoomScene's per-frame decay block. Defaults to
+	// 1.0 if the weapon spec doesn't declare one (back-compat).
+	muzzleIntensityScaleRef.current = spec.muzzleIntensity ?? 1.0;
 
 	if (weapon === "melee") playMelee();
 	else if (weapon === "pistol") playPistol();
