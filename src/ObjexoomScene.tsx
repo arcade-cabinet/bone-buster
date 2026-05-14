@@ -2,7 +2,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Bloom, ChromaticAberration, EffectComposer, Vignette } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import type { RefObject } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type * as Yuka from "yuka";
 import { type Barrel, pickRayBarrel, resolveExplosion, spawnBarrels } from "./barrels";
@@ -139,6 +139,13 @@ export function ObjexoomScene({
 	// first frame after weapon swap, or in test harnesses with no GLB).
 	const muzzleAnchorRef = useRef<THREE.Group | null>(null);
 	const muzzleWorldPos = useMemo(() => new THREE.Vector3(), []);
+	// Stable callback identity so WeaponViewmodel's `useEffect(..., [onMuzzleAnchor])`
+	// cleanup doesn't re-run (and briefly null muzzleAnchorRef) on every
+	// parent render unrelated to a weapon swap. Reviewer-caught issue from
+	// PA-MOD7 review of 2f3369d.
+	const onMuzzleAnchor = useCallback((group: THREE.Group | null) => {
+		muzzleAnchorRef.current = group;
+	}, []);
 
 	// I7 — track which enemies have already fired their aggro alert so we
 	// don't re-play it on every re-entry to chase state. Reset implicitly
@@ -864,12 +871,7 @@ export function ObjexoomScene({
 			<ParticleBurstField />
 			<BodyPartField />
 			<ShellEjectField />
-			<WeaponViewmodel
-				weapon={weapon}
-				onMuzzleAnchor={(group) => {
-					muzzleAnchorRef.current = group;
-				}}
-			/>
+			<WeaponViewmodel weapon={weapon} onMuzzleAnchor={onMuzzleAnchor} />
 
 			<PlayerController map={map} active={active} hasKey={hasKey} settings={settings} />
 
