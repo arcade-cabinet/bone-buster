@@ -52,6 +52,7 @@ import {
 	SectorMapGeometry,
 	ShellEjectField,
 	TreasureChest,
+	VehicleWreck,
 	WeaponViewmodel,
 } from "./scene";
 import { tickEnemyLoop } from "./scene/hooks/enemyTickLoop";
@@ -136,6 +137,39 @@ export function ObjexoomScene({
 	// COV6 step-2 — wall-face decal scatter. 0-2 decals per sector edge
 	// via tile hash, aggregate ≥3 per sector across edges.
 	const decalsRef = useRef<DecalInstance[]>(spawnDecals(map));
+	// COV10 step-2 — courtyard-archetype RV wreck. Placed at the
+	// centroid of the sector farthest from playerSpawn (the hero
+	// position the boss also uses). Null on non-courtyard maps.
+	const wreckPosition = useMemo(() => {
+		if (archetype !== "courtyard") return null;
+		if (!isSectorMap(map) || map.sectors.length === 0) return null;
+		let best = map.sectors[0];
+		let bestDistSq = Number.NEGATIVE_INFINITY;
+		for (const sector of map.sectors) {
+			let cx = 0;
+			let cy = 0;
+			for (const v of sector.vertices) {
+				cx += v.x;
+				cy += v.y;
+			}
+			cx /= sector.vertices.length;
+			cy /= sector.vertices.length;
+			const dx = cx - map.playerSpawn.x;
+			const dy = cy - map.playerSpawn.y;
+			const d2 = dx * dx + dy * dy;
+			if (d2 > bestDistSq) {
+				bestDistSq = d2;
+				best = sector;
+			}
+		}
+		let cx = 0;
+		let cy = 0;
+		for (const v of best.vertices) {
+			cx += v.x;
+			cy += v.y;
+		}
+		return { x: cx / best.vertices.length, y: cy / best.vertices.length };
+	}, [archetype, map]);
 	// E2 — reactive "all bosses dead" flag that the visual portal/door
 	// components read so they don't appear open while a boss is still
 	// alive. Initialized true when the map has no bosses (single source
@@ -696,6 +730,10 @@ export function ObjexoomScene({
 			    the GLB's primary texture extracted onto a 1.2×0.8 plane
 			    aligned to the sector edge normal. */}
 			<DecalField decals={decalsRef.current} />
+
+			{/* COV10 step-2 — one RV wreck at the courtyard archetype's
+			    farthest-sector centroid. Null on non-courtyard maps. */}
+			{wreckPosition && <VehicleWreck position={wreckPosition} seed={map.seed} />}
 
 			{enemiesRef.current.map((enemy) => (
 				<EnemyMesh

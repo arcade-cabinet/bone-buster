@@ -22,6 +22,7 @@ export { PropField } from "./entities/PropField";
 export { RealDoor } from "./entities/RealDoor";
 export { SecretField } from "./entities/SecretField";
 export { TreasureChest } from "./entities/TreasureChest";
+export { VehicleWreck } from "./entities/VehicleWreck";
 export { LockedDoor } from "./map/LockedDoor";
 export { MapGeometry } from "./map/MapGeometry";
 export { SectorMapGeometry } from "./map/SectorMapGeometry";

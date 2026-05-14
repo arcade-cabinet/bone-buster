@@ -2,6 +2,16 @@
 
 **Status:** ACTIVE
 
+## Phase 6 — gameplay extensions for staged pools
+
+The asset-pool step-1 commits shipped data but no gameplay hooks. The
+remaining step-2/3 work turns passive variety into actual game-loop
+behavior.
+
+- [ ] **COV2 step-2** Anchor-piece scatter: 1-2 large props per sector via a new `spawnLargeProps(map)` (sparser than E3's 2-5). Blocking entries register with sector collision. Mounted via a new LargePropField in the renderer.
+- [x] **COV10 step-2** Shipped courtyard-archetype RV wreck placement. New `src/scene/entities/VehicleWreck.tsx` renders one wrecked-vehicle GLB picked via `pickVehicleUrl(map.seed)` with a seeded yaw (LCG → [0, 2π)) so the wreck rests at a different angle per map. ObjexoomScene computes a `wreckPosition` useMemo that returns null when `archetype !== "courtyard"` else the centroid of the sector farthest from `playerSpawn` (one wreck per map, naturally tucked away from spawn so it reads as discovery). Conditional JSX mount: `{wreckPosition && <VehicleWreck ... />}`. All 5 VEHICLE_VARIANTS preloaded on module evaluation; SkeletonUtils.clone per mount. The wreck is collision-flat — visual weight is the point, not the obstacle. 383 unit + 5 browser + 5 e2e screenshots green. Canonicals byte-stable (refLevel 0 → seed 0 → corridor archetype, so the wreck doesn't appear in canonical poses).
+- [ ] **E13 step-2** Per-archetype lighting palette tint. The directional + ambient lights pick from a 5-entry palette keyed by archetype so each archetype reads visually distinct on the spawn pose.
+
 ## Phase 5 — step-2 elevations (use the staged pools)
 
 ELEVATION-P5 wires the step-1 asset pools into actual gameplay /
