@@ -59,6 +59,21 @@ If none of the three answer cleanly, sit with the design before writing code.
 
 Spec: `docs/SLOT-ARCHITECTURE.md`. Reference shapes: `HitChromaticAberration` (POL14), `SecretFoundFlash` (POL21), `EnemyHitFlash` (POL19 retrofit), `WeaponSwapDip` (POL20).
 
+## Phase 15 — playtest + visual judgement (catch what canonical bytes miss)
+
+Phase 12-14 shipped 20+ polish items + slot architecture. Every commit
+greened canonical screenshots + unit/browser tests. But the user has
+been explicit: *"you should be catching EVERYTHING including visuals"*
+— and canonical bytes are byte-identity on a 5-pose corner of the game.
+The agent should be launching the game, walking through it, and judging
+each polish item against the modernized-DOOM bar with EYES, not just
+test gates.
+
+- [ ] **PT1 — capture in-game playtest screenshots.** Launch `pnpm dev`, drive the game through scripted interactions (start → walk → fire each weapon → take a hit → kill an enemy → pick up flashlight → find a key → cross portal → enter going-back → reach spawn). Capture screenshots at each beat. Compare against modernized-DOOM reference frames. Surface anything that reads as student-grade.
+- [ ] **PT2 — per-archetype playtest pass.** Use `?objexoomArchetype=arena` etc to load each archetype and capture the in-game (not pre-engage) visual. Verify per-archetype identity (POL3-v2 floors, POL27 darkness, POL19 hit-flash on enemies) actually reads at runtime, not just in test bytes.
+- [ ] **PT3 — boss encounter visual audit.** Boss tier today = bigger skeleton, 4× HP. Capture a boss-fight beat and judge whether the bigger silhouette + POL10-v2 boss-death sting + POL12 hitstop's 150ms boss freeze + POL19 boss-tier-100ms stagger together deliver a "boss moment" or just "bigger enemy."
+- [ ] **PT4 — onboarding first-30-seconds audit.** New player drops in: do they understand WASD + click? Do POL21 secret + POL22 key + POL26 going-back read in context without prior knowledge? If a beat needs explanation, surface it.
+
 ## Phase 14 — slot architecture remainder (audio bus + HUD overlay extraction)
 
 The slot architecture spec (`docs/SLOT-ARCHITECTURE.md`) calls out four
