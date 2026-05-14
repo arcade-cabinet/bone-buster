@@ -68,6 +68,25 @@ describe("objexoom engine — map generation", () => {
 		}
 	});
 
+	it("E13 step-10 — per-archetype enemy count varies (arena > library)", () => {
+		// Seed 1 → archetype index 1 (arena, multiplier 1.4).
+		// Seed 4 → archetype index 4 (library, multiplier 0.8).
+		// Arena should have strictly more enemies than library on the same
+		// procedural map shape (room count differs by seed, so use the same
+		// seed % 5 = 1 vs 4 inputs and assert directionality, not magnitude).
+		const arena = generateMap(1);
+		const library = generateMap(4);
+		expect(arena.enemySpawns.length).toBeGreaterThan(library.enemySpawns.length);
+	});
+
+	it("E13 step-10 — enemy count stays within the clamp [4, 16]", () => {
+		for (const seed of [0, 1, 2, 3, 4, 100, 999]) {
+			const map = generateMap(seed);
+			expect(map.enemySpawns.length).toBeGreaterThanOrEqual(4);
+			expect(map.enemySpawns.length).toBeLessThanOrEqual(16);
+		}
+	});
+
 	it("carves at least three rooms", () => {
 		const map = generateMap(SEED);
 		expect(map.rooms.length).toBeGreaterThanOrEqual(3);
