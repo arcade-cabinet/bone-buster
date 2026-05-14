@@ -120,10 +120,15 @@ export function spawnLamps(map: ObjexoomMap): LampInstance[] {
 		}
 	}
 
-	// Light up the first MAX_LIT_LAMPS — COV1 leaves them all off
-	// (rendered with the OFF variant); E4 will flip the `on` flag for
-	// the lit subset and wire the pointLights. Until E4 lands, scatter
-	// is visible as decorative geometry only.
+	// E4 — flip the first MAX_LIT_LAMPS lamps to lit. The renderer
+	// (LampField) emits a scoped shadow-mapped pointLight at each lit
+	// position. Capped so the WebGL2 uniform/shadow budget stays
+	// bounded; lamps past the cap render with the OFF variant and
+	// contribute zero per-frame light cost.
+	for (let i = 0; i < Math.min(MAX_LIT_LAMPS, out.length); i += 1) {
+		out[i].on = true;
+	}
+
 	return out;
 }
 

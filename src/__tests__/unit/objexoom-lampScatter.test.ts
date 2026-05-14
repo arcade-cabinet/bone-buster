@@ -106,10 +106,17 @@ describe("COV1 — sector-map lamp scatter", () => {
 		}
 	});
 
-	it("no lamp starts with on=true (COV1 stages assets; E4 flips lit subset)", () => {
+	it("E4 — first MAX_LIT_LAMPS lamps are lit (on=true); rest stay off", () => {
 		const map = loadRefLevel(0);
 		const lamps = spawnLamps(map);
-		expect(lamps.every((l) => l.on === false)).toBe(true);
+		const litCount = lamps.filter((l) => l.on).length;
+		expect(litCount).toBeLessThanOrEqual(MAX_LIT_LAMPS);
+		expect(litCount).toBe(Math.min(MAX_LIT_LAMPS, lamps.length));
+		// Lit subset is the prefix, off subset is the suffix.
+		for (let i = 0; i < lamps.length; i += 1) {
+			if (i < MAX_LIT_LAMPS) expect(lamps[i].on).toBe(true);
+			else expect(lamps[i].on).toBe(false);
+		}
 	});
 
 	it("variantIndex always in [0, LAMP_VARIANTS_OFF.length)", () => {
