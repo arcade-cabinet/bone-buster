@@ -51,7 +51,7 @@ export function WaterSurface({ sector, color }: { sector: MapSector; color: stri
 
 	useFrame(({ clock }) => {
 		const mat = materialRef.current;
-		if (!mat || !mat.map) return;
+		if (!mat?.map) return;
 		// Slow scroll across both axes — wraps via RepeatWrapping.
 		mat.map.offset.x = (clock.elapsedTime * 0.04) % 1;
 		mat.map.offset.y = (clock.elapsedTime * 0.025) % 1;

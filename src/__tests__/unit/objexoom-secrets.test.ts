@@ -122,7 +122,8 @@ describe("E6 — ref-level secret synthesis", () => {
 			const map = loadRefLevel(idx);
 			expect(map.secrets).toBeDefined();
 			expect(map.secrets).toHaveLength(1);
-			const s = map.secrets![0];
+			const s = map.secrets?.[0];
+			if (!s) throw new Error("unreachable — toHaveLength(1) above guarantees");
 			// id encodes the level index so secrets are addressable across reloads.
 			expect(s.id).toBe(idx * 100 + 1);
 			expect(s.switchRadius).toBeGreaterThan(0);
@@ -137,7 +138,7 @@ describe("E6 — ref-level secret synthesis", () => {
 		);
 		// Each level centers at a different place after REF_TO_RUNTIME_SCALE,
 		// so the switch positions diverge across levels.
-		const seen = new Set(positions.map((p) => `${p!.x.toFixed(2)},${p!.y.toFixed(2)}`));
+		const seen = new Set(positions.map((p) => `${p?.x.toFixed(2)},${p?.y.toFixed(2)}`));
 		expect(seen.size).toBe(3);
 	});
 });

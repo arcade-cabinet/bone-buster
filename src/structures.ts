@@ -80,7 +80,7 @@ export const WALLS_BY_ARCHETYPE: Readonly<Record<PropArchetype, readonly string[
  * resolves on disk.
  */
 export const ALL_WALL_URLS: readonly string[] = Array.from(
-	new Set(Object.values(WALLS_BY_ARCHETYPE).flatMap((pool) => pool)),
+	new Set(Object.values(WALLS_BY_ARCHETYPE).flat()),
 );
 
 /**
