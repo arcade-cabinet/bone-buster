@@ -3,13 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
-import { SCALE } from "../../design-tokens";
 import { BOSS_VISUAL_SCALE, type Enemy } from "../../engine";
 import { ENEMY_MODELS, pickEnemySkin } from "../../models";
-
-// POL19 — hit-flash tint constants. White lerp + bright blood emissive.
-const WHITE = new THREE.Color(0xffffff);
-const BLOOD_RED = new THREE.Color(SCALE.blood[300]);
 
 /**
  * Renders an enemy using a real 3DPSX GLB asset (see `models.ts`),
@@ -41,46 +36,6 @@ export function EnemyMesh({
 	// across multiple instances — a plain .clone() shares skeletons and
 	// every instance animates in lockstep.
 	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
-
-	// POL19 — collect material clones so we can modulate emissive on
-	// hit without mutating the shared cached GLB materials. Cloning
-	// materials per-instance keeps the hit-flash isolated to this
-	// enemy. The original color is captured for restore-on-flash-end.
-	const flashMaterials = useMemo(() => {
-		const out: {
-			material: THREE.MeshStandardMaterial;
-			baseColor: THREE.Color;
-			baseEmissive: THREE.Color;
-		}[] = [];
-		cloned.traverse((node) => {
-			const mesh = node as THREE.Mesh;
-			if (!mesh.isMesh) return;
-			const material = mesh.material;
-			if (Array.isArray(material)) {
-				for (let i = 0; i < material.length; i += 1) {
-					const m = material[i];
-					if ((m as THREE.MeshStandardMaterial).isMeshStandardMaterial) {
-						const cloned = (m as THREE.MeshStandardMaterial).clone();
-						material[i] = cloned;
-						out.push({
-							material: cloned,
-							baseColor: cloned.color.clone(),
-							baseEmissive: cloned.emissive.clone(),
-						});
-					}
-				}
-			} else if ((material as THREE.MeshStandardMaterial)?.isMeshStandardMaterial) {
-				const m = (material as THREE.MeshStandardMaterial).clone();
-				mesh.material = m;
-				out.push({
-					material: m,
-					baseColor: m.color.clone(),
-					baseEmissive: m.emissive.clone(),
-				});
-			}
-		});
-		return out;
-	}, [cloned]);
 	// Normalize size against measured bbox. Use the LONGEST axis (not
 	// just Y) because some horror meshes ship lying on the wrong axis
 	// — picking the biggest dim and matching it to heightTiles gives
@@ -117,45 +72,7 @@ export function EnemyMesh({
 		mixer.update(dt);
 		const group = groupRef.current;
 		if (!group) return;
-
-		// POL19 — hit-flash tint. While inside staggerUntil window, push
-		// each material toward white (color → #ffffff, emissive → bright
-		// blood-red) on an ease-out curve so the flash punches on impact
-		// and recovers smoothly.
-		const FLASH_MS = 140;
-		const nowMs = performance.now();
-		const stagger = enemy.staggerUntil ?? 0;
-		if (stagger > 0 && nowMs < stagger) {
-			// stagger was set at hitTime; the flash is the first FLASH_MS
-			// of that window (the stagger lasts longer for movement effect).
-			const flashStart = stagger - (enemy.tier === "boss" ? 100 : 70);
-			const flashAge = nowMs - flashStart;
-			if (flashAge >= 0 && flashAge < FLASH_MS) {
-				const t = flashAge / FLASH_MS;
-				const ease = (1 - t) * (1 - t); // ease-out quad — peak at t=0
-				for (const slot of flashMaterials) {
-					slot.material.color.copy(slot.baseColor).lerp(WHITE, ease);
-					slot.material.emissive.copy(slot.baseEmissive).lerp(BLOOD_RED, ease);
-					slot.material.emissiveIntensity = 0.5 + ease * 2.0;
-				}
-			} else {
-				// Restore baseline.
-				for (const slot of flashMaterials) {
-					slot.material.color.copy(slot.baseColor);
-					slot.material.emissive.copy(slot.baseEmissive);
-					slot.material.emissiveIntensity = 1;
-				}
-			}
-		} else if (stagger > 0) {
-			// Stagger ended; restore baseline. Setting once when stagger
-			// transitions to 0 would be cleaner, but checking each frame
-			// is cheap and correct against external mutations of stagger.
-			for (const slot of flashMaterials) {
-				slot.material.color.copy(slot.baseColor);
-				slot.material.emissive.copy(slot.baseEmissive);
-				slot.material.emissiveIntensity = 1;
-			}
-		}
+		// POL19 hit-flash moved to <EnemyHitFlash> slot (see docs/SLOT-ARCHITECTURE.md).
 
 		const t = performance.now() / 1000;
 		const bobY = hasNamedAnims ? 0 : Math.sin(t * 2.2 + bobPhase) * 0.06;

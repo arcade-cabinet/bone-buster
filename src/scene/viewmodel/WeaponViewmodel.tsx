@@ -67,8 +67,17 @@ export function WeaponViewmodel({
 	weapon,
 	mapSeed,
 	onMuzzleAnchor,
+	swapDipOffsetRef,
 }: {
 	weapon: WeaponId;
+	/**
+	 * POL20 — optional Y-offset ref driven by `<WeaponSwapDip>`. When
+	 * the slot is mounted, it writes a per-frame value here that this
+	 * viewmodel reads + adds to its Y translation, so the swap-dip
+	 * animation lives entirely in the slot. Omitting the prop disables
+	 * the feature without changing render behavior.
+	 */
+	swapDipOffsetRef?: { current: number };
 	/**
 	 * COV9 step-2 — seed used to pick the BLADE skin variant per run.
 	 * `pickMeleeSkin(mapSeed)` returns one of the 7 melee GLBs so each
@@ -187,11 +196,16 @@ export function WeaponViewmodel({
 			}
 		}
 
+		// POL20 — swap dip slot. WeaponSwapDip writes a Y delta here;
+		// we just read it. When the slot isn't mounted (prop omitted),
+		// dipY stays 0 and behavior matches pre-POL20.
+		const dipY = swapDipOffsetRef?.current ?? 0;
+
 		// In camera-local space:
 		//   +X = right, +Y = up, -Z = forward.
 		// model.offset = [right, up, forward (negative)] in world-units.
 		group.translateX(model.offset[0]);
-		group.translateY(model.offset[1]);
+		group.translateY(model.offset[1] + dipY);
 		group.translateZ(model.offset[2] + recoilOffset);
 	});
 

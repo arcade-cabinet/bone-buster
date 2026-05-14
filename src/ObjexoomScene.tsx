@@ -58,6 +58,7 @@ import {
 	DamageNumberField,
 	DebrisField,
 	DecalField,
+	EnemyHitFlash,
 	EnemyMesh,
 	ExitPortal,
 	Flashlight,
@@ -80,6 +81,7 @@ import {
 	TrapField,
 	TreasureChest,
 	VehicleWreck,
+	WeaponSwapDip,
 	WeaponViewmodel,
 } from "./scene";
 import { tickEnemyLoop } from "./scene/hooks/enemyTickLoop";
@@ -287,6 +289,10 @@ export function ObjexoomScene({
 	// it and scales its dt down to 5% inside the window so enemies
 	// appear to "freeze" — reads as a weighty kill-confirm punch.
 	const hitstopUntilRef = useRef(0);
+	// POL20 — shared Y-offset ref between WeaponSwapDip (writer) and
+	// WeaponViewmodel (reader). Slot architecture: the dip animation
+	// lives in its own component, the viewmodel just reads the value.
+	const weaponSwapDipOffsetRef = useRef(0);
 	// PA-MOD7 — the WeaponViewmodel registers its muzzle-anchor group
 	// here; per-frame we copy its world-position into muzzleLightRef so
 	// the flash bloom originates from the barrel tip rather than the
@@ -883,14 +889,20 @@ export function ObjexoomScene({
 			{wreckPosition && <VehicleWreck position={wreckPosition} seed={map.seed} />}
 
 			{enemiesRef.current.map((enemy) => (
-				<EnemyMesh
-					key={enemy.id}
-					enemy={enemy}
-					register={(group) => {
-						if (group) enemyMeshes.current.set(enemy.id, group);
-						else enemyMeshes.current.delete(enemy.id);
-					}}
-				/>
+				<group key={enemy.id}>
+					<EnemyMesh
+						enemy={enemy}
+						register={(group) => {
+							if (group) enemyMeshes.current.set(enemy.id, group);
+							else enemyMeshes.current.delete(enemy.id);
+						}}
+					/>
+					{/* POL19 — hit-flash slot. Sibling to EnemyMesh per
+					    docs/SLOT-ARCHITECTURE.md. Reads enemy.staggerUntil,
+					    looks up the registered mesh via enemyMeshes, clones
+					    + modulates materials. Returns null. */}
+					<EnemyHitFlash enemy={enemy} meshLookup={enemyMeshes} />
+				</group>
 			))}
 
 			{pickupsRef.current.map((pickup) => (
@@ -921,7 +933,14 @@ export function ObjexoomScene({
 			<BodyPartField />
 			<ShellEjectField />
 			<DamageNumberField />
-			<WeaponViewmodel weapon={weapon} mapSeed={map.seed} onMuzzleAnchor={onMuzzleAnchor} />
+			<WeaponViewmodel
+				weapon={weapon}
+				mapSeed={map.seed}
+				onMuzzleAnchor={onMuzzleAnchor}
+				swapDipOffsetRef={weaponSwapDipOffsetRef}
+			/>
+			{/* POL20 — weapon-swap dip slot per docs/SLOT-ARCHITECTURE.md. */}
+			<WeaponSwapDip weapon={weapon} dipOffsetRef={weaponSwapDipOffsetRef} />
 
 			<PlayerController map={map} active={active} hasKey={hasKey} settings={settings} />
 
