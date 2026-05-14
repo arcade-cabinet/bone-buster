@@ -5,8 +5,8 @@
  * (220ms after the trigger pull).
  */
 
-import { chromium } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import { chromium } from "@playwright/test";
 
 const BASE = "http://localhost:5191";
 const OUT = "test-results/pt5-flamethrower";
