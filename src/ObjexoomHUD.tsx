@@ -285,7 +285,7 @@ export function ObjexoomHUD({
 					{state.status === "transitioning" && (
 						<OverlayCard
 							title="LEVEL COMPLETE"
-							body={`ADVANCING TO M${state.run.runLevelsCleared + 1}`}
+							body={`ADVANCING TO M${state.run.runLevelsCleared + 1}\n\n${formatRunStats(state)}`}
 						/>
 					)}
 				</div>
