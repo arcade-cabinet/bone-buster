@@ -1,23 +1,39 @@
+import { useGLTF } from "@react-three/drei";
 import { useMemo } from "react";
+import { SkeletonUtils } from "three-stdlib";
+import { pickArchetype } from "../../archetype";
 import { TILE } from "../../constants";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import type { ObjexoomGridMap } from "../../engine";
+import type { PropArchetype } from "../../scatter/propPool";
+import { ALL_WALL_URLS, pickWallUrl } from "../../structures";
 import { WALL_HEIGHT } from "../constants";
 import { LockedDoor } from "./LockedDoor";
 
 /**
- * Renders an ObjexoomGridMap as floor + ceiling + wall boxes + lava
- * tiles. Walls are picked with a stable per-cell variant index so the
- * scene reads with subtle color variation rather than uniform fill.
+ * Renders an ObjexoomGridMap as floor + ceiling + wall slabs + lava
+ * tiles. COV3 step-5: wall cells are rendered as cloned modular GLBs
+ * keyed to the map's archetype (via `pickArchetype(map)`), replacing
+ * the procedural `<boxGeometry>` cubes. Each wall cell still
+ * physically occupies one TILE × WALL_HEIGHT × TILE slot — collision
+ * is unaffected — the GLB is scaled to fill the slot for visual fit.
+ *
+ * The per-cell variant pick uses the same deterministic formula as
+ * the previous color-variant index (`gx * 31 + gy * 17`) so two
+ * adjacent cells generally land on different variants.
  */
+const NATIVE_WALL_WIDTH = 2;
+const NATIVE_WALL_HEIGHT = 2;
+const NATIVE_WALL_DEPTH = 0.4;
+
 export function MapGeometry({ map, doorOpen }: { map: ObjexoomGridMap; doorOpen: boolean }) {
+	const archetype = useMemo<PropArchetype>(() => pickArchetype(map), [map]);
 	const walls = useMemo(() => {
-		const out: { x: number; z: number; variant: number }[] = [];
+		const out: { x: number; z: number; hash: number }[] = [];
 		for (let gy = 0; gy < map.height; gy += 1) {
 			for (let gx = 0; gx < map.width; gx += 1) {
 				if (map.cells[gy][gx] !== "wall") continue;
-				const variant = (gx * 31 + gy * 17) % 3;
-				out.push({ x: (gx + 0.5) * TILE, z: (gy + 0.5) * TILE, variant });
+				out.push({ x: (gx + 0.5) * TILE, z: (gy + 0.5) * TILE, hash: gx * 31 + gy * 17 });
 			}
 		}
 		return out;
@@ -73,29 +89,38 @@ export function MapGeometry({ map, doorOpen }: { map: ObjexoomGridMap; doorOpen:
 			))}
 
 			{walls.map((m) => (
-				<mesh
-					key={`w-${m.x}-${m.z}`}
-					position={[m.x, WALL_HEIGHT / 2, m.z]}
-					castShadow
-					receiveShadow
-				>
-					<boxGeometry args={[TILE, WALL_HEIGHT, TILE]} />
-					<meshStandardMaterial
-						color={
-							m.variant === 0
-								? OBJEXOOM_PALETTE.wallVariantCool
-								: m.variant === 1
-									? OBJEXOOM_PALETTE.wallVariantWarm
-									: OBJEXOOM_PALETTE.wallVariantNeutral
-						}
-						emissive={m.variant === 0 ? OBJEXOOM_PALETTE.indigo : OBJEXOOM_PALETTE.violet}
-						emissiveIntensity={0.08}
-						roughness={0.85}
-					/>
-				</mesh>
+				<GridWall key={`w-${m.x}-${m.z}`} archetype={archetype} x={m.x} z={m.z} hash={m.hash} />
 			))}
 
 			<LockedDoor position={doorPos} open={doorOpen} />
 		</group>
 	);
+}
+
+function GridWall({
+	archetype,
+	x,
+	z,
+	hash,
+}: {
+	archetype: PropArchetype;
+	x: number;
+	z: number;
+	hash: number;
+}) {
+	const url = pickWallUrl(archetype, hash);
+	const gltf = useGLTF(url);
+	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
+	const scaleX = TILE / NATIVE_WALL_WIDTH;
+	const scaleY = WALL_HEIGHT / NATIVE_WALL_HEIGHT;
+	const scaleZ = TILE / NATIVE_WALL_DEPTH;
+	return (
+		<group position={[x, 0, z]} scale={[scaleX, scaleY, scaleZ]}>
+			<primitive object={cloned} />
+		</group>
+	);
+}
+
+for (const url of ALL_WALL_URLS) {
+	useGLTF.preload(url);
 }

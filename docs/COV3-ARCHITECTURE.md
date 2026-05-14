@@ -91,14 +91,18 @@ gains the archetype argument; `SectorMapGeometry` resolves it via
 ALL ref levels — refLevel 0 stays corridor (canonical bytes), refLevels
 1+2 light up arena and courtyard pools respectively.
 
-### Step 5 (future commit) — modular walls on procedural grid maps
+### Step 5 (shipped) — modular walls on procedural grid maps
 
-Currently `MapGeometry` (grid path) renders procedural box-walls.
-Procedural maps benefit from per-archetype walls just as refLevels do.
-Requires the same `pickArchetype` + `pickWallUrl(archetype, hash)`
-plumbing on the grid path, plus a `useModularWalls` opt-in or unconditional
-adoption with the canonical-byte concern delegated to whichever screenshot
-suite covers procedural runs.
+`MapGeometry` (grid path) gained a `<GridWall>` inline component that
+mounts a cloned GLB per wall cell using `pickWallUrl(archetype, hash)`
+where archetype is resolved from `pickArchetype(map)` once per render.
+The per-cell hash retains the original `gx*31 + gy*17` formula so
+neighboring cells get different variants. GLBs are scaled to fill the
+cell slot (X/Y from native 2-unit dims, Z stretches the thin native
+depth so the wall reads solid from any angle). Adoption is
+unconditional — every procedural grid map gets archetype walls.
+Canonical screenshots stay byte-stable because the canonical refLevel-0
+pose runs on `SectorMapGeometry`, not the grid path.
 
 ## Single-source
 
