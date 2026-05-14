@@ -58,3 +58,4 @@
 {"ts":"2026-05-14T19:38:58.188Z","sha":"dbc24c756417","subject":"feat(scene): E13 step-13 — per-archetype water tint","decision":null,"why":null,"resolves":["directive Phase 11 E13 step-13."],"overrides":[]}
 {"ts":"2026-05-14T19:45:06.324Z","sha":"23f80be87f43","subject":"feat(hud): POL4 — secrets HUD + RunStats integration","decision":null,"why":null,"resolves":["directive Phase 11 POL4."],"overrides":[]}
 {"ts":"2026-05-14T19:47:59.478Z","sha":"05d28f37198b","subject":"feat(history): POL5 — secrets in run history persistence","decision":null,"why":null,"resolves":["directive Phase 11 POL5."],"overrides":[]}
+{"ts":"2026-05-14T19:50:46.154Z","sha":"64d2947ae354","subject":"feat(scene): E13 step-14 — canvas background matches fog color","decision":null,"why":null,"resolves":["directive Phase 11 E13 step-14."],"overrides":[]}

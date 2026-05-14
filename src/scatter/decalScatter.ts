@@ -14,7 +14,7 @@
  */
 
 import { pickArchetype } from "../archetype";
-import { pickDecalUrl } from "../decals";
+import { pickDecalUrlByArchetype } from "../decals";
 import type { MapSector, ObjexoomMap, Vec2 } from "../engine";
 import type { PropArchetype } from "./propPool";
 
@@ -69,6 +69,7 @@ function decalsOnEdge(
 	a: Vec2,
 	b: Vec2,
 	densityMultiplier: number,
+	archetype: PropArchetype,
 ): DecalInstance[] {
 	const len = Math.hypot(b.x - a.x, b.y - a.y);
 	if (len < 1.2) return []; // Edge too short for a decal.
@@ -113,7 +114,7 @@ function decalsOnEdge(
 			position: { x: px, y: py },
 			y,
 			yaw,
-			url: pickDecalUrl(slotSeed),
+			url: pickDecalUrlByArchetype(archetype, slotSeed),
 		});
 	}
 	return out;
@@ -129,7 +130,7 @@ export function spawnDecals(map: ObjexoomMap): DecalInstance[] {
 		for (let i = 0; i < sector.vertices.length; i += 1) {
 			const a = sector.vertices[i];
 			const b = sector.vertices[(i + 1) % sector.vertices.length];
-			out.push(...decalsOnEdge(sector, i, a, b, densityMultiplier));
+			out.push(...decalsOnEdge(sector, i, a, b, densityMultiplier, archetype));
 		}
 	}
 	return out;
