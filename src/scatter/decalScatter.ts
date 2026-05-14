@@ -13,10 +13,28 @@
  * survives map mutations to other sectors.
  */
 
+import { pickArchetype } from "../archetype";
 import { pickDecalUrl } from "../decals";
 import type { MapSector, ObjexoomMap, Vec2 } from "../engine";
+import type { PropArchetype } from "./propPool";
 
 const WALL_OFFSET = 0.05;
+
+/**
+ * E13 step-8 — per-archetype decal-density multiplier applied to the
+ * `lengthScale` cap. Corridor is 1.0 to preserve canonical bytes
+ * (refLevel 0 = corridor by seed%5 invariant). Arena/sewer push
+ * toward the 2-decal cap more often (more wear/grime); library and
+ * courtyard pull back (cleaner). Values clamp to [0, 2] after the
+ * multiply so the per-edge cap stays bounded.
+ */
+const DENSITY_MULTIPLIER: Readonly<Record<PropArchetype, number>> = {
+	corridor: 1.0,
+	arena: 1.3,
+	courtyard: 0.7,
+	sewer: 1.3,
+	library: 0.6,
+};
 
 export interface DecalInstance {
 	readonly id: number;
@@ -45,12 +63,22 @@ function hashFace(sectorId: number, edgeIdx: number, slot: number): number {
 	return h >>> 0;
 }
 
-function decalsOnEdge(sector: MapSector, edgeIdx: number, a: Vec2, b: Vec2): DecalInstance[] {
+function decalsOnEdge(
+	sector: MapSector,
+	edgeIdx: number,
+	a: Vec2,
+	b: Vec2,
+	densityMultiplier: number,
+): DecalInstance[] {
 	const len = Math.hypot(b.x - a.x, b.y - a.y);
 	if (len < 1.2) return []; // Edge too short for a decal.
 	// Decal count per edge: 0, 1, or 2 based on hash and edge length.
 	const countSeed = hashFace(sector.id, edgeIdx, 0);
-	const lengthScale = Math.min(2, Math.floor(len / 2.5));
+	const rawLengthScale = Math.floor(len / 2.5);
+	// E13 step-8: scale by archetype multiplier (corridor = 1.0, no-op).
+	// Round to nearest int so the formula stays integer; clamp to [0, 2]
+	// so the per-edge cap is bounded.
+	const lengthScale = Math.max(0, Math.min(2, Math.round(rawLengthScale * densityMultiplier)));
 	const count = countSeed % (lengthScale + 1); // 0..lengthScale inclusive
 	if (count === 0) return [];
 
@@ -94,12 +122,14 @@ function decalsOnEdge(sector: MapSector, edgeIdx: number, a: Vec2, b: Vec2): Dec
 export function spawnDecals(map: ObjexoomMap): DecalInstance[] {
 	if (map.kind !== "sectors") return [];
 	const out: DecalInstance[] = [];
+	const archetype = pickArchetype(map);
+	const densityMultiplier = DENSITY_MULTIPLIER[archetype];
 	for (const sector of map.sectors) {
 		if (sector.vertices.length < 3) continue;
 		for (let i = 0; i < sector.vertices.length; i += 1) {
 			const a = sector.vertices[i];
 			const b = sector.vertices[(i + 1) % sector.vertices.length];
-			out.push(...decalsOnEdge(sector, i, a, b));
+			out.push(...decalsOnEdge(sector, i, a, b, densityMultiplier));
 		}
 	}
 	return out;
