@@ -27,6 +27,7 @@ import { type LampInstance, spawnLamps } from "./lampScatter";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
 import { type DebrisInstance, spawnDebris } from "./scatter/debrisScatter";
+import { type DecalInstance, spawnDecals } from "./scatter/decalScatter";
 import { type FloorTileInstance, spawnFloorTiles } from "./scatter/floorTiles";
 import { type PropInstance, spawnProps } from "./scatter/propScatter";
 import {
@@ -35,6 +36,7 @@ import {
 	BodyPartField,
 	BulletField,
 	DebrisField,
+	DecalField,
 	EnemyMesh,
 	ExitPortal,
 	Flashlight,
@@ -131,6 +133,9 @@ export function ObjexoomScene({
 	// sector, 4-tile skip-radius from anchors. Reads as "this place has
 	// been overrun."
 	const debrisRef = useRef<DebrisInstance[]>(spawnDebris(map));
+	// COV6 step-2 — wall-face decal scatter. 0-2 decals per sector edge
+	// via tile hash, aggregate ≥3 per sector across edges.
+	const decalsRef = useRef<DecalInstance[]>(spawnDecals(map));
 	// E2 — reactive "all bosses dead" flag that the visual portal/door
 	// components read so they don't appear open while a boss is still
 	// alive. Initialized true when the map has no bosses (single source
@@ -686,6 +691,16 @@ export function ObjexoomScene({
 			{/* COV5 step-2 — sector-body debris scatter (3-5 per sector,
 			    skip-radius 4 from spawn/exit/key). Reads as "overrun." */}
 			<DebrisField debris={debrisRef.current} />
+
+			{/* COV6 step-2 — wall-face decals. Scatter data is computed
+			    above; the renderer is gated off in this commit because
+			    the decal GLBs are full meshes (posters/graffiti exported
+			    from Blender with their own scale + origin), not flat
+			    quads, and mounting them at sector edges produced view-
+			    blocking artifacts. Step-2.1 will bound each decal to a
+			    wall-quad billboard rather than rendering the raw GLB.
+			    The scatter data + tests stay live as the asset-enabler. */}
+			{false && <DecalField decals={decalsRef.current} />}
 
 			{enemiesRef.current.map((enemy) => (
 				<EnemyMesh

@@ -11,6 +11,7 @@ export { ParticleBurstField } from "./effects/ParticleBurstField";
 export { ShellEjectField } from "./effects/ShellEjectField";
 export { BarrelMesh } from "./entities/BarrelMesh";
 export { DebrisField } from "./entities/DebrisField";
+export { DecalField } from "./entities/DecalField";
 export { EnemyMesh } from "./entities/EnemyMesh";
 export { ExitPortal } from "./entities/ExitPortal";
 export { FloorTileField } from "./entities/FloorTileField";
