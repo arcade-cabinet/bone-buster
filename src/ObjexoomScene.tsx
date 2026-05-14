@@ -282,6 +282,11 @@ export function ObjexoomScene({
 	// POL13 — per-weapon bloom tier multiplier set on every shot by
 	// fireResolution; muzzle decay block applies it to base intensity.
 	const muzzleIntensityScaleRef = useRef(1.0);
+	// POL12 — hitstop window. fireResolution sets this to `now + 80ms`
+	// (or 150ms for boss kills) on any enemy kill; enemyTickLoop reads
+	// it and scales its dt down to 5% inside the window so enemies
+	// appear to "freeze" — reads as a weighty kill-confirm punch.
+	const hitstopUntilRef = useRef(0);
 	// PA-MOD7 — the WeaponViewmodel registers its muzzle-anchor group
 	// here; per-frame we copy its world-position into muzzleLightRef so
 	// the flash bloom originates from the barrel tip rather than the
@@ -604,6 +609,7 @@ export function ObjexoomScene({
 			playerY: py,
 			now,
 			dt,
+			hitstopUntilRef,
 		});
 
 		// Bullet integration — advance, check wall/player, retire dead bullets.
@@ -747,6 +753,7 @@ export function ObjexoomScene({
 				muzzleFlashUntilRef: muzzleFlashUntil,
 				muzzleColorRef,
 				muzzleIntensityScaleRef,
+				hitstopUntilRef,
 				explodeBarrel: (b) => explodeBarrelRef.current(b),
 			});
 		};

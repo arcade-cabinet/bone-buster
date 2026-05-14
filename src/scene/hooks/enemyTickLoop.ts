@@ -73,6 +73,16 @@ export interface EnemyTickContext {
 	playerY: number;
 	now: number;
 	dt: number;
+	/**
+	 * POL12 — hitstop on enemy kills. When `now < hitstopUntil`, the
+	 * effective dt for enemy AI/movement is scaled by HITSTOP_FACTOR
+	 * (near-zero) so enemies appear to "freeze" for the duration —
+	 * reads as a "weighty kill" punch from modernized DOOM. The player
+	 * camera + bullet ticks + particle ticks are NOT affected; only
+	 * this loop reads the ref. Optional so test contexts that don't
+	 * care about hitstop can pass `undefined` (treated as never-active).
+	 */
+	hitstopUntilRef?: { current: number };
 }
 
 export function tickEnemyLoop(ctx: EnemyTickContext): void {
@@ -93,8 +103,17 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 		playerX: px,
 		playerY: py,
 		now,
-		dt,
+		dt: rawDt,
+		hitstopUntilRef,
 	} = ctx;
+
+	// POL12 — hitstop. While the kill-punch window is open, scale enemy
+	// AI dt to 0.05 (5%) so enemies appear nearly frozen. 0 would cause
+	// divide-by-zero in places that normalize velocity by dt; 5% gives
+	// near-instant frame-coherence + a perceptual "frozen" read.
+	const HITSTOP_FACTOR = 0.05;
+	const hitstopActive = hitstopUntilRef !== undefined && now < hitstopUntilRef.current;
+	const dt = hitstopActive ? rawDt * HITSTOP_FACTOR : rawDt;
 
 	// Enemy AI — FSM driven (state 0=patrol, 1=chase, 3=shoot). Skeletons
 	// also melee on contact via the legacy attack-range/cooldown path.

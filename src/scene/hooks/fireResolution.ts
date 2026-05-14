@@ -61,6 +61,13 @@ export interface FireResolutionContext {
 	muzzleColorRef: { current: THREE.Color };
 	/** POL13 — muzzle-flash bloom tier per weapon (0=melee, 0.6=pistol, 0.9=chaingun, 1.4=shotgun, 1.1=flamethrower). */
 	muzzleIntensityScaleRef: { current: number };
+	/**
+	 * POL12 — hitstop trigger. On any enemy kill this shot, set the
+	 * `until` timestamp to `now + HITSTOP_MS`. Enemy AI tick reads this
+	 * ref and scales its dt down for the window so the kill reads as
+	 * a "weighty" punch.
+	 */
+	hitstopUntilRef: { current: number };
 	explodeBarrel: (barrel: Barrel) => void;
 }
 
@@ -83,6 +90,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		muzzleFlashUntilRef,
 		muzzleColorRef,
 		muzzleIntensityScaleRef,
+		hitstopUntilRef,
 		explodeBarrel,
 	} = ctx;
 
@@ -249,6 +257,13 @@ export function resolveFire(ctx: FireResolutionContext): void {
 
 	if (killsThisShot > 0) {
 		for (let i = 0; i < killsThisShot; i += 1) gameRef.current.onKill();
+		// POL12 — hitstop punch on any enemy kill this shot. 80ms reads
+		// as a "weighty kill" beat in modernized DOOM without disrupting
+		// the player's input pacing (cooldowns are ≥90ms so the hitstop
+		// is always inside the next-shot gap). Boss kills get a longer
+		// 150ms freeze — the "boss down" beat deserves a bigger pause.
+		const hitstopMs = bossKillsThisShot > 0 ? 150 : 80;
+		hitstopUntilRef.current = now + hitstopMs;
 		playSkeletonDeath();
 		// POL10 — layer the boss-down sting on top when at least one boss
 		// died in this shot. Players hear both the "kill confirmed" cascade
