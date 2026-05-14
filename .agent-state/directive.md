@@ -68,7 +68,7 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 - [x] **DS.4** Dependabot grouped non-major + major per ecosystem.
 - [x] **DS.5** Wire tokens into `ObjexoomHUD` (replace hardcoded hex/rgba with `var(--obx-…)`).
 - [x] **DS.6** Wire tokens into `ObjexoomShell` landing / mission-complete / game-over overlays.
-- [ ] **DS.7** Wire tokens into scene materials where they cross the JS↔three boundary (lava, key glow, fire muzzle, key pickup tint). Acceptance: zero literal hex codes in `src/scene/**/*.tsx` outside the design-tokens module; every material color routed through `OBJEXOOM_PALETTE` or `ROLE`.
+- [x] **DS.7** Wired tokens into every scene material. Zero literal hex codes remain in `src/scene/**/*.tsx`. Added 14 semantic anchors to `OBJEXOOM_PALETTE` (wallShadow/wallBase/wallVariantCool/wallVariantWarm/wallVariantNeutral/wallEmissive/door/flashlightWarm/weaponMetalLight/weaponMetalDark/ammoBrass/chestWood/chestWoodDeep/portalTeal/portalRose).
 - [x] **DS.8** Apply Black Ops One to all heading-class HUD elements.
 - [x] **DS.9** Re-shoot the 5 canonical screenshots with the new typography + tokens applied.
 

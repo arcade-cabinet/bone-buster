@@ -68,7 +68,7 @@ export function PickupMesh({
 					<mesh>
 						<boxGeometry args={[0.55, 0.32, 0.32]} />
 						<meshStandardMaterial
-							color="#1f2547"
+							color={OBJEXOOM_PALETTE.wallVariantCool}
 							emissive={OBJEXOOM_PALETTE.indigo}
 							emissiveIntensity={0.55}
 							roughness={0.5}
@@ -116,11 +116,19 @@ export function PickupMesh({
 					{/* Brass primer caps */}
 					<mesh position={[-0.15, 0.18, 0]}>
 						<cylinderGeometry args={[0.13, 0.13, 0.04, 12]} />
-						<meshStandardMaterial color="#b16a14" emissive="#b16a14" emissiveIntensity={0.4} />
+						<meshStandardMaterial
+							color={OBJEXOOM_PALETTE.ammoBrass}
+							emissive={OBJEXOOM_PALETTE.ammoBrass}
+							emissiveIntensity={0.4}
+						/>
 					</mesh>
 					<mesh position={[0.15, 0.18, 0]}>
 						<cylinderGeometry args={[0.13, 0.13, 0.04, 12]} />
-						<meshStandardMaterial color="#b16a14" emissive="#b16a14" emissiveIntensity={0.4} />
+						<meshStandardMaterial
+							color={OBJEXOOM_PALETTE.ammoBrass}
+							emissive={OBJEXOOM_PALETTE.ammoBrass}
+							emissiveIntensity={0.4}
+						/>
 					</mesh>
 				</group>
 			)}
@@ -130,8 +138,8 @@ export function PickupMesh({
 					<mesh rotation={[0, 0, Math.PI / 2]}>
 						<cylinderGeometry args={[0.13, 0.16, 0.45, 12]} />
 						<meshStandardMaterial
-							color="#fef3c7"
-							emissive="#fef3c7"
+							color={OBJEXOOM_PALETTE.flashlightWarm}
+							emissive={OBJEXOOM_PALETTE.flashlightWarm}
 							emissiveIntensity={0.6}
 							metalness={0.4}
 							roughness={0.3}

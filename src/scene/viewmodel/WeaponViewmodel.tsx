@@ -4,6 +4,7 @@ import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import { WEAPON_MODELS } from "../../models";
 import { WEAPONS, type WeaponId } from "../../weapons";
 
@@ -79,7 +80,10 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 			const isUntexturedBasic = m instanceof THREE.MeshBasicMaterial && !m.map;
 			if (isUntexturedStd || isUntexturedBasic) {
 				node.material = new THREE.MeshStandardMaterial({
-					color: weapon === "pistol" ? "#3a3a48" : "#1f2230",
+					color:
+						weapon === "pistol"
+							? OBJEXOOM_PALETTE.weaponMetalLight
+							: OBJEXOOM_PALETTE.weaponMetalDark,
 					emissive: WEAPONS[weapon].muzzleColor,
 					emissiveIntensity: 0.18,
 					metalness: 0.7,

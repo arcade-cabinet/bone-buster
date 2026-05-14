@@ -14,7 +14,7 @@ export function TreasureChest({ position }: { position: { x: number; y: number }
 			<mesh position={[0, 0, 0]}>
 				<boxGeometry args={[0.9, 0.45, 0.65]} />
 				<meshStandardMaterial
-					color="#3a2a14"
+					color={OBJEXOOM_PALETTE.chestWood}
 					emissive={OBJEXOOM_PALETTE.amber}
 					emissiveIntensity={0.15}
 					roughness={0.7}
@@ -23,7 +23,7 @@ export function TreasureChest({ position }: { position: { x: number; y: number }
 			<mesh position={[0, 0.33, 0]}>
 				<boxGeometry args={[0.92, 0.22, 0.68]} />
 				<meshStandardMaterial
-					color="#241a0a"
+					color={OBJEXOOM_PALETTE.chestWoodDeep}
 					emissive={OBJEXOOM_PALETTE.amber}
 					emissiveIntensity={0.18}
 					roughness={0.6}

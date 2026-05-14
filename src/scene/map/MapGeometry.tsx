@@ -53,14 +53,14 @@ export function MapGeometry({ map, doorOpen }: { map: ObjexoomGridMap; doorOpen:
 				<planeGeometry args={[floorSize, floorSize]} />
 				<meshStandardMaterial
 					color={OBJEXOOM_PALETTE.ink}
-					emissive="#1a1f3a"
+					emissive={OBJEXOOM_PALETTE.wallEmissive}
 					emissiveIntensity={0.18}
 					roughness={0.95}
 				/>
 			</mesh>
 			<mesh rotation={[Math.PI / 2, 0, 0]} position={[floorCenter, WALL_HEIGHT, floorCenter]}>
 				<planeGeometry args={[floorSize, floorSize]} />
-				<meshStandardMaterial color="#0b1024" roughness={1} />
+				<meshStandardMaterial color={OBJEXOOM_PALETTE.wallBase} roughness={1} />
 			</mesh>
 
 			{lavaTiles.map((p) => (
@@ -83,7 +83,13 @@ export function MapGeometry({ map, doorOpen }: { map: ObjexoomGridMap; doorOpen:
 				>
 					<boxGeometry args={[TILE, WALL_HEIGHT, TILE]} />
 					<meshStandardMaterial
-						color={m.variant === 0 ? "#1f2547" : m.variant === 1 ? "#26224a" : "#1a1e3b"}
+						color={
+							m.variant === 0
+								? OBJEXOOM_PALETTE.wallVariantCool
+								: m.variant === 1
+									? OBJEXOOM_PALETTE.wallVariantWarm
+									: OBJEXOOM_PALETTE.wallVariantNeutral
+						}
 						emissive={m.variant === 0 ? OBJEXOOM_PALETTE.indigo : OBJEXOOM_PALETTE.violet}
 						emissiveIntensity={0.08}
 						roughness={0.85}

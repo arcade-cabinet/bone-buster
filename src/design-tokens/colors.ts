@@ -200,6 +200,24 @@ export const OBJEXOOM_PALETTE = {
 	amber: SCALE.amber[400],
 	ink: SCALE.ink[900],
 	parchment: SCALE.parchment[100],
+	// DS.7 — semantic anchors used by the 3D scene. These appeared as
+	// raw hex literals scattered across map/entities/effects before the
+	// token rollout. Promoted here so brand tweaks ripple everywhere.
+	wallShadow: SCALE.ink[800], // "#080c20" — floor + ceiling base
+	wallBase: SCALE.ink[700], // "#0e1432" ≈ "#0b1024" — backdrop fill
+	wallVariantCool: "#1f2547", // cooler-tinted wall variant
+	wallVariantWarm: "#26224a", // warmer-tinted wall variant
+	wallVariantNeutral: "#1a1e3b", // neutral mid wall variant
+	wallEmissive: "#1a1f3a", // floor emissive cool blue
+	door: "#231a3f", // locked-door darker indigo
+	flashlightWarm: SCALE.parchment[50], // "#fef3c7" — flashlight + amber lens
+	weaponMetalLight: "#3a3a48", // pistol untextured metal
+	weaponMetalDark: "#1f2230", // chaingun/shotgun untextured metal
+	ammoBrass: "#b16a14", // shotgun shell brass
+	chestWood: "#3a2a14", // treasure chest body
+	chestWoodDeep: "#241a0a", // treasure chest band
+	portalTeal: "#22d3a8", // ExitPortal hue variant
+	portalRose: "#f43f5e", // ExitPortal hue variant
 } as const;
 
 export type ScaleStep = keyof typeof SCALE.ink;

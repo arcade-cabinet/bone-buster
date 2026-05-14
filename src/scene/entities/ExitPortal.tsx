@@ -15,8 +15,8 @@ const GOAL_HUES: readonly string[] = [
 	OBJEXOOM_PALETTE.violet,
 	OBJEXOOM_PALETTE.indigo,
 	OBJEXOOM_PALETTE.amber,
-	"#22d3a8", // teal
-	"#f43f5e", // rose
+	OBJEXOOM_PALETTE.portalTeal,
+	OBJEXOOM_PALETTE.portalRose,
 ];
 
 /**

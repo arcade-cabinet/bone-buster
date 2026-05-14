@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- **DS.7 Design tokens in scene materials.** Zero literal hex codes remain in `src/scene/**/*.tsx`. Added 14 semantic anchors to `OBJEXOOM_PALETTE` covering wall variants, door colors, flashlight warmth, weapon untextured-fallback metals, ammo brass, treasure-chest woods, and ExitPortal hue variants. Brand-color tweaks now ripple to the 3D scene with a single edit to the design-tokens module.
 - **PA9b Chaingun shell ejection.** Extended `ShellEjectField` to dispatch shells on chaingun fires (was shotgun-only). Chaingun shell renders at 0.6× scale with slightly reduced lateral/upward velocity; ~11/sec at the chaingun's 90ms cooldown. `MAX_SHELLS` raised 40 → 80 to handle the burst rate. Reference clone's behavior is now fully matched.
 - **E5 Destructible barrels with AoE damage.** Pure-sim core in `src/barrels.ts` (spawn, ray-test, AoE resolve). Fire-path prioritizes barrels over enemies when both are on the ray. Chain reactions via queue. 5-variant skin pool (4 metal weathering + 1 wooden) cycled by id. 14 new unit tests. ([688104d](https://github.com/objexiv/objexoom/commit/688104d))
 - **3DPSX asset coverage maximization principle.** User directive 2026-05-14: "I want as much possible value from ALL the PSX assets — anything that makes sense in a level." STANDARDS.md, PRD.md, and the directive's COV1-COV14 queue encode the principle: every new feature uses a multi-variant pool, seeded by id.

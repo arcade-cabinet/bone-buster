@@ -49,7 +49,7 @@ export function RealDoor({
 		>
 			<boxGeometry args={[2.2, 2.4, 0.18]} />
 			<meshStandardMaterial
-				color={unlocked ? OBJEXOOM_PALETTE.violet : "#231a3f"}
+				color={unlocked ? OBJEXOOM_PALETTE.violet : OBJEXOOM_PALETTE.door}
 				emissive={unlocked ? OBJEXOOM_PALETTE.violet : OBJEXOOM_PALETTE.indigo}
 				emissiveIntensity={unlocked ? 1.0 : 0.25}
 				roughness={0.4}

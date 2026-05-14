@@ -3,6 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef } from "react";
 import * as THREE from "three";
+import { OBJEXOOM_PALETTE } from "../../design-tokens";
 
 /**
  * J1 — flashlight. A SpotLight that lives at the camera position and
@@ -40,7 +41,7 @@ export function Flashlight() {
 				angle={0.5}
 				penumbra={0.3}
 				decay={1.5}
-				color="#fef3c7"
+				color={OBJEXOOM_PALETTE.flashlightWarm}
 				castShadow
 				shadow-mapSize={[1024, 1024]}
 				shadow-camera-near={0.2}

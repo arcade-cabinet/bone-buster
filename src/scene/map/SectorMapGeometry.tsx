@@ -33,8 +33,8 @@ export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 					<mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, sector.floorHeight, 0]}>
 						<shapeGeometry args={[shape]} />
 						<meshStandardMaterial
-							color={lava ? OBJEXOOM_PALETTE.amber : "#1f2547"}
-							emissive={lava ? OBJEXOOM_PALETTE.amber : "#0b1024"}
+							color={lava ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.wallVariantCool}
+							emissive={lava ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.wallBase}
 							emissiveIntensity={lava ? 1.4 : 0.18}
 							roughness={lava ? 0.4 : 0.95}
 							side={THREE.DoubleSide}
@@ -43,7 +43,11 @@ export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 					{/* Ceiling */}
 					<mesh rotation={[Math.PI / 2, 0, 0]} position={[0, sector.ceilingHeight, 0]}>
 						<shapeGeometry args={[shape]} />
-						<meshStandardMaterial color="#0b1024" roughness={1} side={THREE.DoubleSide} />
+						<meshStandardMaterial
+							color={OBJEXOOM_PALETTE.wallBase}
+							roughness={1}
+							side={THREE.DoubleSide}
+						/>
 					</mesh>
 					{/* Walls — one quad per edge. */}
 					{sector.vertices.map((a, idx) => {
@@ -63,7 +67,13 @@ export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 							>
 								<boxGeometry args={[len, height, 0.08]} />
 								<meshStandardMaterial
-									color={variant === 0 ? "#1f2547" : variant === 1 ? "#26224a" : "#1a1e3b"}
+									color={
+										variant === 0
+											? OBJEXOOM_PALETTE.wallVariantCool
+											: variant === 1
+												? OBJEXOOM_PALETTE.wallVariantWarm
+												: OBJEXOOM_PALETTE.wallVariantNeutral
+									}
 									emissive={variant === 0 ? OBJEXOOM_PALETTE.indigo : OBJEXOOM_PALETTE.violet}
 									emissiveIntensity={0.08}
 									roughness={0.85}
