@@ -175,6 +175,12 @@ export const ROLE = {
 	actionWin: SCALE.indigo[300], // win overlay accent (echoes Objexiv)
 	actionGoingBack: SCALE.ember[500], // going-back-strobe color
 
+	// 3D scene materials — semantic anchors for untextured weapon GLBs
+	// + scene props. Kept here (not in OBJEXOOM_PALETTE) so the 3D scene
+	// pulls from the same ROLE layer as the HUD.
+	sceneWeaponMetalLight: "#3a3a48", // pistol / lighter weapons
+	sceneWeaponMetalDark: "#1f2230", // chaingun / shotgun / darker weapons
+
 	// Strokes / borders
 	borderSoft: "rgba(124, 137, 248, 0.18)", // indigo-tinted at low alpha
 	borderHard: SCALE.indigo[700],

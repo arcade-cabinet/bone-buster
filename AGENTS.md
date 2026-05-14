@@ -29,8 +29,8 @@ When two docs disagree, use this order:
 2. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — system truth
 3. [`docs/DECISIONS.md`](./docs/DECISIONS.md) — binding decisions
 4. [`docs/PRD.md`](./docs/PRD.md) — remaining-work spec (acceptance criteria + DAG)
-5. [`docs/ROADMAP.md`](./docs/ROADMAP.md) — milestone summary
-6. [`.agent-state/directive.md`](./.agent-state/directive.md) — executable checklist mirror of PRD
+5. [`.agent-state/directive.md`](./.agent-state/directive.md) — executable checklist mirror of PRD
+6. [`docs/ROADMAP.md`](./docs/ROADMAP.md) — milestone summary
 
 ## Stack rules
 

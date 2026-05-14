@@ -146,23 +146,32 @@ export function resolveExplosion(
  * `ObjexoomScene.onFire`: project the barrel onto the ray, accept if
  * the perpendicular distance is within `BARREL_HIT_RADIUS`. Returns
  * the closest hit barrel + its forward distance, or `null` if no
- * barrel is hit within `maxDist`. */
+ * barrel is hit within `maxDist`.
+ *
+ * `dir` MAY be passed in unnormalized — we normalize here defensively
+ * so the forward-distance and perpendicular checks remain in tile
+ * units regardless of caller convention. A zero-length `dir` returns
+ * `null` (no ray to project against). */
 export function pickRayBarrel(
 	origin: Vec2,
 	dir: Vec2,
 	barrels: ReadonlyArray<Barrel>,
 	maxDist: number,
 ): { barrel: Barrel; dist: number } | null {
+	const len = Math.hypot(dir.x, dir.y);
+	if (len === 0) return null;
+	const nx = dir.x / len;
+	const ny = dir.y / len;
 	let best: { barrel: Barrel; dist: number } | null = null;
 	for (const b of barrels) {
 		if (b.exploded) continue;
 		const ex = b.position.x - origin.x;
 		const ey = b.position.y - origin.y;
-		const t = ex * dir.x + ey * dir.y;
+		const t = ex * nx + ey * ny;
 		if (t <= 0 || t > maxDist) continue;
 		if (best && t > best.dist) continue;
-		const perpX = ex - dir.x * t;
-		const perpY = ey - dir.y * t;
+		const perpX = ex - nx * t;
+		const perpY = ey - ny * t;
 		if (Math.hypot(perpX, perpY) > BARREL_HIT_RADIUS) continue;
 		best = { barrel: b, dist: t };
 	}

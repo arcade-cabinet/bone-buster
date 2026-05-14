@@ -3,7 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
-import { OBJEXOOM_PALETTE } from "../../design-tokens";
+import { ROLE } from "../../design-tokens";
 import { WEAPON_MODELS } from "../../models";
 import { WEAPONS, type WeaponId } from "../../weapons";
 
@@ -76,10 +76,7 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 			const isUntexturedBasic = m instanceof THREE.MeshBasicMaterial && !m.map;
 			if (isUntexturedStd || isUntexturedBasic) {
 				const mat = new THREE.MeshStandardMaterial({
-					color:
-						weapon === "pistol"
-							? OBJEXOOM_PALETTE.weaponMetalLight
-							: OBJEXOOM_PALETTE.weaponMetalDark,
+					color: weapon === "pistol" ? ROLE.sceneWeaponMetalLight : ROLE.sceneWeaponMetalDark,
 					emissive: WEAPONS[weapon].muzzleColor,
 					emissiveIntensity: 0.18,
 					metalness: 0.7,

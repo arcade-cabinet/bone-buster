@@ -97,6 +97,21 @@ describe("pickRayBarrel", () => {
 		const behind: Barrel[] = [{ id: 0, position: { x: -3, y: 0 }, hp: 3, exploded: false }];
 		expect(pickRayBarrel({ x: 0, y: 0 }, { x: 1, y: 0 }, behind, 10)).toBeNull();
 	});
+
+	it("normalizes a non-unit-length dir so unit-mismatched callers stay correct", () => {
+		const inLine: Barrel[] = [{ id: 0, position: { x: 5, y: 0 }, hp: 3, exploded: false }];
+		// A dir vector of length 4 (instead of 1) would, pre-normalization,
+		// scale the projected forward distance to 20 — falsely beyond the
+		// 10-tile maxDist. After normalization the hit lands at t=5.
+		const hit = pickRayBarrel({ x: 0, y: 0 }, { x: 4, y: 0 }, inLine, 10);
+		expect(hit?.barrel.id).toBe(0);
+		expect(hit?.dist).toBeCloseTo(5, 5);
+	});
+
+	it("returns null when dir is a zero vector", () => {
+		const any: Barrel[] = [{ id: 0, position: { x: 5, y: 0 }, hp: 3, exploded: false }];
+		expect(pickRayBarrel({ x: 0, y: 0 }, { x: 0, y: 0 }, any, 10)).toBeNull();
+	});
 });
 
 describe("resolveExplosion", () => {

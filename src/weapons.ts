@@ -1,3 +1,5 @@
+import { LINEAGE, ROLE, SCALE } from "./design-tokens";
+
 export type WeaponId = "melee" | "pistol" | "chaingun" | "shotgun";
 
 export type WeaponSpec = Readonly<{
@@ -30,7 +32,9 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		ammoCostPerShot: 0,
 		startingAmmo: Number.POSITIVE_INFINITY,
 		pickupAmmo: 0,
-		muzzleColor: "#ef4444",
+		// scale-step: muzzle-flash hue wants a slightly lighter red than
+		// ROLE.actionFire (blood[500]) so the BLADE swing reads warm-but-not-arterial.
+		muzzleColor: SCALE.blood[400],
 		hudHotkey: "1",
 	},
 	pistol: {
@@ -44,7 +48,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		ammoCostPerShot: 0,
 		startingAmmo: Number.POSITIVE_INFINITY,
 		pickupAmmo: 0,
-		muzzleColor: "#6172f3",
+		muzzleColor: LINEAGE.objexivIndigo,
 		hudHotkey: "2",
 	},
 	chaingun: {
@@ -60,7 +64,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		ammoCostPerShot: 0,
 		startingAmmo: Number.POSITIVE_INFINITY,
 		pickupAmmo: 0,
-		muzzleColor: "#a855f7",
+		muzzleColor: ROLE.accentPrimary,
 		hudHotkey: "3",
 	},
 	shotgun: {
@@ -74,7 +78,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		ammoCostPerShot: 1,
 		startingAmmo: 0,
 		pickupAmmo: 8,
-		muzzleColor: "#f59e0b",
+		muzzleColor: ROLE.actionKey,
 		hudHotkey: "4",
 	},
 };
