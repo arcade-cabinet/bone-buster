@@ -78,8 +78,10 @@ function svgFor(size, maskable) {
 </svg>`;
 }
 
-async function rasterize(svg, outPath, size) {
-	const browser = await chromium.launch();
+// CodeRabbit nitpick fold (PR #16): reuse a single Chromium instance
+// across all icon jobs. Launching the browser is ~1-2s; with 5 jobs
+// that saves ~5-10s on every PWA-icon regeneration.
+async function rasterize(browser, svg, outPath, size) {
 	const ctx = await browser.newContext({
 		viewport: { width: size, height: size },
 		deviceScaleFactor: 1,
@@ -96,7 +98,7 @@ async function rasterize(svg, outPath, size) {
 	const png = await page.screenshot({ omitBackground: true, type: "png" });
 	mkdirSync(dirname(outPath), { recursive: true });
 	writeFileSync(outPath, png);
-	await browser.close();
+	await ctx.close();
 	return png.length;
 }
 
@@ -110,21 +112,26 @@ const JOBS = [
 	{ size: 32, maskable: false, out: "public/favicon-32.png", initialsOnly: true },
 ];
 
-for (const job of JOBS) {
-	const svg = job.initialsOnly
-		? `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-        <rect width="32" height="32" fill="${TOKENS.bgVoid}"/>
-        <text x="50%" y="62%" text-anchor="middle"
-              font-family="'Black Ops One', Impact, sans-serif"
-              font-size="14" font-weight="900" fill="${TOKENS.primary}">O</text>
-      </svg>`
-		: svgFor(job.size, job.maskable);
-	const outPath = resolve(ROOT, job.out);
-	process.stdout.write(
-		`Rendering ${job.out} (${job.size}px${job.maskable ? " maskable" : ""}) ... `,
-	);
-	const bytes = await rasterize(svg, outPath, job.size);
-	console.log(`${(bytes / 1024).toFixed(1)} KB`);
+const browser = await chromium.launch();
+try {
+	for (const job of JOBS) {
+		const svg = job.initialsOnly
+			? `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+          <rect width="32" height="32" fill="${TOKENS.bgVoid}"/>
+          <text x="50%" y="62%" text-anchor="middle"
+                font-family="'Black Ops One', Impact, sans-serif"
+                font-size="14" font-weight="900" fill="${TOKENS.primary}">O</text>
+        </svg>`
+			: svgFor(job.size, job.maskable);
+		const outPath = resolve(ROOT, job.out);
+		process.stdout.write(
+			`Rendering ${job.out} (${job.size}px${job.maskable ? " maskable" : ""}) ... `,
+		);
+		const bytes = await rasterize(browser, svg, outPath, job.size);
+		console.log(`${(bytes / 1024).toFixed(1)} KB`);
+	}
+} finally {
+	await browser.close();
 }
 
 console.log("\nDone. Icons written to public/icons/ and public/favicon-32.png.");
