@@ -602,6 +602,7 @@ export function ObjexoomShell() {
 						levelsCleared: state.run.runLevelsCleared,
 						totalKills: state.run.runTotalKills,
 						totalDamageTaken: state.run.runTotalDamageTaken,
+						totalSecrets: state.run.runTotalSecrets,
 						level: settings.level,
 						outcome: state.status === "won" ? "won" : "died",
 					},

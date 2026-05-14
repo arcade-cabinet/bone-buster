@@ -24,6 +24,8 @@ export type RunRecord = Readonly<{
 	levelsCleared: number;
 	totalKills: number;
 	totalDamageTaken: number;
+	/** POL5 — secrets triggered across the run. Older rows default to 0. */
+	totalSecrets: number;
 	// "procedural" or 1-5 — stored as string for forward compat.
 	levelSet: string;
 	outcome: RunOutcome;
@@ -35,6 +37,8 @@ export type RunInsert = Readonly<{
 	levelsCleared: number;
 	totalKills: number;
 	totalDamageTaken: number;
+	/** POL5 — secrets triggered across the run. */
+	totalSecrets: number;
 	level: LevelChoice;
 	outcome: RunOutcome;
 }>;
@@ -80,6 +84,16 @@ function ensureSchema(db: Database) {
 		);
 	`);
 	db.run(`CREATE INDEX IF NOT EXISTS runs_ended_at_desc ON runs (ended_at DESC);`);
+	// POL5 — additive migration for the secrets count. Older blobs lack
+	// this column; ALTER TABLE ADD COLUMN with a NOT NULL DEFAULT 0 fills
+	// in zeros for legacy rows. Wrap in try/catch because sql.js doesn't
+	// support IF NOT EXISTS on ALTER TABLE — second run throws "duplicate
+	// column name".
+	try {
+		db.run(`ALTER TABLE runs ADD COLUMN total_secrets INTEGER NOT NULL DEFAULT 0`);
+	} catch {
+		// Column already exists from a prior run — fine.
+	}
 }
 
 /**
@@ -109,14 +123,15 @@ export async function openRunHistory(): Promise<RunHistory> {
 	const insert: RunHistory["insert"] = (record, now) => {
 		db.run(
 			`INSERT INTO runs (started_at, ended_at, levels_cleared, total_kills,
-			                   total_damage_taken, level_set, outcome)
-			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			                   total_damage_taken, total_secrets, level_set, outcome)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				record.startedAt,
 				now,
 				record.levelsCleared,
 				record.totalKills,
 				record.totalDamageTaken,
+				record.totalSecrets,
 				String(record.level),
 				record.outcome,
 			],
@@ -179,6 +194,7 @@ function rowToRecord(row: Record<string, unknown>): RunRecord {
 		levelsCleared: Number(row.levels_cleared),
 		totalKills: Number(row.total_kills),
 		totalDamageTaken: Number(row.total_damage_taken),
+		totalSecrets: Number(row.total_secrets) || 0,
 		levelSet: String(row.level_set),
 		outcome: String(row.outcome) as RunOutcome,
 	};

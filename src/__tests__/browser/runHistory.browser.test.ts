@@ -16,6 +16,7 @@ const SAMPLE: RunInsert = {
 	levelsCleared: 3,
 	totalKills: 42,
 	totalDamageTaken: 17,
+	totalSecrets: 2,
 	level: 1,
 	outcome: "died",
 };
