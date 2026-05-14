@@ -1,6 +1,6 @@
 # Continuous Work Directive — objexoom
 
-**Status:** ACTIVE
+**Status:** RELEASED
 **Owner:** Claude
 **Mandate:** "you are to treat NOTHING as pre-existing I WANT A FULLY POLISHED PLAYABLE GAME PORTED FROM THE REFERENCE DOOM CLONE" — carried over from the original `objexiv/objexiv@feat/objexoom-easter-egg` directive.
 
