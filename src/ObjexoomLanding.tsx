@@ -415,6 +415,21 @@ function HelpPane({ onBack }: { onBack: () => void }) {
 				not pleased to see you.
 			</p>
 
+			<div style={{ ...paneHeadingStyle, marginTop: 20 }}>ARCHETYPES</div>
+			<p style={objectiveStyle}>
+				Every run picks one of five flavors deterministically from the seed:
+				<br />
+				<strong>CORRIDOR</strong> tight cool ink-violet halls · the baseline.
+				<br />
+				<strong>ARENA</strong> ember-red combat space · denser enemies, sparser cover.
+				<br />
+				<strong>COURTYARD</strong> cool dusk-indigo outdoor · mid density, foliage scatter.
+				<br />
+				<strong>SEWER</strong> damp parchment underground · oppressive, traps.
+				<br />
+				<strong>LIBRARY</strong> warm amber study halls · sparse enemies, dense props, NPCs.
+			</p>
+
 			<MenuItem label="BACK" onClick={onBack} />
 		</motion.section>
 	);
