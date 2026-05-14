@@ -2,6 +2,20 @@
 
 **Status:** ACTIVE
 
+## CONTINUE doesn't have an end-of-turn
+
+User feedback (verbatim, 2026-05-14): **"Update your directives FIRST you are STILL stopping and not dojng EVERYTHING"**
+
+`ScheduleWakeup` at end-of-turn is a stop. Context auto-compacts; long
+turns are fine. After every shipped commit: pick the next `[ ]` item
+(or seed the next forward-sweep item) and start it IN THE SAME TURN.
+
+End-of-turn summaries that say "next wake picks up X" are stops in
+disguise. Don't write them. Only stop on: (a) directive drained AND
+no forward-sweep work surfaces, (b) test/CI failure needing user
+knowledge, (c) destructive action needing per-op authorization, (d)
+ambiguous design question that flips scope.
+
 ## Phase 11 — continuing polish
 
 - [x] **COV3 step-6 — per-archetype procedural floor tint.** Shipped. Extended `ArchetypeLightPalette` with two new fields: `floorColor` and `floorEmissive`. `MapGeometry`'s floor `<meshStandardMaterial>` now reads from the archetype palette via `getArchetypeLightPalette(archetype)` instead of the hardcoded `OBJEXOOM_PALETTE.ink` / `wallEmissive` literals. Corridor entry preserves the pre-step-6 literal values for byte-stability (refLevel 0 runs on sector path, not this code, but the procedural corridor path stays visually identical). Per-archetype tints: arena → SCALE.ember[900] with SCALE.blood[700] emissive (vivid red-orange combat surface), courtyard → SCALE.indigo[900]/[700] (cool dusk), sewer → SCALE.parchment[900]/[700] (damp underground), library → SCALE.amber[900]/[700] (warm sepia paper-tinted). Two new test assertions: corridor floor preserves canonical literals, ≥3 archetypes have unique floor colors. Updated existing "every entry has valid hex" test to cover floor fields too. 490 unit + 5 browser + 5 canonical + 5 archetype green. Self-judged via re-captured archetype shots: arena floor reads vivid red, sewer reads damp parchment, library reads sepia paper, courtyard reads dusk-cool, corridor unchanged — closes the last visual-flatness gap on the procedural archetype shots. Decision: tint via palette extension vs per-cell GLB scatter. Why: 400 GLB clones per map is render-cost prohibitive; a single tinted plane matches the lighting system's existing per-archetype shape and lands the visual win at near-zero perf cost. If per-tile texture detail becomes desirable, a future step can layer GLBs on top of the tinted base.
