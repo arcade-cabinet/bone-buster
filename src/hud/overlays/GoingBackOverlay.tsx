@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 /**
  * POL26 — going-back klaxon overlay (HUD overlay slot per
@@ -10,6 +11,12 @@ import { motion } from "framer-motion";
  *   - Edge vignette pulses (radial gradient, blood[600] at 35% to
  *     transparent at 0%, peak opacity 0.45 → 0.15 → 0.45 over 1.4s
  *     loop). Reads as the room itself pulsing.
+ *   - PT4B — on the FIRST going_back transition per mount, a
+ *     transient "RETURN TO SPAWN" directive card fades in 500ms
+ *     after the phase flips, holds 2 seconds, then fades out
+ *     800ms. This is the one-shot teach moment for new players —
+ *     the chevrons are the persistent klaxon, this card is the
+ *     directive that tells them WHERE to go.
  *
  * All elements render as `motion.div` with infinite repeating
  * animations. Mount conditional on phase so when the player isn't
@@ -17,6 +24,25 @@ import { motion } from "framer-motion";
  * bytes stay stable).
  */
 export function GoingBackOverlay({ phase }: { phase: "out" | "going_back" }) {
+	const [showDirective, setShowDirective] = useState(false);
+	useEffect(() => {
+		if (phase !== "going_back") {
+			setShowDirective(false);
+			return;
+		}
+		// Delay 500ms so the chevrons + vignette establish first,
+		// then the card fades in over its own 0.5s entry.
+		const t1 = window.setTimeout(() => setShowDirective(true), 500);
+		// Hold 2 seconds visible, then 800ms fade-out (handled by
+		// AnimatePresence-style key change → we just flip back to
+		// false at 500 + 500 + 2000 = 3000ms).
+		const t2 = window.setTimeout(() => setShowDirective(false), 3300);
+		return () => {
+			window.clearTimeout(t1);
+			window.clearTimeout(t2);
+		};
+	}, [phase]);
+
 	if (phase !== "going_back") return null;
 
 	const stripePattern =
@@ -66,6 +92,33 @@ export function GoingBackOverlay({ phase }: { phase: "out" | "going_back" }) {
 				animate={{ opacity: [0.6, 1, 0.6] }}
 				transition={{ duration: 1.4, ease: "easeInOut", repeat: Infinity }}
 			/>
+			{showDirective && (
+				<motion.div
+					style={{
+						position: "absolute",
+						left: "50%",
+						top: "35%",
+						transform: "translate(-50%, -50%)",
+						padding: "14px 30px",
+						background: "rgba(15, 7, 7, 0.78)",
+						border: "1px solid rgba(248, 113, 113, 0.55)",
+						borderRadius: 6,
+						fontFamily: "'Black Ops One', 'Press Start 2P', system-ui, monospace",
+						fontWeight: 400,
+						fontSize: 22,
+						letterSpacing: "0.18em",
+						color: "rgba(254, 226, 226, 0.95)",
+						textShadow: "0 0 14px rgba(220, 38, 38, 0.85), 0 0 4px rgba(254, 202, 202, 0.7)",
+						pointerEvents: "none",
+					}}
+					initial={{ opacity: 0, scale: 0.85, y: 12 }}
+					animate={{ opacity: 1, scale: 1, y: 0 }}
+					exit={{ opacity: 0, scale: 0.95, y: -8 }}
+					transition={{ type: "spring", stiffness: 260, damping: 22 }}
+				>
+					RETURN TO SPAWN
+				</motion.div>
+			)}
 		</>
 	);
 }

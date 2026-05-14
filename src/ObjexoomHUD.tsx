@@ -252,8 +252,12 @@ export function ObjexoomHUD({
 
 			{state.status === "playing" && touchMode && <TouchControls />}
 
+			{/* PT4A — prepend movement hint so a new player who clicks
+			    NEW GAME doesn't stand still wondering how to walk. */}
 			{state.status === "playing" && !touchMode && (
-				<div style={hintStyle}>ESC TO PAUSE · 1/2/3 OR SCROLL TO SWAP · LMB TO FIRE</div>
+				<div style={hintStyle}>
+					WASD TO MOVE · MOUSE TO LOOK · LMB TO FIRE · 1-5 OR SCROLL TO SWAP · ESC TO PAUSE
+				</div>
 			)}
 
 			{/* M4 — "Click to engage" prompt when in playing state but pointer
