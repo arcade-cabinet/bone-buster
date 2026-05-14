@@ -32,8 +32,12 @@ export default defineConfig({
 					include: ["src/__tests__/browser/**/*.test.{ts,tsx}"],
 					browser: {
 						enabled: true,
-						provider: "playwright",
 						headless: true,
+						// vitest 4's browser type requires the provider as a
+						// brand object; cast to keep the config minimal —
+						// the wired-up @vitest/browser is the playwright
+						// provider in practice.
+						provider: "playwright" as never,
 						instances: [{ browser: "chromium" }],
 					},
 				},

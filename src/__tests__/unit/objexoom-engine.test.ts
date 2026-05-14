@@ -138,13 +138,7 @@ describe("objexoom engine — collision + raycast", () => {
 		const dx = wallSomewhere.x - map.playerSpawn.x;
 		const dy = wallSomewhere.y - map.playerSpawn.y;
 		const len = Math.hypot(dx, dy) || 1;
-		const ray = castRay(
-			map.playerSpawn,
-			{ x: dx / len, y: dy / len },
-			map,
-			false,
-			TILE * 30,
-		);
+		const ray = castRay(map.playerSpawn, { x: dx / len, y: dy / len }, map, false, TILE * 30);
 		expect(ray.dist).toBeLessThan(TILE * 30);
 		expect(ray.hit).not.toBeNull();
 	});
@@ -257,35 +251,20 @@ describe("objexoom engine — sector containment + lookup", () => {
 	});
 
 	it("rayHitsSegment: ray hits perpendicular segment ahead", () => {
-		const t = rayHitsSegment(
-			{ x: 0, y: 0 },
-			{ x: 1, y: 0 },
-			{ x: 5, y: -1 },
-			{ x: 5, y: 1 },
-		);
-		expect(t).not.toBeNull();
-		expect(t!).toBeCloseTo(5, 4);
+		const t = rayHitsSegment({ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 5, y: -1 }, { x: 5, y: 1 });
+		if (t === null) throw new Error("expected hit");
+		expect(t).toBeCloseTo(5, 4);
 	});
 
 	it("rayHitsSegment: ray parallel to segment returns null", () => {
 		expect(
-			rayHitsSegment(
-				{ x: 0, y: 0 },
-				{ x: 1, y: 0 },
-				{ x: 5, y: 1 },
-				{ x: 10, y: 1 },
-			),
+			rayHitsSegment({ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 5, y: 1 }, { x: 10, y: 1 }),
 		).toBeNull();
 	});
 
 	it("rayHitsSegment: segment behind the ray returns null", () => {
 		expect(
-			rayHitsSegment(
-				{ x: 0, y: 0 },
-				{ x: 1, y: 0 },
-				{ x: -5, y: -1 },
-				{ x: -5, y: 1 },
-			),
+			rayHitsSegment({ x: 0, y: 0 }, { x: 1, y: 0 }, { x: -5, y: -1 }, { x: -5, y: 1 }),
 		).toBeNull();
 	});
 
@@ -293,9 +272,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		const sectorMap: ObjexoomSectorMap = {
 			kind: "sectors",
 			seed: 0,
-			sectors: [
-				{ id: 0, vertices: square(0, 0, 5), floorHeight: 0, ceilingHeight: 10 },
-			],
+			sectors: [{ id: 0, vertices: square(0, 0, 5), floorHeight: 0, ceilingHeight: 10 }],
 			playerSpawn: { x: 0, y: 0 },
 			playerYaw: 0,
 			enemySpawns: [],
@@ -329,12 +306,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 			exitPosition: { x: 100, y: 100 },
 			bounds: { minX: -5, minY: -5, maxX: 5, maxY: 5 },
 		};
-		const ray = castRaySectors(
-			{ x: 100, y: 100 },
-			{ x: 1, y: 0 },
-			sectorMap,
-			50,
-		);
+		const ray = castRaySectors({ x: 100, y: 100 }, { x: 1, y: 0 }, sectorMap, 50);
 		expect(ray.dist).toBe(50);
 		expect(ray.hit).toBeNull();
 	});
@@ -365,13 +337,9 @@ describe("objexoom engine — sector containment + lookup", () => {
 			exitPosition: { x: 20, y: 0 },
 			bounds: { minX: -5, minY: -5, maxX: 25, maxY: 5 },
 		};
-		expect(
-			hasLineOfSightSectors({ x: -2, y: 0 }, { x: 2, y: 0 }, sectorMap),
-		).toBe(true);
+		expect(hasLineOfSightSectors({ x: -2, y: 0 }, { x: 2, y: 0 }, sectorMap)).toBe(true);
 		// Walking from sector 0 to sector 1 crosses two walls (sector edges).
-		expect(
-			hasLineOfSightSectors({ x: 0, y: 0 }, { x: 20, y: 0 }, sectorMap),
-		).toBe(false);
+		expect(hasLineOfSightSectors({ x: 0, y: 0 }, { x: 20, y: 0 }, sectorMap)).toBe(false);
 	});
 
 	it("computePortalEdges: shared edges with matching heights are portals", () => {
@@ -482,12 +450,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		};
 		const portals = computePortalEdges(sectorMap);
 		// Player at (9.5, 5) with radius 0.8 — clipping into the east wall.
-		const resolved = resolveCollisionSectors(
-			{ x: 9.5, y: 5 },
-			sectorMap,
-			portals,
-			0.8,
-		);
+		const resolved = resolveCollisionSectors({ x: 9.5, y: 5 }, sectorMap, portals, 0.8);
 		expect(resolved.x).toBeLessThanOrEqual(9.2 + 1e-3);
 	});
 
@@ -529,12 +492,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		};
 		const portals = computePortalEdges(sectorMap);
 		// Standing right at the portal — should NOT be pushed.
-		const resolved = resolveCollisionSectors(
-			{ x: 10, y: 5 },
-			sectorMap,
-			portals,
-			0.8,
-		);
+		const resolved = resolveCollisionSectors({ x: 10, y: 5 }, sectorMap, portals, 0.8);
 		expect(resolved.x).toBeCloseTo(10, 4);
 		expect(resolved.y).toBeCloseTo(5, 4);
 	});

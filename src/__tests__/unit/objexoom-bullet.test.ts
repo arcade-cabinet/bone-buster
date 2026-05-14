@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	ENEMY_BULLET_TTL_MS,
-	generateMap,
-	makeEnemyBullet,
-	stepEnemyBullet,
-} from "@/engine";
+import { ENEMY_BULLET_TTL_MS, generateMap, makeEnemyBullet, stepEnemyBullet } from "@/engine";
 
 describe("objexoom EnemyBullet (C2)", () => {
 	const map = generateMap(12345);
@@ -40,13 +35,7 @@ describe("objexoom EnemyBullet (C2)", () => {
 
 	it("returns hitWall when the bullet path is blocked", () => {
 		// Use procedural map's known wall: cell (0,0) is wall.
-		const bullet = makeEnemyBullet(
-			0,
-			0,
-			{ x: 0.5, y: 0.5 },
-			{ x: -10, y: 0.5 },
-			0,
-		);
+		const bullet = makeEnemyBullet(0, 0, { x: 0.5, y: 0.5 }, { x: -10, y: 0.5 }, 0);
 		const step = stepEnemyBullet(bullet, 0.5, 100, { x: 99, y: 99 }, map, ctx);
 		// Either hit a wall or — if the spawn is *inside* the wall — alive.
 		// On the procedural map the perimeter cells are wall, so a bullet

@@ -8,10 +8,7 @@
 //
 // K8 — also covers getMusicLoadProgress for the K6 landing indicator.
 import { describe, expect, it } from "vitest";
-import {
-	getMusicLoadProgress,
-	panForPosition,
-} from "@/sfx";
+import { getMusicLoadProgress, panForPosition } from "@/sfx";
 
 describe("objexoom sfx — panForPosition", () => {
 	const camera = { x: 0, y: 0, yaw: 0 };

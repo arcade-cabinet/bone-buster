@@ -12,13 +12,7 @@
  *   9 = ManyEnemies (squad spawn — emits one wraith + one skeleton at the position)
  */
 
-import type {
-	EnemySpawn,
-	MapSector,
-	ObjexoomSectorMap,
-	PickupSpawn,
-	Vec2,
-} from "./engine";
+import type { EnemySpawn, MapSector, ObjexoomSectorMap, PickupSpawn, Vec2 } from "./engine";
 import type { Difficulty } from "./settings";
 import { decodeRefLevel, levelBounds, type RefLevelIndex } from "./turtle";
 
@@ -132,9 +126,7 @@ export function loadRefLevel(
 	// Fallbacks — every level needs a player spawn and an exit. If the
 	// decoded turtle stream didn't carry one, derive from geometry.
 	if (!playerSpawn) {
-		playerSpawn = sectors[0]
-			? polygonCentroid(sectors[0].vertices)
-			: { x: 0, y: 0 };
+		playerSpawn = sectors[0] ? polygonCentroid(sectors[0].vertices) : { x: 0, y: 0 };
 	}
 	if (!exitPosition) {
 		// Furthest sector centroid from spawn.

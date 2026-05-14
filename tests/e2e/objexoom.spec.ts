@@ -38,9 +38,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await expect(page.getByRole("heading", { name: /OBJEXOOM/ })).toBeVisible();
 		await expect(page.getByRole("button", { name: /NEW GAME/ })).toBeVisible();
 		await expect(page.getByRole("button", { name: /OPTIONS/ })).toBeVisible();
-		await expect(
-			page.getByRole("button", { name: /HOW TO PLAY/ }),
-		).toBeVisible();
+		await expect(page.getByRole("button", { name: /HOW TO PLAY/ })).toBeVisible();
 		await expect(page.getByRole("button", { name: /QUIT/ })).toBeVisible();
 
 		await page
@@ -56,16 +54,12 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			});
 	});
 
-	test("NEW GAME → difficulty → level → game starts via debug hook", async ({
-		page,
-	}) => {
+	test("NEW GAME → difficulty → level → game starts via debug hook", async ({ page }) => {
 		await page.goto(DEBUG_URL);
 
 		// Walk the menu UI like a real player.
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
-		await expect(
-			page.getByRole("button", { name: /HURT ME PLENTY/ }),
-		).toBeVisible();
+		await expect(page.getByRole("button", { name: /HURT ME PLENTY/ })).toBeVisible();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
 		await expect(page.getByRole("button", { name: /^RANDOM$/ })).toBeVisible();
 		await page.getByRole("button", { name: /^RANDOM$/ }).click();
@@ -77,9 +71,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 
 		// Sanity: getState() exposes the right snapshot.
 		const state = await page.evaluate(() =>
-			(
-				window as unknown as { __objexoom?: ObjexoomDebugHooks }
-			).__objexoom?.getState(),
+			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.getState(),
 		);
 		expect(state).toBeDefined();
 		expect((state as { status: string }).status).toBe("playing");
@@ -117,9 +109,10 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 				| undefined;
 			const target = state?.enemySpawns[0]?.position;
 			if (!target) throw new Error("no enemy spawn");
-			(
-				window as unknown as { __objexoom?: ObjexoomDebugHooks }
-			).__objexoom?.teleport(target.x + 1.2, target.y + 1.2);
+			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(
+				target.x + 1.2,
+				target.y + 1.2,
+			);
 		});
 
 		// Wait up to 20s for HP to drop. Skeleton cooldown is 900ms so one hit
@@ -139,9 +132,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			.toBeLessThan(initialHpNum);
 	});
 
-	test("player kills all enemies via debug hook → kill counter saturates", async ({
-		page,
-	}) => {
+	test("player kills all enemies via debug hook → kill counter saturates", async ({ page }) => {
 		await page.goto(DEBUG_URL);
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
@@ -157,8 +148,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		// the debug listeners.
 		await page.waitForFunction(
 			() => {
-				const hooks = (window as unknown as { __objexoom?: ObjexoomDebugHooks })
-					.__objexoom;
+				const hooks = (window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom;
 				const s = hooks?.getState() as { status?: string } | undefined;
 				return s?.status === "playing";
 			},
@@ -172,9 +162,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			.poll(
 				async () => {
 					await page.evaluate(() => {
-						(
-							window as unknown as { __objexoom?: ObjexoomDebugHooks }
-						).__objexoom?.killAllEnemies();
+						(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.killAllEnemies();
 					});
 					return (await page.locator(KILLS_HUD).innerText()).trim();
 				},
@@ -193,9 +181,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		});
 
 		await page.evaluate(() => {
-			(
-				window as unknown as { __objexoom?: ObjexoomDebugHooks }
-			).__objexoom?.collectKey();
+			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.collectKey();
 		});
 
 		await expect(page.locator(KEY_HUD)).toContainText(/KEY ACQUIRED/, {
@@ -203,9 +189,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		});
 	});
 
-	test("portal interaction triggers LEVEL COMPLETE on first clear", async ({
-		page,
-	}) => {
+	test("portal interaction triggers LEVEL COMPLETE on first clear", async ({ page }) => {
 		await page.goto(DEBUG_URL);
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
@@ -213,17 +197,15 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await expect(page.locator(PLAYER_HUD)).toBeVisible({ timeout: 5_000 });
 
 		await page.evaluate(() => {
-			(
-				window as unknown as { __objexoom?: ObjexoomDebugHooks }
-			).__objexoom?.triggerWin();
+			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.triggerWin();
 		});
 
 		// First win in a run flips status to "transitioning" — overlay renders
 		// the LEVEL COMPLETE card before the next-level fade. Full MISSION
 		// COMPLETE (5 levels cleared) is exercised by the B5 chained-run test.
-		await expect(
-			page.getByRole("heading", { name: /LEVEL COMPLETE/ }),
-		).toBeVisible({ timeout: 3_000 });
+		await expect(page.getByRole("heading", { name: /LEVEL COMPLETE/ })).toBeVisible({
+			timeout: 3_000,
+		});
 
 		await page
 			.screenshot({
@@ -237,9 +219,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			});
 	});
 
-	test("B5 — chained run advances 5 levels via triggerWin", async ({
-		page,
-	}) => {
+	test("B5 — chained run advances 5 levels via triggerWin", async ({ page }) => {
 		await page.goto(DEBUG_URL);
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
@@ -251,25 +231,21 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		// the MISSION COMPLETE overlay renders with run stats.
 		for (let i = 0; i < 5; i += 1) {
 			await page.evaluate(() => {
-				(
-					window as unknown as { __objexoom?: ObjexoomDebugHooks }
-				).__objexoom?.triggerWin();
+				(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.triggerWin();
 			});
 			// 1s > 800ms transition hold + a margin
 			await page.waitForTimeout(1100);
 		}
 
-		await expect(
-			page.getByRole("heading", { name: /MISSION COMPLETE/ }),
-		).toBeVisible({ timeout: 3_000 });
+		await expect(page.getByRole("heading", { name: /MISSION COMPLETE/ })).toBeVisible({
+			timeout: 3_000,
+		});
 		// Verify run stats string is in the overlay body.
 		await expect(page.getByText(/LEVELS? CLEARED/)).toBeVisible();
 		await expect(page.getByText(/TIME \d+:\d{2}/)).toBeVisible();
 	});
 
-	test("B5 — level 2 reachable via real exit-portal win on level 1", async ({
-		page,
-	}) => {
+	test("B5 — level 2 reachable via real exit-portal win on level 1", async ({ page }) => {
 		// Regression for the level-transition Scene-state bug: prior to the
 		// `key={settings.level}-${seed}` fix, lastWonAt latched true on level
 		// 1's natural win and level 2's exit collision could never re-fire.
@@ -284,9 +260,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		for (let level = 0; level < 2; level += 1) {
 			// Collect the key first so the door opens.
 			await page.evaluate(() => {
-				(
-					window as unknown as { __objexoom?: ObjexoomDebugHooks }
-				).__objexoom?.collectKey();
+				(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.collectKey();
 			});
 			await expect(page.locator(KEY_HUD)).toContainText(/KEY ACQUIRED/, {
 				timeout: 3_000,
@@ -312,9 +286,10 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 
 			// Step 1: teleport to exit, flips phase → going_back.
 			await page.evaluate((exit) => {
-				(
-					window as unknown as { __objexoom?: ObjexoomDebugHooks }
-				).__objexoom?.teleport(exit.x, exit.y);
+				(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(
+					exit.x,
+					exit.y,
+				);
 			}, positions.exit);
 			// Poll for the phase flip rather than sleeping a fixed window —
 			// the Scene's proximity check runs once per useFrame tick.
@@ -331,14 +306,15 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			// Step 2: teleport back to spawn, fires onReachSpawn →
 			// LEVEL COMPLETE.
 			await page.evaluate((spawn) => {
-				(
-					window as unknown as { __objexoom?: ObjexoomDebugHooks }
-				).__objexoom?.teleport(spawn.x, spawn.y);
+				(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(
+					spawn.x,
+					spawn.y,
+				);
 			}, positions.spawn);
 
-			await expect(
-				page.getByRole("heading", { name: /LEVEL COMPLETE/ }),
-			).toBeVisible({ timeout: 4_000 });
+			await expect(page.getByRole("heading", { name: /LEVEL COMPLETE/ })).toBeVisible({
+				timeout: 4_000,
+			});
 
 			// Wait past the 800ms transition for the next level to mount.
 			await page.waitForTimeout(1100);
@@ -356,9 +332,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 	// (teleport waypoint) → onReachSpawn fires → LEVEL COMPLETE overlay.
 	// Proves the goal/going-back/reach-spawn loop fires from real
 	// geometry-driven proximity, not the debug shortcut.
-	test("N5 — full Lv1 playthrough (no triggerWin shortcut)", async ({
-		page,
-	}) => {
+	test("N5 — full Lv1 playthrough (no triggerWin shortcut)", async ({ page }) => {
 		await page.goto(DEBUG_URL);
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
@@ -367,8 +341,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 
 		// Capture starting positions for the round-trip teleport.
 		const positions = await page.evaluate(() => {
-			const hooks = (window as unknown as { __objexoom?: ObjexoomDebugHooks })
-				.__objexoom;
+			const hooks = (window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom;
 			if (!hooks) throw new Error("no debug hooks");
 			const s = hooks.getState() as {
 				playerSpawn: { x: number; y: number };
@@ -383,16 +356,15 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		// triggerWin), then teleport onto the exit so the Scene's own
 		// proximity-check flips phase → going_back.
 		await page.evaluate(() => {
-			(
-				window as unknown as { __objexoom?: ObjexoomDebugHooks }
-			).__objexoom?.collectKey();
+			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.collectKey();
 		});
 		await expect(page.locator(KEY_HUD)).toContainText(/KEY ACQUIRED/);
 
 		await page.evaluate((exit) => {
-			(
-				window as unknown as { __objexoom?: ObjexoomDebugHooks }
-			).__objexoom?.teleport(exit.x, exit.y);
+			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(
+				exit.x,
+				exit.y,
+			);
 		}, positions.exit);
 
 		// Phase 2 — going_back. Poll for phase=going_back rather than
@@ -414,22 +386,21 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			y: (positions.spawn.y + positions.exit.y) / 2,
 		};
 		await page.evaluate((mid) => {
-			(
-				window as unknown as { __objexoom?: ObjexoomDebugHooks }
-			).__objexoom?.teleport(mid.x, mid.y);
+			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(mid.x, mid.y);
 		}, midpoint);
 		await expect(page.locator(KEY_HUD)).toContainText(/KEY ACQUIRED/);
 
 		// Phase 3 — reach spawn. Teleport back to the original spawn so
 		// the Scene's proximity-check fires onReachSpawn → LEVEL COMPLETE.
 		await page.evaluate((spawn) => {
-			(
-				window as unknown as { __objexoom?: ObjexoomDebugHooks }
-			).__objexoom?.teleport(spawn.x, spawn.y);
+			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(
+				spawn.x,
+				spawn.y,
+			);
 		}, positions.spawn);
 
-		await expect(
-			page.getByRole("heading", { name: /LEVEL COMPLETE/ }),
-		).toBeVisible({ timeout: 4_000 });
+		await expect(page.getByRole("heading", { name: /LEVEL COMPLETE/ })).toBeVisible({
+			timeout: 4_000,
+		});
 	});
 });

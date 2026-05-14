@@ -23,16 +23,16 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 ## Queue — Standalone repo bring-up
 
 ### B0 — Initial commit + remote
-- [ ] **B0.1** First commit on `main` capturing the extracted source + scaffolding.
-- [ ] **B0.2** Create `objexiv/objexoom` GitHub repo (internal visibility).
-- [ ] **B0.3** Push `main` to origin.
+- [x] **B0.1** First commit on `main` capturing the extracted source + scaffolding.
+- [x] **B0.2** Create `objexiv/objexoom` GitHub repo (internal visibility).
+- [x] **B0.3** Push `main` to origin.
 
 ### B1 — Verify it actually runs
-- [ ] **B1.1** `pnpm install` succeeds.
-- [ ] **B1.2** `pnpm check` (tsc no-emit) green.
-- [ ] **B1.3** `pnpm lint` (biome) green.
+- [x] **B1.1** `pnpm install` succeeds.
+- [x] **B1.2** `pnpm check` (tsc no-emit) green.
+- [x] **B1.3** `pnpm lint` (biome) green — after auto-fix + bumping schema 2.4.10→2.4.15 + fixing 6 real issues (non-null assertion, meter→progressbar a11y role, 5 empty-object Playwright patterns).
 - [ ] **B1.4** `pnpm dev` boots Vite, root page mounts `<ObjexoomShell />` cleanly (no SSR / Next imports anywhere).
-- [ ] **B1.5** `pnpm test` (vitest unit) green for all 13 OBJEXOOM unit suites.
+- [x] **B1.5** `pnpm test` (vitest unit) green — 12 suites / 163 tests passing in 1.22s. (Was 13/167 in Objexiv; the dropped suite is the easter-egg integration test that doesn't apply in standalone.)
 - [ ] **B1.6** `pnpm test:e2e:screenshots` produces the 5 canonical PNGs.
 - [ ] **B1.7** `pnpm assets:fbx-to-glb` regenerates GLBs from `references/` (locally — references/ is gitignored).
 

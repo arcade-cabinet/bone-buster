@@ -177,9 +177,7 @@ function MainMenu({
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.35 }}
 		>
-			{canResume && onResume && (
-				<MenuItem label="RESUME RUN" onClick={onResume} primary />
-			)}
+			{canResume && onResume && <MenuItem label="RESUME RUN" onClick={onResume} primary />}
 			<MenuItem
 				label={canResume ? "NEW GAME" : "NEW GAME"}
 				onClick={onNewGame}
@@ -220,9 +218,7 @@ function DifficultyPane({
 						aria-pressed={d === current}
 					>
 						<div style={{ fontWeight: 700 }}>{DIFFICULTY_LABEL[d]}</div>
-						<div style={{ fontSize: 12, opacity: 0.7, marginTop: 2 }}>
-							{DIFFICULTY_BLURB[d]}
-						</div>
+						<div style={{ fontSize: 12, opacity: 0.7, marginTop: 2 }}>{DIFFICULTY_BLURB[d]}</div>
 					</button>
 				))}
 			</div>
@@ -312,14 +308,10 @@ function OptionsPane({
 					max={2.5}
 					step={0.1}
 					value={settings.mouseSensitivity}
-					onChange={(e) =>
-						onChange({ mouseSensitivity: Number(e.target.value) })
-					}
+					onChange={(e) => onChange({ mouseSensitivity: Number(e.target.value) })}
 					style={sliderStyle}
 				/>
-				<span style={optionValueStyle}>
-					{settings.mouseSensitivity.toFixed(1)}×
-				</span>
+				<span style={optionValueStyle}>{settings.mouseSensitivity.toFixed(1)}×</span>
 			</div>
 
 			<div style={optionRowStyle}>
@@ -333,14 +325,10 @@ function OptionsPane({
 					max={4}
 					step={0.1}
 					value={settings.touchLookSensitivity}
-					onChange={(e) =>
-						onChange({ touchLookSensitivity: Number(e.target.value) })
-					}
+					onChange={(e) => onChange({ touchLookSensitivity: Number(e.target.value) })}
 					style={sliderStyle}
 				/>
-				<span style={optionValueStyle}>
-					{settings.touchLookSensitivity.toFixed(1)}×
-				</span>
+				<span style={optionValueStyle}>{settings.touchLookSensitivity.toFixed(1)}×</span>
 			</div>
 
 			<MenuItem label="BACK" onClick={onBack} />
@@ -359,29 +347,17 @@ function HelpPane({ onBack }: { onBack: () => void }) {
 		>
 			<div style={paneHeadingStyle}>CONTROLS</div>
 			<div style={helpGridStyle}>
-				<HelpRow
-					action="MOVE"
-					desktop="W A S D / arrow keys"
-					touch="Left thumb-stick"
-				/>
-				<HelpRow
-					action="AIM"
-					desktop="Mouse (pointer-locked)"
-					touch="Right thumb-stick"
-				/>
+				<HelpRow action="MOVE" desktop="W A S D / arrow keys" touch="Left thumb-stick" />
+				<HelpRow action="AIM" desktop="Mouse (pointer-locked)" touch="Right thumb-stick" />
 				<HelpRow action="FIRE" desktop="Left-click" touch="FIRE button" />
-				<HelpRow
-					action="SWAP WEAPON"
-					desktop="1 / 2 / 3 · scroll-wheel"
-					touch="Weapon chips"
-				/>
+				<HelpRow action="SWAP WEAPON" desktop="1 / 2 / 3 · scroll-wheel" touch="Weapon chips" />
 				<HelpRow action="PAUSE" desktop="ESC" touch="ESC button" />
 			</div>
 
 			<div style={{ ...paneHeadingStyle, marginTop: 20 }}>OBJECTIVE</div>
 			<p style={objectiveStyle}>
-				Clear the level. Find the floating amber key. Step into the violet
-				portal. The corridors are not pleased to see you.
+				Clear the level. Find the floating amber key. Step into the violet portal. The corridors are
+				not pleased to see you.
 			</p>
 
 			<MenuItem label="BACK" onClick={onBack} />
@@ -389,15 +365,7 @@ function HelpPane({ onBack }: { onBack: () => void }) {
 	);
 }
 
-function HelpRow({
-	action,
-	desktop,
-	touch,
-}: {
-	action: string;
-	desktop: string;
-	touch: string;
-}) {
+function HelpRow({ action, desktop, touch }: { action: string; desktop: string; touch: string }) {
 	return (
 		<>
 			<div style={helpActionStyle}>{action}</div>
@@ -559,12 +527,8 @@ function difficultyChip(active: boolean): CSSProperties {
 		textAlign: "left",
 		padding: "10px 14px",
 		borderRadius: 8,
-		border: active
-			? `1px solid ${OBJEXOOM_PALETTE.amber}`
-			: "1px solid rgba(255,255,255,0.08)",
-		background: active
-			? `${OBJEXOOM_PALETTE.amber}1a`
-			: "rgba(255,255,255,0.03)",
+		border: active ? `1px solid ${OBJEXOOM_PALETTE.amber}` : "1px solid rgba(255,255,255,0.08)",
+		background: active ? `${OBJEXOOM_PALETTE.amber}1a` : "rgba(255,255,255,0.03)",
 		color: OBJEXOOM_PALETTE.parchment,
 		fontFamily: '"Inter", system-ui, sans-serif',
 		cursor: "pointer",
@@ -575,12 +539,8 @@ function levelChip(active: boolean): CSSProperties {
 	return {
 		padding: "16px 12px",
 		borderRadius: 8,
-		border: active
-			? `1px solid ${OBJEXOOM_PALETTE.violet}`
-			: "1px solid rgba(255,255,255,0.08)",
-		background: active
-			? `${OBJEXOOM_PALETTE.violet}22`
-			: "rgba(255,255,255,0.03)",
+		border: active ? `1px solid ${OBJEXOOM_PALETTE.violet}` : "1px solid rgba(255,255,255,0.08)",
+		background: active ? `${OBJEXOOM_PALETTE.violet}22` : "rgba(255,255,255,0.03)",
 		color: OBJEXOOM_PALETTE.parchment,
 		fontFamily: '"Poppins", system-ui, sans-serif',
 		fontWeight: 700,
@@ -713,10 +673,7 @@ function MusicLoadIndicator() {
 	}, []);
 	const ready = progress.loaded === progress.total;
 	return (
-		<span
-			data-testid="objexoom-music-progress"
-			style={{ opacity: ready ? 0.5 : 0.85 }}
-		>
+		<span data-testid="objexoom-music-progress" style={{ opacity: ready ? 0.5 : 0.85 }}>
 			{ready
 				? `AUDIO READY (${progress.total}/${progress.total})`
 				: `AUDIO ${progress.loaded}/${progress.total}`}

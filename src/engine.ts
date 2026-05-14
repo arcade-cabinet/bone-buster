@@ -1,18 +1,6 @@
-import {
-	PISTOL_MAX_RANGE,
-	PLAYER_RADIUS,
-	SKELETON_HP,
-	TILE,
-} from "./constants";
+import { PISTOL_MAX_RANGE, PLAYER_RADIUS, SKELETON_HP, TILE } from "./constants";
 
-export type Cell =
-	| "empty"
-	| "wall"
-	| "door"
-	| "spawn"
-	| "exit"
-	| "key"
-	| "lava";
+export type Cell = "empty" | "wall" | "door" | "spawn" | "exit" | "key" | "lava";
 
 // Reference enemy roster (game.js → all_objects):
 //   skeleton  = closest analogue to the reference's vanilla `Enemy` —
@@ -101,11 +89,9 @@ export type MapSector = Readonly<{
 
 export type ObjexoomMap = ObjexoomGridMap | ObjexoomSectorMap;
 
-export const isGridMap = (m: ObjexoomMap): m is ObjexoomGridMap =>
-	m.kind === "grid";
+export const isGridMap = (m: ObjexoomMap): m is ObjexoomGridMap => m.kind === "grid";
 
-export const isSectorMap = (m: ObjexoomMap): m is ObjexoomSectorMap =>
-	m.kind === "sectors";
+export const isSectorMap = (m: ObjexoomMap): m is ObjexoomSectorMap => m.kind === "sectors";
 
 export type Vec2 = Readonly<{ x: number; y: number }>;
 
@@ -220,9 +206,7 @@ export function generateMap(seed: number): ObjexoomGridMap {
 	const rand = mulberry32(seed);
 	const width = MAP_WIDTH;
 	const height = MAP_HEIGHT;
-	const cells: Cell[][] = Array.from({ length: height }, () =>
-		new Array<Cell>(width).fill("wall"),
-	);
+	const cells: Cell[][] = Array.from({ length: height }, () => new Array<Cell>(width).fill("wall"));
 
 	const rooms: Room[] = [];
 	for (let i = 0; i < ROOM_TRIES; i += 1) {
@@ -284,10 +268,7 @@ export function generateMap(seed: number): ObjexoomGridMap {
 		] as const
 	)
 		.map(([dx, dy]) => ({ gx: exit.gx + dx, gy: exit.gy + dy }))
-		.filter(
-			(n) =>
-				inBounds(n.gx, n.gy, width, height) && cells[n.gy][n.gx] === "empty",
-		);
+		.filter((n) => inBounds(n.gx, n.gy, width, height) && cells[n.gy][n.gx] === "empty");
 	if (exitNeighbors.length > 0) {
 		doorCell = exitNeighbors[0];
 		for (let i = 1; i < exitNeighbors.length; i += 1) {
@@ -334,21 +315,13 @@ export function generateMap(seed: number): ObjexoomGridMap {
 	}
 	for (let i = enemyCandidates.length - 1; i > 0; i -= 1) {
 		const j = Math.floor(rand() * (i + 1));
-		[enemyCandidates[i], enemyCandidates[j]] = [
-			enemyCandidates[j],
-			enemyCandidates[i],
-		];
+		[enemyCandidates[i], enemyCandidates[j]] = [enemyCandidates[j], enemyCandidates[i]];
 	}
-	const totalEnemies = Math.min(
-		12,
-		Math.max(6, Math.floor(rooms.length * 1.2)),
-	);
-	const enemySpawns: EnemySpawn[] = enemyCandidates
-		.slice(0, totalEnemies)
-		.map((position, idx) => ({
-			kind: idx % 3 === 2 ? "wraith" : "skeleton",
-			position,
-		}));
+	const totalEnemies = Math.min(12, Math.max(6, Math.floor(rooms.length * 1.2)));
+	const enemySpawns: EnemySpawn[] = enemyCandidates.slice(0, totalEnemies).map((position, idx) => ({
+		kind: idx % 3 === 2 ? "wraith" : "skeleton",
+		position,
+	}));
 
 	// L2 — pickup spawns are health-only on procedural maps now.
 	// Chaingun is permanent (L3) and shotgun arrives from the goal drop
@@ -388,11 +361,7 @@ export function worldToGrid(pos: Vec2): { gx: number; gy: number } {
 	};
 }
 
-export function cellAt(
-	gx: number,
-	gy: number,
-	map: ObjexoomGridMap,
-): Cell | "outOfBounds" {
+export function cellAt(gx: number, gy: number, map: ObjexoomGridMap): Cell | "outOfBounds" {
 	if (!inBounds(gx, gy, map.width, map.height)) return "outOfBounds";
 	return map.cells[gy][gx];
 }
@@ -473,10 +442,8 @@ export function castRay(
 	let gy = Math.floor(origin.y / TILE);
 	const stepX = Math.sign(dir.x);
 	const stepY = Math.sign(dir.y);
-	const tDeltaX =
-		dir.x === 0 ? Number.POSITIVE_INFINITY : Math.abs(TILE / dir.x);
-	const tDeltaY =
-		dir.y === 0 ? Number.POSITIVE_INFINITY : Math.abs(TILE / dir.y);
+	const tDeltaX = dir.x === 0 ? Number.POSITIVE_INFINITY : Math.abs(TILE / dir.x);
+	const tDeltaY = dir.y === 0 ? Number.POSITIVE_INFINITY : Math.abs(TILE / dir.y);
 	let tMaxX =
 		dir.x === 0
 			? Number.POSITIVE_INFINITY
@@ -504,12 +471,7 @@ export function castRay(
 	return { dist: maxDist, hit: null };
 }
 
-export function hasLineOfSight(
-	a: Vec2,
-	b: Vec2,
-	map: ObjexoomGridMap,
-	doorOpen: boolean,
-): boolean {
+export function hasLineOfSight(a: Vec2, b: Vec2, map: ObjexoomGridMap, doorOpen: boolean): boolean {
 	const dx = b.x - a.x;
 	const dy = b.y - a.y;
 	const len = Math.hypot(dx, dy);
@@ -717,10 +679,7 @@ export function stepEnemyBullet(
 
 	// Wall test: cast from current to next along the velocity. If the cast
 	// distance is shorter than the step length, we hit something.
-	const stepLen = Math.hypot(
-		next.x - bullet.position.x,
-		next.y - bullet.position.y,
-	);
+	const stepLen = Math.hypot(next.x - bullet.position.x, next.y - bullet.position.y);
 	if (stepLen > 0) {
 		const dir = {
 			x: (next.x - bullet.position.x) / stepLen,
@@ -753,10 +712,7 @@ export function stepEnemyBullet(
  * the degenerate boundary case (matches the reference's urandom_vector
  * jitter in `is_in_region`).
  */
-export function polygonContains(
-	point: Vec2,
-	vertices: readonly Vec2[],
-): boolean {
+export function polygonContains(point: Vec2, vertices: readonly Vec2[]): boolean {
 	let inside = false;
 	const len = vertices.length;
 	if (len < 3) return false;
@@ -767,9 +723,7 @@ export function polygonContains(
 		const yi = vertices[i].y;
 		const xj = vertices[j].x;
 		const yj = vertices[j].y;
-		const intersects =
-			yi > py !== yj > py &&
-			px < ((xj - xi) * (py - yi)) / (yj - yi + 1e-30) + xi;
+		const intersects = yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi + 1e-30) + xi;
 		if (intersects) inside = !inside;
 	}
 	return inside;
@@ -803,11 +757,7 @@ export function getSectorAtPoint(
 	return null;
 }
 
-export function getFloorHeightAt(
-	map: ObjexoomSectorMap,
-	point: Vec2,
-	cache?: SectorCache,
-): number {
+export function getFloorHeightAt(map: ObjexoomSectorMap, point: Vec2, cache?: SectorCache): number {
 	const sector = getSectorAtPoint(map, point, cache);
 	return sector ? sector.floorHeight : -100;
 }
@@ -825,19 +775,13 @@ export function getCeilingHeightAt(
 // (floor=0, ceiling=WALL_HEIGHT); sector maps look up the polygon
 // the point sits inside. Returns null when the point is outside the
 // playable region (e.g. inside a wall).
-export function getFloorHeightAtAny(
-	map: ObjexoomMap,
-	point: Vec2,
-): number | null {
+export function getFloorHeightAtAny(map: ObjexoomMap, point: Vec2): number | null {
 	if (map.kind === "grid") return 0;
 	const sector = getSectorAtPoint(map, point);
 	return sector ? sector.floorHeight : null;
 }
 
-export function getCeilingHeightAtAny(
-	map: ObjexoomMap,
-	point: Vec2,
-): number | null {
+export function getCeilingHeightAtAny(map: ObjexoomMap, point: Vec2): number | null {
 	if (map.kind === "grid") return 3; // matches WALL_HEIGHT
 	const sector = getSectorAtPoint(map, point);
 	return sector ? sector.ceilingHeight : null;
@@ -851,12 +795,7 @@ export function getCeilingHeightAtAny(
  *
  * Reference: `ray_line_intersect` in utils.js.
  */
-export function rayHitsSegment(
-	origin: Vec2,
-	dir: Vec2,
-	p1: Vec2,
-	p2: Vec2,
-): number | null {
+export function rayHitsSegment(origin: Vec2, dir: Vec2, p1: Vec2, p2: Vec2): number | null {
 	const v1x = origin.x - p1.x;
 	const v1y = origin.y - p1.y;
 	const v2x = p2.x - p1.x;
@@ -910,11 +849,7 @@ export function castRaySectors(
 	return { dist: bestDist, hit: bestHit };
 }
 
-export function hasLineOfSightSectors(
-	a: Vec2,
-	b: Vec2,
-	map: ObjexoomSectorMap,
-): boolean {
+export function hasLineOfSightSectors(a: Vec2, b: Vec2, map: ObjexoomSectorMap): boolean {
 	const dx = b.x - a.x;
 	const dy = b.y - a.y;
 	const len = Math.hypot(dx, dy);
@@ -979,11 +914,7 @@ export function computePortalEdges(map: ObjexoomSectorMap): Set<string> {
  * height read as lava in the reference. Returns true if the actor stands
  * on lava.
  */
-export function isOnLavaSector(
-	map: ObjexoomSectorMap,
-	point: Vec2,
-	cache?: SectorCache,
-): boolean {
+export function isOnLavaSector(map: ObjexoomSectorMap, point: Vec2, cache?: SectorCache): boolean {
 	const sector = getSectorAtPoint(map, point, cache);
 	return sector ? sector.floorHeight < 0 : false;
 }

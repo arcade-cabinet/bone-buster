@@ -9,10 +9,7 @@ import {
 	WANDER_JITTER_RAD_PER_SEC,
 	WANDER_RADIUS,
 } from "@/enemyAi";
-import type {
-	Enemy,
-	ObjexoomGridMap,
-} from "@/engine";
+import type { Enemy, ObjexoomGridMap } from "@/engine";
 import { generateMap } from "@/engine";
 
 function makeEnemy(partial: Partial<Enemy> = {}): Enemy {
@@ -191,9 +188,7 @@ describe("objexoom enemyAi FSM (C3)", () => {
 	it("Y2: skeleton wander is tighter than imp than wraith", () => {
 		expect(WANDER_RADIUS.skeleton).toBeLessThan(WANDER_RADIUS.imp);
 		expect(WANDER_RADIUS.imp).toBeLessThan(WANDER_RADIUS.wraith);
-		expect(WANDER_JITTER_RAD_PER_SEC.skeleton).toBeLessThan(
-			WANDER_JITTER_RAD_PER_SEC.wraith,
-		);
+		expect(WANDER_JITTER_RAD_PER_SEC.skeleton).toBeLessThan(WANDER_JITTER_RAD_PER_SEC.wraith);
 	});
 
 	it("Y2: patrol jitters the bearing every frame (mutates enemy.patrolBearing)", () => {
@@ -256,9 +251,7 @@ describe("objexoom enemyAi FSM (C3)", () => {
 		expect(outLed.moveTarget).not.toBeNull();
 		expect(outNoLead.moveTarget).not.toBeNull();
 		if (outLed.moveTarget && outNoLead.moveTarget) {
-			expect(outLed.moveTarget.x).toBeGreaterThanOrEqual(
-				outNoLead.moveTarget.x,
-			);
+			expect(outLed.moveTarget.x).toBeGreaterThanOrEqual(outNoLead.moveTarget.x);
 		}
 	});
 
@@ -291,10 +284,7 @@ describe("objexoom enemyAi FSM (C3)", () => {
 			playerVelocity: { x: 50, y: 0 },
 		});
 		// Identical for non-imp kinds.
-		expect(outWithVel.moveTarget?.x).toBeCloseTo(
-			outNoLead.moveTarget?.x ?? 0,
-			5,
-		);
+		expect(outWithVel.moveTarget?.x).toBeCloseTo(outNoLead.moveTarget?.x ?? 0, 5);
 	});
 
 	it("Y3: IMP_LEAD_FACTOR is positive", () => {

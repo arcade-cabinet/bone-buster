@@ -98,9 +98,7 @@ export function ObjexoomHUD({
 						marginTop: 6,
 						fontSize: 11,
 						letterSpacing: "0.18em",
-						color: state.hasKey
-							? OBJEXOOM_PALETTE.amber
-							: OBJEXOOM_PALETTE.parchment,
+						color: state.hasKey ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.parchment,
 					}}
 				>
 					{state.hasKey ? "KEY ACQUIRED" : "FIND THE KEY"}
@@ -145,10 +143,7 @@ export function ObjexoomHUD({
 							aria-label={`Select ${spec.label}`}
 							aria-pressed={active}
 						>
-							<span style={{ fontSize: 10, opacity: 0.7 }}>
-								{spec.hudHotkey}
-							</span>{" "}
-							{spec.label}
+							<span style={{ fontSize: 10, opacity: 0.7 }}>{spec.hudHotkey}</span> {spec.label}
 						</button>
 					);
 				})}
@@ -178,9 +173,7 @@ export function ObjexoomHUD({
 			{state.status === "playing" && touchMode && <TouchControls />}
 
 			{state.status === "playing" && !touchMode && (
-				<div style={hintStyle}>
-					ESC TO PAUSE · 1/2/3 OR SCROLL TO SWAP · LMB TO FIRE
-				</div>
+				<div style={hintStyle}>ESC TO PAUSE · 1/2/3 OR SCROLL TO SWAP · LMB TO FIRE</div>
 			)}
 
 			{/* M4 — "Click to engage" prompt when in playing state but pointer
@@ -340,8 +333,7 @@ function VirtualStick({
 					borderRadius: "50%",
 					background: `linear-gradient(135deg, ${OBJEXOOM_PALETTE.indigo}, ${OBJEXOOM_PALETTE.violet})`,
 					transform: `translate(${knob.x}px, ${knob.y}px)`,
-					transition:
-						pointerId.current === null ? "transform 120ms ease-out" : "none",
+					transition: pointerId.current === null ? "transform 120ms ease-out" : "none",
 				}}
 			/>
 		</div>
@@ -407,9 +399,7 @@ function OverlayCard({
 			transition={{ type: "spring", stiffness: 280, damping: 24 }}
 		>
 			<h1 style={overlayTitleStyle}>{title}</h1>
-			{body && (
-				<p style={{ marginTop: 12, maxWidth: 360, lineHeight: 1.4 }}>{body}</p>
-			)}
+			{body && <p style={{ marginTop: 12, maxWidth: 360, lineHeight: 1.4 }}>{body}</p>}
 			<div
 				style={{
 					display: "flex",
@@ -429,20 +419,12 @@ function OverlayCard({
 					</button>
 				)}
 				{secondary && (
-					<button
-						type="button"
-						onClick={secondary.onClick}
-						style={ctaButton("transparent", false)}
-					>
+					<button type="button" onClick={secondary.onClick} style={ctaButton("transparent", false)}>
 						{secondary.label}
 					</button>
 				)}
 				{tertiary && (
-					<button
-						type="button"
-						onClick={tertiary.onClick}
-						style={ctaButton("transparent", false)}
-					>
+					<button type="button" onClick={tertiary.onClick} style={ctaButton("transparent", false)}>
 						{tertiary.label}
 					</button>
 				)}
@@ -547,11 +529,7 @@ function ctaButton(bg: string, primary: boolean): CSSProperties {
 	};
 }
 
-function weaponChipStyle(
-	active: boolean,
-	owned: boolean,
-	accent: string,
-): CSSProperties {
+function weaponChipStyle(active: boolean, owned: boolean, accent: string): CSSProperties {
 	return {
 		padding: "6px 10px",
 		borderRadius: 10,
@@ -564,9 +542,7 @@ function weaponChipStyle(
 			: owned
 				? "rgba(255,255,255,0.05)"
 				: "rgba(255,255,255,0.02)",
-		color: owned
-			? OBJEXOOM_PALETTE.parchment
-			: `${OBJEXOOM_PALETTE.parchment}55`,
+		color: owned ? OBJEXOOM_PALETTE.parchment : `${OBJEXOOM_PALETTE.parchment}55`,
 		opacity: owned ? 1 : 0.5,
 		cursor: owned ? "pointer" : "not-allowed",
 		pointerEvents: "auto",
@@ -582,7 +558,11 @@ function HpPipRow({ hp, maxHp }: { hp: number; maxHp: number }) {
 	return (
 		<div
 			data-testid="objexoom-hp-pips"
-			role="meter"
+			// "progressbar" because biome a11y disallows "meter" on a div
+			// (it's only valid on <meter>). Both render identically to a
+			// screen reader as a percent-style indicator.
+			role="progressbar"
+			aria-label="Player health"
 			aria-valuenow={hp}
 			aria-valuemax={maxHp}
 			aria-valuemin={0}
@@ -604,9 +584,7 @@ function HpPipRow({ hp, maxHp }: { hp: number; maxHp: number }) {
 							width: 14,
 							height: 14,
 							borderRadius: 3,
-							background: lit
-								? OBJEXOOM_PALETTE.amber
-								: "rgba(167,139,250,0.18)",
+							background: lit ? OBJEXOOM_PALETTE.amber : "rgba(167,139,250,0.18)",
 							boxShadow: lit
 								? `0 0 6px ${OBJEXOOM_PALETTE.amber}aa`
 								: "inset 0 0 0 1px rgba(255,255,255,0.06)",
@@ -634,9 +612,7 @@ const lowHealthWarningStyle: CSSProperties = {
 // any moment the lock breaks (alt-tab, OS focus shift, etc).
 function ClickToEngagePrompt() {
 	const [locked, setLocked] = useState(
-		typeof document !== "undefined"
-			? document.pointerLockElement != null
-			: false,
+		typeof document !== "undefined" ? document.pointerLockElement != null : false,
 	);
 	useEffect(() => {
 		const onChange = () => setLocked(document.pointerLockElement != null);

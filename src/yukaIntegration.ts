@@ -94,12 +94,7 @@ export function yukaToVec2(v: Yuka.Vector3): Vec2 {
  * toward `to` by `speed * dt` units (clamped to not overshoot). Uses
  * yuka.MathUtils for the clamp so the math matches yuka steering.
  */
-export function yukaStepToward(
-	from: Vec2,
-	to: Vec2,
-	speed: number,
-	dt: number,
-): Vec2 {
+export function yukaStepToward(from: Vec2, to: Vec2, speed: number, dt: number): Vec2 {
 	const fromV = vec2ToYuka(from);
 	const toV = vec2ToYuka(to);
 	const direction = new Yuka.Vector3().subVectors(toV, fromV);
@@ -116,11 +111,7 @@ export function yukaStepToward(
  * projection at a small radius, returning the world-space target the
  * patroller should head toward.
  */
-export function yukaWanderTarget(
-	origin: Vec2,
-	bearing: number,
-	radius: number,
-): Vec2 {
+export function yukaWanderTarget(origin: Vec2, bearing: number, radius: number): Vec2 {
 	return {
 		x: origin.x + Math.cos(bearing) * radius,
 		y: origin.y + Math.sin(bearing) * radius,
@@ -134,11 +125,7 @@ export function yukaWanderTarget(
  * here is to centralize the math so future migration to a real
  * yuka.Projectile registered with the EntityManager is mechanical.
  */
-export function yukaProjectileStep(
-	from: Vec2,
-	velocity: Vec2,
-	dt: number,
-): Vec2 {
+export function yukaProjectileStep(from: Vec2, velocity: Vec2, dt: number): Vec2 {
 	return {
 		x: from.x + velocity.x * dt,
 		y: from.y + velocity.y * dt,
@@ -210,9 +197,7 @@ export type ObjexoomNavmesh = Readonly<{
 	bounds: { minX: number; minY: number; maxX: number; maxY: number };
 }>;
 
-export function buildNavmeshFromSectors(
-	map: ObjexoomSectorMap,
-): ObjexoomNavmesh {
+export function buildNavmeshFromSectors(map: ObjexoomSectorMap): ObjexoomNavmesh {
 	const regions = map.sectors.map((sector) => ({
 		id: sector.id,
 		vertices: sector.vertices.map((v) => ({ x: v.x, y: v.y })),
