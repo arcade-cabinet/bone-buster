@@ -55,6 +55,14 @@ export interface ArchetypeLightPalette {
 	 * so lamp shadows on refLevel 0 stay byte-stable.
 	 */
 	readonly lampLightColor: string;
+	/**
+	 * E13 step-12 — hemisphere light sky + ground colors. Drives the
+	 * subtle horizon-up vs floor-down lighting bias. Corridor preserves
+	 * the pre-step-12 literals (indigo sky, ink ground) for canonical
+	 * byte-stability.
+	 */
+	readonly hemisphereSky: string;
+	readonly hemisphereGround: string;
 }
 
 /**
@@ -71,9 +79,9 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		floorEmissive: OBJEXOOM_PALETTE.wallEmissive,
 		ceilingColor: OBJEXOOM_PALETTE.wallBase,
 		lampLightColor: OBJEXOOM_PALETTE.flashlightWarm,
+		hemisphereSky: OBJEXOOM_PALETTE.indigo,
+		hemisphereGround: OBJEXOOM_PALETTE.ink,
 	},
-	// Hot arena — reddish ambient, ember sun, ember-deep fog. Reads as
-	// a combat pit with smoke and heat haze on the depth fade.
 	arena: {
 		ambientColor: SCALE.blood[300],
 		directionalColor: SCALE.ember[300],
@@ -82,10 +90,9 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		floorEmissive: SCALE.blood[700],
 		ceilingColor: SCALE.blood[900],
 		lampLightColor: SCALE.ember[300],
+		hemisphereSky: SCALE.ember[400],
+		hemisphereGround: SCALE.blood[900],
 	},
-	// Outdoor courtyard — cool indigo ambient, warm amber sun, indigo-
-	// deep fog (dusk). The dusk-cool fog separates this hardest from
-	// corridor's ink fog.
 	courtyard: {
 		ambientColor: SCALE.indigo[300],
 		directionalColor: SCALE.amber[200],
@@ -94,9 +101,9 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		floorEmissive: SCALE.indigo[700],
 		ceilingColor: SCALE.indigo[700],
 		lampLightColor: SCALE.amber[200],
+		hemisphereSky: SCALE.indigo[200],
+		hemisphereGround: SCALE.indigo[900],
 	},
-	// Damp sewer — desaturated parchment ambient, cool fill, parchment-
-	// deep fog with a slight green-ink mix. Reads as "underground".
 	sewer: {
 		ambientColor: SCALE.parchment[600],
 		directionalColor: SCALE.indigo[200],
@@ -105,10 +112,9 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		floorEmissive: SCALE.parchment[700],
 		ceilingColor: SCALE.ink[700],
 		lampLightColor: SCALE.parchment[300],
+		hemisphereSky: SCALE.parchment[600],
+		hemisphereGround: SCALE.ink[700],
 	},
-	// Library — warm parchment ambient, soft amber sun, ember-deep fog
-	// for the "paper + dust mote sunshafts" feel. Lifts away from
-	// corridor's cool ink toward a warm sepia depth fade.
 	library: {
 		ambientColor: SCALE.parchment[300],
 		directionalColor: SCALE.amber[100],
@@ -117,6 +123,8 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		floorEmissive: SCALE.amber[700],
 		ceilingColor: SCALE.parchment[700],
 		lampLightColor: SCALE.amber[100],
+		hemisphereSky: SCALE.amber[200],
+		hemisphereGround: SCALE.amber[900],
 	},
 };
 

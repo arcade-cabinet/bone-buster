@@ -780,7 +780,7 @@ export function ObjexoomScene({
 				shadow-camera-far={60}
 			/>
 			{hasFlashlight && <Flashlight />}
-			<hemisphereLight args={[OBJEXOOM_PALETTE.indigo, OBJEXOOM_PALETTE.ink, 0.35]} />
+			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.35]} />
 			{/* I11 — muzzle-flash point light. Lives at camera position,
 			    driven by useFrame so it can decay between renders. */}
 			<pointLight ref={muzzleLightRef} intensity={0} distance={8} decay={1.5} />
