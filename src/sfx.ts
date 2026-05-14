@@ -385,6 +385,35 @@ export function playPickup() {
  * a brief reverb push so the discovery resolves cathedral-wide.
  * Distinct from any other sting in the sfx bank.
  */
+/**
+ * POL26 — going-back klaxon. Two-tone alarm (A4 → E4 → A4 → E4) over
+ * 800ms on the hurtSynth (sawtooth, sharper than the pickup
+ * triangle). Fires once when the player crosses the goal portal +
+ * the phase flips to going_back. Distinct sting from boss-death,
+ * skeleton-death, secret-found — pure descending warning tone.
+ */
+let lastKlaxonFireTime = 0;
+export function playKlaxon() {
+	const t = jitter(lastKlaxonFireTime);
+	lastKlaxonFireTime = t;
+	hurtSynth?.triggerAttackRelease("A4", "8n", t);
+	setTimeout(() => {
+		const inner = jitter(lastKlaxonFireTime);
+		lastKlaxonFireTime = inner;
+		hurtSynth?.triggerAttackRelease("E4", "8n", inner);
+	}, 220);
+	setTimeout(() => {
+		const inner = jitter(lastKlaxonFireTime);
+		lastKlaxonFireTime = inner;
+		hurtSynth?.triggerAttackRelease("A4", "8n", inner);
+	}, 440);
+	setTimeout(() => {
+		const inner = jitter(lastKlaxonFireTime);
+		lastKlaxonFireTime = inner;
+		hurtSynth?.triggerAttackRelease("E4", "4n", inner);
+	}, 660);
+}
+
 export function playSecretFound() {
 	// Share the pickupSynth pool with playPickup — both fire jittered
 	// through lastPickupFireTime to prevent same-frame collisions.

@@ -17,6 +17,7 @@ import { DEFAULT_SETTINGS, DIFFICULTY_TUNING, type ObjexoomSettings } from "./se
 import {
 	ensureSfx,
 	playHitSting,
+	playKlaxon,
 	playPickup,
 	playPlayerDeath,
 	playSecretFound,
@@ -559,6 +560,20 @@ export function ObjexoomShell() {
 	// K5 — switch music mood based on phase. exploration → combat once
 	// the player has taken any hit / is mid-fight; going_back overrides
 	// when phase flips. Cheap heuristic: HP < maxHp signals engagement.
+	// POL26 — fire the going-back klaxon once on the out → going_back
+	// transition. The music-mood effect below handles ongoing audio;
+	// this is the discrete "the alarm has gone off" sting.
+	const lastPhaseRef = useRef<LevelPhase>(state.phase);
+	useEffect(() => {
+		if (!settings.soundEnabled) return;
+		if (state.status !== "playing") return;
+		const prevPhase = lastPhaseRef.current;
+		lastPhaseRef.current = state.phase;
+		if (prevPhase !== "going_back" && state.phase === "going_back") {
+			playKlaxon();
+		}
+	}, [settings.soundEnabled, state.status, state.phase]);
+
 	useEffect(() => {
 		if (!settings.soundEnabled) return;
 		if (state.status !== "playing") return;
