@@ -56,10 +56,9 @@ for (const archetype of ARCHETYPES) {
 	const page = await ctx.newPage();
 	page.on("pageerror", (err) => console.log(`  pageerror[${archetype}]: ${err.message}`));
 	try {
-		await page.goto(
-			`${BASE}/?objexoomDebug&objexoomSeed=12345&objexoomArchetype=${archetype}`,
-			{ waitUntil: "domcontentloaded" },
-		);
+		await page.goto(`${BASE}/?objexoomDebug&objexoomSeed=12345&objexoomArchetype=${archetype}`, {
+			waitUntil: "domcontentloaded",
+		});
 		await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
 		await page.evaluate(() => window.__objexoom.start());
 		await page.locator("[data-testid='objexoom-hp']").waitFor({ timeout: 8000 });
