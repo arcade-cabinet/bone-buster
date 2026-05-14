@@ -182,6 +182,33 @@ export function loadRefLevel(
 		}
 	}
 
+	// E6 — synthesize one secret per ref level. Step-1 slice: place the
+	// switch+wall pair offset from the level center along an axis that
+	// keeps both inside the map bounds. Per-level seed prevents collision
+	// with player/key/exit anchors. Generalization to multi-secret +
+	// designer-authored placements follows when a second level needs it.
+	const scaledBounds = {
+		minX: bb.minX * REF_TO_RUNTIME_SCALE,
+		minY: bb.minY * REF_TO_RUNTIME_SCALE,
+		maxX: bb.maxX * REF_TO_RUNTIME_SCALE,
+		maxY: bb.maxY * REF_TO_RUNTIME_SCALE,
+	};
+	const cx = (scaledBounds.minX + scaledBounds.maxX) * 0.5;
+	const cy = (scaledBounds.minY + scaledBounds.maxY) * 0.5;
+	const width = scaledBounds.maxX - scaledBounds.minX;
+	const switchOffset = Math.min(2.5, width * 0.18);
+	const secrets: import("./secrets").SecretSpec[] = [
+		{
+			id: index * 100 + 1,
+			switchPosition: { x: cx + switchOffset, y: cy },
+			switchRadius: 0.6,
+			wallPosition: { x: cx + switchOffset + 1.2, y: cy },
+			wallSize: { x: 1.4, z: 0.4 },
+			wallRestY: 1.2,
+			wallLiftY: 2.6,
+		},
+	];
+
 	return {
 		kind: "sectors",
 		seed: index,
@@ -192,12 +219,8 @@ export function loadRefLevel(
 		pickupSpawns,
 		keyPosition,
 		exitPosition,
-		bounds: {
-			minX: bb.minX * REF_TO_RUNTIME_SCALE,
-			minY: bb.minY * REF_TO_RUNTIME_SCALE,
-			maxX: bb.maxX * REF_TO_RUNTIME_SCALE,
-			maxY: bb.maxY * REF_TO_RUNTIME_SCALE,
-		},
+		bounds: scaledBounds,
+		secrets,
 	};
 }
 

@@ -117,6 +117,18 @@ export interface TeleportEvent {
 	yaw: number | null;
 }
 
+/**
+ * E6 — fires when a secret switch is hit by a weapon ray. Carries the
+ * switch id so SecretWall components can advance their lift state
+ * (multi-listener: SFX + scene + future minimap pings).
+ */
+export interface SecretTriggeredEvent {
+	type: "secretTriggered";
+	id: number;
+	x: number;
+	y: number;
+}
+
 export type ObjexoomEvent =
 	| BurstEvent
 	| BodyPartsEvent
@@ -131,7 +143,8 @@ export type ObjexoomEvent =
 	| FpsUpdateEvent
 	| ShakeEvent
 	| FellToDeathEvent
-	| TeleportEvent;
+	| TeleportEvent
+	| SecretTriggeredEvent;
 
 export type ObjexoomEventType = ObjexoomEvent["type"];
 

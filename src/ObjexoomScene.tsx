@@ -13,6 +13,7 @@ import {
 	ENEMY_BULLET_DAMAGE,
 	type Enemy,
 	type EnemyBullet,
+	isSectorMap,
 	type ObjexoomMap,
 	type Pickup,
 	polygonContains,
@@ -36,6 +37,7 @@ import {
 	ParticleBurstField,
 	PickupMesh,
 	RealDoor,
+	SecretField,
 	SectorMapGeometry,
 	ShellEjectField,
 	TreasureChest,
@@ -43,6 +45,7 @@ import {
 } from "./scene";
 import { tickEnemyLoop } from "./scene/hooks/enemyTickLoop";
 import { resolveFire } from "./scene/hooks/fireResolution";
+import { type Secret, spawnSecrets } from "./secrets";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 import { playBoom, playHurt, playPickup, playPortal, stopAmbient } from "./sfx";
 import type { WeaponId } from "./weapons";
@@ -83,6 +86,13 @@ export function ObjexoomScene({
 	);
 	const pickupsRef = useRef<Pickup[]>(spawnPickups(map));
 	const barrelsRef = useRef<Barrel[]>(spawnBarrels(map));
+	// E6 — secret switches/walls for the current map. Grid maps don't
+	// carry secrets in this slice; sector maps may have a `secrets` field
+	// that lists 1+ SecretSpec. spawnSecrets initializes the runtime
+	// state (triggered=false, liftProgress=0) per Spec.
+	const secretsRef = useRef<Secret[]>(
+		isSectorMap(map) && map.secrets ? spawnSecrets(map.secrets) : [],
+	);
 	const enemyMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const pickupMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const barrelMeshes = useRef<Map<number, THREE.Group>>(new Map());
@@ -508,6 +518,7 @@ export function ObjexoomScene({
 				gameRef,
 				enemiesRef,
 				barrelsRef,
+				secretsRef,
 				enemyMeshesRef: enemyMeshes,
 				collisionCtxRef,
 				lastFireAtRef: lastFireAt,
@@ -575,6 +586,11 @@ export function ObjexoomScene({
 			    going_back phase so the player has a clear visual goal to
 			    sprint toward while every enemy aggros. */}
 			<RealDoor position={map.playerSpawn} unlocked={phase === "going_back"} />
+
+			{/* E6 — secret switches + their hidden walls. Empty when the
+			    current map has no `secrets` field (grid maps + future
+			    secret-free ref levels). */}
+			<SecretField secretsRef={secretsRef} />
 
 			{enemiesRef.current.map((enemy) => (
 				<EnemyMesh

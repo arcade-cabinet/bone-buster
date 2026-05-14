@@ -27,6 +27,7 @@ import type { CollisionContext } from "../../engine";
 import { castRayAny, type Enemy, type ObjexoomMap } from "../../engine";
 import { dispatch } from "../../events";
 import type { GameRef, WeaponState } from "../../ObjexoomShell";
+import { pickRaySwitch, type Secret } from "../../secrets";
 import type { ObjexoomSettings } from "../../settings";
 import {
 	playBoom,
@@ -49,6 +50,8 @@ export interface FireResolutionContext {
 	gameRef: { current: GameRef };
 	enemiesRef: { current: Enemy[] };
 	barrelsRef: { current: Barrel[] };
+	// E6 — optional. When undefined, the secret hit-test branch is skipped.
+	secretsRef?: { current: Secret[] };
 	enemyMeshesRef: { current: Map<number, THREE.Group> };
 	collisionCtxRef: { current: CollisionContext };
 	lastFireAtRef: { current: number };
@@ -69,6 +72,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		gameRef,
 		enemiesRef,
 		barrelsRef,
+		secretsRef,
 		enemyMeshesRef,
 		collisionCtxRef,
 		lastFireAtRef,
@@ -150,6 +154,25 @@ export function resolveFire(ctx: FireResolutionContext): void {
 			if (perp > 1.0) continue;
 			bestEnemy = enemy;
 			bestDist = t;
+		}
+		// E6 — secret-switch hit-test wins over barrels + enemies. The
+		// switch is an explicit aim target on a wall; if the ray hits
+		// one before any other entity, the switch flips and the pellet
+		// is consumed (no damage propagated past). A triggered switch
+		// is inert (pickRaySwitch already filters those out).
+		if (secretsRef) {
+			const switchHit = pickRaySwitch(origin, dir2, secretsRef.current, bestDist);
+			if (switchHit) {
+				switchHit.secret.triggered = true;
+				dispatch({
+					type: "secretTriggered",
+					id: switchHit.secret.id,
+					x: switchHit.secret.spec.switchPosition.x,
+					y: switchHit.secret.spec.switchPosition.y,
+				});
+				// Pellet consumed — skip the barrel + enemy branches.
+				continue;
+			}
 		}
 		// E5 — barrel hit-test wins ties over enemies.
 		const barrelHit = pickRayBarrel(origin, dir2, barrelsRef.current, bestDist);

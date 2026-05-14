@@ -78,6 +78,13 @@ export type ObjexoomSectorMap = ObjexoomMapBase &
 			maxX: number;
 			maxY: number;
 		}>;
+		/**
+		 * E6 — optional list of secret switch/wall pairs. Step-1 slice
+		 * is "one per ref level"; the type is plural so a future step
+		 * can scatter several per level without re-shaping the map.
+		 * Grid maps don't carry secrets in this slice.
+		 */
+		secrets?: readonly import("./secrets").SecretSpec[];
 	}>;
 
 export type MapSector = Readonly<{
