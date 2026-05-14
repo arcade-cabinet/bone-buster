@@ -29,6 +29,7 @@ const SOURCE_FILES = [
 	resolve(root, "src/scatter/floorTiles.ts"),
 	resolve(root, "src/doors.ts"),
 	resolve(root, "src/decals.ts"),
+	resolve(root, "src/debris.ts"),
 ];
 
 function categoryOf(publicPath) {
