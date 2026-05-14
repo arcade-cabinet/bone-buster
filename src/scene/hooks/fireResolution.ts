@@ -32,6 +32,7 @@ import type { ObjexoomSettings } from "../../settings";
 import {
 	playBoom,
 	playChaingun,
+	playFlamethrower,
 	playMelee,
 	playPistol,
 	playShotgun,
@@ -101,6 +102,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	if (weapon === "melee") playMelee();
 	else if (weapon === "pistol") playPistol();
 	else if (weapon === "chaingun") playChaingun();
+	else if (weapon === "flamethrower") playFlamethrower();
 	else playShotgun();
 
 	// I10 / PA9b — shell ejection.

@@ -218,6 +218,16 @@ export function playMelee() {
 	meleeSynth?.triggerAttackRelease("16n");
 }
 
+/**
+ * E8 — flamethrower whoosh. Reuses the shotgun NoiseSynth (brown
+ * noise with a short envelope) at a tighter duration so per-tick
+ * fires at 100ms cooldown overlap into a continuous hiss rather than
+ * discrete shotgun blasts.
+ */
+export function playFlamethrower() {
+	shotgunSynth?.triggerAttackRelease("32n");
+}
+
 export function playHurt() {
 	hurtSynth?.triggerAttackRelease("E2", "16n");
 }

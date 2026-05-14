@@ -93,16 +93,18 @@ const baseAmmo = (): Record<WeaponId, number> => ({
 	pistol: WEAPONS.pistol.startingAmmo,
 	chaingun: WEAPONS.chaingun.startingAmmo,
 	shotgun: WEAPONS.shotgun.startingAmmo,
+	flamethrower: WEAPONS.flamethrower.startingAmmo,
 });
 
-// E1 — every fresh run starts with the blade + pistol; chaingun and
-// shotgun are world pickups. Centralized so adding a weapon to the
-// default loadout is a one-line change.
+// E1 — every fresh run starts with the blade + pistol; chaingun,
+// shotgun, and (E8) flamethrower are world pickups. Centralized so
+// adding a weapon to the default loadout is a one-line change.
 const baseOwnedWeapons = (): Record<WeaponId, boolean> => ({
 	melee: true,
 	pistol: true,
 	chaingun: false,
 	shotgun: false,
+	flamethrower: false,
 });
 
 const ammoIncrement: Record<
@@ -311,10 +313,12 @@ export function ObjexoomShell() {
 						...prev.ownedWeapons,
 						chaingun: true,
 						shotgun: true,
+						flamethrower: true,
 					},
 					ammo: {
 						...prev.ammo,
 						shotgun: Math.max(prev.ammo.shotgun, WEAPONS.shotgun.pickupAmmo + 4),
+						flamethrower: Math.max(prev.ammo.flamethrower, WEAPONS.flamethrower.pickupAmmo + 10),
 					},
 				};
 			});

@@ -27,6 +27,9 @@ const RECOIL_DISTANCE: Record<WeaponId, number> = {
 	pistol: 0.04,
 	chaingun: 0.025,
 	shotgun: 0.08,
+	// E8 — flamethrower is continuous-fire so the recoil bob is small
+	// (matches chaingun's rapid-fire scale).
+	flamethrower: 0.025,
 };
 const RECOIL_DURATION_MS = 120;
 

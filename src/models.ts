@@ -316,6 +316,15 @@ export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
 		// Muzzle at the +Z tip, mid-X, mid-Y.
 		muzzleBboxFrac: [0.5, 0.55, 0.97],
 	},
+	flamethrower: {
+		// E8 — Flamethrower.glb shipped from the references/ pack. Uses
+		// the same hip-tilt rotation as the other weapons; muzzle bbox
+		// frac aimed at the nozzle tip (mid-X, mid-Y, +Z extreme).
+		url: A("/assets/models/weapons/flamethrower.glb"),
+		rotation: [0.15, Math.PI, 0],
+		offset: [0.2, -0.16, -0.36],
+		muzzleBboxFrac: [0.5, 0.55, 0.97],
+	},
 };
 
 export const PROP_MODELS = {

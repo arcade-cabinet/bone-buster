@@ -1,6 +1,6 @@
 import { LINEAGE, ROLE, SCALE } from "./design-tokens";
 
-export type WeaponId = "melee" | "pistol" | "chaingun" | "shotgun";
+export type WeaponId = "melee" | "pistol" | "chaingun" | "shotgun" | "flamethrower";
 
 export type WeaponSpec = Readonly<{
 	id: WeaponId;
@@ -81,6 +81,31 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		muzzleColor: ROLE.actionKey,
 		hudHotkey: "4",
 	},
+	flamethrower: {
+		// E8 — continuous-fire cone AoE via the existing pellet+spread+
+		// cooldown primitives. 100 ms cooldown ≈ PRD §E8's "every 100ms";
+		// 5 pellets × 0.42 rad spread paints a visible cone; short range
+		// (8 tiles) keeps it firmly in close-quarters territory. Fuel
+		// pickups come in increments of 30 ticks of fire.
+		id: "flamethrower",
+		label: "FLAMETHROWER",
+		cooldownMs: 100,
+		damage: 10,
+		pellets: 5,
+		spreadRad: 0.42,
+		rangeTiles: 8,
+		ammoCostPerShot: 1,
+		startingAmmo: 0,
+		pickupAmmo: 30,
+		muzzleColor: ROLE.actionLava, // ember[400] = "#ff7518" — fire orange
+		hudHotkey: "5",
+	},
 };
 
-export const WEAPON_ORDER: readonly WeaponId[] = ["melee", "pistol", "chaingun", "shotgun"];
+export const WEAPON_ORDER: readonly WeaponId[] = [
+	"melee",
+	"pistol",
+	"chaingun",
+	"shotgun",
+	"flamethrower",
+];
