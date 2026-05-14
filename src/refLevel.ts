@@ -234,8 +234,13 @@ export function loadRefLevel(
 		// COV3 step-1: only refLevel 0 opts into modular asphalt floors.
 		// Other levels keep the procedural floor until step-2+ ships.
 		useModularFloor: index === 0,
-		// COV3 step-2: same gating for modular walls — refLevel 0 only.
-		useModularWalls: index === 0,
+		// COV3 step-2 + step-4: ALL ref levels now use modular walls.
+		// The variant pool is archetype-keyed (see `WALLS_BY_ARCHETYPE`),
+		// so refLevel 0 (corridor) keeps its canonical look while
+		// refLevels 1+2 (arena, courtyard by canonical seed%5 invariant)
+		// pick from their archetype-specific pools — closes the PRD §E13
+		// "visual identity test" gap for ref-level play.
+		useModularWalls: true,
 	};
 }
 

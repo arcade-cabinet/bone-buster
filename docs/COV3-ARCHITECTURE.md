@@ -61,20 +61,44 @@ surface type ships separately. Walls / doorways are step-2 and step-3.
 **Asset pool:** 4 asphalt variants (`asphalt_hr_1.glb`,
 `asphalt_hr_1_large.glb`, `asphalt_hr_2.glb`, `asphalt_hr_3.glb`).
 
-### Step 2 (future commit)
+### Step 2 (shipped)
 
-Modular wall pieces for refLevel 0 sector edges. Same gating field
-(`map.useModularWalls`). Procedural box-walls stay on refLevels 1+2.
+Modular wall pieces for refLevel 0 sector edges. New optional
+`useModularWalls?: boolean` field on `ObjexoomSectorMap`; refLevel 0
+opts in, refLevels 1+2 keep procedural box-walls. Implementation:
+one stretched GLB clone per non-portal edge (vs. tiling). 4 wall
+variants in the pool, deterministic per-edge pick via
+`pickWallUrl(hash)` keyed on `sectorId * 100 + edgeIdx`.
 
-### Step 3 (future commit)
+### Step 3 (closed-by-design, no commit needed)
 
-Doorway cutouts at portal edges. Required for step-2's walls not to
-hide the navigation paths between sectors.
+Original framing assumed tiled walls with separate doorway cutout
+GLBs. Step-2's stretch-one-clone-per-edge approach makes this moot:
+portal edges are skipped entirely (the doorway IS the gap), so no
+cutout asset is needed. If a future step revisits tiling for variety
+along very long edges, the doorway-cutout question returns then.
 
-### Step 4 (future commit, E13 dependency)
+### Step 4 (shipped)
 
-Per-archetype tile/wall asset sets so each archetype reads visually
-distinct.
+Per-archetype wall pools via `WALLS_BY_ARCHETYPE: Record<PropArchetype, readonly string[]>`.
+Each of the 5 archetypes (corridor / arena / courtyard / sewer /
+library) has its own 4-GLB pool drawn from distinct PSX Mega Pack II
+prefix families (`hr_*`, `hs_*`, `rg_*`, `rtx_*`, `rx_*`). The
+corridor pool is the literal step-2 array unchanged so refLevel 0
+canonical screenshots stay byte-stable. `pickWallUrl(archetype, hash)`
+gains the archetype argument; `SectorMapGeometry` resolves it via
+`pickArchetype(map)`. `refLevel.ts` sets `useModularWalls: true` for
+ALL ref levels — refLevel 0 stays corridor (canonical bytes), refLevels
+1+2 light up arena and courtyard pools respectively.
+
+### Step 5 (future commit) — modular walls on procedural grid maps
+
+Currently `MapGeometry` (grid path) renders procedural box-walls.
+Procedural maps benefit from per-archetype walls just as refLevels do.
+Requires the same `pickArchetype` + `pickWallUrl(archetype, hash)`
+plumbing on the grid path, plus a `useModularWalls` opt-in or unconditional
+adoption with the canonical-byte concern delegated to whichever screenshot
+suite covers procedural runs.
 
 ## Single-source
 

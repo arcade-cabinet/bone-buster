@@ -2,9 +2,11 @@ import { useGLTF } from "@react-three/drei";
 import { useMemo } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
+import { pickArchetype } from "../../archetype";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import { computePortalEdges, edgeKey, type ObjexoomSectorMap } from "../../engine";
-import { pickWallUrl, WALL_VARIANTS } from "../../structures";
+import type { PropArchetype } from "../../scatter/propPool";
+import { ALL_WALL_URLS, pickWallUrl } from "../../structures";
 import { WaterSurface } from "./WaterSurface";
 
 /**
@@ -34,6 +36,7 @@ import { WaterSurface } from "./WaterSurface";
 export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 	const useModularFloor = map.useModularFloor === true;
 	const useModularWalls = map.useModularWalls === true;
+	const archetype = useMemo<PropArchetype>(() => pickArchetype(map), [map]);
 	const portals = useMemo(
 		() => (useModularWalls ? computePortalEdges(map) : null),
 		[map, useModularWalls],
@@ -96,6 +99,7 @@ export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 							return (
 								<ModularWall
 									key={`mw-${wallKey}`}
+									archetype={archetype}
 									hash={sector.id * 100 + idx}
 									midX={mx}
 									midZ={mz}
@@ -148,6 +152,7 @@ const NATIVE_WALL_WIDTH = 2;
 const NATIVE_WALL_HEIGHT = 2;
 
 function ModularWall({
+	archetype,
 	hash,
 	midX,
 	midZ,
@@ -156,6 +161,7 @@ function ModularWall({
 	baseY,
 	angle,
 }: {
+	archetype: PropArchetype;
 	hash: number;
 	midX: number;
 	midZ: number;
@@ -164,7 +170,7 @@ function ModularWall({
 	baseY: number;
 	angle: number;
 }) {
-	const url = pickWallUrl(hash);
+	const url = pickWallUrl(archetype, hash);
 	const gltf = useGLTF(url);
 	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
 	const scaleX = length / NATIVE_WALL_WIDTH;
@@ -176,6 +182,6 @@ function ModularWall({
 	);
 }
 
-for (const url of WALL_VARIANTS) {
+for (const url of ALL_WALL_URLS) {
 	useGLTF.preload(url);
 }
