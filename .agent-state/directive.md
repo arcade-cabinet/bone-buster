@@ -64,7 +64,7 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 - [x] **DS.2** CSS mirror: `app/tokens.css` with `--obx-*` custom properties.
 - [x] **DS.3** Self-hosted horror-tactical fonts: Black Ops One (display) + Rajdhani (body), 12 woff2 files in `public/assets/fonts/`, declared in `app/fonts.css`.
 - [x] **DS.4** Dependabot grouped non-major + major per ecosystem.
-- [ ] **DS.5** Wire tokens into `ObjexoomHUD` (replace hardcoded hex/rgba with `var(--obx-…)` or token imports).
+- [x] **DS.5** Wire tokens into `ObjexoomHUD` (replace hardcoded hex/rgba with `var(--obx-…)` or token imports).
 - [ ] **DS.6** Wire tokens into `ObjexoomShell` landing / mission-complete / game-over overlays.
 - [ ] **DS.7** Wire tokens into scene materials where they cross the JS↔three boundary (lava, key glow, fire muzzle, key pickup tint).
 - [ ] **DS.8** Apply Black Ops One to all heading-class HUD elements (HP/AMMO numerics, MISSION COMPLETE/GAME OVER); Rajdhani to body labels (HP/AMMO labels, level select, difficulty descriptions).

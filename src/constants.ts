@@ -21,10 +21,8 @@ export const PISTOL_DAMAGE = 25;
 export const PISTOL_COOLDOWN_MS = 250;
 export const PISTOL_MAX_RANGE = TILE * 18;
 
-export const OBJEXOOM_PALETTE = {
-	indigo: "#6172f3",
-	violet: "#a855f7",
-	amber: "#f59e0b",
-	ink: "#060912",
-	parchment: "#f8f9fc",
-} as const;
+// Re-export from the design-tokens system so existing import sites
+// (`from "./constants"`) keep working while there's only one source of
+// truth for color values. New code should import from
+// `./design-tokens` directly and prefer `ROLE.*` over `OBJEXOOM_PALETTE.*`.
+export { OBJEXOOM_PALETTE } from "./design-tokens/colors";
