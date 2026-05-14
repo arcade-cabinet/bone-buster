@@ -9,6 +9,7 @@ import { pickArchetype } from "./archetype";
 import { type Barrel, resolveExplosion, spawnBarrels } from "./barrels";
 import { PLAYER_HEIGHT, TILE } from "./constants";
 import { OBJEXOOM_PALETTE } from "./design-tokens";
+import { remapEnemyMix } from "./enemyMix";
 import {
 	computePortalEdges,
 	ENEMY_BULLET_DAMAGE,
@@ -105,12 +106,18 @@ export function ObjexoomScene({
 	hasFlashlight,
 }: SceneProps) {
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
-	const enemiesRef = useRef<Enemy[]>(
-		spawnEnemies(map).map((e) => {
-			const scaledHp = Math.max(1, Math.round(e.hp * tuning.enemyHpMultiplier));
-			return { ...e, hp: scaledHp, maxHp: scaledHp };
-		}),
-	);
+	// E13 step-3 — per-archetype enemy mix. Remap spawn `kind`s through
+	// the archetype's weight table before spawnEnemies consumes them.
+	// pickArchetype is pure + trivial; safe to call inline for the
+	// useRef initializer.
+	const initialEnemies = spawnEnemies(
+		map,
+		remapEnemyMix(map.enemySpawns, pickArchetype(map), map.seed),
+	).map((e) => {
+		const scaledHp = Math.max(1, Math.round(e.hp * tuning.enemyHpMultiplier));
+		return { ...e, hp: scaledHp, maxHp: scaledHp };
+	});
+	const enemiesRef = useRef<Enemy[]>(initialEnemies);
 	const pickupsRef = useRef<Pickup[]>(spawnPickups(map));
 	const barrelsRef = useRef<Barrel[]>(spawnBarrels(map));
 	// E6 — secret switches/walls for the current map. Grid maps don't

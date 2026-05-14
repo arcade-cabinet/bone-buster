@@ -565,9 +565,15 @@ export function pickBossSpawnIndex(map: ObjexoomMap): number {
 	return bestIdx;
 }
 
-export function spawnEnemies(map: ObjexoomMap): Enemy[] {
+/**
+ * @param spawnsOverride — optional pre-remapped spawn list (E13 step-3
+ * enemy mix). When absent, uses `map.enemySpawns` directly. Length and
+ * order must match `map.enemySpawns` so bossIdx still aligns.
+ */
+export function spawnEnemies(map: ObjexoomMap, spawnsOverride?: readonly EnemySpawn[]): Enemy[] {
+	const spawns = spawnsOverride ?? map.enemySpawns;
 	const bossIdx = pickBossSpawnIndex(map);
-	return map.enemySpawns.map((spawn, i) => {
+	return spawns.map((spawn, i) => {
 		const isBoss = i === bossIdx;
 		const baseHp = enemyBaseHp(spawn.kind);
 		const hp = isBoss ? baseHp * BOSS_HP_MULTIPLIER : baseHp;
