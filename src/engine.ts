@@ -101,6 +101,14 @@ export type ObjexoomSectorMap = ObjexoomMapBase &
 		 * slice.
 		 */
 		useModularFloor?: boolean;
+		/**
+		 * COV3 step-2 — when true, SectorMapGeometry OMITS the procedural
+		 * `<boxGeometry>` wall quads and mounts modular wall GLBs along
+		 * non-portal sector edges instead. Portal edges (sector-to-sector
+		 * openings) skip walls regardless. Default false; only refLevel
+		 * 0 sets it true in this slice.
+		 */
+		useModularWalls?: boolean;
 	}>;
 
 export type MapSector = Readonly<{
@@ -1009,7 +1017,7 @@ export function hasLineOfSightSectors(a: Vec2, b: Vec2, map: ObjexoomSectorMap):
 
 const EPS = 1e-6;
 
-function edgeKey(a: Vec2, b: Vec2): string {
+export function edgeKey(a: Vec2, b: Vec2): string {
 	// Order-independent so shared edges match regardless of winding direction.
 	const ax = Math.round(a.x * 1000) / 1000;
 	const ay = Math.round(a.y * 1000) / 1000;

@@ -38,6 +38,7 @@ const SOURCE_FILES = [
 	resolve(root, "src/nature.ts"),
 	resolve(root, "src/npcs.ts"),
 	resolve(root, "src/traps.ts"),
+	resolve(root, "src/structures.ts"),
 ];
 
 function categoryOf(publicPath) {

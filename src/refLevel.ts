@@ -234,6 +234,8 @@ export function loadRefLevel(
 		// COV3 step-1: only refLevel 0 opts into modular asphalt floors.
 		// Other levels keep the procedural floor until step-2+ ships.
 		useModularFloor: index === 0,
+		// COV3 step-2: same gating for modular walls — refLevel 0 only.
+		useModularWalls: index === 0,
 	};
 }
 
