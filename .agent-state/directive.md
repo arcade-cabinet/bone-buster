@@ -4,6 +4,8 @@
 
 ## Phase 11 — continuing polish
 
+- [x] **POL3 — investigated; not a bug.** Closed as "intentional architecture, not a stub." Investigation revealed: `onHit` already mirrors `finalDamage` into `run.runTotalDamageTaken` live (line 331), and `onKill` mirrors into `run.runTotalKills` live (line 348). The `clearLevel` dispatch in ObjexoomShell only handles the level-advance bookkeeping (incrementing `runLevelsCleared`); passing `killsThisLevel: 0` + `damageThisLevel: 0` avoids double-counting. Win-screen `formatRunStats` reads from `state.run.runTotal*` which is already correct. The only field that needed the reducer pathway was `runTotalScore` — score doesn't live-mirror because it's per-pickup, not per-event, so POL2's `scoreThisLevel: prev.score` is the correct way to thread it. No code change required; the apparent "hardcoded 0 stub" is intentional. Directive closed for accuracy; no commit needed for the item itself.
+
 - [x] **POL2 — score → RunStats integration.** Shipped. Extended `RunStats` with `runTotalScore: number`. `RunAction.clearLevel` now requires `scoreThisLevel: number`. `runStatsReducer` accumulates score on every `clearLevel` action; `start`/`reset` zero it. The single `clearLevel` dispatch site in ObjexoomShell now passes `scoreThisLevel: prev.score`. Win-screen summary line gained a conditional ` • {score} SCORE` segment (hidden when `runTotalScore === 0`). Existing 4 runStats tests updated to the new shape (4 fields, not 3); 1 new test pins the `scoreThisLevel=0` no-op. 475 unit + 5 browser + 5 e2e canonical screenshots green. Canonicals byte-stable (`runTotalScore` starts at 0 and the canonical poses never collect treasure loot, so the conditional SCORE segment stays hidden).
 
 ## Phase 10 — polish + stub cleanup
