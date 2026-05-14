@@ -27,8 +27,7 @@ const WORLD_SCALE = 0.25; // reference units → r3f units
 
 function polygonToVec2Array(poly: Polygon, ox: number, oy: number) {
 	return poly.vertices.map(
-		(v) =>
-			new THREE.Vector2((v.x - ox) * WORLD_SCALE, (v.y - oy) * WORLD_SCALE),
+		(v) => new THREE.Vector2((v.x - ox) * WORLD_SCALE, (v.y - oy) * WORLD_SCALE),
 	);
 }
 
@@ -69,11 +68,7 @@ export function RefLevelMap({ level }: Props) {
 						{/* Ceiling */}
 						<mesh rotation={[Math.PI / 2, 0, 0]} position={[0, ceilY, 0]}>
 							<shapeGeometry args={[shape]} />
-							<meshStandardMaterial
-								color="#0b1024"
-								roughness={1}
-								side={THREE.DoubleSide}
-							/>
+							<meshStandardMaterial color="#0b1024" roughness={1} side={THREE.DoubleSide} />
 						</mesh>
 						{/* Walls — one quad per edge */}
 						{poly.vertices.map((a, idx) => {
@@ -96,13 +91,7 @@ export function RefLevelMap({ level }: Props) {
 								>
 									<boxGeometry args={[len, height, 0.08]} />
 									<meshStandardMaterial
-										color={
-											idx % 3 === 0
-												? "#1f2547"
-												: idx % 3 === 1
-													? "#26224a"
-													: "#1a1e3b"
-										}
+										color={idx % 3 === 0 ? "#1f2547" : idx % 3 === 1 ? "#26224a" : "#1a1e3b"}
 										emissive={OBJEXOOM_PALETTE.indigo}
 										emissiveIntensity={0.08}
 										roughness={0.85}

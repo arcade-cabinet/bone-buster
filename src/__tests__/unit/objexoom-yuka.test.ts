@@ -67,12 +67,7 @@ describe("yukaProjectileStep (Y5)", () => {
 
 describe("yukaAvoidObstacles (Y4)", () => {
 	it("returns the original target when no obstacle is hit", () => {
-		const r = yukaAvoidObstacles(
-			{ x: 0, y: 0 },
-			{ x: 5, y: 0 },
-			2,
-			() => false,
-		);
+		const r = yukaAvoidObstacles({ x: 0, y: 0 }, { x: 5, y: 0 }, 2, () => false);
 		expect(r.x).toBe(5);
 		expect(r.y).toBe(0);
 	});

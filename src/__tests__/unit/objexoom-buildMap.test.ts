@@ -21,13 +21,14 @@ describe("objexoom buildMap (A6)", () => {
 	for (const level of [1, 2, 3, 4, 5] as const) {
 		it(`level=${level} returns a sector map (E1M${level})`, () => {
 			const map = buildMap(0, level satisfies LevelChoice);
-			expect(isSectorMap(map)).toBe(true);
+			if (!isSectorMap(map)) throw new Error("expected sector map");
 			expect(map.sectors.length).toBeGreaterThan(0);
 		});
 
 		it(`level=${level} ignores the seed argument`, () => {
 			const a = buildMap(1, level satisfies LevelChoice);
 			const b = buildMap(999_999, level satisfies LevelChoice);
+			if (!isSectorMap(a) || !isSectorMap(b)) throw new Error("expected sector maps");
 			expect(a.sectors).toEqual(b.sectors);
 		});
 	}

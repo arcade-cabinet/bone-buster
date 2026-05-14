@@ -14,13 +14,7 @@
  * the player from picking off patrolling enemies one-by-one.
  */
 
-import type {
-	CollisionContext,
-	Enemy,
-	EnemyFsmState,
-	ObjexoomMap,
-	Vec2,
-} from "./engine";
+import type { CollisionContext, Enemy, EnemyFsmState, ObjexoomMap, Vec2 } from "./engine";
 import { hasLineOfSightAny, resolveCollisionAny } from "./engine";
 // Y1/Y3/Y8 — yuka-backed step math. The hand-rolled FSM stays
 // (it's the "thin compat shim" Y8 calls out); the per-frame patrol +
@@ -28,11 +22,7 @@ import { hasLineOfSightAny, resolveCollisionAny } from "./engine";
 // so the migration toward yuka.WanderBehavior / SeekBehavior has a
 // landing spot. Tests are unaffected because the return shape is
 // identical.
-import {
-	yukaAvoidObstacles,
-	yukaStepToward,
-	yukaWanderTarget,
-} from "./yukaIntegration";
+import { yukaAvoidObstacles, yukaStepToward, yukaWanderTarget } from "./yukaIntegration";
 
 export const GETHELP_RADIUS = 6.5;
 export const LOS_LOST_MS = 2_500;
@@ -115,10 +105,8 @@ export function tickEnemyFsm(input: FsmTickInput): FsmTickOutput {
 						!e.dead &&
 						e.id !== enemy.id &&
 						e.fsmState === 0 &&
-						Math.hypot(
-							e.position.x - enemy.position.x,
-							e.position.y - enemy.position.y,
-						) < GETHELP_RADIUS,
+						Math.hypot(e.position.x - enemy.position.x, e.position.y - enemy.position.y) <
+							GETHELP_RADIUS,
 				)
 				.map((e) => e.id);
 			return {
@@ -144,12 +132,7 @@ export function tickEnemyFsm(input: FsmTickInput): FsmTickOutput {
 		);
 		return {
 			nextState: 0,
-			moveTarget: yukaStepToward(
-				enemy.position,
-				wanderTarget,
-				PATROL_SPEED,
-				input.dt,
-			),
+			moveTarget: yukaStepToward(enemy.position, wanderTarget, PATROL_SPEED, input.dt),
 			fireBullet: false,
 			gethelpFromIds: [],
 			lastSeenAt,
@@ -169,12 +152,7 @@ export function tickEnemyFsm(input: FsmTickInput): FsmTickOutput {
 		}
 		// Can we shoot? wraiths + imps shoot; skeletons don't.
 		const canShoot = enemy.kind !== "skeleton";
-		if (
-			canShoot &&
-			sees &&
-			dist <= SHOOT_RANGE &&
-			now - enemy.lastShotAt > SHOOT_COOLDOWN_MS
-		) {
+		if (canShoot && sees && dist <= SHOOT_RANGE && now - enemy.lastShotAt > SHOOT_COOLDOWN_MS) {
 			return {
 				nextState: 3,
 				moveTarget: null,
@@ -212,21 +190,13 @@ export function tickEnemyFsm(input: FsmTickInput): FsmTickOutput {
 						// than a small epsilon, something pushed us out (i.e.
 						// `p` was inside a wall).
 						const resolved = resolveCollisionAny(p, input.map, input.ctx, 0.4);
-						return (
-							Math.abs(resolved.x - p.x) > 0.05 ||
-							Math.abs(resolved.y - p.y) > 0.05
-						);
+						return Math.abs(resolved.x - p.x) > 0.05 || Math.abs(resolved.y - p.y) > 0.05;
 					},
 				);
 			}
 			return {
 				nextState: 1,
-				moveTarget: yukaStepToward(
-					enemy.position,
-					chaseTarget,
-					chaseSpeed,
-					input.dt,
-				),
+				moveTarget: yukaStepToward(enemy.position, chaseTarget, chaseSpeed, input.dt),
 				fireBullet: false,
 				gethelpFromIds: [],
 				lastSeenAt,

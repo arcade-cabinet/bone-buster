@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	advanceLevel,
-	makeInitialRunStats,
-	RUN_LENGTH,
-	runStatsReducer,
-} from "@/runStats";
+import { advanceLevel, makeInitialRunStats, RUN_LENGTH, runStatsReducer } from "@/runStats";
 
 describe("objexoom runStatsReducer (B2)", () => {
 	it("makeInitialRunStats starts at zero", () => {

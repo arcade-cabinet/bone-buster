@@ -44,10 +44,7 @@ export function runStatsReducer(state: RunStats, action: RunAction): RunStats {
  * when the run is complete. For procedural mode the level field stays
  * "procedural" — the runner is expected to re-roll the seed externally.
  */
-export function advanceLevel(
-	current: LevelChoice,
-	clearedCount: number,
-): LevelChoice | null {
+export function advanceLevel(current: LevelChoice, clearedCount: number): LevelChoice | null {
 	if (clearedCount + 1 >= RUN_LENGTH) return null;
 	if (current === "procedural") return "procedural";
 	const next = current + 1;

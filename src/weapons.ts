@@ -62,8 +62,4 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 	},
 };
 
-export const WEAPON_ORDER: readonly WeaponId[] = [
-	"pistol",
-	"chaingun",
-	"shotgun",
-];
+export const WEAPON_ORDER: readonly WeaponId[] = ["pistol", "chaingun", "shotgun"];
