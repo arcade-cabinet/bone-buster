@@ -77,3 +77,22 @@ export function advanceLevel(current: LevelChoice, clearedCount: number): LevelC
 	if (next > 5) return null;
 	return next as LevelChoice;
 }
+
+/**
+ * PT1E — the level-transition handler in ObjexoomShell uses this to
+ * decide whether `status` should flip to `"playing"` (start the next
+ * level) or `"won"` (campaign complete). Extracted as a pure function
+ * because the bug shipped before was a missing branch: when
+ * `advanceLevel` returns `null` (no more levels), the handler used to
+ * unconditionally set `"playing"`, leaving the player stuck on the
+ * same map with `phase="going_back"` + `lastReachedSpawnAt=true`.
+ * This codifies the contract so a regression is structurally
+ * impossible.
+ */
+export function nextStatusAfterTransition(
+	current: LevelChoice,
+	clearedCount: number,
+): "playing" | "won" {
+	const next = advanceLevel(current, clearedCount);
+	return next === null ? "won" : "playing";
+}

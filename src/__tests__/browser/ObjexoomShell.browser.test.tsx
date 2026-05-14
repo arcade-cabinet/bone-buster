@@ -80,6 +80,7 @@ describe("ObjexoomShell — landing surface", () => {
 					collectKey: () => void;
 					collectAllPickups: () => void;
 					triggerWin: () => void;
+					forceMissionComplete: () => void;
 				};
 			}
 		).__objexoom;
@@ -93,5 +94,7 @@ describe("ObjexoomShell — landing surface", () => {
 		expect(typeof hooks?.collectKey).toBe("function");
 		expect(typeof hooks?.collectAllPickups).toBe("function");
 		expect(typeof hooks?.triggerWin).toBe("function");
+		expect(typeof hooks?.forceMissionComplete).toBe("function");
 	});
 });
+

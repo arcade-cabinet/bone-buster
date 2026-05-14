@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { advanceLevel, makeInitialRunStats, RUN_LENGTH, runStatsReducer } from "@/runStats";
+import {
+	advanceLevel,
+	makeInitialRunStats,
+	nextStatusAfterTransition,
+	RUN_LENGTH,
+	runStatsReducer,
+} from "@/runStats";
 
 describe("objexoom runStatsReducer (B2)", () => {
 	it("makeInitialRunStats starts at zero", () => {
@@ -125,5 +131,31 @@ describe("objexoom advanceLevel (B1/B4)", () => {
 
 	it("RUN_LENGTH is 5", () => {
 		expect(RUN_LENGTH).toBe(5);
+	});
+});
+
+describe("objexoom nextStatusAfterTransition (PT1E)", () => {
+	it("returns 'playing' when there's a next level in the campaign", () => {
+		expect(nextStatusAfterTransition(1, 0)).toBe("playing");
+		expect(nextStatusAfterTransition(2, 1)).toBe("playing");
+		expect(nextStatusAfterTransition(3, 2)).toBe("playing");
+		expect(nextStatusAfterTransition(4, 3)).toBe("playing");
+	});
+
+	it("returns 'won' when the final refLevel is cleared", () => {
+		// settings.level=5 (E1M5) with cleared=4 → advanceLevel
+		// returns null → status must be 'won' (not bounced back to
+		// 'playing' which would leave the player frozen on the same
+		// map with phase=going_back + lastReachedSpawnAt=true).
+		expect(nextStatusAfterTransition(5, 4)).toBe("won");
+	});
+
+	it("returns 'won' for procedural mode after RUN_LENGTH clears", () => {
+		expect(nextStatusAfterTransition("procedural", 4)).toBe("won");
+	});
+
+	it("returns 'playing' for procedural mode mid-run", () => {
+		expect(nextStatusAfterTransition("procedural", 0)).toBe("playing");
+		expect(nextStatusAfterTransition("procedural", 3)).toBe("playing");
 	});
 });

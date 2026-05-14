@@ -113,17 +113,28 @@ await page.evaluate(() => {
 await page.waitForTimeout(700);
 await captureCDP(page, `${OUT}/08-going-back.png`);
 
-console.log("PT1.8 — force mission-complete → capture PT1B ceremony");
-// Short-circuit to status="won" via the dedicated debug hook so the
-// PT1B MissionCompleteCeremony overlay renders. Grinding through
-// RUN_LENGTH levels would require resolving a separate engine
-// timing quirk (lastReachedSpawnAt persists across level
-// transitions even though scene remounts — tracked under PT1E).
-await page.evaluate(() => window.__objexoom.forceMissionComplete());
-// Wait for: indigo vignette (0.6s), card spring (~0.6s), headline
-// glow ramp (0.4 + 0.6 = 1.0s), 5x tick-up stagger (0.5 + 4*0.12 +
-// 0.9 = 1.88s), CTA spring entry (1.1 + ~0.4 = 1.5s). 2200ms covers
-// all animations to settled state.
+console.log("PT1.8 — clear remaining levels → mission complete");
+// PT1E fixed: when settings.level is the final refLevel, the
+// transition handler now routes to status="won" instead of
+// bouncing back to "playing". Each onReachSpawn fires
+// automatically when the player is at spawn + phase=going_back,
+// so all we need to do is keep teleporting the player to spawn
+// after each level mounts. Poll status until "won".
+const start = Date.now();
+while (Date.now() - start < 12000) {
+	const s = await page.evaluate(() => {
+		const hooks = window.__objexoom;
+		const st = hooks.getState();
+		if (st.status === "playing" && st.phase === "going_back") {
+			const spawn = st.playerSpawn ?? { x: 4, y: 4 };
+			hooks.teleport(spawn.x, spawn.y, 0);
+		}
+		return st.status;
+	});
+	if (s === "won") break;
+	await page.waitForTimeout(200);
+}
+// Wait for ceremony animations to settle (PT1B timeline: 2.2s).
 await page.waitForTimeout(2200);
 await captureCDP(page, `${OUT}/09-mission-complete.png`);
 

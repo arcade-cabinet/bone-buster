@@ -48,3 +48,6 @@ public/assets/wasm/
 !.env.example
 .claude/state/
 .claude/scheduled_tasks.lock
+test-results/
+.vitest-attachments/
+src/**/__screenshots__/

@@ -12,7 +12,13 @@ import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
 import { openRunHistory, type RunHistory } from "./runHistory";
-import { advanceLevel, makeInitialRunStats, type RunStats, runStatsReducer } from "./runStats";
+import {
+	advanceLevel,
+	makeInitialRunStats,
+	nextStatusAfterTransition,
+	type RunStats,
+	runStatsReducer,
+} from "./runStats";
 import { DEFAULT_SETTINGS, DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 import {
 	ensureSfx,
@@ -668,9 +674,18 @@ export function ObjexoomShell() {
 					setSettings((prev) => ({ ...prev, level: next }));
 				}
 			}
+			// PT1E — pure function decides "playing" vs "won". Bug
+			// before: unconditionally set "playing", leaving the
+			// player stuck at spawn with phase=going_back +
+			// lastReachedSpawnAt=true on the final map (no remount
+			// since level didn't advance, key didn't change).
+			const nextStatus = nextStatusAfterTransition(
+				settings.level,
+				state.run.runLevelsCleared,
+			);
 			setState((prev) => ({
 				...prev,
-				status: "playing",
+				status: nextStatus,
 				hp: prev.maxHp,
 				kills: 0,
 				score: 0,
