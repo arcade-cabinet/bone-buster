@@ -18,7 +18,22 @@ type BodyShard = {
 	bounced: boolean;
 };
 
-const BODYPART_TTL_MS = 3000;
+/**
+ * POL25 — phased body-part lifecycle.
+ *
+ *   0 .. MOTION_MS              physics: gravity, bounce, spin
+ *   MOTION_MS .. SETTLE_END_MS  settled: opacity 1, no motion, no spin
+ *   SETTLE_END_MS .. TTL_MS     fade-out: opacity 1 → 0
+ *
+ * Pre-POL25 used a single 3000ms TTL with linear fade across the
+ * whole window — gibs faded out while they were still moving, which
+ * read as "the world is dissolving" rather than "they fell and
+ * settled." The phased lifecycle gives each shard a proper rest
+ * pose before it disappears.
+ */
+const MOTION_MS = 800; // active physics window
+const SETTLE_END_MS = 4000; // settled rest window ends
+const BODYPART_TTL_MS = 5000; // full lifetime (fade ends here)
 const MAX_BODY_SHARDS = 120;
 
 /**
@@ -87,21 +102,25 @@ export function BodyPartField() {
 		for (const shard of shardsRef.current) {
 			const age = now - shard.createdAt;
 			if (age > BODYPART_TTL_MS) continue;
-			shard.pos.x += shard.vel.x * dt;
-			shard.pos.y += shard.vel.y * dt;
-			shard.pos.z += shard.vel.z * dt;
-			shard.vel.y -= 10 * dt;
-			if (shard.pos.y < 0.1) {
-				shard.pos.y = 0.1;
-				if (!shard.bounced && shard.vel.y < -0.5) {
-					shard.vel.y *= -0.35;
-					shard.vel.x *= 0.6;
-					shard.vel.z *= 0.6;
-					shard.bounced = true;
-				} else {
-					shard.vel.x *= 0.85;
-					shard.vel.z *= 0.85;
-					shard.vel.y = 0;
+			// POL25 — phased lifecycle. Only run physics + spin in the
+			// MOTION phase; after MOTION_MS the shard rests in place.
+			if (age < MOTION_MS) {
+				shard.pos.x += shard.vel.x * dt;
+				shard.pos.y += shard.vel.y * dt;
+				shard.pos.z += shard.vel.z * dt;
+				shard.vel.y -= 10 * dt;
+				if (shard.pos.y < 0.1) {
+					shard.pos.y = 0.1;
+					if (!shard.bounced && shard.vel.y < -0.5) {
+						shard.vel.y *= -0.35;
+						shard.vel.x *= 0.6;
+						shard.vel.z *= 0.6;
+						shard.bounced = true;
+					} else {
+						shard.vel.x *= 0.85;
+						shard.vel.z *= 0.85;
+						shard.vel.y = 0;
+					}
 				}
 			}
 			let mesh = meshes.current.get(shard.id);
@@ -121,11 +140,20 @@ export function BodyPartField() {
 				mesh = m;
 			}
 			mesh.position.set(shard.pos.x, shard.pos.y, shard.pos.z);
-			mesh.rotation.x += shard.spin.x * dt;
-			mesh.rotation.y += shard.spin.y * dt;
-			mesh.rotation.z += shard.spin.z * dt;
-			const fade = 1 - age / BODYPART_TTL_MS;
-			(mesh.material as THREE.MeshStandardMaterial).opacity = fade;
+			// POL25 — spin only during motion phase; rest pose is static.
+			if (age < MOTION_MS) {
+				mesh.rotation.x += shard.spin.x * dt;
+				mesh.rotation.y += shard.spin.y * dt;
+				mesh.rotation.z += shard.spin.z * dt;
+			}
+			// POL25 — phased opacity: full during motion + rest, fade
+			// only during the final SETTLE_END_MS → TTL_MS window.
+			let opacity = 1;
+			if (age > SETTLE_END_MS) {
+				const fadeT = (age - SETTLE_END_MS) / (BODYPART_TTL_MS - SETTLE_END_MS);
+				opacity = Math.max(0, 1 - fadeT);
+			}
+			(mesh.material as THREE.MeshStandardMaterial).opacity = opacity;
 			mesh.visible = true;
 			seen.add(shard.id);
 			live.push(shard);

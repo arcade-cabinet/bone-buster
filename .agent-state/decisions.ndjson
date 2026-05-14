@@ -68,3 +68,4 @@
 {"ts":"2026-05-14T20:36:14.913Z","sha":"b38604370d0a","subject":"feat(audio): POL10 — boss-down sting","decision":null,"why":null,"resolves":["directive Phase 11 POL10."],"overrides":[]}
 {"ts":"2026-05-14T21:43:53.755Z","sha":"635cd004cf4d","subject":"feat(hud): POL22 — key pickup ceremony slot","decision":"punted the 'brief slow-mo' sub-feature from the","why":null,"resolves":[],"overrides":[]}
 {"ts":"2026-05-14T21:46:30.148Z","sha":"e2dac1bdbc65","subject":"feat(scene): POL23 — exit-portal pull slot","decision":"skipped the camera-dolly + white-flash + audio swell","why":null,"resolves":[],"overrides":[]}
+{"ts":"2026-05-14T21:47:23.880Z","sha":"90a059156619","subject":"docs: POL24 — flashlight battery decision (SKIP)","decision":"SKIP POL24. The 'you absolutely need the flashlight'","why":null,"resolves":[],"overrides":[]}
