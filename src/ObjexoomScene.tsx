@@ -647,12 +647,16 @@ export function ObjexoomScene({
 				unlocked={hasKey && allBossesDead}
 				hueIndex={(map.seed >>> 0) % 5}
 			/>
-			<RealDoor position={map.exitPosition} unlocked={hasKey && allBossesDead} />
+			<RealDoor position={map.exitPosition} unlocked={hasKey && allBossesDead} mapSeed={map.seed} />
 			<TreasureChest position={map.exitPosition} />
 			{/* H8 — second RealDoor at the original spawn. Opens during the
 			    going_back phase so the player has a clear visual goal to
 			    sprint toward while every enemy aggros. */}
-			<RealDoor position={map.playerSpawn} unlocked={phase === "going_back"} />
+			<RealDoor
+				position={map.playerSpawn}
+				unlocked={phase === "going_back"}
+				mapSeed={map.seed ^ 0x676f6e67 /* "gong" tag — different variant for the spawn-side door */}
+			/>
 
 			{/* E6 — secret switches + their hidden walls. Empty when the
 			    current map has no `secrets` field (grid maps + future
