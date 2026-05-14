@@ -40,8 +40,7 @@ function NpcMesh({ inst }: { inst: NpcInstance }) {
 		// Prefer a clip whose name matches /idle/i; fall back to the
 		// first clip if none matches — the chibi pack always ships
 		// SOMETHING in the rest pose worth animating subtly.
-		const idleName =
-			names.find((n) => /idle/i.test(n)) ?? names[0];
+		const idleName = names.find((n) => /idle/i.test(n)) ?? names[0];
 		const action = actions[idleName];
 		if (!action) return;
 		// Phase-offset by inst.id so multiple chibis don't perfectly
