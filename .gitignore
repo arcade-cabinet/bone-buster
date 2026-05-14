@@ -33,3 +33,4 @@ public/assets/wasm/
 .env
 .env.*
 !.env.example
+.claude/state/

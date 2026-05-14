@@ -26,14 +26,29 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 Pick the topmost `[ ]` item from the highest-priority lane that has remaining work:
 
 1. **PARITY** — reference-clone gaps (all currently `[x]`; if any regress, fix first).
-2. **ELEVATION Phase 2** — mechanical (E5 ✅ shipped; E6 next).
-3. **ELEVATION Phase 3** — visual (PA-MOD7 → E4 → E3 → E2).
-4. **ELEVATION Phase 4** — polish (E13, E7, E8, E11, E10).
-5. **COV*** — 3DPSX coverage. **REQUIRES `/Volumes/home/assets/3DPSX/` mounted.** If detached, skip the whole lane and pick next.
-6. **INFRA** — INF2 (build-time asset copy).
-7. **Standalone hardening** — B1.7, B2.1, B2.4, AO.4, AO.5, AO.6, DS.* (all parallel; pick any).
+2. **ARCH** — architectural maintenance raised by reviews. **ARCH2 (re-decomp) blocks E3.** Pick first if it's the gate.
+3. **ELEVATION Phase 2** — mechanical (E5 ✅ shipped; E6 next).
+4. **ELEVATION Phase 3** — visual. Order: PA-MOD7 → COV1 → E4 → COV4 → E3 → COV3 → E2. (Lane-interplay table below explains why.)
+5. **ELEVATION Phase 4** — polish (E13, E7, E8, E11, E10). E13 depends on COV3.
+6. **COV*** — 3DPSX coverage NOT paired with an E. **REQUIRES `/Volumes/home/assets/3DPSX/` mounted.** If detached, skip the lane.
+7. **INFRA** — INF2 (build-time asset copy).
+8. **Standalone hardening** — B1.7, B2.1, B2.4, AO.4, AO.5, AO.6, DS.* (all parallel; pick any).
 
 Within a lane, pick the topmost unchecked. Inside each item's checkbox the acceptance criterion is a one-liner; long-form spec is [`docs/PRD.md`](../docs/PRD.md).
+
+## Lane interplay (deduplication of overlapping items)
+
+Some COV* items overlap E* items. The COV* row is the **asset-prereq enabler**; the E* row is the **gameplay feature consuming the assets**. Always land COV before its paired E in that pair.
+
+| COV (assets) | E (feature) | Relationship |
+|---|---|---|
+| **COV1** Light Sources (10 GLBs) | **E4** Lit lamps + shadow projection | COV1 stages the variants; E4 wires the pointLights + shadow maps. **COV1 first.** |
+| **COV3** Modular Structures (210 GLBs) | **E13** Procedural archetype deepening | COV3 stages the tile palette; E13 reads them through archetype configs. **COV3 first.** |
+| **COV4** Props (137 GLBs) | **E3** Decorative sector scatter | COV4 stages the scatter pool; E3 wires per-archetype curation. **COV4 first.** |
+| **COV9** Melee variants (axe/knife/etc) | **E1** Melee slot (BLADE shipped) | E1 shipped with machete; COV9 adds seeded variant cycling. **E1 done; COV9 is the extension.** |
+| **COV8** Traps (20 GLBs) | **E6** Switches + secrets | Independent — traps are hazards, switches disable them. Either order works; pick the topmost. |
+
+All other COV* items have no E* pair and run standalone.
 
 ## Forbidden phrases
 
@@ -165,6 +180,12 @@ visually consistent across reloads.
 
 These are sequenced by gameplay value (light/structures/props first
 because they yield the biggest visual ROI). Re-order any time.
+
+### ARCH — architectural maintenance (raised by PR #12 architect review)
+
+- [ ] **ARCH1** Typed event-bus + Shell↔Scene channel migration. Acceptance: create `src/events.ts` with a discriminated union (`type ObjexoomEvent = | { type: "burst"; ... } | { type: "shellEject"; ... } | ...`) covering all 12 `objexoom:*` `window.dispatchEvent` channels. Convert Shell↔Scene channels (`fpsUpdate`, `shake`, `playerHit`, `fellToDeath`, `teleport`) from window events to direct ref callbacks on `GameRef`/`SceneRef` (they have a known parent). Keep particle-fanout, input, and debug channels as window events (they're correct broadcast). Add a `dispatch<T extends ObjexoomEvent>(event: T)` typed helper.
+
+- [ ] **ARCH2** Pre-emptive ObjexoomScene re-decomposition before E3. Acceptance: ObjexoomScene.tsx at 868 LOC (was 758 post-50764f5 refactor; +110 over E5/PA9b/DS.7). E3 + E13 will push it past 1500. Extract a `useFireResolution(map, weapon, ammoRef, gameRef, enemies, barrels)` hook (~250 lines covering onFire + barrel hit-priority + per-pellet enemy hit) and a `useEnemyTickLoop(enemiesRef, yukaEntities, playerPos, settings, phase)` hook (the per-frame AI tick block). Scene root reads as orchestration only.
 
 ### INFRA — supporting infrastructure
 

@@ -4,8 +4,8 @@
  * Pure-sim module. Barrels live in their own registry, separate from
  * Enemy / Pickup, because their interaction model is different:
  *
- *  - They take damage from any weapon hit (handled by extending the
- *    fire-path's hit-test in ObjexoomScene to consider barrels).
+ *  - They take damage from any weapon hit; the caller's fire-path
+ *    runs `pickRayBarrel` alongside its enemy hit-test.
  *  - On HP ≤ 0, they explode and deal AoE damage to every Enemy + the
  *    player + any other barrel within `BARREL_AOE_RADIUS` tiles.
  *  - Chain reactions are handled by the caller pushing newly-exploded

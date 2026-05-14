@@ -1,15 +1,19 @@
 ---
 title: Reference clone parity audit
 updated: 2026-05-14
-status: current
+status: superseded
 domain: quality
 ---
 
+> **Superseded by [`docs/PRD.md`](./PRD.md).** This doc is the historical
+> parity audit — 100% reference parity is reached and PA9b is now closed.
+> All remaining work tracks in [`PRD.md`](./PRD.md) +
+> [`.agent-state/directive.md`](../.agent-state/directive.md).
+>
 > **Parity reached.** Every reference mechanic is matched or elevated.
 > The last critical gap (PA16 — adaptive resolution) shipped in
-> 57dd8fa. The remaining shell-ejection-on-chaingun shape (PA9b) is a
-> partial-→-full upgrade, not a missing mechanic. Persistent save/load
-> ships via sql.js per E9.
+> 57dd8fa. Shell-ejection-on-chaingun (PA9b) closed in 332f8ea.
+> Persistent save/load ships via sql.js per E9.
 
 # DOOM reference clone parity audit
 

@@ -1,9 +1,14 @@
 ---
 title: Elevation roadmap — beyond reference parity
 updated: 2026-05-14
-status: current
+status: superseded
 domain: product
 ---
+
+> **Superseded by [`docs/PRD.md`](./PRD.md).** This doc is the historical
+> catalogue of E1–E13. Acceptance criteria, asset paths, and remaining
+> work for every elevation item now live in [`PRD.md`](./PRD.md) +
+> [`.agent-state/directive.md`](../.agent-state/directive.md).
 
 # Elevation roadmap
 

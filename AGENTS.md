@@ -56,19 +56,30 @@ Full diagram in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 - **`src/engine.ts` + `src/buildMap.ts` + `src/turtle.ts`** — pure-TS
   sim. Maps, raycasts, collision, spawning. No DOM, no three.js, no
   `Math.random()` in sim code (use seedable RNG).
+- **`src/barrels.ts`** — pure-sim destructible barrel registry. Spawn,
+  ray-test, AoE resolution. Mirrors `engine.ts` shape: returns IDs +
+  flags to the caller, no side effects. 14 unit tests in
+  `src/__tests__/unit/objexoom-barrels.test.ts`.
 - **`src/enemyAi.ts`** — FSM tick function with explicit states
   (0=patrol, 1=approach, 3=shoot). Tested via pure unit assertions in
   `src/__tests__/unit/objexoom-enemyAi.test.ts`.
+- **`src/runHistory.ts`** — sql.js persistence layer for per-run
+  stats. Pure-async open/insert/list/best/count/clear API; serialized
+  as base64 in localStorage. WASM via `prepare-web-wasm.mjs`. Browser
+  smoke test in `src/__tests__/browser/runHistory.browser.test.ts`.
 - **`src/yukaIntegration.ts`** — yuka EntityManager bridge: mirror
   sim positions, run steering, write back. Stateful, isolated.
-- **`src/ObjexoomScene.tsx`** — r3f scene tree. Drives mesh transforms
-  from refs, NOT React state.
+- **`src/ObjexoomScene.tsx`** — r3f scene tree orchestrator. Drives
+  mesh transforms from refs, NOT React state. Hosts the fire-path,
+  the per-frame AI tick, the barrel explosion queue (`explodeBarrelRef`
+  late-bind pattern). At 868 LOC as of PR #12; ARCH2 extracts
+  `useFireResolution` + `useEnemyTickLoop` before E3.
 - **`src/ObjexoomShell.tsx`** — game lifecycle, level transitions,
-  debug-hook attach.
+  debug-hook attach, run-history recording on terminal status.
 - **`src/models.ts`** — pose + animation registry per
   enemy/weapon/prop. Per-kind skin roster, deterministic pick by id.
-  URLs flow through `A()` so `import.meta.env.BASE_URL` is honored;
-  see [`DECISIONS.md` D10](./docs/DECISIONS.md#d10).
+  URLs flow through `A()` (in `src/assetUrl.ts`) so `import.meta.env.BASE_URL`
+  is honored; see [`DECISIONS.md` D10](./docs/DECISIONS.md#d10).
 
 ## Design tokens
 
