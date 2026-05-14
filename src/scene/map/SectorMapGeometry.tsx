@@ -5,6 +5,7 @@ import { SkeletonUtils } from "three-stdlib";
 import { pickArchetype } from "../../archetype";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import { computePortalEdges, edgeKey, type ObjexoomSectorMap } from "../../engine";
+import { getArchetypeLightPalette } from "../../lighting/archetypePalette";
 import type { PropArchetype } from "../../scatter/propPool";
 import { ALL_WALL_URLS, pickWallUrl } from "../../structures";
 import { WaterSurface } from "./WaterSurface";
@@ -37,6 +38,7 @@ export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 	const useModularFloor = map.useModularFloor === true;
 	const useModularWalls = map.useModularWalls === true;
 	const archetype = useMemo<PropArchetype>(() => pickArchetype(map), [map]);
+	const palette = useMemo(() => getArchetypeLightPalette(archetype), [archetype]);
 	const portals = useMemo(
 		() => (useModularWalls ? computePortalEdges(map) : null),
 		[map, useModularWalls],
@@ -77,7 +79,7 @@ export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 					<mesh rotation={[Math.PI / 2, 0, 0]} position={[0, sector.ceilingHeight, 0]}>
 						<shapeGeometry args={[shape]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.wallBase}
+							color={palette.ceilingColor}
 							roughness={1}
 							side={THREE.DoubleSide}
 						/>
