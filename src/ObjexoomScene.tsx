@@ -6,27 +6,17 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type * as Yuka from "yuka";
 import { type Barrel, pickRayBarrel, resolveExplosion, spawnBarrels } from "./barrels";
-import {
-	PLAYER_HEIGHT,
-	SKELETON_ATTACK_COOLDOWN_MS,
-	SKELETON_ATTACK_RANGE,
-	SKELETON_DAMAGE,
-	TILE,
-} from "./constants";
+import { PLAYER_HEIGHT, TILE } from "./constants";
 import { OBJEXOOM_PALETTE } from "./design-tokens";
-import { tickEnemyFsm } from "./enemyAi";
 import {
 	castRayAny,
 	computePortalEdges,
 	ENEMY_BULLET_DAMAGE,
 	type Enemy,
 	type EnemyBullet,
-	hasLineOfSightAny,
-	makeEnemyBullet,
 	type ObjexoomMap,
 	type Pickup,
 	polygonContains,
-	resolveCollisionAny,
 	spawnEnemies,
 	spawnPickups,
 	stepEnemyBullet,
@@ -51,10 +41,9 @@ import {
 	TreasureChest,
 	WeaponViewmodel,
 } from "./scene";
+import { tickEnemyLoop } from "./scene/hooks/enemyTickLoop";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 import {
-	panForPosition,
-	playAggroAlert,
 	playBoom,
 	playChaingun,
 	playHurt,
@@ -381,114 +370,27 @@ export function ObjexoomScene({
 			}
 		}
 
-		// Enemy AI — FSM driven (state 0=patrol, 1=chase, 3=shoot). Skeletons
-		// also melee on contact via the legacy attack-range/cooldown path.
-		const allEnemies = enemiesRef.current;
-		for (const enemy of allEnemies) {
-			if (enemy.dead) continue;
-			const dxp = px - enemy.position.x;
-			const dyp = py - enemy.position.y;
-			const distToPlayer = Math.hypot(dxp, dyp);
-			if (distToPlayer === 0) continue;
-
-			const wraith = enemy.kind === "wraith";
-			const lastSeen = lastSeenRef.current.get(enemy.id) ?? -Infinity;
-			const prevState = enemy.fsmState;
-			const out = tickEnemyFsm({
-				enemy,
-				player: { x: px, y: py },
-				map,
-				ctx: collisionCtxRef.current,
-				now,
-				dt,
-				allEnemies,
-				lastSeenAt: lastSeen,
-				playerVelocity: playerVelocityRef.current,
-			});
-			enemy.fsmState = out.nextState;
-			// I7 — first-time patrol → chase transition fires a panned aggro
-			// growl. The Set is per-Scene-instance; remounting on level change
-			// resets it implicitly.
-			if (prevState === 0 && out.nextState === 1 && !aggroFiredRef.current.has(enemy.id)) {
-				aggroFiredRef.current.add(enemy.id);
-				if (settings.soundEnabled) {
-					const pan = panForPosition(enemy.position, {
-						x: px,
-						y: py,
-						yaw: camera.rotation.y,
-					});
-					playAggroAlert(pan);
-				}
-			}
-			lastSeenRef.current.set(enemy.id, out.lastSeenAt);
-			for (const helpId of out.gethelpFromIds) {
-				const helped = allEnemies.find((e) => e.id === helpId);
-				if (helped && !helped.dead) helped.fsmState = 1;
-			}
-
-			if (out.moveTarget) {
-				enemy.position = wraith
-					? out.moveTarget
-					: resolveCollisionAny(out.moveTarget, map, collisionCtxRef.current, 0.5);
-			}
-
-			if (out.fireBullet) {
-				bulletsRef.current.push(
-					makeEnemyBullet(
-						nextBulletIdRef.current++,
-						enemy.id,
-						enemy.position,
-						{ x: px, y: py },
-						now,
-					),
-				);
-				enemy.lastShotAt = now;
-			}
-
-			// Skeleton melee — short-range contact damage (legacy path; skeletons
-			// don't shoot, so they need a close-quarters threat). Imps and wraiths
-			// rely on ranged.
-			if (
-				enemy.kind === "skeleton" &&
-				distToPlayer < SKELETON_ATTACK_RANGE &&
-				now - enemy.lastAttackAt > SKELETON_ATTACK_COOLDOWN_MS
-			) {
-				const sees = hasLineOfSightAny(
-					enemy.position,
-					{ x: px, y: py },
-					map,
-					collisionCtxRef.current,
-				);
-				if (sees) {
-					enemy.lastAttackAt = now;
-					gameRef.current.onHit(SKELETON_DAMAGE);
-					playHurt();
-				}
-			}
-
-			const mesh = enemyMeshes.current.get(enemy.id);
-			if (mesh) {
-				mesh.position.x = enemy.position.x;
-				mesh.position.z = enemy.position.y;
-				mesh.position.y = wraith
-					? 1.4 + Math.sin(now * 0.003 + enemy.id) * 0.25
-					: 0.8 + Math.sin(now * 0.003 + enemy.id) * 0.06;
-				mesh.lookAt(px, mesh.position.y, py);
-			}
-
-			// Y1 — mirror the FSM-computed enemy position into its yuka
-			// GameEntity so EntityManager.update sees real coordinates each
-			// frame. Drop the entity from the manager when the enemy dies.
-			const yukaEntity = yukaEntitiesRef.current.get(enemy.id);
-			if (yukaEntity) {
-				if (enemy.dead) {
-					removeYukaEntity(yukaEntity);
-					yukaEntitiesRef.current.delete(enemy.id);
-				} else {
-					yukaEntity.position.set(enemy.position.x, 0, enemy.position.y);
-				}
-			}
-		}
+		// ARCH2a — per-frame enemy AI loop lives in src/scene/hooks/enemyTickLoop.ts.
+		// Behavior is byte-identical; this call site is a pure relocation.
+		tickEnemyLoop({
+			enemiesRef,
+			yukaEntitiesRef,
+			bulletsRef,
+			nextBulletIdRef,
+			enemyMeshesRef: enemyMeshes,
+			lastSeenRef,
+			aggroFiredRef,
+			collisionCtxRef,
+			gameRef,
+			map,
+			camera,
+			settings,
+			playerVelocity: playerVelocityRef.current,
+			playerX: px,
+			playerY: py,
+			now,
+			dt,
+		});
 
 		// Bullet integration — advance, check wall/player, retire dead bullets.
 		const bullets = bulletsRef.current;
