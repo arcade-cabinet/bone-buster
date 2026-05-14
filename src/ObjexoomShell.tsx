@@ -385,6 +385,7 @@ export function ObjexoomShell() {
 					type: "clearLevel",
 					killsThisLevel: 0,
 					damageThisLevel: 0,
+					scoreThisLevel: prev.score,
 				});
 				return {
 					...prev,

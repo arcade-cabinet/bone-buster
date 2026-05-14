@@ -8,6 +8,7 @@ describe("objexoom runStatsReducer (B2)", () => {
 		expect(stats.runLevelsCleared).toBe(0);
 		expect(stats.runTotalKills).toBe(0);
 		expect(stats.runTotalDamageTaken).toBe(0);
+		expect(stats.runTotalScore).toBe(0);
 	});
 
 	it("start action initializes a fresh stats record", () => {
@@ -16,12 +17,14 @@ describe("objexoom runStatsReducer (B2)", () => {
 			runLevelsCleared: 3,
 			runTotalKills: 42,
 			runTotalDamageTaken: 99,
+			runTotalScore: 200,
 		} as const;
 		const next = runStatsReducer(prev, { type: "start", now: 5000 });
 		expect(next.runStartAt).toBe(5000);
 		expect(next.runLevelsCleared).toBe(0);
 		expect(next.runTotalKills).toBe(0);
 		expect(next.runTotalDamageTaken).toBe(0);
+		expect(next.runTotalScore).toBe(0);
 	});
 
 	it("reset action also clears everything", () => {
@@ -30,32 +33,48 @@ describe("objexoom runStatsReducer (B2)", () => {
 			type: "clearLevel",
 			killsThisLevel: 5,
 			damageThisLevel: 30,
+			scoreThisLevel: 100,
 		});
 		const reset = runStatsReducer(used, { type: "reset", now: 9000 });
 		expect(reset.runLevelsCleared).toBe(0);
 		expect(reset.runTotalKills).toBe(0);
+		expect(reset.runTotalScore).toBe(0);
 		expect(reset.runStartAt).toBe(9000);
 	});
 
-	it("clearLevel accumulates kills + damage and bumps level counter", () => {
+	it("clearLevel accumulates kills + damage + score and bumps level counter", () => {
 		const stats = makeInitialRunStats(0);
 		const after1 = runStatsReducer(stats, {
 			type: "clearLevel",
 			killsThisLevel: 3,
 			damageThisLevel: 12,
+			scoreThisLevel: 50,
 		});
 		expect(after1.runLevelsCleared).toBe(1);
 		expect(after1.runTotalKills).toBe(3);
 		expect(after1.runTotalDamageTaken).toBe(12);
+		expect(after1.runTotalScore).toBe(50);
 
 		const after2 = runStatsReducer(after1, {
 			type: "clearLevel",
 			killsThisLevel: 7,
 			damageThisLevel: 4,
+			scoreThisLevel: 100,
 		});
 		expect(after2.runLevelsCleared).toBe(2);
 		expect(after2.runTotalKills).toBe(10);
 		expect(after2.runTotalDamageTaken).toBe(16);
+		expect(after2.runTotalScore).toBe(150);
+	});
+
+	it("clearLevel with scoreThisLevel=0 leaves runTotalScore unchanged", () => {
+		const stats = runStatsReducer(makeInitialRunStats(0), {
+			type: "clearLevel",
+			killsThisLevel: 5,
+			damageThisLevel: 0,
+			scoreThisLevel: 0,
+		});
+		expect(stats.runTotalScore).toBe(0);
 	});
 });
 

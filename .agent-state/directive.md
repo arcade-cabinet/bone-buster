@@ -2,6 +2,10 @@
 
 **Status:** ACTIVE
 
+## Phase 11 — continuing polish
+
+- [x] **POL2 — score → RunStats integration.** Shipped. Extended `RunStats` with `runTotalScore: number`. `RunAction.clearLevel` now requires `scoreThisLevel: number`. `runStatsReducer` accumulates score on every `clearLevel` action; `start`/`reset` zero it. The single `clearLevel` dispatch site in ObjexoomShell now passes `scoreThisLevel: prev.score`. Win-screen summary line gained a conditional ` • {score} SCORE` segment (hidden when `runTotalScore === 0`). Existing 4 runStats tests updated to the new shape (4 fields, not 3); 1 new test pins the `scoreThisLevel=0` no-op. 475 unit + 5 browser + 5 e2e canonical screenshots green. Canonicals byte-stable (`runTotalScore` starts at 0 and the canonical poses never collect treasure loot, so the conditional SCORE segment stays hidden).
+
 ## Phase 10 — polish + stub cleanup
 
 Forward-sweep from Phase 9: shipping COV12 step-2's treasure loot

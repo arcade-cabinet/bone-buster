@@ -318,7 +318,9 @@ function formatRunStats(state: GameState): string {
 	const kills = state.run.runTotalKills;
 	const dmg = state.run.runTotalDamageTaken;
 	const cleared = state.run.runLevelsCleared;
-	return `${cleared} LEVEL${cleared === 1 ? "" : "S"} CLEARED  •  TIME ${time}  •  ${kills} KILLS  •  ${dmg} DMG TAKEN`;
+	const score = state.run.runTotalScore;
+	const scoreSegment = score > 0 ? `  •  ${score} SCORE` : "";
+	return `${cleared} LEVEL${cleared === 1 ? "" : "S"} CLEARED  •  TIME ${time}  •  ${kills} KILLS  •  ${dmg} DMG TAKEN${scoreSegment}`;
 }
 
 const STICK_RADIUS = 56;

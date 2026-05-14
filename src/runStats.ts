@@ -5,11 +5,24 @@ export type RunStats = Readonly<{
 	runLevelsCleared: number;
 	runTotalKills: number;
 	runTotalDamageTaken: number;
+	/**
+	 * POL2 — total score accumulated across all cleared levels in this
+	 * run. Each level contributes the player's score at the moment the
+	 * level cleared (COV12 treasure-loot pickups grant +50; bottles +HP,
+	 * books +ammo don't contribute). Surfaced on the win screen
+	 * summary line.
+	 */
+	runTotalScore: number;
 }>;
 
 export type RunAction =
 	| { type: "start"; now: number }
-	| { type: "clearLevel"; killsThisLevel: number; damageThisLevel: number }
+	| {
+			type: "clearLevel";
+			killsThisLevel: number;
+			damageThisLevel: number;
+			scoreThisLevel: number;
+	  }
 	| { type: "reset"; now: number };
 
 export const RUN_LENGTH = 5;
@@ -20,6 +33,7 @@ export function makeInitialRunStats(now: number): RunStats {
 		runLevelsCleared: 0,
 		runTotalKills: 0,
 		runTotalDamageTaken: 0,
+		runTotalScore: 0,
 	};
 }
 
@@ -35,6 +49,7 @@ export function runStatsReducer(state: RunStats, action: RunAction): RunStats {
 				runLevelsCleared: state.runLevelsCleared + 1,
 				runTotalKills: state.runTotalKills + action.killsThisLevel,
 				runTotalDamageTaken: state.runTotalDamageTaken + action.damageThisLevel,
+				runTotalScore: state.runTotalScore + action.scoreThisLevel,
 			};
 	}
 }
