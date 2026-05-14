@@ -38,6 +38,7 @@ import {
 	spawnLargeProps,
 } from "./scatter/largePropScatter";
 import { lootPickupSpawn } from "./scatter/lootScatter";
+import { type NatureInstance, spawnNature } from "./scatter/natureScatter";
 import { type PropInstance, spawnProps } from "./scatter/propScatter";
 import {
 	disarmSector,
@@ -66,6 +67,7 @@ import {
 	LampField,
 	LargePropField,
 	MapGeometry,
+	NatureField,
 	ParticleBurstField,
 	PickupMesh,
 	PropField,
@@ -189,6 +191,10 @@ export function ObjexoomScene({
 	// COV13 step-2 — library-archetype kitchen scatter. Empty list on
 	// non-library maps. 20% of library sectors get 1-3 kitchen props.
 	const kitchenRef = useRef<KitchenInstance[]>(spawnKitchen(map));
+	// COV11 step-2 — courtyard-archetype nature scatter. Empty list on
+	// non-courtyard maps. Each instance is a scaled-down clone of the
+	// Mega_Nature.glb aggregate (4-8 per sector, varied yaw + scale).
+	const natureRef = useRef<NatureInstance[]>(spawnNature(map));
 	// COV8 step-2 — per-map trap scatter (hazards + triggers per sector).
 	// Tick damage + lever-disarm-sector handled in the main per-frame loop.
 	const trapsRef = useRef<TrapInstance[]>(spawnTraps(map));
@@ -828,6 +834,10 @@ export function ObjexoomScene({
 			{/* COV13 step-2 — library-archetype kitchen scatter.
 			    Empty on non-library archetypes. */}
 			<KitchenField props={kitchenRef.current} />
+
+			{/* COV11 step-2 — courtyard-archetype nature scatter.
+			    Empty on non-courtyard archetypes. */}
+			<NatureField instances={natureRef.current} />
 
 			{/* COV3 step-1 — modular asphalt floor tiles. Empty unless
 			    the map opts in via `useModularFloor: true`. */}

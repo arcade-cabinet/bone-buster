@@ -19,6 +19,7 @@ export { KeyMarker } from "./entities/KeyMarker";
 export { KitchenField } from "./entities/KitchenField";
 export { LampField } from "./entities/LampField";
 export { LargePropField } from "./entities/LargePropField";
+export { NatureField } from "./entities/NatureField";
 export { PickupMesh } from "./entities/PickupMesh";
 export { PropField } from "./entities/PropField";
 export { RealDoor } from "./entities/RealDoor";
