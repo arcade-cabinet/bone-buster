@@ -72,10 +72,10 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 
 ### AO — Asset organization (NEW)
 
-- [ ] **AO.1** Inventory current `public/` layout, document the convention in `public/README.md`.
-- [ ] **AO.2** Move every existing GLB under `public/assets/models/{enemies,weapons,props}/` if not already there.
-- [ ] **AO.3** Bundle horror enemy GLBs (sewerfiend, plague_doctor, elk_demon, abomination ×2, anomaly, horned, nun, alien, clown ×2) under `public/assets/models/enemies/horror/`.
-- [ ] **AO.4** Bundle slasher weapon GLBs under `public/assets/models/weapons/slasher/`.
+- [x] **AO.1** Inventory current `public/` layout, document the convention in `public/README.md`.
+- [x] **AO.2** Move every existing GLB under `public/assets/models/{enemies,weapons,props}/` if not already there.
+- [x] **AO.3** Bundle horror enemy GLBs (sewerfiend, plague_doctor, elk_demon, abomination ×2, anomaly, horned, nun, alien, clown ×2) under `public/assets/models/enemies/horror/`.
+- [ ] **AO.4** Bundle slasher weapon GLBs under `public/assets/models/weapons/slasher/` (slasher weapons currently sit under `public/assets/models/weapons/melee_*.glb`; staged for the future melee slot).
 - [ ] **AO.5** Add PWA manifest + favicon set (apple-touch-icon, 192/512 maskable, theme-color from `--obx-bg-void`).
 - [ ] **AO.6** Verify `index.html` head references the manifest + favicons.
 
