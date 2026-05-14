@@ -304,8 +304,12 @@ export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.18, -0.16, -0.38],
 		// Chaingun (Uzi/Flamethrower body): bbox size 1.19 × 0.37 × 0.13,
-		// long axis is +X in native frame (the rotation_Y=π in the
-		// viewmodel flips it to -X = camera-forward). Muzzle near +X max.
+		// long axis is +X in the native (un-rotated) GLB frame. The
+		// muzzleBboxFrac picker uses the bbox BEFORE the viewmodel
+		// rotation is applied — so the +X corner of the bbox is the
+		// barrel tip and the WeaponViewmodel projects it through the
+		// rotation matrix at runtime to land at the correct world
+		// position. Empirically validated against the muzzle-flash light.
 		muzzleBboxFrac: [0.97, 0.55, 0.5],
 	},
 	shotgun: {

@@ -99,8 +99,23 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 	// Enemy AI — FSM driven (state 0=patrol, 1=chase, 3=shoot). Skeletons
 	// also melee on contact via the legacy attack-range/cooldown path.
 	const allEnemies = enemiesRef.current;
+	// O(1) help-FSM lookup map — rebuild once per tick, then mutate by id.
+	// Replaces the prior `allEnemies.find(e => e.id === helpId)` inner loop
+	// which was O(N²) per tick across the get-help fan-out.
+	const enemyById = new Map<number, (typeof allEnemies)[number]>();
+	for (const e of allEnemies) enemyById.set(e.id, e);
 	for (const enemy of allEnemies) {
-		if (enemy.dead) continue;
+		if (enemy.dead) {
+			// Drop dead enemies from the yuka manager — this was unreachable
+			// before the early-continue refactor because the cleanup block
+			// at the bottom sat after the continue.
+			const yukaEntity = yukaEntitiesRef.current.get(enemy.id);
+			if (yukaEntity) {
+				removeYukaEntity(yukaEntity);
+				yukaEntitiesRef.current.delete(enemy.id);
+			}
+			continue;
+		}
 		const dxp = px - enemy.position.x;
 		const dyp = py - enemy.position.y;
 		const distToPlayer = Math.hypot(dxp, dyp);
@@ -137,7 +152,7 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 		}
 		lastSeenRef.current.set(enemy.id, out.lastSeenAt);
 		for (const helpId of out.gethelpFromIds) {
-			const helped = allEnemies.find((e) => e.id === helpId);
+			const helped = enemyById.get(helpId);
 			if (helped && !helped.dead) helped.fsmState = 1;
 		}
 
@@ -187,15 +202,8 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 
 		// Y1 — mirror the FSM-computed enemy position into its yuka
 		// GameEntity so EntityManager.update sees real coordinates each
-		// frame. Drop the entity from the manager when the enemy dies.
+		// frame. Dead-enemy cleanup is handled at the top of the loop.
 		const yukaEntity = yukaEntitiesRef.current.get(enemy.id);
-		if (yukaEntity) {
-			if (enemy.dead) {
-				removeYukaEntity(yukaEntity);
-				yukaEntitiesRef.current.delete(enemy.id);
-			} else {
-				yukaEntity.position.set(enemy.position.x, 0, enemy.position.y);
-			}
-		}
+		if (yukaEntity) yukaEntity.position.set(enemy.position.x, 0, enemy.position.y);
 	}
 }

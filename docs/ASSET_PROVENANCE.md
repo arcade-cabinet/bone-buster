@@ -16,7 +16,7 @@ This doc covers (2) — the FBX-derived subset that requires the conversion pipe
 
 ## Pipeline
 
-```
+```text
 references/                              (gitignored, repo-root directory)
 ├── _extracted/                          (manually unzipped source packs)
 │   ├── horror_rigged/PSX Horror-Fantasy Megapack/
@@ -51,7 +51,7 @@ The script is **idempotent** — re-running it skips outputs newer than their FB
 | `slasher/Machete/Machete.fbx` | `weapons/slasher/melee_machete.glb` | same | same |
 | `slasher/Meat Hook/MeatHook.fbx` | `weapons/slasher/melee_meathook.glb` | same | same |
 
-10 conversion jobs; each output is referenced (directly or via the cycling roster) from `src/models.ts`.
+10 conversion jobs; all weapon outputs are referenced (directly or via the cycling melee-skin roster) from `src/models.ts` + `src/meleeSkins.ts`. Some loose enemy/character GLBs unpacked from `references/` (e.g. `enemies/horror/abomination_rigged.glb`) are NOT yet wired into runtime — they're staged for future content steps.
 
 ## Re-extraction recipe (fresh checkout)
 

@@ -424,6 +424,15 @@ export function ObjexoomScene({
 			muzzleLightRef.current.color.copy(muzzleColorRef.current);
 			const anchor = muzzleAnchorRef.current;
 			if (anchor) {
+				// Read the muzzle anchor's world position. Note: this
+				// reads from the most-recently-updated matrix, which is
+				// last frame's (WeaponViewmodel's useFrame runs AFTER this
+				// one in registration order). The resulting 1-frame lag
+				// (~16ms at 60fps) is functionally invisible against the
+				// muzzle flash's 250ms decay window — flagged by PR #16
+				// review, accepted as a known minor imperfection. A future
+				// refactor can re-architect this as a positive-priority
+				// useFrame if the lag ever becomes perceptible.
 				anchor.getWorldPosition(muzzleWorldPos);
 				muzzleLightRef.current.position.copy(muzzleWorldPos);
 			} else {

@@ -216,7 +216,7 @@ helper applies the prefix once, every site stays readable.
 
 PA-MOD7's original framing was "wire gltfjsx so muzzle bones become addressable as named refs." Investigation showed the wired GLBs (`pistol.glb`, `chaingun.glb`, `shotgun.glb`, `melee_machete.glb`) ship with only generic node names like `Gun` / `Bullet` — no muzzle/barrel/tip bones to address. gltfjsx would have generated typed components over those generic names, but the muzzle position would still need to be specified out-of-band.
 
-**Call:** add a `muzzleOffset: [x, y, z]` to `WeaponModel` in `src/models.ts` measured in weapon-local space (after the same `autoScale` + `rotation` the viewmodel applies). `WeaponViewmodel` renders an empty `<group ref={muzzleRef}>` at that offset. `ObjexoomScene` reads the world-position of the muzzle ref each frame instead of `camera.position` for `muzzleLightRef`.
+**Call:** add a `muzzleBboxFrac: [x, y, z]` to `WeaponModel` in `src/models.ts` specifying the muzzle's position as a fraction of the GLB's bounding box on each axis (0 = bbox min, 1 = bbox max). The viewmodel computes the bbox at mount, multiplies by the frac, and parents an empty `<group ref={muzzleRef}>` at that local position — so the marker rides through the same `autoScale` + `rotation` the rest of the weapon does. `ObjexoomScene` reads the world-position of the muzzle ref each frame instead of `camera.position` for `muzzleLightRef`. (Earlier draft called this `muzzleOffset` measured in absolute weapon-local units; the bbox-frac form was the actual implementation chosen because GLB authoring scales vary.)
 
 **Why:**
 - Solves the user-visible outcome (muzzle light at the barrel tip rather than camera center) without a codegen step, new devDep, or per-asset re-export.
