@@ -5,6 +5,7 @@ import { pickArchetype } from "../../archetype";
 import { TILE } from "../../constants";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import type { ObjexoomGridMap } from "../../engine";
+import { getArchetypeLightPalette } from "../../lighting/archetypePalette";
 import type { PropArchetype } from "../../scatter/propPool";
 import { ALL_WALL_URLS, pickWallUrl } from "../../structures";
 import { WALL_HEIGHT } from "../constants";
@@ -28,6 +29,7 @@ const NATIVE_WALL_DEPTH = 0.4;
 
 export function MapGeometry({ map, doorOpen }: { map: ObjexoomGridMap; doorOpen: boolean }) {
 	const archetype = useMemo<PropArchetype>(() => pickArchetype(map), [map]);
+	const palette = useMemo(() => getArchetypeLightPalette(archetype), [archetype]);
 	const walls = useMemo(() => {
 		const out: { x: number; z: number; hash: number }[] = [];
 		for (let gy = 0; gy < map.height; gy += 1) {
@@ -66,8 +68,8 @@ export function MapGeometry({ map, doorOpen }: { map: ObjexoomGridMap; doorOpen:
 			<mesh rotation={[-Math.PI / 2, 0, 0]} position={[floorCenter, 0, floorCenter]} receiveShadow>
 				<planeGeometry args={[floorSize, floorSize]} />
 				<meshStandardMaterial
-					color={OBJEXOOM_PALETTE.ink}
-					emissive={OBJEXOOM_PALETTE.wallEmissive}
+					color={palette.floorColor}
+					emissive={palette.floorEmissive}
 					emissiveIntensity={0.18}
 					roughness={0.95}
 				/>

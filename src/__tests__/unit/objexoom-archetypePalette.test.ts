@@ -24,15 +24,28 @@ describe("E13 — archetype lighting palette", () => {
 		// E13 step-4 — fog also preserves the pre-step-4 literal for
 		// refLevel 0 canonical byte-stability.
 		expect(corridor.fogColor).toBe(OBJEXOOM_PALETTE.ink);
+		// COV3 step-6 — floor color preserves the pre-step-6 grid-map
+		// literal (`OBJEXOOM_PALETTE.ink`) so MapGeometry's corridor
+		// procedural floor remains visually identical to the prior
+		// hardcoded value.
+		expect(corridor.floorColor).toBe(OBJEXOOM_PALETTE.ink);
+		expect(corridor.floorEmissive).toBe(OBJEXOOM_PALETTE.wallEmissive);
 	});
 
-	it("every entry has ambient + directional + fog colors set as valid hex", () => {
+	it("every entry has all 5 colors set as valid hex", () => {
 		for (const name of ARCHETYPE_NAMES) {
 			const p = ARCHETYPE_LIGHT_PALETTES[name];
 			expect(p.ambientColor).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(p.directionalColor).toMatch(/^#[0-9a-f]{6}$/i);
 			expect(p.fogColor).toMatch(/^#[0-9a-f]{6}$/i);
+			expect(p.floorColor).toMatch(/^#[0-9a-f]{6}$/i);
+			expect(p.floorEmissive).toMatch(/^#[0-9a-f]{6}$/i);
 		}
+	});
+
+	it("at least 3 archetypes have unique floor colors (visual separation)", () => {
+		const floors = new Set(ARCHETYPE_NAMES.map((n) => ARCHETYPE_LIGHT_PALETTES[n].floorColor));
+		expect(floors.size).toBeGreaterThanOrEqual(3);
 	});
 
 	it("at least 3 archetypes have unique fog colors (visual depth-fade separation)", () => {
