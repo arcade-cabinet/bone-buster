@@ -201,6 +201,18 @@ export function resolveFire(ctx: FireResolutionContext): void {
 				y: bestEnemy.position.y,
 				kind: "damage",
 			});
+			// POL11-v2 — floating damage number. Consumed by
+			// DamageNumberField. `enemyId` enables crit-stack
+			// consolidation so 8 shotgun pellets on one enemy read
+			// as a single growing total, not 8 stacked labels.
+			dispatch({
+				type: "damageNumber",
+				x: bestEnemy.position.x,
+				y: bestEnemy.position.y,
+				amount: spec.damage,
+				killed: bestEnemy.hp <= 0,
+				enemyId: bestEnemy.id,
+			});
 			if (bestEnemy.hp <= 0) {
 				bestEnemy.dead = true;
 				killsThisShot += 1;

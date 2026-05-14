@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- **POL11-v2 Modernized-DOOM damage numbers.** New `DamageNumberField` rendered alongside other in-world effects. Tier-colored by damage magnitude (cool parchment → warm amber → hot ember → incandescent kill-amber), punch-in scale animation 1.25× → 1.0× ease-out quad over 140ms, kill-confirms boost upward velocity from 1.4u/s → 2.4u/s and prepend a "✦" bullet glyph. Crit-stack consolidation: `damageNumber` event carries `enemyId`, same-enemy hits within 350ms merge into the existing pool slot — 8 shotgun pellets read as one growing label, not 8 stacked numbers. Drop-shadow + outline for legibility on any backdrop. 24-number pool cap.
 - **POL10 Boss-down sting.** Ascending G1 → C2 'triumph chord' on the deathSynth, distinct from both skeleton-death (descending) and player-death (descending three-note). Layered on top of the standard skeleton-death sting when ≥1 boss died in the shot.
 - **POL9 Player-death sting.** Slow descending E2 → B1 → E1 sequence on the existing deathSynth, distinct from the skeleton-death two-note cascade. Fires on both HP-zero transition and fellToDeath path.
 - **POL8 Tone.js audio-time collision protection.** Shared jitter() helper bumps Tone.now() by 1ms on collision; protects chaingun/flamethrower/aggro/hurt/death voices.

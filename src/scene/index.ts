@@ -6,6 +6,7 @@ export { WALL_HEIGHT } from "./constants";
 export { AdaptiveResolution } from "./effects/AdaptiveResolution";
 export { BodyPartField } from "./effects/BodyPartField";
 export { BulletField } from "./effects/BulletField";
+export { DamageNumberField } from "./effects/DamageNumberField";
 export { Flashlight } from "./effects/Flashlight";
 export { ParticleBurstField } from "./effects/ParticleBurstField";
 export { ShellEjectField } from "./effects/ShellEjectField";

@@ -118,6 +118,28 @@ export interface TeleportEvent {
 }
 
 /**
+ * POL11 — floating damage number. Dispatched on every successful
+ * enemy hit (one per pellet that lands), consumed by DamageNumberField
+ * which renders a fade-out text label at the world position.
+ */
+export interface DamageNumberEvent {
+	type: "damageNumber";
+	x: number;
+	y: number;
+	amount: number;
+	/** True when the hit dropped the enemy — DamageNumberField may render bigger / brighter. */
+	killed: boolean;
+	/**
+	 * POL11-v2 — enemy id for crit-stack consolidation. Multiple pellets
+	 * landing on the same enemy within a short window combine into a
+	 * single running-total label rather than 8 stacked numbers.
+	 * Optional so non-enemy sources (e.g. barrels, future explosive
+	 * splash) can still spawn floating numbers without stacking.
+	 */
+	enemyId?: number;
+}
+
+/**
  * E6 — fires when a secret switch is hit by a weapon ray. Carries the
  * switch id so SecretWall components can advance their lift state
  * (multi-listener: SFX + scene + future minimap pings).
@@ -144,7 +166,8 @@ export type ObjexoomEvent =
 	| ShakeEvent
 	| FellToDeathEvent
 	| TeleportEvent
-	| SecretTriggeredEvent;
+	| SecretTriggeredEvent
+	| DamageNumberEvent;
 
 export type ObjexoomEventType = ObjexoomEvent["type"];
 

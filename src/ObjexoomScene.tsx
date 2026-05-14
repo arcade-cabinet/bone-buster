@@ -56,6 +56,7 @@ import {
 	BarrelMesh,
 	BodyPartField,
 	BulletField,
+	DamageNumberField,
 	DebrisField,
 	DecalField,
 	EnemyMesh,
@@ -903,6 +904,7 @@ export function ObjexoomScene({
 			<ParticleBurstField />
 			<BodyPartField />
 			<ShellEjectField />
+			<DamageNumberField />
 			<WeaponViewmodel weapon={weapon} mapSeed={map.seed} onMuzzleAnchor={onMuzzleAnchor} />
 
 			<PlayerController map={map} active={active} hasKey={hasKey} settings={settings} />

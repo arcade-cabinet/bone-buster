@@ -16,6 +16,53 @@ no forward-sweep work surfaces, (b) test/CI failure needing user
 knowledge, (c) destructive action needing per-op authorization, (d)
 ambiguous design question that flips scope.
 
+## The quality bar is "modernized polished DOOM", not "simplest implementation"
+
+User feedback (verbatim, 2026-05-14): **"why are you looking for simolest and bkt highestvqual8ty"** + **"what SHOYLD be happenijg is whst hapoens in DOOM but modernied and polished."**
+
+Every feature shipped from this point forward MUST be benchmarked against
+"what does this look/feel/sound like in DOOM Eternal / 2016, modernized
+and polished?" — NOT "what's the minimum that satisfies the directive
+line?" If the implementation reads as student-grade compared to that bar,
+it's a bug to fold forward, not a shipped item.
+
+**Concrete polish checklist applied to every visual/audio feature:**
+- **Damage numbers:** punch-in scale (1.2→1.0 ease over 120ms), tiered color by damage magnitude, kill-confirm uses distinct glyph weight + brighter color + larger scale + slight upward velocity boost. Numbers track the enemy's head, not frozen world position. Outline + drop-shadow for legibility. Crit-stack on rapid same-target hits (running total combines).
+- **Hit feedback:** screen shake magnitude scaled by damage taken; hitstop (1-2 frames freeze) on enemy kills; chromatic-aberration pulse on player hits; muzzle flash bloom scales with weapon damage tier.
+- **Audio stings:** layered cues (sub-bass + tonal + ambient duck), never just isolated notes. Boss kill = thud + resolve + ambient swell. Player death = sub-bass thud + descending tonal + reverb tail.
+- **Materials:** procedural detail (tri-planar, normal maps, emissive variance) per archetype, not flat tinted color. If detail textures aren't in the asset library, generate or pick from Polyhaven.
+- **Particles:** layered systems (impact spark + smoke puff + ember trail), not single-color bursts.
+- **Lighting:** dynamic per-shot point lights, gobo-like flicker on lamps, light-falloff curves matched per archetype palette.
+- **UI animations:** spring-eased, never linear; entry/exit cards have stagger; numbers tick rather than snap.
+
+When an item is being shipped, the commit message MUST cite which of
+these polish dimensions were applied. If none apply, justify why in the
+commit body. Background reviewer trio (code-reviewer + simplifier +
+security) catches code smell; the **agent foreground judgement** catches
+polish-bar shortfall before commit.
+
+**Filter the existing backlog through this lens.** If an item already
+shipped at the minimal bar (e.g. POL10 boss-death sting is two notes,
+POL3 floor is a flat color), re-open the equivalent polish-pass item
+under Phase 12 and ship the modernized version.
+
+## Phase 12 — modernized-DOOM polish-pass (forward-sweep)
+
+Each item here is a REDO of a prior item that shipped at the minimal
+bar. The acceptance criterion is "watch the result side-by-side with a
+DOOM Eternal / 2016 reference clip — does this read as the same caliber
+of polish?" If no, the item stays `[ ]`.
+
+- [x] **POL11-v2 — modernized damage numbers.** Shipped. Tier-colored by damage magnitude: pistol-tick = parchment[200] (cool), chaingun = amber[300], mid-damage (4-7) = amber[200], heavy (≥8) = ember[300] (hot), kill-confirm = "#fff4d6" incandescent white-amber with "✦" bullet prefix. Punch-in scale animation 1.25× → 1.0× ease-out quad over 140ms — re-fires on every crit-stack merge so the player sees the accumulation, not a frozen number. Kill-confirms boost upward velocity 1.4→2.4u/s + larger base scale (0.7 vs 0.36-0.5). Crit-stack consolidation: damageNumber events carry `enemyId` (events.ts extension); same-enemy hits within 350ms merge into the existing pool slot, summing amount and refreshing createdAt. 8 shotgun pellets on one enemy = 1 growing label, not 8 stacked numbers. Drop shadow (second darker text at +0.02 x/-0.02 y/-0.012 z offset, opacity 0.55) for legibility on any backdrop. Outlined fill via drei `<Text>` (0.022 standard / 0.035 kill). Mounted in ObjexoomScene alongside ShellEjectField. 498 unit + 6 browser + 5 canonical green. Polish dimensions applied: tier-coloring, punch-in scale, drop-shadow + outline, kill-glyph differentiation, crit-stack consolidation, kill-velocity boost.
+- [ ] **POL10-v2 — modernized boss-death sting.** Replace the 2-note ascending sequence with: sub-bass thud (NoiseSynth pop at C1, 100ms), 4-note tonal resolve (G1 → D2 → G2 → D3 ascending bell tones with decay overlap), ambient duck (master volume -6dB for 400ms then ramp back), reverb tail (Tone.Reverb wet=0.4 routed to deathSynth for boss kills only).
+- [ ] **POL9-v2 — modernized player-death sting.** Replace 3-note descending with: sub-bass thud + descending tonal (E3 → B2 → E2 over 800ms) + reverb tail (wet=0.6) + master duck on the music layer if present.
+- [ ] **POL3-v2 — modernized procedural floors.** Replace flat tint with tri-planar normal-mapped material per archetype: arena → cracked-metal grating (rusted normal, emissive heat-pattern), sewer → wet-stone (parchment albedo + bump), library → wood-parquet (amber grain texture), courtyard → stone-pavers (indigo cobble normal), corridor preserves canonical bytes via the existing flat path. Use Polyhaven if asset library lacks the textures.
+- [ ] **POL12 — hitstop on enemy kills.** 1-2 frame freeze of enemy mesh + brief camera-shake punch when an enemy dies. Reads as the "weighty kill" feel from modern DOOM.
+- [ ] **POL13 — muzzle-flash bloom tier.** Scale muzzle flash radius + intensity by weapon damage tier (pistol = 0.6x, chaingun = 0.9x, shotgun = 1.4x, melee = 0x). Already-existing muzzle light gets a per-shot color modulator that pulses brighter on heavier shots.
+- [ ] **POL14 — chromatic-aberration on player hits.** drei `<ChromaticAberration>` pulse (offset 0→0.004→0 over 180ms) on `playerHit` event. Scales magnitude with damage taken.
+- [ ] **POL15 — damage-based screen shake.** Refactor existing `shake` event to scale magnitude by damage amount (currently uniform 0.15 multiplier). Heavy hits = bigger shake, taps = subtle.
+- [ ] **POL16 — layered impact particles.** Replace single-color `burst` with: impact spark (white-yellow point particles) + smoke puff (gray opacity-fade) + ember trail (orange sub-particles drifting up) — three sibling emitters per burst event.
+
 ## Phase 11 — continuing polish
 
 - [x] **POL10 — boss-down sting.** Shipped. New `playBossDeath()` plays an ascending G1 → C2 sequence on the deathSynth — sonically distinct from both skeleton-death (descending A1 → D1) and player-death (descending E2 → B1 → E1). Fires layered on top of the standard skeleton-death sting when at least one boss-tier enemy died in the current shot (`bossKillsThisShot > 0`). AoE shots that down a boss + standard enemies read as a richer audio event. 498 unit + 6 browser + 5 canonical green.
