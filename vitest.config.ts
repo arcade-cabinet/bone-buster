@@ -32,6 +32,7 @@ export default defineConfig({
 					include: ["src/__tests__/browser/**/*.test.{ts,tsx}"],
 					browser: {
 						enabled: true,
+						// @ts-expect-error vitest resolves built-in provider names at runtime
 						provider: "playwright",
 						headless: true,
 						instances: [{ browser: "chromium" }],

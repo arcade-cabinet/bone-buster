@@ -36,8 +36,7 @@ describe("objexoom J9 — fade trigger derivations", () => {
 	});
 
 	it("damage intensity scales peak but is capped at 1", () => {
-		const scale = (intensity: number) =>
-			Math.min(1, PEAK_BY_KIND.damage * intensity);
+		const scale = (intensity: number) => Math.min(1, PEAK_BY_KIND.damage * intensity);
 		expect(scale(0)).toBe(0);
 		expect(scale(0.5)).toBeCloseTo(0.275, 5);
 		expect(scale(1)).toBe(0.55);

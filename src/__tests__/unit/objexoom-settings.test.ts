@@ -2,10 +2,7 @@
 // the game relies on. These are pure data, so a regression here would
 // break i-frame timing or enemy density without firing a test elsewhere.
 import { describe, expect, it } from "vitest";
-import {
-	DIFFICULTY_TUNING,
-	type Difficulty,
-} from "@/settings";
+import { DIFFICULTY_TUNING, type Difficulty } from "@/settings";
 
 const ORDER: readonly Difficulty[] = [
 	"tooYoung",

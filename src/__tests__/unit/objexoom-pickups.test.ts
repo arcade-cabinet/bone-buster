@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TILE } from "@/constants";
-import {
-	generateMap,
-	spawnPickups,
-} from "@/engine";
+import { generateMap, spawnPickups } from "@/engine";
 
 describe("objexoom pickup placement (D6)", () => {
 	for (const seed of [12345, 67890, 42, 1729]) {
@@ -23,10 +20,7 @@ describe("objexoom pickup placement (D6)", () => {
 			const map = generateMap(seed);
 			const pickups = spawnPickups(map);
 			for (const p of pickups) {
-				const dKey = Math.hypot(
-					p.position.x - map.keyPosition.x,
-					p.position.y - map.keyPosition.y,
-				);
+				const dKey = Math.hypot(p.position.x - map.keyPosition.x, p.position.y - map.keyPosition.y);
 				const dExit = Math.hypot(
 					p.position.x - map.exitPosition.x,
 					p.position.y - map.exitPosition.y,
