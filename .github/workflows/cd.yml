@@ -1,12 +1,18 @@
 name: Deploy to Pages
 
+# B2.4 — fires on release-please tags (v*) and manual workflow_dispatch.
+# Build is colocated with deploy in a single workflow; the prior
+# `workflow_run`-after-Release model was incomplete (no build step, no
+# artifact upload) and could not produce a working deploy. Latest main
+# always deploys when a vX.Y.Z tag lands.
 on:
-  workflow_run:
-    workflows: [Release]
-    types: [completed]
-    branches: [main]
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: {}
 
 permissions:
+  contents: read
   pages: write
   id-token: write
 
@@ -15,8 +21,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with: { lfs: true }
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.2.0 }
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build for GitHub Pages
+        run: pnpm build:pages
+      - name: Verify runtime asset bundle
+        # Re-runs scripts/verify-runtime-assets.mjs against the source
+        # tree. The script also confirms the GLBs referenced by
+        # src/models.ts exist; dist/ inherits these via Vite's static
+        # asset copy.
+        run: pnpm assets:verify-runtime
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
   deploy:
-    if: github.event.workflow_run.conclusion == 'success'
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
