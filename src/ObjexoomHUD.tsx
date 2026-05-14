@@ -72,8 +72,8 @@ export function ObjexoomHUD({
 			{/* AUDIO3 — transient HUD overlays (POL21 secret-found, POL22
 			    key-acquired, POL26 going-back klaxon) live in
 			    src/hud/overlays/ per docs/SLOT-ARCHITECTURE.md §1.
-			    HUDOverlays mounts all three and forwards phase. */}
-			<HUDOverlays phase={state.phase} />
+			    HUDOverlays mounts all four and forwards phase + state. */}
+			<HUDOverlays phase={state.phase} state={state} onReturnToMenu={onReturnToLanding} />
 			{/* E10 — 3D spinning key model. Mounts only when hasKey is
 			    true (no Canvas → no WebGL cost otherwise). Flashes red on
 			    player-hit via the keyFlashUntil deadline. */}
@@ -280,14 +280,11 @@ export function ObjexoomHUD({
 							secondary={{ label: "QUIT", onClick: onQuit }}
 						/>
 					)}
-					{state.status === "won" && (
-						<OverlayCard
-							title="MISSION COMPLETE"
-							body={formatRunStats(state)}
-							primary={{ label: "NEXT RUN", onClick: onReturnToLanding }}
-							secondary={{ label: "QUIT", onClick: onQuit }}
-						/>
-					)}
+					{/* PT1B — MISSION COMPLETE is now owned by the
+					    MissionCompleteCeremony HUD overlay slot. The
+					    generic OverlayCard isn't celebratory enough for
+					    a campaign-clear; the dedicated slot adds tick-up
+					    stats, layered vignette, and spring-eased CTA. */}
 					{state.status === "transitioning" && (
 						<OverlayCard
 							title="LEVEL COMPLETE"

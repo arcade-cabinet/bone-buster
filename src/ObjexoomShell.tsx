@@ -201,6 +201,7 @@ declare global {
 			collectKey: () => void;
 			collectAllPickups: () => void;
 			triggerWin: () => void;
+			forceMissionComplete: () => void;
 		};
 	}
 }
@@ -736,6 +737,12 @@ export function ObjexoomShell() {
 			},
 			triggerWin: () => {
 				gameRef.current.onWin();
+			},
+			// PT1B — short-circuit to the win state so playtest/e2e can verify
+			// the MissionCompleteCeremony renders without grinding through
+			// all RUN_LENGTH levels (which has its own engine timing quirks).
+			forceMissionComplete: () => {
+				setState((prev) => ({ ...prev, status: "won" }));
 			},
 		};
 		return () => {
