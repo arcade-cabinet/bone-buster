@@ -37,6 +37,7 @@ const SOURCE_FILES = [
 	resolve(root, "src/loot.ts"),
 	resolve(root, "src/nature.ts"),
 	resolve(root, "src/npcs.ts"),
+	resolve(root, "src/traps.ts"),
 ];
 
 function categoryOf(publicPath) {
