@@ -92,6 +92,28 @@ It should NOT feel:
 - Cute / colorful
 - Brand-deck slick
 
+## Archetype identity
+
+Every run picks one of five archetypes deterministically from
+`(seed >>> 0) % 5`. Each archetype is keyed across 16+ axes
+(see `src/lighting/archetypePalette.ts` for the lighting axis;
+`src/scatter/*` for density tables; `src/structures.ts` for wall
+GLB pools; `src/floors.ts`-equivalent palette-tint for floors).
+
+| Archetype | Mood | Color stack | Density | Mechanics |
+|-----------|------|-------------|---------|-----------|
+| **CORRIDOR** | tight, claustrophobic | violet-indigo-ink — canonical | mid props, mid enemies | baseline; no scatter overrides |
+| **ARENA** | hot combat space | ember-blood — vivid red | sparse props, dense enemies (1.4×) | combat-focused |
+| **COURTYARD** | dusk outdoors | indigo-amber — cool sky/warm sun | mid props, normal enemies | nature scatter (Mega_Nature aggregate) |
+| **SEWER** | damp underground | parchment-ink — sickly desaturated | mid props, normal enemies | water-as-sewage tint; traps lean dense |
+| **LIBRARY** | warm study halls | amber-parchment — sepia paper | dense props (3-5), sparse enemies (0.8×) | NPCs (ambient set-dressing), kitchen scatter |
+
+Corridor is the canonical-byte-stable anchor: it preserves every
+pre-step literal so refLevel 0's canonical screenshots stay byte-
+identical regardless of how many axes downstream archetypes vary.
+This means new identity axes can ship indefinitely without breaking
+existing visual contracts.
+
 ## References
 
 Game-design references live locally under `references/` (gitignored).
