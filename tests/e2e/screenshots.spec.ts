@@ -109,7 +109,8 @@ test.beforeAll(async () => {
 });
 
 test.describe("OBJEXOOM screenshots (N1)", () => {
-	test("01 landing — DOOM menu", async (_fixtures, testInfo) => {
+	test("01 landing — DOOM menu", async () => {
+		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -122,7 +123,8 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("02 ingame — flashlight ON (full lighting)", async (_fixtures, testInfo) => {
+	test("02 ingame — flashlight ON (full lighting)", async () => {
+		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -143,7 +145,8 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("03 ingame — flashlight OFF (dark mode)", async (_fixtures, testInfo) => {
+	test("03 ingame — flashlight OFF (dark mode)", async () => {
+		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -160,7 +163,8 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("04 going-back strobe — H8/J5", async (_fixtures, testInfo) => {
+	test("04 going-back strobe — H8/J5", async () => {
+		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -206,7 +210,8 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("05 mission complete — full run cleared", async (_fixtures, testInfo) => {
+	test("05 mission complete — full run cleared", async () => {
+		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL

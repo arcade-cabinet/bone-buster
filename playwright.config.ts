@@ -8,7 +8,7 @@ export default defineConfig({
 	workers: 1,
 	reporter: process.env.CI ? "github" : "list",
 	use: {
-		baseURL: "http://localhost:5173",
+		baseURL: "http://localhost:5191",
 		trace: "on-first-retry",
 		video: "retain-on-failure",
 	},
@@ -19,10 +19,13 @@ export default defineConfig({
 		},
 	],
 	webServer: {
-		// Boot the standalone Vite dev server. Playwright re-uses an
-		// already-running instance if one is on 5173.
+		// Pin OBJEXOOM to a unique port so it never collides with
+		// other arcade dev servers in the same shell — `reuseExistingServer`
+		// would happily attach to a totally different project on 5173
+		// (Vite's default), which masquerades as a green dev server and
+		// produces blank screenshots.
 		command: "pnpm dev",
-		port: 5173,
+		url: "http://localhost:5191",
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000,
 	},
