@@ -192,7 +192,14 @@ declare global {
 
 export function ObjexoomShell() {
 	const [seed, setSeed] = useState(readSeedFromUrl);
-	const [settings, setSettings] = useState<ObjexoomSettings>(DEFAULT_SETTINGS);
+	// INF3 — when `?objexoomArchetype` is present, switch the level to
+	// procedural so the seed rewrite (and thus the archetype pick)
+	// actually drives map generation. Without this override the default
+	// `level: 1` would load the baked refLevel 0 (corridor) and the
+	// archetype flag would silently no-op.
+	const [settings, setSettings] = useState<ObjexoomSettings>(() =>
+		readArchetypeFromUrl() ? { ...DEFAULT_SETTINGS, level: "procedural" } : DEFAULT_SETTINGS,
+	);
 	const map: ObjexoomMap = useMemo(
 		// I4 — difficulty plumbed through so ManyEnemies (class 9) expands
 		// per the ref formula. Procedural maps don't read it.
