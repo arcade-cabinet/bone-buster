@@ -40,9 +40,15 @@ body,
 	*,
 	*::before,
 	*::after {
+		/* biome-ignore-start lint/complexity/noImportantStyles: WCAG
+		   2.3.3 reduced-motion override — must beat per-element
+		   transition/animation declarations. The canonical
+		   reduce-motion media-block pattern is `!important` on all
+		   four properties; without it author styles win. */
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
+		/* biome-ignore-end lint/complexity/noImportantStyles: see above */
 	}
 }

@@ -185,8 +185,7 @@ export const ROLE = {
 	heroGradientHot: "linear-gradient(135deg, #a855f7 0%, #f59e0b 60%, #dc2626 100%)",
 	// Wordmark gradient — direct homage to Objexiv's gradient but
 	// pushed warmer at the right end to mark OBJEXOOM's identity.
-	wordmarkGradient:
-		"linear-gradient(95deg, #7c89f8 0%, #b681fb 35%, #f59e0b 75%, #ff7518 100%)",
+	wordmarkGradient: "linear-gradient(95deg, #7c89f8 0%, #b681fb 35%, #f59e0b 75%, #ff7518 100%)",
 } as const;
 
 /**

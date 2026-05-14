@@ -1,0 +1,132 @@
+"use client";
+
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
+
+type Shell = {
+	id: number;
+	pos: { x: number; y: number; z: number };
+	vel: { x: number; y: number; z: number };
+	spin: { x: number; y: number; z: number };
+	createdAt: number;
+	bounced: boolean;
+};
+
+const SHELL_TTL_MS = 4000;
+const MAX_SHELLS = 40;
+
+/**
+ * I10 — shotgun shell ejection. Listens for `objexoom:shellEject`
+ * events (dispatched by the fire handler on shotgun shots only) and
+ * spawns one brass-tipped cylinder shell at the eject point. Each
+ * shell has random spin, gravity, a single ground bounce, and fades
+ * out over the final 750 ms of its `SHELL_TTL_MS` lifetime.
+ */
+export function ShellEjectField() {
+	const shellsRef = useRef<Shell[]>([]);
+	const groupRef = useRef<THREE.Group | null>(null);
+	const meshes = useRef<Map<number, THREE.Mesh>>(new Map());
+	const nextId = useRef(1);
+
+	useEffect(() => {
+		const onEject = (e: Event) => {
+			const ev = e as CustomEvent<{
+				x: number;
+				y: number;
+				z: number;
+				vx: number;
+				vy: number;
+				vz: number;
+			}>;
+			const d = ev.detail;
+			shellsRef.current.push({
+				id: nextId.current++,
+				pos: { x: d.x, y: d.y, z: d.z },
+				vel: { x: d.vx, y: d.vy, z: d.vz },
+				spin: {
+					x: (Math.random() - 0.5) * 12,
+					y: (Math.random() - 0.5) * 12,
+					z: (Math.random() - 0.5) * 12,
+				},
+				createdAt: performance.now(),
+				bounced: false,
+			});
+			while (shellsRef.current.length > MAX_SHELLS) shellsRef.current.shift();
+		};
+		window.addEventListener("objexoom:shellEject", onEject);
+		return () => window.removeEventListener("objexoom:shellEject", onEject);
+	}, []);
+
+	useFrame((_, dt) => {
+		if (!groupRef.current) return;
+		const now = performance.now();
+		const live: Shell[] = [];
+		const seen = new Set<number>();
+		for (const shell of shellsRef.current) {
+			const age = now - shell.createdAt;
+			if (age > SHELL_TTL_MS) continue;
+			shell.pos.x += shell.vel.x * dt;
+			shell.pos.y += shell.vel.y * dt;
+			shell.pos.z += shell.vel.z * dt;
+			shell.vel.y -= 9 * dt;
+			if (shell.pos.y < 0.05) {
+				shell.pos.y = 0.05;
+				if (!shell.bounced && shell.vel.y < -0.3) {
+					shell.vel.y *= -0.3;
+					shell.vel.x *= 0.7;
+					shell.vel.z *= 0.7;
+					shell.bounced = true;
+				} else {
+					shell.vel.x *= 0.85;
+					shell.vel.z *= 0.85;
+					shell.vel.y = 0;
+				}
+			}
+			let mesh = meshes.current.get(shell.id);
+			if (!mesh) {
+				const m = new THREE.Mesh(
+					new THREE.CylinderGeometry(0.025, 0.025, 0.07, 8),
+					new THREE.MeshStandardMaterial({
+						color: 0xb45309,
+						emissive: 0x92400e,
+						emissiveIntensity: 0.4,
+						metalness: 0.7,
+						roughness: 0.35,
+						transparent: true,
+					}),
+				);
+				groupRef.current.add(m);
+				meshes.current.set(shell.id, m);
+				mesh = m;
+			}
+			mesh.position.set(shell.pos.x, shell.pos.y, shell.pos.z);
+			mesh.rotation.x += shell.spin.x * dt;
+			mesh.rotation.y += shell.spin.y * dt;
+			mesh.rotation.z += shell.spin.z * dt;
+			// Fade only in the last 750 ms.
+			const fadeStart = SHELL_TTL_MS - 750;
+			const fade = age < fadeStart ? 1 : 1 - (age - fadeStart) / 750;
+			(mesh.material as THREE.MeshStandardMaterial).opacity = fade;
+			mesh.visible = true;
+			seen.add(shell.id);
+			live.push(shell);
+		}
+		shellsRef.current = live;
+		for (const [id, mesh] of meshes.current) {
+			if (!seen.has(id)) {
+				mesh.visible = false;
+				groupRef.current.remove(mesh);
+				meshes.current.delete(id);
+			}
+		}
+	});
+
+	return (
+		<group
+			ref={(node) => {
+				groupRef.current = node;
+			}}
+		/>
+	);
+}

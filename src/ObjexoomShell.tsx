@@ -514,20 +514,36 @@ export function ObjexoomShell() {
 	// present AND not in production. The contract is the only stable way to
 	// drive the game from Playwright — pointer-lock + canvas-keyed input are
 	// hostile to scripted automation.
+	// Mirror state + map into refs so the debug-hook installer below can
+	// install ONCE per game session instead of re-installing on every
+	// state/map change. Re-install caused a tiny window where the global
+	// was undefined; e2e loops calling start → triggerWin → next-level
+	// six times in a row hit that window often enough to flake.
+	const stateRef = useRef(state);
+	stateRef.current = state;
+	const mapRef = useRef(map);
+	mapRef.current = map;
+	const onStartGameRef = useRef(onStartGame);
+	onStartGameRef.current = onStartGame;
+
 	useEffect(() => {
 		if (!debugHooksEnabled()) return;
 		window.__objexoom = {
-			getState: () => ({
-				...state,
-				mapKind: map.kind,
-				playerSpawn: map.playerSpawn,
-				keyPosition: map.keyPosition,
-				exitPosition: map.exitPosition,
-				enemySpawns: map.enemySpawns,
-				totalEnemies: state.totalEnemies,
-			}),
+			getState: () => {
+				const s = stateRef.current;
+				const m = mapRef.current;
+				return {
+					...s,
+					mapKind: m.kind,
+					playerSpawn: m.playerSpawn,
+					keyPosition: m.keyPosition,
+					exitPosition: m.exitPosition,
+					enemySpawns: m.enemySpawns,
+					totalEnemies: s.totalEnemies,
+				};
+			},
 			start: () => {
-				onStartGame();
+				onStartGameRef.current();
 			},
 			teleport: (x, y, yawRad) => {
 				window.dispatchEvent(
@@ -555,7 +571,7 @@ export function ObjexoomShell() {
 		return () => {
 			delete window.__objexoom;
 		};
-	}, [state, map, onStartGame]);
+	}, []);
 
 	const onSelectWeapon = useCallback(
 		(weapon: WeaponId) => {

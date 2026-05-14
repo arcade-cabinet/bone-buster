@@ -223,25 +223,24 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
+			// Clear N levels: each level needs killAllEnemies + collectKey
+			// + triggerWin (flips phase to going_back) + teleport-to-spawn
+			// (engine fires onReachSpawn → status="transitioning" →
+			// next level mounts). One full cycle per iteration.
 			for (let i = 0; i < 6; i += 1) {
 				await page.evaluate(() => {
-					const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
+					const hooks = (window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom;
+					if (!hooks) return;
 					hooks.killAllEnemies();
 					hooks.collectKey();
 					hooks.triggerWin();
+					const state = hooks.getState() as { playerSpawn?: { x: number; y: number } };
+					if (state.playerSpawn) {
+						hooks.teleport(state.playerSpawn.x, state.playerSpawn.y, 0);
+					}
 				});
 				await page.waitForTimeout(900);
 			}
-			await page.evaluate(() => {
-				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
-				const state = hooks.getState() as {
-					playerSpawn?: { x: number; y: number };
-				};
-				if (state.playerSpawn) {
-					hooks.teleport(state.playerSpawn.x, state.playerSpawn.y, 0);
-				}
-			});
-			await page.waitForTimeout(800);
 			await captureViaCDP(page, `${OUT_DIR}/mission-complete.png`);
 		});
 	});

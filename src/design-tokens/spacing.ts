@@ -37,8 +37,7 @@ export const RADIUS = {
 
 export const ELEVATION = {
 	// Glow under the wordmark + win cards. Indigo + violet bleed.
-	wordmark:
-		"0 0 24px rgba(124, 137, 248, 0.25), 0 0 48px rgba(182, 129, 251, 0.18)",
+	wordmark: "0 0 24px rgba(124, 137, 248, 0.25), 0 0 48px rgba(182, 129, 251, 0.18)",
 	// Soft drop on HUD cards.
 	hudCard: "0 8px 24px rgba(6, 9, 18, 0.55)",
 	// Hard ring on enemy-damage flash (red bloom).
