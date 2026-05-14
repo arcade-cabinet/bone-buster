@@ -758,7 +758,15 @@ function ClickToEngagePrompt() {
 			window.clearInterval(id);
 		};
 	}, []);
-	if (locked) return null;
+	// PT1A — debug/playtest runs (`?objexoomDebug`) drive the game via
+	// `window.__objexoom.*` and can't acquire pointer-lock without a real
+	// user gesture. The prompt is for human players; debug runs already
+	// drive input through the hook contract, so hide the overlay so
+	// scripted screenshot captures see the real gameplay framing.
+	const debug =
+		typeof window !== "undefined" &&
+		new URL(window.location.href).searchParams.has("objexoomDebug");
+	if (locked || debug) return null;
 	return (
 		<div
 			data-testid="objexoom-click-to-engage"
