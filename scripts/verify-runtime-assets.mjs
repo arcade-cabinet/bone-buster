@@ -39,11 +39,16 @@ const SOURCE_FILES = [
 	resolve(root, "src/npcs.ts"),
 	resolve(root, "src/traps.ts"),
 	resolve(root, "src/structures.ts"),
+	resolve(root, "src/floorTextures.ts"),
 ];
 
 function categoryOf(publicPath) {
-	const m = publicPath.match(/\/assets\/models\/([^/]+)\//);
-	return m?.[1] ?? "other";
+	// Try models subfolder first (e.g. /assets/models/enemies/foo.glb → "enemies").
+	const modelMatch = publicPath.match(/\/assets\/models\/([^/]+)\//);
+	if (modelMatch) return modelMatch[1];
+	// Textures collapse into a single "textures" category.
+	if (publicPath.startsWith("/assets/textures/")) return "textures";
+	return "other";
 }
 
 function formatBytes(n) {
@@ -55,7 +60,8 @@ function formatBytes(n) {
 // Concat all source files and extract every A("/assets/models/...") literal.
 const sources = await Promise.all(SOURCE_FILES.map((p) => readFile(p, "utf8")));
 const combined = sources.join("\n");
-const matches = [...combined.matchAll(/A\("(\/assets\/models\/[^"]+)"\)/g)];
+// Match both /assets/models/ (GLBs) and /assets/textures/ (PBR maps).
+const matches = [...combined.matchAll(/A\("(\/assets\/(?:models|textures)\/[^"]+)"\)/g)];
 if (matches.length === 0) {
 	console.error("verify-runtime-assets: no A() URLs found across", SOURCE_FILES.join(", "));
 	process.exit(1);
