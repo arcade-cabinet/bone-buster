@@ -2,6 +2,19 @@
 
 **Status:** ACTIVE
 
+## Phase 10 — polish + stub cleanup
+
+Forward-sweep from Phase 9: shipping COV12 step-2's treasure loot
+revealed a real stub — `treasure → kills+5` is using `kills` as a
+score proxy because GameState lacks a dedicated `score` field. The
+CLAUDE.md global rule "Stubs are bugs. Fix or delete." applies.
+Also: CLAUDE.md line 53 still claims "B2.4 not yet wired" but the
+directive shows it shipped — drift to fix.
+
+- [x] **POL1 — real `score` field on GameState.** Shipped. Added `score: number` to `GameState`. All 3 initializers (initial useState, onStartGame setState, the level-advance setState) reset it to 0. The COV12 treasure-loot branch now grants `+50 score` instead of the pre-POL1 `+5 kills` stub. HUD renders `SCORE N` (in `ROLE.actionKey` amber) directly below the `KILLS X / N` readout, scale-bumped via Framer Motion on each delta, and is hidden when score is still 0 so the HUD reads cleanly on fresh runs. New `data-testid="objexoom-score"` for e2e probing. 474 unit + 5 browser + 5 e2e canonical screenshots green. Canonicals byte-stable (no procedural change; the HUD addition is hidden until score > 0 and the canonical poses never collect loot).
+
+- [x] **DOC1 — CLAUDE.md staleness sweep.** Shipped. Updated the test-count line from "177 passing across 13 suites" → "474+ passing across 50+ suites" + added the new `pnpm test:e2e:archetype-screenshots` command. Rewrote the B2.4 line from "not yet wired" → "shipped" with the actual action names (`actions/configure-pages@v5` / `actions/upload-pages-artifact@v3` / `actions/deploy-pages@v4`) so future agents know exactly what's in cd.yml without grepping. Added a Phase-9-inventory bullet listing every per-archetype scatter (COV8 traps, COV13 kitchen, COV11 nature, COV14 NPCs, COV12 loot) with their archetype gating + per-system PRNG XOR tags. Added a POL1 bullet describing the new `score` field + the 3 loot bonuses. Single commit folded with POL1.
+
 ## Phase 9 — wire the remaining staged COV pools
 
 Step-1 of COV8 / COV11 / COV12 / COV13 / COV14 each staged an asset

@@ -119,6 +119,25 @@ export function ObjexoomHUD({
 				>
 					{state.kills} / {state.totalEnemies}
 				</motion.div>
+				{state.score > 0 && (
+					<motion.div
+						data-testid="objexoom-score"
+						style={{
+							marginTop: 4,
+							fontFamily: FONT_FAMILY.display,
+							fontSize: 14,
+							fontWeight: FONT_WEIGHT.regular,
+							letterSpacing: LETTER_SPACING.display,
+							color: ROLE.actionKey,
+						}}
+						key={state.score}
+						initial={{ scale: 1.4 }}
+						animate={{ scale: 1 }}
+						transition={{ type: "spring", stiffness: 320, damping: 18 }}
+					>
+						SCORE {state.score}
+					</motion.div>
+				)}
 				<div
 					data-testid="objexoom-key"
 					style={{

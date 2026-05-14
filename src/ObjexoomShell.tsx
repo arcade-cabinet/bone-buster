@@ -53,6 +53,12 @@ export type GameState = {
 	hp: number;
 	maxHp: number;
 	kills: number;
+	/**
+	 * POL1 — running score across the current level. Earned from
+	 * COV12 treasure-loot pickups (+50 each) and reset on level
+	 * advance / death. Surfaced on the HUD next to KILLS.
+	 */
+	score: number;
 	totalEnemies: number;
 	hasKey: boolean;
 	// J1 — player owns a flashlight after picking up class 7. Without it
@@ -220,6 +226,7 @@ export function ObjexoomShell() {
 		hp: maxHp,
 		maxHp,
 		kills: 0,
+		score: 0,
 		totalEnemies: map.enemySpawns.length,
 		hasKey: false,
 		hasFlashlight: false,
@@ -428,12 +435,10 @@ export function ObjexoomShell() {
 							},
 						};
 					}
-					// treasure → +50 to total kills proxy (no dedicated score
-					// field on GameState yet; kills doubles as the win-screen
-					// counter). Treat the loot bonus as a kill-equivalent
-					// bounty so the HUD's "0/N" reads as progress without a
-					// new state field. Future step adds a real score field.
-					return { ...prev, kills: prev.kills + 5 };
+					// POL1 — treasure → +50 score (real score field).
+					// Pre-POL1 used kills+5 as a proxy because GameState
+					// lacked score; that stub is now resolved.
+					return { ...prev, score: prev.score + 50 };
 				}
 				return {
 					...prev,
@@ -466,6 +471,7 @@ export function ObjexoomShell() {
 			hp: maxHp,
 			maxHp,
 			kills: 0,
+			score: 0,
 			totalEnemies: map.enemySpawns.length,
 			hasKey: false,
 			hasFlashlight: false,
@@ -616,6 +622,7 @@ export function ObjexoomShell() {
 				status: "playing",
 				hp: prev.maxHp,
 				kills: 0,
+				score: 0,
 				hasKey: false,
 				hasFlashlight: false,
 				weapon: "pistol",
