@@ -5,11 +5,10 @@ import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type * as Yuka from "yuka";
-import { type Barrel, pickRayBarrel, resolveExplosion, spawnBarrels } from "./barrels";
+import { type Barrel, resolveExplosion, spawnBarrels } from "./barrels";
 import { PLAYER_HEIGHT, TILE } from "./constants";
 import { OBJEXOOM_PALETTE } from "./design-tokens";
 import {
-	castRayAny,
 	computePortalEdges,
 	ENEMY_BULLET_DAMAGE,
 	type Enemy,
@@ -42,20 +41,10 @@ import {
 	WeaponViewmodel,
 } from "./scene";
 import { tickEnemyLoop } from "./scene/hooks/enemyTickLoop";
+import { resolveFire } from "./scene/hooks/fireResolution";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
-import {
-	playBoom,
-	playChaingun,
-	playHurt,
-	playMelee,
-	playPickup,
-	playPistol,
-	playPortal,
-	playShotgun,
-	playSkeletonDeath,
-	stopAmbient,
-} from "./sfx";
-import { WEAPONS, type WeaponId } from "./weapons";
+import { playBoom, playHurt, playPickup, playPortal, stopAmbient } from "./sfx";
+import type { WeaponId } from "./weapons";
 import { clearYuka, makeYukaEntityAt, removeYukaEntity, tickYuka } from "./yukaIntegration";
 
 type SceneProps = Readonly<{
@@ -512,173 +501,35 @@ export function ObjexoomScene({
 		}
 	};
 
-	// Fire handler
-	// biome-ignore lint/correctness/useExhaustiveDependencies: refs (ammoRef, enemiesRef) are mutable and shouldn't trigger re-subscribe; lints fights with the imperative ref pattern.
+	// ARCH2b — single-shot resolution moved to src/scene/hooks/fireResolution.ts.
+	// The useEffect that wires `objexoom:fire` stays here (it owns the
+	// listener lifecycle); the body is one call into the pure helper.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: refs are mutable and shouldn't trigger re-subscribe; matches the imperative ref pattern.
 	useEffect(() => {
 		const onFire = () => {
-			if (!active) return;
-			const spec = WEAPONS[weapon];
-			const now = performance.now();
-			if (now - lastFireAt.current < spec.cooldownMs) return;
-
-			if (spec.ammoCostPerShot > 0) {
-				const remaining = ammoRef.current.ammo[weapon];
-				if (remaining < spec.ammoCostPerShot) return;
-			}
-
-			lastFireAt.current = now;
-			gameRef.current.onSpendAmmo(weapon, spec.ammoCostPerShot);
-
-			// I11 — muzzle-flash light. 80 ms of weapon-colored bloom from
-			// the camera position. The light decays in the per-frame block.
-			muzzleFlashUntil.current = now + 80;
-			muzzleColorRef.current.set(spec.muzzleColor);
-
-			if (weapon === "melee") playMelee();
-			else if (weapon === "pistol") playPistol();
-			else if (weapon === "chaingun") playChaingun();
-			else playShotgun();
-
-			// I10 / PA9b — shell ejection. Shotgun ejects one large brass
-			// shell per trigger pull; chaingun ejects a smaller shell on
-			// every individual pulse (~11/sec at 90ms cooldown). Both
-			// flick to the camera's right with random spin; gravity +
-			// ground bounce; 4 s despawn via ShellEjectField.
-			if (weapon === "shotgun" || weapon === "chaingun") {
-				const isChaingun = weapon === "chaingun";
-				const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-				// Chaingun shells lateral velocity is a touch lower so the
-				// dense stream doesn't fling shells halfway across the room.
-				const lateral = isChaingun ? 1.0 : 1.6;
-				const upward = isChaingun ? 0.9 : 1.2;
-				const scale = isChaingun ? 0.6 : 1.0;
-				window.dispatchEvent(
-					new CustomEvent("objexoom:shellEject", {
-						detail: {
-							x: camera.position.x + right.x * 0.3,
-							y: camera.position.y - 0.3,
-							z: camera.position.z + right.z * 0.3,
-							vx: right.x * lateral + (Math.random() - 0.5) * 0.4,
-							vy: upward,
-							vz: right.z * lateral + (Math.random() - 0.5) * 0.4,
-							scale,
-						},
-					}),
-				);
-			}
-
-			const forwardBase = new THREE.Vector3(0, 0, -1)
-				.applyQuaternion(camera.quaternion)
-				.normalize();
-			const origin = { x: camera.position.x, y: camera.position.z };
-
-			let killsThisShot = 0;
-			for (let pelletIdx = 0; pelletIdx < spec.pellets; pelletIdx += 1) {
-				const spreadX = (Math.random() - 0.5) * spec.spreadRad;
-				const spreadY = (Math.random() - 0.5) * spec.spreadRad;
-				const forward = forwardBase
-					.clone()
-					.applyAxisAngle(new THREE.Vector3(0, 1, 0), spreadX)
-					.applyAxisAngle(new THREE.Vector3(1, 0, 0), spreadY);
-				const dir2 = { x: forward.x, y: forward.z };
-				const len2 = Math.hypot(dir2.x, dir2.y) || 1;
-				dir2.x /= len2;
-				dir2.y /= len2;
-
-				const maxDist = spec.rangeTiles * TILE;
-				const wallHit = castRayAny(origin, dir2, map, collisionCtxRef.current, maxDist);
-				let bestEnemy: Enemy | null = null;
-				let bestDist = wallHit.dist;
-				for (const enemy of enemiesRef.current) {
-					if (enemy.dead) continue;
-					const ex = enemy.position.x - origin.x;
-					const ey = enemy.position.y - origin.y;
-					const t = ex * dir2.x + ey * dir2.y;
-					if (t <= 0 || t > bestDist) continue;
-					const perpX = ex - dir2.x * t;
-					const perpY = ey - dir2.y * t;
-					const perp = Math.hypot(perpX, perpY);
-					if (perp > 1.0) continue;
-					bestEnemy = enemy;
-					bestDist = t;
-				}
-				// E5 — barrel hit-test. Barrels are closer-than-enemy targets in
-				// the priority chain: if a barrel sits in the ray before the
-				// nearest enemy, the barrel takes the pellet instead. Wins ties.
-				const barrelHit = pickRayBarrel(origin, dir2, barrelsRef.current, bestDist);
-				if (barrelHit && barrelHit.dist <= bestDist) {
-					barrelHit.barrel.hp -= spec.damage;
-					window.dispatchEvent(
-						new CustomEvent("objexoom:burst", {
-							detail: {
-								x: barrelHit.barrel.position.x,
-								y: barrelHit.barrel.position.y,
-								kind: "damage",
-							},
-						}),
-					);
-					if (barrelHit.barrel.hp <= 0 && !barrelHit.barrel.exploded) {
-						explodeBarrelRef.current(barrelHit.barrel);
-					}
-					// Pellet consumed — skip the enemy-damage block below.
-					continue;
-				}
-				if (bestEnemy) {
-					bestEnemy.hp -= spec.damage;
-					// D5 — damage burst at hit point.
-					window.dispatchEvent(
-						new CustomEvent("objexoom:burst", {
-							detail: {
-								x: bestEnemy.position.x,
-								y: bestEnemy.position.y,
-								kind: "damage",
-							},
-						}),
-					);
-					if (bestEnemy.hp <= 0) {
-						bestEnemy.dead = true;
-						killsThisShot += 1;
-						const mesh = enemyMeshes.current.get(bestEnemy.id);
-						if (mesh) mesh.visible = false;
-						// D1-style imp explode-on-death: extra burst at higher count.
-						if (bestEnemy.kind === "imp") {
-							window.dispatchEvent(
-								new CustomEvent("objexoom:burst", {
-									detail: {
-										x: bestEnemy.position.x,
-										y: bestEnemy.position.y,
-										kind: "explode",
-									},
-								}),
-							);
-						}
-						// I1 — body-part physics. Spawn 4-6 chunky meshes with
-						// urandom spin + gravity at the death location.
-						window.dispatchEvent(
-							new CustomEvent("objexoom:bodyParts", {
-								detail: {
-									x: bestEnemy.position.x,
-									y: bestEnemy.position.y,
-									kind: bestEnemy.kind,
-								},
-							}),
-						);
-					}
-				}
-			}
-
-			if (killsThisShot > 0) {
-				for (let i = 0; i < killsThisShot; i += 1) gameRef.current.onKill();
-				playSkeletonDeath();
-				// K1 — every kill ships a (subtler) explosion stinger so
-				// crowd-kill moments have weight, not just the death pluck.
-				if (settings.soundEnabled) playBoom();
-			}
+			resolveFire({
+				active,
+				weapon,
+				now: performance.now(),
+				camera,
+				map,
+				settings,
+				ammoRef,
+				gameRef,
+				enemiesRef,
+				barrelsRef,
+				enemyMeshesRef: enemyMeshes,
+				collisionCtxRef,
+				lastFireAtRef: lastFireAt,
+				muzzleFlashUntilRef: muzzleFlashUntil,
+				muzzleColorRef,
+				explodeBarrel: (b) => explodeBarrelRef.current(b),
+			});
 		};
 
 		window.addEventListener("objexoom:fire", onFire);
 		return () => window.removeEventListener("objexoom:fire", onFire);
-	}, [active, camera, map, hasKey, gameRef, weapon, ammoRef]);
+	}, [active, camera, map, hasKey, gameRef, weapon, ammoRef, settings]);
 
 	useFrame(() => {
 		if (!active || hasKey) return;

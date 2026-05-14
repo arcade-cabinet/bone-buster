@@ -30,7 +30,6 @@
 
 import type * as THREE from "three";
 import type * as Yuka from "yuka";
-import type { Barrel } from "../../barrels";
 import {
 	SKELETON_ATTACK_COOLDOWN_MS,
 	SKELETON_ATTACK_RANGE,
@@ -74,11 +73,6 @@ export interface EnemyTickContext {
 	playerY: number;
 	now: number;
 	dt: number;
-	// E5 — barrel chain reactions can be ignited via FSM logic in the
-	// future; right now the enemy loop doesn't touch barrels, but the
-	// context is wired so ARCH2b's onFire helper can reach the same
-	// barrelsRef without re-plumbing.
-	barrelsRef?: { current: Barrel[] };
 }
 
 export function tickEnemyLoop(ctx: EnemyTickContext): void {
