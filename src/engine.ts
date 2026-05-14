@@ -390,9 +390,20 @@ export function generateMap(seed: number, shape?: GenerateMapShape): ObjexoomGri
 	// Chaingun is permanent (L3) and shotgun arrives from the goal drop
 	// (not the floor). One shotgun-ammo every 4 slots keeps procedural
 	// runs distinct from ref-level pickup layouts.
+	//
+	// E13 step-11 — per-archetype pickup-count multiplier. Combat-heavy
+	// archetypes need more pickups (arena, sewer); cleaner ones less.
+	// Corridor multiplier 1.0 + base count 8 = pre-step-11 output exactly,
+	// preserves canonical bytes for the procedural-corridor path.
+	const ARCHETYPE_PICKUP_MULTIPLIER = [1.0, 1.3, 1.0, 1.2, 0.7] as const;
 	const pickupCandidates = enemyCandidates.slice(totalEnemies);
+	const basePickupCount = Math.min(8, pickupCandidates.length);
+	const pickupTotal = Math.min(
+		pickupCandidates.length,
+		Math.max(2, Math.round(basePickupCount * ARCHETYPE_PICKUP_MULTIPLIER[archetypeIdx])),
+	);
 	const pickupSpawns: PickupSpawn[] = pickupCandidates
-		.slice(0, Math.min(8, pickupCandidates.length))
+		.slice(0, pickupTotal)
 		.map((position, idx) => {
 			if (idx % 4 === 0) return { kind: "shotgunAmmo", position };
 			return { kind: "health", position };
