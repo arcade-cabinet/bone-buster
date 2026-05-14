@@ -9,17 +9,8 @@ import type { ObjexoomMap, PickupKind } from "./engine";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
-import {
-	advanceLevel,
-	makeInitialRunStats,
-	type RunStats,
-	runStatsReducer,
-} from "./runStats";
-import {
-	DEFAULT_SETTINGS,
-	DIFFICULTY_TUNING,
-	type ObjexoomSettings,
-} from "./settings";
+import { advanceLevel, makeInitialRunStats, type RunStats, runStatsReducer } from "./runStats";
+import { DEFAULT_SETTINGS, DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 import {
 	ensureSfx,
 	playHitSting,
@@ -32,13 +23,7 @@ import {
 } from "./sfx";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "./weapons";
 
-export type GameStatus =
-	| "landing"
-	| "playing"
-	| "paused"
-	| "dead"
-	| "transitioning"
-	| "won";
+export type GameStatus = "landing" | "playing" | "paused" | "dead" | "transitioning" | "won";
 
 // H8 — `phase` tracks where the player is within a single level.
 //   "out"          — heading toward the goal, normal level flow.
@@ -193,9 +178,7 @@ export function ObjexoomShell() {
 	// id per trigger drive the enter/exit animation.
 	const [fadeTrigger, setFadeTrigger] = useState<FadeTrigger | null>(null);
 	const fadeIdRef = useRef(1);
-	const triggerFadeRef = useRef<(kind: FadeKind, intensity?: number) => void>(
-		() => undefined,
-	);
+	const triggerFadeRef = useRef<(kind: FadeKind, intensity?: number) => void>(() => undefined);
 	const triggerFade = useCallback((kind: FadeKind, intensity = 1) => {
 		const colorByKind: Record<FadeKind, string> = {
 			damage: "rgba(220, 38, 38, 1)",
@@ -246,9 +229,7 @@ export function ObjexoomShell() {
 			lastPlayerHitAt.current = now;
 			// I6 — camera shake amount scales with raw incoming damage; the
 			// controller decays at SHAKE_DECAY/sec and applies XZ jitter.
-			window.dispatchEvent(
-				new CustomEvent("objexoom:shake", { detail: { amount: damage } }),
-			);
+			window.dispatchEvent(new CustomEvent("objexoom:shake", { detail: { amount: damage } }));
 			// I2 — 30 red motes at the player on every successful enemy hit
 			// (post-iframe gate so the visual matches actual damage taken).
 			// Scene resolves the player position from the camera and emits the
@@ -321,10 +302,7 @@ export function ObjexoomShell() {
 					},
 					ammo: {
 						...prev.ammo,
-						shotgun: Math.max(
-							prev.ammo.shotgun,
-							WEAPONS.shotgun.pickupAmmo + 4,
-						),
+						shotgun: Math.max(prev.ammo.shotgun, WEAPONS.shotgun.pickupAmmo + 4),
 					},
 				};
 			});
@@ -334,10 +312,7 @@ export function ObjexoomShell() {
 			setState((prev) => {
 				if (prev.status !== "playing") return prev;
 				if (prev.phase !== "going_back") return prev;
-				const advanced = advanceLevel(
-					settings.level,
-					prev.run.runLevelsCleared,
-				);
+				const advanced = advanceLevel(settings.level, prev.run.runLevelsCleared);
 				const clearedRun = runStatsReducer(prev.run, {
 					type: "clearLevel",
 					killsThisLevel: 0,
@@ -422,8 +397,7 @@ export function ObjexoomShell() {
 			// E3 — if the run is mid-flight (paused/playing), preserve the seed
 			// so we can resume the same map. Only re-roll when the run ended
 			// (dead, won) or there's no live run to resume from.
-			const preserveSeed =
-				prev.status === "paused" || prev.status === "playing";
+			const preserveSeed = prev.status === "paused" || prev.status === "playing";
 			if (!preserveSeed) {
 				setSeed(Date.now() & 0xffffffff);
 			}
@@ -437,9 +411,7 @@ export function ObjexoomShell() {
 	// with no run.
 	const onResumeRun = useCallback(() => {
 		setState((prev) =>
-			prev.status === "landing" && prev.hp > 0
-				? { ...prev, status: "playing" }
-				: prev,
+			prev.status === "landing" && prev.hp > 0 ? { ...prev, status: "playing" } : prev,
 		);
 	}, []);
 	const hasPausedRun =
@@ -455,11 +427,7 @@ export function ObjexoomShell() {
 		try {
 			const url = new URL(window.location.href);
 			url.searchParams.delete("objexoom");
-			window.history.replaceState(
-				null,
-				"",
-				`${url.pathname}${url.search}${url.hash}`,
-			);
+			window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
 			window.location.reload();
 		} catch {
 			window.location.reload();
@@ -467,9 +435,7 @@ export function ObjexoomShell() {
 	}, []);
 
 	const onResume = useCallback(() => {
-		setState((prev) =>
-			prev.status === "paused" ? { ...prev, status: "playing" } : prev,
-		);
+		setState((prev) => (prev.status === "paused" ? { ...prev, status: "playing" } : prev));
 	}, []);
 
 	// Whenever the map identity changes during an active run, refresh the
@@ -509,8 +475,7 @@ export function ObjexoomShell() {
 			);
 		};
 		window.addEventListener("objexoom:fellToDeath", onFellToDeath);
-		return () =>
-			window.removeEventListener("objexoom:fellToDeath", onFellToDeath);
+		return () => window.removeEventListener("objexoom:fellToDeath", onFellToDeath);
 	}, []);
 
 	// B1/B4 — when a level is cleared on a chained run, hold for
@@ -607,13 +572,10 @@ export function ObjexoomShell() {
 		if (touchMode) return;
 		const onPointerLockChange = () => {
 			if (document.pointerLockElement) return;
-			setState((prev) =>
-				prev.status === "playing" ? { ...prev, status: "paused" } : prev,
-			);
+			setState((prev) => (prev.status === "playing" ? { ...prev, status: "paused" } : prev));
 		};
 		document.addEventListener("pointerlockchange", onPointerLockChange);
-		return () =>
-			document.removeEventListener("pointerlockchange", onPointerLockChange);
+		return () => document.removeEventListener("pointerlockchange", onPointerLockChange);
 	}, [touchMode]);
 
 	useEffect(() => {
@@ -639,19 +601,12 @@ export function ObjexoomShell() {
 			const owned = WEAPON_ORDER.filter((w) => state.ownedWeapons[w]);
 			if (owned.length < 2) return;
 			const idx = owned.indexOf(state.weapon);
-			const next =
-				owned[(idx + (e.deltaY > 0 ? 1 : owned.length - 1)) % owned.length];
+			const next = owned[(idx + (e.deltaY > 0 ? 1 : owned.length - 1)) % owned.length];
 			onSelectWeapon(next);
 		};
 		window.addEventListener("wheel", onWheel, { passive: false });
 		return () => window.removeEventListener("wheel", onWheel);
-	}, [
-		touchMode,
-		state.status,
-		state.weapon,
-		state.ownedWeapons,
-		onSelectWeapon,
-	]);
+	}, [touchMode, state.status, state.weapon, state.ownedWeapons, onSelectWeapon]);
 
 	useEffect(
 		() => () => {
@@ -764,9 +719,7 @@ export function ObjexoomShell() {
 								level={settings.level}
 							/>
 							<AnimatePresence>
-								{fadeTrigger && (
-									<FadeOverlay key={fadeTrigger.id} trigger={fadeTrigger} />
-								)}
+								{fadeTrigger && <FadeOverlay key={fadeTrigger.id} trigger={fadeTrigger} />}
 							</AnimatePresence>
 						</motion.div>
 					)}
@@ -788,9 +741,7 @@ function FadeOverlay({ trigger }: { trigger: FadeTrigger }) {
 	const reduced = useReducedMotion();
 	const peak = reduced ? Math.min(0.18, trigger.peak * 0.5) : trigger.peak;
 	const animate = reduced ? { opacity: peak } : { opacity: [0, peak, 0] };
-	const transition = reduced
-		? { duration: 0.2 }
-		: { duration: 0.6, times: [0, 0.33, 1] };
+	const transition = reduced ? { duration: 0.2 } : { duration: 0.6, times: [0, 0.33, 1] };
 	return (
 		<motion.div
 			data-testid="objexoom-fade-overlay"

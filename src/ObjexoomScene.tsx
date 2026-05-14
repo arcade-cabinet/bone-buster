@@ -2,12 +2,7 @@
 
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import {
-	Bloom,
-	ChromaticAberration,
-	EffectComposer,
-	Vignette,
-} from "@react-three/postprocessing";
+import { Bloom, ChromaticAberration, EffectComposer, Vignette } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import type { RefObject } from "react";
 import { useEffect, useMemo, useRef } from "react";
@@ -60,12 +55,7 @@ import {
 	stopAmbient,
 } from "./sfx";
 import { WEAPONS, type WeaponId } from "./weapons";
-import {
-	clearYuka,
-	makeYukaEntityAt,
-	removeYukaEntity,
-	tickYuka,
-} from "./yukaIntegration";
+import { clearYuka, makeYukaEntityAt, removeYukaEntity, tickYuka } from "./yukaIntegration";
 
 type SceneProps = Readonly<{
 	map: ObjexoomMap;
@@ -205,8 +195,7 @@ export function ObjexoomScene({
 	// them. The CollisionContext keeps the dispatchers honest about which
 	// engine path (grid vs. sector) handles each call.
 	const portals = useMemo(
-		() =>
-			map.kind === "sectors" ? computePortalEdges(map) : new Set<string>(),
+		() => (map.kind === "sectors" ? computePortalEdges(map) : new Set<string>()),
 		[map],
 	);
 	const collisionCtxRef = useRef({ portals, doorOpen: hasKey });
@@ -288,11 +277,7 @@ export function ObjexoomScene({
 			const intensity = remaining > 0 ? Math.min(4, remaining / 20) : 0;
 			muzzleLightRef.current.intensity = intensity;
 			muzzleLightRef.current.color.copy(muzzleColorRef.current);
-			muzzleLightRef.current.position.set(
-				camera.position.x,
-				camera.position.y,
-				camera.position.z,
-			);
+			muzzleLightRef.current.position.set(camera.position.x, camera.position.y, camera.position.z);
 		}
 
 		// H8 — light strobe during going_back. 200-frame cycle, 10 frames bright.
@@ -331,10 +316,7 @@ export function ObjexoomScene({
 					const yi = verts[i].y;
 					const xj = verts[j].x;
 					const yj = verts[j].y;
-					if (
-						yi > py2 !== yj > py2 &&
-						px < ((xj - xi) * (py2 - yi)) / (yj - yi) + xi
-					) {
+					if (yi > py2 !== yj > py2 && px < ((xj - xi) * (py2 - yi)) / (yj - yi) + xi) {
 						inside = !inside;
 					}
 				}
@@ -401,11 +383,7 @@ export function ObjexoomScene({
 			// I7 — first-time patrol → chase transition fires a panned aggro
 			// growl. The Set is per-Scene-instance; remounting on level change
 			// resets it implicitly.
-			if (
-				prevState === 0 &&
-				out.nextState === 1 &&
-				!aggroFiredRef.current.has(enemy.id)
-			) {
+			if (prevState === 0 && out.nextState === 1 && !aggroFiredRef.current.has(enemy.id)) {
 				aggroFiredRef.current.add(enemy.id);
 				if (settings.soundEnabled) {
 					const pan = panForPosition(enemy.position, {
@@ -425,12 +403,7 @@ export function ObjexoomScene({
 			if (out.moveTarget) {
 				enemy.position = wraith
 					? out.moveTarget
-					: resolveCollisionAny(
-							out.moveTarget,
-							map,
-							collisionCtxRef.current,
-							0.5,
-						);
+					: resolveCollisionAny(out.moveTarget, map, collisionCtxRef.current, 0.5);
 			}
 
 			if (out.fireBullet) {
@@ -497,14 +470,7 @@ export function ObjexoomScene({
 		let writeIdx = 0;
 		for (let i = 0; i < bullets.length; i += 1) {
 			const bullet = bullets[i];
-			const step = stepEnemyBullet(
-				bullet,
-				dt,
-				now,
-				playerPos,
-				map,
-				collisionCtxRef.current,
-			);
+			const step = stepEnemyBullet(bullet, dt, now, playerPos, map, collisionCtxRef.current);
 			if (step.kind === "hitPlayer") {
 				gameRef.current.onHit(ENEMY_BULLET_DAMAGE);
 				playHurt();
@@ -557,16 +523,10 @@ export function ObjexoomScene({
 			}
 		};
 		window.addEventListener("objexoom:debugKillAll", onDebugKillAll);
-		window.addEventListener(
-			"objexoom:debugCollectPickups",
-			onDebugCollectPickups,
-		);
+		window.addEventListener("objexoom:debugCollectPickups", onDebugCollectPickups);
 		return () => {
 			window.removeEventListener("objexoom:debugKillAll", onDebugKillAll);
-			window.removeEventListener(
-				"objexoom:debugCollectPickups",
-				onDebugCollectPickups,
-			);
+			window.removeEventListener("objexoom:debugCollectPickups", onDebugCollectPickups);
 		};
 	}, [gameRef]);
 
@@ -600,9 +560,7 @@ export function ObjexoomScene({
 			// camera's right with random spin; gravity + ground bounce; 4 s
 			// despawn. Driven by the ShellEjectField listener.
 			if (weapon === "shotgun") {
-				const right = new THREE.Vector3(1, 0, 0).applyQuaternion(
-					camera.quaternion,
-				);
+				const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
 				window.dispatchEvent(
 					new CustomEvent("objexoom:shellEject", {
 						detail: {
@@ -636,13 +594,7 @@ export function ObjexoomScene({
 				dir2.y /= len2;
 
 				const maxDist = spec.rangeTiles * TILE;
-				const wallHit = castRayAny(
-					origin,
-					dir2,
-					map,
-					collisionCtxRef.current,
-					maxDist,
-				);
+				const wallHit = castRayAny(origin, dir2, map, collisionCtxRef.current, maxDist);
 				let bestEnemy: Enemy | null = null;
 				let bestDist = wallHit.dist;
 				for (const enemy of enemiesRef.current) {
@@ -750,9 +702,7 @@ export function ObjexoomScene({
 				shadow-camera-far={60}
 			/>
 			{hasFlashlight && <Flashlight />}
-			<hemisphereLight
-				args={[OBJEXOOM_PALETTE.indigo, OBJEXOOM_PALETTE.ink, 0.35]}
-			/>
+			<hemisphereLight args={[OBJEXOOM_PALETTE.indigo, OBJEXOOM_PALETTE.ink, 0.35]} />
 			{/* I11 — muzzle-flash point light. Lives at camera position,
 			    driven by useFrame so it can decay between renders. */}
 			<pointLight ref={muzzleLightRef} intensity={0} distance={8} decay={1.5} />
@@ -765,11 +715,7 @@ export function ObjexoomScene({
 				<SectorMapGeometry map={map} />
 			)}
 			<KeyMarker visible={!hasKey} position={map.keyPosition} />
-			<ExitPortal
-				position={map.exitPosition}
-				unlocked={hasKey}
-				hueIndex={(map.seed >>> 0) % 5}
-			/>
+			<ExitPortal position={map.exitPosition} unlocked={hasKey} hueIndex={(map.seed >>> 0) % 5} />
 			<RealDoor position={map.exitPosition} unlocked={hasKey} />
 			<TreasureChest position={map.exitPosition} />
 			{/* H8 — second RealDoor at the original spawn. Opens during the
@@ -805,36 +751,18 @@ export function ObjexoomScene({
 			<ShellEjectField />
 			<WeaponViewmodel weapon={weapon} />
 
-			<PlayerController
-				map={map}
-				active={active}
-				hasKey={hasKey}
-				settings={settings}
-			/>
+			<PlayerController map={map} active={active} hasKey={hasKey} settings={settings} />
 
 			<EffectComposer>
-				<Bloom
-					intensity={0.45}
-					luminanceThreshold={0.55}
-					luminanceSmoothing={0.2}
-				/>
-				<ChromaticAberration
-					blendFunction={BlendFunction.NORMAL}
-					offset={[0.0015, 0.0015]}
-				/>
+				<Bloom intensity={0.45} luminanceThreshold={0.55} luminanceSmoothing={0.2} />
+				<ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={[0.0015, 0.0015]} />
 				<Vignette eskil={false} offset={0.25} darkness={0.7} />
 			</EffectComposer>
 		</>
 	);
 }
 
-function MapGeometry({
-	map,
-	doorOpen,
-}: {
-	map: ObjexoomGridMap;
-	doorOpen: boolean;
-}) {
+function MapGeometry({ map, doorOpen }: { map: ObjexoomGridMap; doorOpen: boolean }) {
 	const walls = useMemo(() => {
 		const out: { x: number; z: number; variant: number }[] = [];
 		for (let gy = 0; gy < map.height; gy += 1) {
@@ -871,11 +799,7 @@ function MapGeometry({
 
 	return (
 		<group>
-			<mesh
-				rotation={[-Math.PI / 2, 0, 0]}
-				position={[floorCenter, 0, floorCenter]}
-				receiveShadow
-			>
+			<mesh rotation={[-Math.PI / 2, 0, 0]} position={[floorCenter, 0, floorCenter]} receiveShadow>
 				<planeGeometry args={[floorSize, floorSize]} />
 				<meshStandardMaterial
 					color={OBJEXOOM_PALETTE.ink}
@@ -884,20 +808,13 @@ function MapGeometry({
 					roughness={0.95}
 				/>
 			</mesh>
-			<mesh
-				rotation={[Math.PI / 2, 0, 0]}
-				position={[floorCenter, WALL_HEIGHT, floorCenter]}
-			>
+			<mesh rotation={[Math.PI / 2, 0, 0]} position={[floorCenter, WALL_HEIGHT, floorCenter]}>
 				<planeGeometry args={[floorSize, floorSize]} />
 				<meshStandardMaterial color="#0b1024" roughness={1} />
 			</mesh>
 
 			{lavaTiles.map((p) => (
-				<mesh
-					key={`l-${p.x}-${p.z}`}
-					position={[p.x, 0.02, p.z]}
-					rotation={[-Math.PI / 2, 0, 0]}
-				>
+				<mesh key={`l-${p.x}-${p.z}`} position={[p.x, 0.02, p.z]} rotation={[-Math.PI / 2, 0, 0]}>
 					<planeGeometry args={[TILE, TILE]} />
 					<meshStandardMaterial
 						color={OBJEXOOM_PALETTE.amber}
@@ -916,18 +833,8 @@ function MapGeometry({
 				>
 					<boxGeometry args={[TILE, WALL_HEIGHT, TILE]} />
 					<meshStandardMaterial
-						color={
-							m.variant === 0
-								? "#1f2547"
-								: m.variant === 1
-									? "#26224a"
-									: "#1a1e3b"
-						}
-						emissive={
-							m.variant === 0
-								? OBJEXOOM_PALETTE.indigo
-								: OBJEXOOM_PALETTE.violet
-						}
+						color={m.variant === 0 ? "#1f2547" : m.variant === 1 ? "#26224a" : "#1a1e3b"}
+						emissive={m.variant === 0 ? OBJEXOOM_PALETTE.indigo : OBJEXOOM_PALETTE.violet}
 						emissiveIntensity={0.08}
 						roughness={0.85}
 					/>
@@ -941,13 +848,7 @@ function MapGeometry({
 
 // H6 — animated locked door. Slides upward over ~600 ms when the player
 // has the key. Fires `playDoor` exactly once on the open transition.
-function LockedDoor({
-	position,
-	open,
-}: {
-	position: { x: number; z: number };
-	open: boolean;
-}) {
+function LockedDoor({ position, open }: { position: { x: number; z: number }; open: boolean }) {
 	const meshRef = useRef<THREE.Mesh | null>(null);
 	const progressRef = useRef(open ? 1 : 0);
 	const didFireRef = useRef(open);
@@ -965,11 +866,7 @@ function LockedDoor({
 			playDoorTick();
 		}
 		const baseY = WALL_HEIGHT / 2;
-		meshRef.current.position.set(
-			position.x,
-			baseY + progressRef.current * WALL_HEIGHT,
-			position.z,
-		);
+		meshRef.current.position.set(position.x, baseY + progressRef.current * WALL_HEIGHT, position.z);
 	});
 	return (
 		<mesh
@@ -1009,10 +906,7 @@ function EnemyMesh({
 	const groupRef = useRef<THREE.Group | null>(null);
 	// Each enemy picks deterministically from the kind's skin roster
 	// using its id. Same id => same skin every spawn.
-	const skin = useMemo(
-		() => pickEnemySkin(enemy.kind, enemy.id),
-		[enemy.kind, enemy.id],
-	);
+	const skin = useMemo(() => pickEnemySkin(enemy.kind, enemy.id), [enemy.kind, enemy.id]);
 	const gltf = useGLTF(skin.url);
 	// SkeletonUtils.clone keeps the skinned-mesh/skeleton bindings sane
 	// across multiple instances — a plain .clone() shares skeletons and
@@ -1040,9 +934,7 @@ function EnemyMesh({
 
 	const facingRef = useRef(0);
 	const lastPosRef = useRef({ x: enemy.position.x, y: enemy.position.y });
-	const prevStateRef = useRef<"idle" | "walk" | "attack" | "death" | null>(
-		null,
-	);
+	const prevStateRef = useRef<"idle" | "walk" | "attack" | "death" | null>(null);
 	// Phase offset for the procedural bob so a packed level doesn't
 	// look like a chorus line. Deterministic from id.
 	const bobPhase = useMemo(() => (enemy.id * 0.7) % (Math.PI * 2), [enemy.id]);
@@ -1062,8 +954,7 @@ function EnemyMesh({
 		const bobY = hasNamedAnims ? 0 : Math.sin(t * 2.2 + bobPhase) * 0.06;
 
 		// Y-position: wraith hovers; ground enemies stand on floor.
-		const targetY =
-			skin.floorOffset + bobY + (enemy.kind === "wraith" ? 1.2 : 0);
+		const targetY = skin.floorOffset + bobY + (enemy.kind === "wraith" ? 1.2 : 0);
 		group.position.set(enemy.position.x, targetY, enemy.position.y);
 
 		// Face the direction of travel (smoothed).
@@ -1142,8 +1033,7 @@ function PickupMesh({
 	useFrame((s) => {
 		if (!ref.current) return;
 		ref.current.rotation.y = s.clock.elapsedTime * 1.4;
-		ref.current.position.y =
-			0.7 + Math.sin(s.clock.elapsedTime * 2 + pickup.id) * 0.1;
+		ref.current.position.y = 0.7 + Math.sin(s.clock.elapsedTime * 2 + pickup.id) * 0.1;
 	});
 
 	return (
@@ -1229,19 +1119,11 @@ function PickupMesh({
 					{/* Brass primer caps */}
 					<mesh position={[-0.15, 0.18, 0]}>
 						<cylinderGeometry args={[0.13, 0.13, 0.04, 12]} />
-						<meshStandardMaterial
-							color="#b16a14"
-							emissive="#b16a14"
-							emissiveIntensity={0.4}
-						/>
+						<meshStandardMaterial color="#b16a14" emissive="#b16a14" emissiveIntensity={0.4} />
 					</mesh>
 					<mesh position={[0.15, 0.18, 0]}>
 						<cylinderGeometry args={[0.13, 0.13, 0.04, 12]} />
-						<meshStandardMaterial
-							color="#b16a14"
-							emissive="#b16a14"
-							emissiveIntensity={0.4}
-						/>
+						<meshStandardMaterial color="#b16a14" emissive="#b16a14" emissiveIntensity={0.4} />
 					</mesh>
 				</group>
 			)}
@@ -1410,11 +1292,7 @@ function RealDoor({
 			playDoorTick();
 		}
 		const baseY = 1.2;
-		meshRef.current.position.set(
-			position.x,
-			baseY + progressRef.current * 2.4,
-			position.y,
-		);
+		meshRef.current.position.set(position.x, baseY + progressRef.current * 2.4, position.y);
 	});
 	return (
 		<mesh
@@ -1441,13 +1319,9 @@ function RealDoor({
 function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 	const shapes = useMemo(() => {
 		return map.sectors.map((sector) => {
-			const shape = new THREE.Shape(
-				sector.vertices.map((v) => new THREE.Vector2(v.x, v.y)),
-			);
+			const shape = new THREE.Shape(sector.vertices.map((v) => new THREE.Vector2(v.x, v.y)));
 			const lava = sector.floorHeight < 0;
-			const sectorKey = sector.vertices
-				.map((v) => `${v.x.toFixed(2)},${v.y.toFixed(2)}`)
-				.join("|");
+			const sectorKey = sector.vertices.map((v) => `${v.x.toFixed(2)},${v.y.toFixed(2)}`).join("|");
 			return { sector, shape, lava, sectorKey };
 		});
 	}, [map]);
@@ -1457,10 +1331,7 @@ function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 			{shapes.map(({ sector, shape, lava, sectorKey }) => (
 				<group key={`sec-${sectorKey}`}>
 					{/* Floor */}
-					<mesh
-						rotation={[-Math.PI / 2, 0, 0]}
-						position={[0, sector.floorHeight, 0]}
-					>
+					<mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, sector.floorHeight, 0]}>
 						<shapeGeometry args={[shape]} />
 						<meshStandardMaterial
 							color={lava ? OBJEXOOM_PALETTE.amber : "#1f2547"}
@@ -1471,16 +1342,9 @@ function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 						/>
 					</mesh>
 					{/* Ceiling */}
-					<mesh
-						rotation={[Math.PI / 2, 0, 0]}
-						position={[0, sector.ceilingHeight, 0]}
-					>
+					<mesh rotation={[Math.PI / 2, 0, 0]} position={[0, sector.ceilingHeight, 0]}>
 						<shapeGeometry args={[shape]} />
-						<meshStandardMaterial
-							color="#0b1024"
-							roughness={1}
-							side={THREE.DoubleSide}
-						/>
+						<meshStandardMaterial color="#0b1024" roughness={1} side={THREE.DoubleSide} />
 					</mesh>
 					{/* Walls — one quad per edge. Portal de-duping is engine-side. */}
 					{sector.vertices.map((a, idx) => {
@@ -1500,18 +1364,8 @@ function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 							>
 								<boxGeometry args={[len, height, 0.08]} />
 								<meshStandardMaterial
-									color={
-										variant === 0
-											? "#1f2547"
-											: variant === 1
-												? "#26224a"
-												: "#1a1e3b"
-									}
-									emissive={
-										variant === 0
-											? OBJEXOOM_PALETTE.indigo
-											: OBJEXOOM_PALETTE.violet
-									}
+									color={variant === 0 ? "#1f2547" : variant === 1 ? "#26224a" : "#1a1e3b"}
+									emissive={variant === 0 ? OBJEXOOM_PALETTE.indigo : OBJEXOOM_PALETTE.violet}
 									emissiveIntensity={0.08}
 									roughness={0.85}
 								/>
@@ -1733,11 +1587,7 @@ function BodyPartField() {
 			const detail = ev.detail;
 			const count = 4 + ((Math.random() * 3) | 0); // 4-6
 			const baseColor =
-				detail.kind === "wraith"
-					? 0xa855f7
-					: detail.kind === "imp"
-						? 0xdc2626
-						: 0xd4d4d8; // skeleton: bone white
+				detail.kind === "wraith" ? 0xa855f7 : detail.kind === "imp" ? 0xdc2626 : 0xd4d4d8; // skeleton: bone white
 			const now = performance.now();
 			for (let i = 0; i < count; i += 1) {
 				const theta = Math.random() * Math.PI * 2;
@@ -2115,9 +1965,7 @@ function Flashlight() {
 		const target = targetRef.current;
 		if (!spot || !target) return;
 		spot.position.copy(camera.position);
-		const forward = new THREE.Vector3(0, 0, -1)
-			.applyQuaternion(camera.quaternion)
-			.normalize();
+		const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
 		target.position.set(
 			camera.position.x + forward.x * 8,
 			camera.position.y + forward.y * 8,

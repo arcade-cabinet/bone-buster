@@ -119,7 +119,5 @@ for (const job of JOBS) {
 	}
 }
 
-console.log(
-	`\nDone. converted=${converted} skipped=${skipped} failed=${failed}`,
-);
+console.log(`\nDone. converted=${converted} skipped=${skipped} failed=${failed}`);
 if (failed > 0) process.exit(1);

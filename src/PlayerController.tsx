@@ -2,11 +2,7 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import {
-	PLAYER_HEIGHT,
-	PLAYER_MOVE_SPEED,
-	PLAYER_TURN_SENSITIVITY,
-} from "./constants";
+import { PLAYER_HEIGHT, PLAYER_MOVE_SPEED, PLAYER_TURN_SENSITIVITY } from "./constants";
 import {
 	computePortalEdges,
 	getFloorHeightAtAny,
@@ -72,8 +68,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 	// Portals are static per sector map; precompute once. Grid maps don't need
 	// them (collision is grid-cell based).
 	const portals = useMemo(
-		() =>
-			map.kind === "sectors" ? computePortalEdges(map) : new Set<string>(),
+		() => (map.kind === "sectors" ? computePortalEdges(map) : new Set<string>()),
 		[map],
 	);
 
@@ -111,10 +106,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 			const sens = PLAYER_TURN_SENSITIVITY * settings.mouseSensitivity;
 			yaw.current -= e.movementX * sens;
 			pitch.current -= e.movementY * sens;
-			pitch.current = Math.max(
-				-PITCH_CLAMP,
-				Math.min(PITCH_CLAMP, pitch.current),
-			);
+			pitch.current = Math.max(-PITCH_CLAMP, Math.min(PITCH_CLAMP, pitch.current));
 		};
 		const onClick = (e: MouseEvent) => {
 			if (!document.pointerLockElement) return;
@@ -209,10 +201,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 		const touchSens = settings.touchLookSensitivity;
 		yaw.current -= lookStick.current.x * 2.4 * touchSens * dt;
 		pitch.current -= lookStick.current.y * 1.6 * touchSens * dt;
-		pitch.current = Math.max(
-			-PITCH_CLAMP,
-			Math.min(PITCH_CLAMP, pitch.current),
-		);
+		pitch.current = Math.max(-PITCH_CLAMP, Math.min(PITCH_CLAMP, pitch.current));
 
 		camera.rotation.order = "YXZ";
 		camera.rotation.y = yaw.current;
@@ -277,8 +266,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 		// the local floor, accumulate grace time and dispatch death.
 		const now = performance.now();
 		const outOfBounds = floorY === null;
-		const tooDeep =
-			floorY !== null && camera.position.y < floorY - FALL_DEATH_DEPTH;
+		const tooDeep = floorY !== null && camera.position.y < floorY - FALL_DEATH_DEPTH;
 		if (outOfBounds || tooDeep) {
 			if (belowFloorSince.current === null) belowFloorSince.current = now;
 			if (now - belowFloorSince.current > FALL_GRACE_MS) {
@@ -293,9 +281,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 		if (grounded.current && moving && !prefersReducedMotion()) {
 			bobPhase.current += dt * HEAD_BOB_FREQ * Math.PI * 2;
 			camera.position.y +=
-				Math.sin(bobPhase.current) *
-				HEAD_BOB_AMPLITUDE *
-				Math.min(1, lateralSpeed * 4);
+				Math.sin(bobPhase.current) * HEAD_BOB_AMPLITUDE * Math.min(1, lateralSpeed * 4);
 		} else {
 			// Decay phase gently so we don't snap on the next stride.
 			bobPhase.current *= 0.85;

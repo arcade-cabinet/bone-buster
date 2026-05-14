@@ -291,10 +291,7 @@ export function panForPosition(
 
 // K5 — three preset mood melodies. Each row is one voice's note loop;
 // nulls are rests. Voice 0 = bass, 1 = pad, 2-5 = arps.
-const MOOD_MELODIES: Record<
-	MusicMood,
-	ReadonlyArray<ReadonlyArray<string | null>>
-> = {
+const MOOD_MELODIES: Record<MusicMood, ReadonlyArray<ReadonlyArray<string | null>>> = {
 	exploration: [
 		["A1", null, null, "E2", null, null, "A1", null],
 		["E4", null, "A4", null, "B4", null, "E4", null],
