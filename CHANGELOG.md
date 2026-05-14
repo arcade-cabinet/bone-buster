@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Changed
 
+- **AUDIO3 — HUD overlay extraction.** SecretFoundFlash + KeyPickupCeremony + GoingBackOverlay extracted from ObjexoomHUD.tsx (was ~819 lines, now ~606) into `src/hud/overlays/` (one file per overlay) + `HUDOverlays.tsx` aggregator. Adding a new overlay is a new-file operation + one-line addition. Closes all four slot types from docs/SLOT-ARCHITECTURE.md.
 - **AUDIO2 — sfx.ts migrated to audioBus.** All 19 play functions now `fire(channelId, t => synth.triggerAttackRelease(...))` through the typed bus. **Channel re-architecture mid-implementation:** AUDIO1's by-cue ChannelId list was incorrect — Tone.js's collision check is per-synth, so channels must be enumerated by SYNTH INSTANCE (`pickup` channel serves both `playPickup` and `playSecretFound` because both target `pickupSynth`). Final 15 channels: pistol/chaingun/shotgun/melee/hurt/death/pickup/door/doorTick/portal/boom/boomNoise/ambientDrone/aggro/hitSting. All `last*FireTime` globals deleted; the manual `jitter()` helper deleted. sfx.ts dropped from ~600 to ~470 lines.
 
 ### Added
