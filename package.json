@@ -72,6 +72,7 @@
 		"@types/node": "^25.5.2",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
+		"@types/sql.js": "^1.4.11",
 		"@types/three": "^0.184.0",
 		"@vitejs/plugin-react": "^6.0.1",
 		"@vitest/browser": "^4.1.3",

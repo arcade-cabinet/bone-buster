@@ -11,14 +11,9 @@
  * of each ENEMY_MODELS entry for the full list each rig ships.
  */
 
+import { A } from "./assetUrl";
 import type { EnemyKind } from "./engine";
 import type { WeaponId } from "./weapons";
-
-// Vite resolves `import.meta.env.BASE_URL` to "/" in dev/build and to
-// "/objexoom/" in the gh-pages build. Three's loaders (useGLTF /
-// GLTFLoader) don't honor Vite's base, so we prefix it explicitly on
-// every asset URL. Local helper keeps the URL constants below readable.
-const A = (path: string): string => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, "")}`;
 
 export type EnemyAnimSet = {
 	idle: string;

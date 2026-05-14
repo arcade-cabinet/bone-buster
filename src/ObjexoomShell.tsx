@@ -10,6 +10,7 @@ import type { ObjexoomMap, PickupKind } from "./engine";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
+import { openRunHistory, type RunHistory } from "./runHistory";
 import { advanceLevel, makeInitialRunStats, type RunStats, runStatsReducer } from "./runStats";
 import { DEFAULT_SETTINGS, DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 import {
@@ -478,6 +479,38 @@ export function ObjexoomShell() {
 		window.addEventListener("objexoom:fellToDeath", onFellToDeath);
 		return () => window.removeEventListener("objexoom:fellToDeath", onFellToDeath);
 	}, []);
+
+	// E9 — persist run history on terminal status transitions. The handle is
+	// lazily opened once per shell lifetime; sql.js init is a few hundred ms
+	// of WASM compile so we don't want it on every record. The recorded-ref
+	// gate keeps a single status flip from inserting twice if React 19's
+	// strict-mode double-invokes the effect.
+	const runHistoryRef = useRef<RunHistory | null>(null);
+	const recordedRunRef = useRef<number>(0);
+	useEffect(() => {
+		if (state.status !== "dead" && state.status !== "won") return;
+		if (recordedRunRef.current === state.run.runStartAt) return;
+		recordedRunRef.current = state.run.runStartAt;
+		const outcome = state.status === "won" ? "won" : "died";
+		const startedAt = state.run.runStartAt;
+		const levelsCleared = state.run.runLevelsCleared;
+		const totalKills = state.run.runTotalKills;
+		const totalDamageTaken = state.run.runTotalDamageTaken;
+		const level = settings.level;
+		void (async () => {
+			try {
+				if (!runHistoryRef.current) {
+					runHistoryRef.current = await openRunHistory();
+				}
+				runHistoryRef.current.insert(
+					{ startedAt, levelsCleared, totalKills, totalDamageTaken, level, outcome },
+					performance.now(),
+				);
+			} catch {
+				// run-history is a nice-to-have; never block gameplay on it
+			}
+		})();
+	}, [state.status, state.run, settings.level]);
 
 	// B1/B4 — when a level is cleared on a chained run, hold for
 	// TRANSITION_HOLD_MS to let the fade play, then advance settings.level
