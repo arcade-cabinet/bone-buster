@@ -654,10 +654,11 @@ export function ObjexoomScene({
 	// effect tick, the dead-spawn-position set blocks double-credit.
 	const debugKilledSpawnsRef = useRef<Set<string>>(new Set());
 	useEffect(() => {
-		const onDebugKillAll = () => {
+		const runDebugKill = (predicate: (e: Enemy) => boolean) => {
 			let killsThisTick = 0;
 			let bossKillsThisTick = 0;
 			for (const enemy of enemiesRef.current) {
+				if (!predicate(enemy)) continue;
 				const tag = `${enemy.id}@${enemy.position.x.toFixed(3)},${enemy.position.y.toFixed(3)}`;
 				if (debugKilledSpawnsRef.current.has(tag)) continue;
 				if (enemy.dead) continue;
@@ -674,12 +675,10 @@ export function ObjexoomScene({
 					removeYukaEntity(yukaEntity);
 					yukaEntitiesRef.current.delete(enemy.id);
 				}
-				// PT1 fold-forward — debug kill now dispatches the same
+				// PT1 fold-forward — debug kill dispatches the same
 				// death side-effects as the real fire path so playtest
 				// captures see POL16 layered burst + POL25 body-part
-				// settle + POL12 hitstop. Previously debug-kill just
-				// hid the mesh, which meant playtest screenshots couldn't
-				// verify these polish items end-to-end.
+				// settle + POL12 hitstop.
 				dispatch({
 					type: "burst",
 					x: enemy.position.x,
@@ -705,6 +704,8 @@ export function ObjexoomScene({
 				if (settings.soundEnabled) playBoom();
 			}
 		};
+		const onDebugKillAll = () => runDebugKill(() => true);
+		const onDebugKillBoss = () => runDebugKill((e) => e.tier === "boss");
 		const onDebugCollectPickups = () => {
 			for (const pickup of pickupsRef.current) {
 				if (pickup.collected) continue;
@@ -714,10 +715,12 @@ export function ObjexoomScene({
 				gameRef.current.onCollectPickup(pickup.kind);
 			}
 		};
-		const teardownKill = addObjexoomListener("debugKillAll", onDebugKillAll);
+		const teardownKillAll = addObjexoomListener("debugKillAll", onDebugKillAll);
+		const teardownKillBoss = addObjexoomListener("debugKillBoss", onDebugKillBoss);
 		const teardownCollect = addObjexoomListener("debugCollectPickups", onDebugCollectPickups);
 		return () => {
-			teardownKill();
+			teardownKillAll();
+			teardownKillBoss();
 			teardownCollect();
 		};
 	}, [gameRef, settings.soundEnabled]);

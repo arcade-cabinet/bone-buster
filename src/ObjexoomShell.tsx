@@ -204,6 +204,7 @@ declare global {
 			teleport: (x: number, y: number, yawRad?: number) => void;
 			fire: () => void;
 			killAllEnemies: () => void;
+			killBoss: () => void;
 			collectKey: () => void;
 			collectAllPickups: () => void;
 			triggerWin: () => void;
@@ -740,6 +741,10 @@ export function ObjexoomShell() {
 			},
 			killAllEnemies: () => {
 				dispatch({ type: "debugKillAll" });
+			},
+			// PT3A — boss-only kill for isolated boss-tier visual capture.
+			killBoss: () => {
+				dispatch({ type: "debugKillBoss" });
 			},
 			collectKey: () => {
 				gameRef.current.onPickupKey();

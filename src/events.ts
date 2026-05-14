@@ -85,6 +85,16 @@ export interface DebugKillAllEvent {
 	type: "debugKillAll";
 }
 
+/**
+ * PT3A — boss-only debug kill so playtest can capture the boss-tier
+ * death moment in isolation (POL12 150ms hitstop, POL10-v2 sting,
+ * POL16 burst, POL25 body-parts) without the chaos of 8 simultaneous
+ * regular-tier kills firing the same dispatch chain.
+ */
+export interface DebugKillBossEvent {
+	type: "debugKillBoss";
+}
+
 export interface DebugCollectPickupsEvent {
 	type: "debugCollectPickups";
 }
@@ -176,6 +186,7 @@ export type ObjexoomEvent =
 	| LookEvent
 	| MoveEvent
 	| DebugKillAllEvent
+	| DebugKillBossEvent
 	| DebugCollectPickupsEvent
 	| PlayerHitEvent
 	| FpsUpdateEvent
