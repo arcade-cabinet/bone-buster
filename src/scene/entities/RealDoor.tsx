@@ -4,7 +4,8 @@ import { useMemo, useRef } from "react";
 import type * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 import { DOOR_VARIANTS, pickDoorUrl } from "../../doors";
-import { playDoorTick, playPortal } from "../../sfx";
+import { dispatch } from "../../events";
+import { playDoor, playDoorTick, playPortal } from "../../sfx";
 
 /**
  * H7 — RealDoor at the goal. A wide animated portal that slides
@@ -38,26 +39,55 @@ export function RealDoor({
 	const gltf = useGLTF(url);
 	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
 	const groupRef = useRef<THREE.Group | null>(null);
-	const progressRef = useRef(unlocked ? 1 : 0);
+	// POL18 — `rawProgress` tracks linear 0..1; `easedProgress` applies
+	// an ease-out-with-overshoot curve for the visible motion. Keeping
+	// the underlying linear progress preserves the cancel-mid-open
+	// behavior (close-door speed feels symmetric); only the rendered
+	// lift gets the spring shape.
+	const rawProgress = useRef(unlocked ? 1 : 0);
 	const didFireRef = useRef(unlocked);
 	useFrame((_, dt) => {
 		if (!groupRef.current) return;
 		const target = unlocked ? 1 : 0;
 		const speed = 1 / 0.9; // 900 ms slower-than-locked-door open
 		const delta =
-			Math.sign(target - progressRef.current) *
-			Math.min(Math.abs(target - progressRef.current), speed * dt);
-		progressRef.current += delta;
-		if (unlocked && !didFireRef.current && progressRef.current > 0.05) {
+			Math.sign(target - rawProgress.current) *
+			Math.min(Math.abs(target - rawProgress.current), speed * dt);
+		rawProgress.current += delta;
+		if (unlocked && !didFireRef.current && rawProgress.current > 0.05) {
 			didFireRef.current = true;
-			playPortal();
-			// K7 — RealDoor mechanical tick on the open transition.
+			// POL18 — layered open cue. The pre-POL18 path played
+			// playPortal + playDoorTick which read as two isolated
+			// effects. Layering playDoor adds the sub-bass groan so
+			// the open reads as weight + mechanical click + portal
+			// resolve.
+			playDoor();
 			playDoorTick();
+			playPortal();
+			// POL18 — threshold puff. Spawns a "pickup"-kind burst at
+			// the door's base so dust kicks up as the door begins to
+			// lift — reuses ParticleBurstField's existing channel
+			// (pickup = 8 amber motes) rather than introducing a new
+			// kind. The amber tone reads as "the world giving way."
+			dispatch({
+				type: "burst",
+				x: position.x,
+				y: position.y,
+				kind: "pickup",
+			});
 		}
+		// POL18 — ease-out-with-overshoot envelope. Linear `rawProgress`
+		// is reshaped into a spring-eased visible position via a curve
+		// that overshoots target ~6% at p≈0.85 then settles to 1.0.
+		// Math: blend(linear, sin(p*π)*1.06) using bell weight `4p(1-p)`.
+		const p = rawProgress.current;
+		const bell = Math.max(0, 4 * p * (1 - p));
+		const overshootBoost = Math.sin(p * Math.PI) * 0.06;
+		const easedProgress = p + bell * overshootBoost;
 		// Slide the door upward as it opens. The base Y matches the prior
 		// procedural box height + offset so the canonical pose is the same.
 		const baseY = 1.2;
-		groupRef.current.position.set(position.x, baseY + progressRef.current * 2.4, position.y);
+		groupRef.current.position.set(position.x, baseY + easedProgress * 2.4, position.y);
 	});
 	return (
 		<group
