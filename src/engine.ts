@@ -543,7 +543,10 @@ export const BOSS_VISUAL_SCALE = 1.6;
 export function pickBossSpawnIndex(map: ObjexoomMap): number {
 	if (map.enemySpawns.length === 0) return -1;
 	let bestIdx = 0;
-	let bestDistSq = -1;
+	// Use -Infinity (not -1) so the comparison is independent of the loop
+	// starting index — if a future refactor skips the first spawn for any
+	// reason, the picker still works. Reviewer-caught issue from E2.
+	let bestDistSq = Number.NEGATIVE_INFINITY;
 	for (let i = 0; i < map.enemySpawns.length; i += 1) {
 		const dx = map.enemySpawns[i].position.x - map.playerSpawn.x;
 		const dy = map.enemySpawns[i].position.y - map.playerSpawn.y;

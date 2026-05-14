@@ -2,9 +2,10 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Bloom, ChromaticAberration, EffectComposer, Vignette } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import type { RefObject } from "react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type * as Yuka from "yuka";
+import { pickArchetype } from "./archetype";
 import { type Barrel, resolveExplosion, spawnBarrels } from "./barrels";
 import { PLAYER_HEIGHT, TILE } from "./constants";
 import { OBJEXOOM_PALETTE } from "./design-tokens";
@@ -103,14 +104,27 @@ export function ObjexoomScene({
 	// Sector maps only in this slice; grid maps return []. E4 will flip
 	// the lit-subset's `on` flag and wire pointLights.
 	const lampsRef = useRef<LampInstance[]>(spawnLamps(map));
-	// COV4 + E3 — per-map decorative prop scatter. Step-1: every sector
-	// gets the "corridor" archetype default; E13 will pick archetypes
-	// per map.seed once it ships.
-	const propsRef = useRef<PropInstance[]>(spawnProps(map, "corridor"));
+	// E13 step-1 — pick the map's archetype deterministically from
+	// `map.seed % 5`. Step-1 only wires the prop-pool axis; future
+	// steps will add lighting palette + enemy mix + SFX bed axes per
+	// PRD §E13. The archetype is constant for the lifetime of the
+	// Scene mount (re-keyed on level change).
+	const archetype = useMemo(() => pickArchetype(map), [map]);
+	// COV4 + E3 — per-map decorative prop scatter, now using E13's
+	// per-map archetype pick instead of the hardcoded "corridor".
+	const propsRef = useRef<PropInstance[]>(spawnProps(map, archetype));
 	// COV3 step-1 — modular asphalt floor tiles. Empty unless the map
 	// opts in via `useModularFloor: true`. Currently only refLevel 0
 	// sets the flag; the procedural floor stays everywhere else.
 	const floorTilesRef = useRef<FloorTileInstance[]>(spawnFloorTiles(map));
+	// E2 — reactive "all bosses dead" flag that the visual portal/door
+	// components read so they don't appear open while a boss is still
+	// alive. Initialized true when the map has no bosses (single source
+	// of truth: enemiesRef at mount time). The per-frame loop flips it
+	// when the last boss dies. Reviewer-caught issue from E2 review.
+	const [allBossesDead, setAllBossesDead] = useState(
+		() => !enemiesRef.current.some((e) => e.tier === "boss"),
+	);
 	const enemyMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const pickupMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const barrelMeshes = useRef<Map<number, THREE.Group>>(new Map());
@@ -279,9 +293,11 @@ export function ObjexoomScene({
 			const dxExit = px - map.exitPosition.x;
 			const dyExit = py - map.exitPosition.y;
 			// E2 — portal stays locked until every boss enemy is dead, even
-			// if the key has been collected.
-			const allBossesDead = enemiesRef.current.every((e) => e.tier !== "boss" || e.dead);
-			if (hasKey && allBossesDead && dxExit * dxExit + dyExit * dyExit < TILE * TILE * 0.4) {
+			// if the key has been collected. Sync the reactive flag on the
+			// same tick so the visual portal/door reflects the gate state.
+			const allBossesDeadNow = enemiesRef.current.every((e) => e.tier !== "boss" || e.dead);
+			if (allBossesDeadNow !== allBossesDead) setAllBossesDead(allBossesDeadNow);
+			if (hasKey && allBossesDeadNow && dxExit * dxExit + dyExit * dyExit < TILE * TILE * 0.4) {
 				if (!lastWonAt.current) {
 					lastWonAt.current = true;
 					gameRef.current.onWin();
@@ -600,8 +616,12 @@ export function ObjexoomScene({
 				<SectorMapGeometry map={map} />
 			)}
 			<KeyMarker visible={!hasKey} position={map.keyPosition} />
-			<ExitPortal position={map.exitPosition} unlocked={hasKey} hueIndex={(map.seed >>> 0) % 5} />
-			<RealDoor position={map.exitPosition} unlocked={hasKey} />
+			<ExitPortal
+				position={map.exitPosition}
+				unlocked={hasKey && allBossesDead}
+				hueIndex={(map.seed >>> 0) % 5}
+			/>
+			<RealDoor position={map.exitPosition} unlocked={hasKey && allBossesDead} />
 			<TreasureChest position={map.exitPosition} />
 			{/* H8 — second RealDoor at the original spawn. Opens during the
 			    going_back phase so the player has a clear visual goal to
