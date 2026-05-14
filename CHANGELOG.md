@@ -13,6 +13,12 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+### Changed
+
+- **AUDIO2 — sfx.ts migrated to audioBus.** All 19 play functions now `fire(channelId, t => synth.triggerAttackRelease(...))` through the typed bus. **Channel re-architecture mid-implementation:** AUDIO1's by-cue ChannelId list was incorrect — Tone.js's collision check is per-synth, so channels must be enumerated by SYNTH INSTANCE (`pickup` channel serves both `playPickup` and `playSecretFound` because both target `pickupSynth`). Final 15 channels: pistol/chaingun/shotgun/melee/hurt/death/pickup/door/doorTick/portal/boom/boomNoise/ambientDrone/aggro/hitSting. All `last*FireTime` globals deleted; the manual `jitter()` helper deleted. sfx.ts dropped from ~600 to ~470 lines.
+
+### Added
+
 - **POL27 Atmospheric darkness pass.** `ArchetypeLightPalette` gains `ambientMul`, `directionalMul`, `fogFarTiles` fields. Corridor preserves 1.0/1.0/12 defaults. Tuning per archetype: arena 1.1/1.0/14, courtyard 0.85/1.1/16, **sewer 0.5/0.3/8 (DARK — flashlight is the practical sight distance)**, library 0.8/0.7/11. Applied to `<ambientLight>`, `<directionalLight>`, `<fog>` + the going-back strobe block respects them. Delivers the "you absolutely need the flashlight" feel for sewer maps without changing combat balance.
 - **POL28 Flashlight click polish.** New `flashlightAcquired` event dispatched on pickup. New `playFlashlightClick()` plays a sharp metallic transient on doorTickSynth (MetalSynth) — reads as the flashlight literally being switched on. Existing `triggerFadeRef('flash')` already provides the visual brighten.
 - **POL26 Going-back klaxon overlay (slot).** New `GoingBackOverlay` HUD slot: animated diagonal red caution-stripes (top + bottom 14% bands, scrolling opposite directions over 1.3s loop, mixBlendMode screen) + edge vignette breathing pulse (radial blood[800] gradient, 1.4s loop). New `playKlaxon()` audio sting (A4 → E4 → A4 → E4 on hurtSynth, 660ms) fires once on out → going_back transition via lastPhaseRef guard.

@@ -65,10 +65,10 @@ describe("AUDIO1 — audio bus", () => {
 		fire("pickup", (t) => {
 			pickupT = t;
 		});
-		fire("bossDeath", (t) => {
+		fire("death", (t) => {
 			bossT = t;
 		});
-		// pickup advanced 3 times; bossDeath fired once after, but its
+		// pickup advanced 3 times; death fired once after, but its
 		// timer should be independent — starts from 0 (Tone.now mock),
 		// not from pickup's 0.003.
 		expect(bossT!).toBe(0);

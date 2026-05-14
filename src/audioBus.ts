@@ -23,33 +23,52 @@ import * as Tone from "tone";
  * the union, which forces the enumeration to stay synchronized.
  */
 
+/**
+ * Channels are organized by SYNTH INSTANCE, not by cue, because
+ * Tone.js's "Start time must be strictly greater than previous start
+ * time" check is per-synth — two cues that target the same synth
+ * MUST serialize through the same channel, even when the cues are
+ * logically distinct (e.g. playPickup + playSecretFound both fire
+ * pickupSynth).
+ *
+ * Channel-to-synth mapping (sfx.ts owns the synths):
+ *   pistol         → pistolSynth      (1 cue: playPistol)
+ *   chaingun       → chaingunSynth    (1 cue: playChaingun)
+ *   shotgun        → shotgunSynth     (2 cues: playShotgun, playFlamethrower)
+ *   melee          → meleeSynth       (1 cue: playMelee)
+ *   hurt           → hurtSynth        (2 cues: playHurt, playKlaxon)
+ *   death          → deathSynth       (3 cues: playSkeletonDeath,
+ *                                              playPlayerDeath,
+ *                                              playBossDeath)
+ *   pickup         → pickupSynth      (2 cues: playPickup, playSecretFound)
+ *   door           → doorSynth        (1 cue: playDoor)
+ *   doorTick       → doorTickSynth    (2 cues: playDoorTick,
+ *                                              playFlashlightClick)
+ *   portal         → portalSynth      (1 cue: playPortal)
+ *   boom           → boomSynth        (3 cues: playBoom, playPlayerDeath,
+ *                                              playBossDeath)
+ *   boomNoise      → boomNoise        (3 cues: playBoom, playPlayerDeath,
+ *                                              playBossDeath)
+ *   ambientDrone   → ambientDrone     (1 cue: playBossDeath layer 3)
+ *   aggro          → aggroSynth       (1 cue: playAggroAlert)
+ *   hitSting       → hitStingSynth    (1 cue: playHitSting)
+ */
 export type ChannelId =
-	// Weapon SFX
 	| "pistol"
 	| "chaingun"
 	| "shotgun"
 	| "melee"
-	| "flamethrower"
-	// Player feedback
 	| "hurt"
-	| "hitSting"
-	| "playerDeath"
-	// Enemy feedback
-	| "skeletonDeath"
-	| "bossDeath"
-	// World events
+	| "death"
 	| "pickup"
-	| "klaxon"
-	| "flashlightClick"
-	| "secretFound"
 	| "door"
-	| "portal"
 	| "doorTick"
-	// Shared instruments (multiple cues hit the same synth — need
-	// dedicated channels so cross-cue collisions are jittered).
+	| "portal"
 	| "boom"
 	| "boomNoise"
-	| "ambientDrone";
+	| "ambientDrone"
+	| "aggro"
+	| "hitSting";
 
 /**
  * Per-channel last-fire bookkeeping. Initialized lazily on first

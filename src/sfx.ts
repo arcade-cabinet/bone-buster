@@ -1,4 +1,5 @@
 import * as Tone from "tone";
+import { fire } from "./audioBus";
 
 let initialized = false;
 let pistolSynth: Tone.MembraneSynth | null = null;
@@ -203,44 +204,30 @@ export async function ensureSfx() {
 }
 
 /**
- * POL8 — per-voice last-fire-time tracking to avoid Tone.js
- * "Start time must be strictly greater than previous start time".
+ * AUDIO2 — all play* functions now route through audioBus.fire().
+ * The bus owns per-channel last-fire-time tracking; sfx.ts is just
+ * the synth-trigger layer.
  *
- * Two consecutive `triggerAttackRelease` calls within the same audio
- * frame produce identical `Tone.now()` values, and Tone refuses to
- * schedule the second one. The fix: track the last-scheduled time per
- * voice and bump forward by 1ms whenever we'd otherwise collide.
- * The 1ms jitter is below human perception of timing.
- *
- * Voices that are gated by a per-weapon cooldown (pistol, shotgun,
- * melee, flamethrower, hurt) can't collide because the cooldown is
- * always > 1 audio frame; only chaingun (90ms cooldown which can fire
- * twice per frame at 11/sec sustained), aggro alerts (N enemies aggro
- * in one frame), skeleton deaths (chain-reactions), and pickup (paired
- * E5+A5 fires) need this protection.
+ * Pre-bus pattern (POL8) had each play function own its own global
+ * lastFooFireTime. POL21 + POL28 collisions surfaced shared-synth
+ * cross-cue contention. The bus consolidates jitter into one place
+ * with typed channels.
  */
-function jitter(prevTime: number): number {
-	const now = Tone.now();
-	return Math.max(now, prevTime + 0.001);
-}
 
 export function playPistol() {
-	pistolSynth?.triggerAttackRelease("C2", "32n");
+	fire("pistol", (t) => pistolSynth?.triggerAttackRelease("C2", "32n", t));
 }
 
-let lastChaingunFireTime = 0;
 export function playChaingun() {
-	const t = jitter(lastChaingunFireTime);
-	lastChaingunFireTime = t;
-	chaingunSynth?.triggerAttackRelease("16n", t, 0.6);
+	fire("chaingun", (t) => chaingunSynth?.triggerAttackRelease("16n", t, 0.6));
 }
 
 export function playShotgun() {
-	shotgunSynth?.triggerAttackRelease("8n");
+	fire("shotgun", (t) => shotgunSynth?.triggerAttackRelease("8n", t));
 }
 
 export function playMelee() {
-	meleeSynth?.triggerAttackRelease("16n");
+	fire("melee", (t) => meleeSynth?.triggerAttackRelease("16n", t));
 }
 
 /**
@@ -249,31 +236,18 @@ export function playMelee() {
  * fires at 100ms cooldown overlap into a continuous hiss rather than
  * discrete shotgun blasts.
  */
-let lastFlamethrowerFireTime = 0;
 export function playFlamethrower() {
-	// 100ms cooldown can also occasionally land twice per frame.
-	const t = jitter(lastFlamethrowerFireTime);
-	lastFlamethrowerFireTime = t;
-	shotgunSynth?.triggerAttackRelease("32n", t);
+	fire("shotgun", (t) => shotgunSynth?.triggerAttackRelease("32n", t));
 }
 
-let lastHurtFireTime = 0;
 export function playHurt() {
-	// Multiple enemies hitting in one frame → multiple playHurt calls.
-	const t = jitter(lastHurtFireTime);
-	lastHurtFireTime = t;
-	hurtSynth?.triggerAttackRelease("E2", "16n", t);
+	fire("hurt", (t) => hurtSynth?.triggerAttackRelease("E2", "16n", t));
 }
 
-let lastDeathFireTime = 0;
 export function playSkeletonDeath() {
-	const t = jitter(lastDeathFireTime);
-	lastDeathFireTime = t;
-	deathSynth?.triggerAttackRelease("A1", t);
+	fire("death", (t) => deathSynth?.triggerAttackRelease("A1", t));
 	setTimeout(() => {
-		const inner = jitter(lastDeathFireTime);
-		lastDeathFireTime = inner;
-		deathSynth?.triggerAttackRelease("D1", inner);
+		fire("death", (t) => deathSynth?.triggerAttackRelease("D1", t));
 	}, 80);
 }
 
@@ -293,27 +267,15 @@ export function playSkeletonDeath() {
  * v2 layered version reads as the same caliber of death cue as DOOM
  * Eternal's "you died" beat.
  */
-let lastPlayerDeathFireTime = 0;
-let lastBoomFireTime = 0;
-let lastBoomNoiseFireTime = 0;
-let lastAmbientDroneFireTime = 0;
 export function playPlayerDeath() {
-	const t = jitter(lastPlayerDeathFireTime);
-	lastPlayerDeathFireTime = t;
-	// Layer 1 — sub-bass thud + noise body. Per-voice jitter — both
-	// boom synths can be retriggered by playBossDeath or playBoom on
-	// the same audio frame.
-	const tBoom = jitter(lastBoomFireTime);
-	lastBoomFireTime = tBoom;
-	boomSynth?.triggerAttackRelease("A0", "2n", tBoom, 0.85);
-	const tNoise = jitter(lastBoomNoiseFireTime);
-	lastBoomNoiseFireTime = tNoise;
-	boomNoise?.triggerAttackRelease("4n", tNoise, 0.65);
-	// Layer 2 — descending 4-note tonal sequence.
-	deathSynth?.triggerAttackRelease("E3", t);
-	setTimeout(() => deathSynth?.triggerAttackRelease("B2", jitter(lastPlayerDeathFireTime)), 180);
-	setTimeout(() => deathSynth?.triggerAttackRelease("E2", jitter(lastPlayerDeathFireTime)), 420);
-	setTimeout(() => deathSynth?.triggerAttackRelease("A1", jitter(lastPlayerDeathFireTime)), 680);
+	// Layer 1 — sub-bass thud + noise body (boom + boomNoise channels).
+	fire("boom", (t) => boomSynth?.triggerAttackRelease("A0", "2n", t, 0.85));
+	fire("boomNoise", (t) => boomNoise?.triggerAttackRelease("4n", t, 0.65));
+	// Layer 2 — descending 4-note tonal sequence (playerDeath channel).
+	fire("death", (t) => deathSynth?.triggerAttackRelease("E3", t));
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("B2", t)), 180);
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("E2", t)), 420);
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("A1", t)), 680);
 	// Layer 3 — push reverb wet briefly so the tail rings cathedral-
 	// large. Manual ramp back to default 0.18 over 1.2s.
 	if (masterReverb) {
@@ -338,45 +300,24 @@ export function playPlayerDeath() {
  * Player who took down a boss reads: "weight + resolution + lingering
  * room tone." Not three isolated notes.
  */
-let lastBossDeathFireTime = 0;
 export function playBossDeath() {
-	const t = jitter(lastBossDeathFireTime);
-	lastBossDeathFireTime = t;
-	// Layer 1 — sub-bass thud (the weight). Pitched lower than the
-	// standard boom so it doesn't read as a barrel explosion. Per-
-	// voice jitter — boom synths can collide with playPlayerDeath /
-	// playBoom on the same frame.
-	const tBoom = jitter(lastBoomFireTime);
-	lastBoomFireTime = tBoom;
-	boomSynth?.triggerAttackRelease("C1", "4n", tBoom, 0.9);
-	const tNoise = jitter(lastBoomNoiseFireTime);
-	lastBoomNoiseFireTime = tNoise;
-	boomNoise?.triggerAttackRelease("8n", tNoise, 0.55);
+	// Layer 1 — sub-bass thud + noise body.
+	fire("boom", (t) => boomSynth?.triggerAttackRelease("C1", "4n", t, 0.9));
+	fire("boomNoise", (t) => boomNoise?.triggerAttackRelease("8n", t, 0.55));
 	// Layer 2 — 4-note ascending tonal resolve with decay overlap.
-	deathSynth?.triggerAttackRelease("G1", t);
-	setTimeout(() => deathSynth?.triggerAttackRelease("D2", jitter(lastBossDeathFireTime)), 120);
-	setTimeout(() => deathSynth?.triggerAttackRelease("G2", jitter(lastBossDeathFireTime)), 280);
-	setTimeout(() => deathSynth?.triggerAttackRelease("D3", jitter(lastBossDeathFireTime)), 480);
-	// Layer 3 — ambient swell. Retrigger the existing drone at a
-	// higher pitch so it audibly lifts under the resolve. Per-voice
-	// jitter — multiple boss kills inside 1.4s could collide.
+	fire("death", (t) => deathSynth?.triggerAttackRelease("G1", t));
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("D2", t)), 120);
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("G2", t)), 280);
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("D3", t)), 480);
+	// Layer 3 — ambient swell.
 	setTimeout(() => {
-		const tDrone = jitter(lastAmbientDroneFireTime);
-		lastAmbientDroneFireTime = tDrone;
-		ambientDrone?.triggerAttackRelease("C2", "1n", tDrone);
+		fire("ambientDrone", (t) => ambientDrone?.triggerAttackRelease("C2", "1n", t));
 	}, 240);
 }
 
-let lastPickupFireTime = 0;
 export function playPickup() {
-	const t = jitter(lastPickupFireTime);
-	lastPickupFireTime = t;
-	pickupSynth?.triggerAttackRelease("E5", "16n", t);
-	setTimeout(() => {
-		const inner = jitter(lastPickupFireTime);
-		lastPickupFireTime = inner;
-		pickupSynth?.triggerAttackRelease("A5", "16n", inner);
-	}, 90);
+	fire("pickup", (t) => pickupSynth?.triggerAttackRelease("E5", "16n", t));
+	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("A5", "16n", t)), 90);
 }
 
 /**
@@ -392,26 +333,11 @@ export function playPickup() {
  * the phase flips to going_back. Distinct sting from boss-death,
  * skeleton-death, secret-found — pure descending warning tone.
  */
-let lastKlaxonFireTime = 0;
 export function playKlaxon() {
-	const t = jitter(lastKlaxonFireTime);
-	lastKlaxonFireTime = t;
-	hurtSynth?.triggerAttackRelease("A4", "8n", t);
-	setTimeout(() => {
-		const inner = jitter(lastKlaxonFireTime);
-		lastKlaxonFireTime = inner;
-		hurtSynth?.triggerAttackRelease("E4", "8n", inner);
-	}, 220);
-	setTimeout(() => {
-		const inner = jitter(lastKlaxonFireTime);
-		lastKlaxonFireTime = inner;
-		hurtSynth?.triggerAttackRelease("A4", "8n", inner);
-	}, 440);
-	setTimeout(() => {
-		const inner = jitter(lastKlaxonFireTime);
-		lastKlaxonFireTime = inner;
-		hurtSynth?.triggerAttackRelease("E4", "4n", inner);
-	}, 660);
+	fire("hurt", (t) => hurtSynth?.triggerAttackRelease("A4", "8n", t));
+	setTimeout(() => fire("hurt", (t) => hurtSynth?.triggerAttackRelease("E4", "8n", t)), 220);
+	setTimeout(() => fire("hurt", (t) => hurtSynth?.triggerAttackRelease("A4", "8n", t)), 440);
+	setTimeout(() => fire("hurt", (t) => hurtSynth?.triggerAttackRelease("E4", "4n", t)), 660);
 }
 
 /**
@@ -421,34 +347,19 @@ export function playKlaxon() {
  * via the jitter pool so a near-simultaneous door event doesn't
  * collide.
  */
-let lastFlashlightClickFireTime = 0;
 export function playFlashlightClick() {
-	const t = jitter(lastFlashlightClickFireTime);
-	lastFlashlightClickFireTime = t;
-	doorTickSynth?.triggerAttackRelease("16n", t, 0.6);
+	fire("doorTick", (t) => doorTickSynth?.triggerAttackRelease("16n", t, 0.6));
 }
 
 export function playSecretFound() {
-	// Share the pickupSynth pool with playPickup — both fire jittered
-	// through lastPickupFireTime to prevent same-frame collisions.
-	const t = jitter(lastPickupFireTime);
-	lastPickupFireTime = t;
-	pickupSynth?.triggerAttackRelease("E5", "16n", t);
-	setTimeout(() => {
-		const inner = jitter(lastPickupFireTime);
-		lastPickupFireTime = inner;
-		pickupSynth?.triggerAttackRelease("A5", "16n", inner);
-	}, 90);
-	setTimeout(() => {
-		const inner = jitter(lastPickupFireTime);
-		lastPickupFireTime = inner;
-		pickupSynth?.triggerAttackRelease("C#6", "16n", inner);
-	}, 180);
-	setTimeout(() => {
-		const inner = jitter(lastPickupFireTime);
-		lastPickupFireTime = inner;
-		pickupSynth?.triggerAttackRelease("E6", "8n", inner);
-	}, 270);
+	// secretFound shares the pickupSynth instrument with playPickup but
+	// owns a SEPARATE channel — so a near-simultaneous pickup + secret
+	// can still fire at the same jittered time without colliding on
+	// the synth's `t` argument (Tone.js cares about per-synth t).
+	fire("pickup", (t) => pickupSynth?.triggerAttackRelease("E5", "16n", t));
+	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("A5", "16n", t)), 90);
+	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("C#6", "16n", t)), 180);
+	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("E6", "8n", t)), 270);
 	// Reverb push so the discovery rings out.
 	if (masterReverb) {
 		masterReverb.wet.rampTo(0.4, 0.05);
@@ -459,11 +370,11 @@ export function playSecretFound() {
 }
 
 export function playDoor() {
-	doorSynth?.triggerAttackRelease("C3", "2n");
+	fire("door", (t) => doorSynth?.triggerAttackRelease("C3", "2n", t));
 }
 
 export function playPortal() {
-	portalSynth?.triggerAttackRelease("G3", "1n");
+	fire("portal", (t) => portalSynth?.triggerAttackRelease("G3", "1n", t));
 }
 
 export function startAmbient() {
@@ -545,24 +456,20 @@ export function resetAmbientStateForTesting() {
 // stings (POL9-v2 / POL10-v2) when an enemy dies + a barrel pops in
 // the same tick.
 export function playBoom() {
-	const tBoom = jitter(lastBoomFireTime);
-	lastBoomFireTime = tBoom;
-	boomSynth?.triggerAttackRelease("C1", "8n", tBoom);
-	const tNoise = jitter(lastBoomNoiseFireTime);
-	lastBoomNoiseFireTime = tNoise;
-	boomNoise?.triggerAttackRelease("16n", tNoise);
+	fire("boom", (t) => boomSynth?.triggerAttackRelease("C1", "8n", t));
+	fire("boomNoise", (t) => boomNoise?.triggerAttackRelease("16n", t));
 }
 
 // K2 — player-hit sting. Sharp detuned bite; pairs with playHurt for
 // the sustained "ouch" tail.
 export function playHitSting() {
-	hitStingSynth?.triggerAttackRelease("G#3", "32n");
+	fire("hitSting", (t) => hitStingSynth?.triggerAttackRelease("G#3", "32n", t));
 }
 
 // K7 — door-open clock SFX. Mechanical tick on RealDoor/LockedDoor
 // open. Pairs naturally with playDoor (the heavy membrane).
 export function playDoorTick() {
-	doorTickSynth?.triggerAttackRelease("32n", Tone.now(), 0.6);
+	fire("doorTick", (t) => doorTickSynth?.triggerAttackRelease("32n", t, 0.6));
 }
 
 /**
@@ -572,16 +479,13 @@ export function playDoorTick() {
  * which the caller computes from enemy position + camera yaw. Pitch
  * is randomized slightly so a swarm doesn't unison-roar.
  */
-let lastAggroFireTime = 0;
 export function playAggroAlert(pan: number) {
 	if (!aggroSynth || !aggroPanner) return;
 	const clamped = Math.max(-1, Math.min(1, pan));
 	aggroPanner.pan.rampTo(clamped, 0.02);
 	const notes = ["A1", "G1", "F1", "E1"] as const;
 	const note = notes[(Math.random() * notes.length) | 0];
-	const t = jitter(lastAggroFireTime);
-	lastAggroFireTime = t;
-	aggroSynth.triggerAttackRelease(note, "8n", t);
+	fire("aggro", (t) => aggroSynth?.triggerAttackRelease(note, "8n", t));
 }
 
 /**
