@@ -692,15 +692,10 @@ export function ObjexoomScene({
 			    skip-radius 4 from spawn/exit/key). Reads as "overrun." */}
 			<DebrisField debris={debrisRef.current} />
 
-			{/* COV6 step-2 — wall-face decals. Scatter data is computed
-			    above; the renderer is gated off in this commit because
-			    the decal GLBs are full meshes (posters/graffiti exported
-			    from Blender with their own scale + origin), not flat
-			    quads, and mounting them at sector edges produced view-
-			    blocking artifacts. Step-2.1 will bound each decal to a
-			    wall-quad billboard rather than rendering the raw GLB.
-			    The scatter data + tests stay live as the asset-enabler. */}
-			{false && <DecalField decals={decalsRef.current} />}
+			{/* COV6 step-2.1 — wall-face decals as billboard quads with
+			    the GLB's primary texture extracted onto a 1.2×0.8 plane
+			    aligned to the sector edge normal. */}
+			<DecalField decals={decalsRef.current} />
 
 			{enemiesRef.current.map((enemy) => (
 				<EnemyMesh
