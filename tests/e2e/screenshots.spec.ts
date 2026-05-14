@@ -82,10 +82,7 @@ async function waitForHooks(page: Page): Promise<void> {
 // runIsolatedRouteScreenshot does — guarantees the GL backend flags
 // take effect (Playwright's `chromium` project doesn't accept --use-angle
 // per-context, only per-launch).
-async function withGame(
-	baseURL: string,
-	fn: (page: Page) => Promise<void>,
-): Promise<void> {
+async function withGame(baseURL: string, fn: (page: Page) => Promise<void>): Promise<void> {
 	const browser = await chromium.launch({ headless: true, args: BROWSER_ARGS });
 	const context = await browser.newContext({
 		baseURL,
@@ -96,8 +93,7 @@ async function withGame(
 	// Block external font loads — they stall page.screenshot's font-wait.
 	await page.route(
 		(url) =>
-			url.hostname.includes("fonts.googleapis.com") ||
-			url.hostname.includes("fonts.gstatic.com"),
+			url.hostname.includes("fonts.googleapis.com") || url.hostname.includes("fonts.gstatic.com"),
 		(route) => route.abort(),
 	);
 	try {
@@ -113,7 +109,7 @@ test.beforeAll(async () => {
 });
 
 test.describe("OBJEXOOM screenshots (N1)", () => {
-	test("01 landing — DOOM menu", async ({}, testInfo) => {
+	test("01 landing — DOOM menu", async (_fixtures, testInfo) => {
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -126,7 +122,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("02 ingame — flashlight ON (full lighting)", async ({}, testInfo) => {
+	test("02 ingame — flashlight ON (full lighting)", async (_fixtures, testInfo) => {
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -135,15 +131,11 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(
-					window as unknown as { __objexoom: ObjexoomDebugHooks }
-				).__objexoom.start();
+				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			await page.evaluate(() => {
-				(
-					window as unknown as { __objexoom: ObjexoomDebugHooks }
-				).__objexoom.collectAllPickups();
+				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.collectAllPickups();
 			});
 			// Settle frames for SpotLight + shadow map.
 			await page.waitForTimeout(750);
@@ -151,7 +143,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("03 ingame — flashlight OFF (dark mode)", async ({}, testInfo) => {
+	test("03 ingame — flashlight OFF (dark mode)", async (_fixtures, testInfo) => {
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -160,9 +152,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(
-					window as unknown as { __objexoom: ObjexoomDebugHooks }
-				).__objexoom.start();
+				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			await page.waitForTimeout(500);
@@ -170,7 +160,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("04 going-back strobe — H8/J5", async ({}, testInfo) => {
+	test("04 going-back strobe — H8/J5", async (_fixtures, testInfo) => {
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -179,9 +169,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(
-					window as unknown as { __objexoom: ObjexoomDebugHooks }
-				).__objexoom.start();
+				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			// Teleport AWAY from spawn before flipping to going_back —
@@ -191,8 +179,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			// trip onReachSpawn and the LEVEL COMPLETE overlay would
 			// render instead of the strobing going_back walk back.
 			await page.evaluate(() => {
-				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks })
-					.__objexoom;
+				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
 				const state = hooks.getState() as {
 					playerSpawn?: { x: number; y: number };
 					exitPosition?: { x: number; y: number };
@@ -219,7 +206,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		});
 	});
 
-	test("05 mission complete — full run cleared", async ({}, testInfo) => {
+	test("05 mission complete — full run cleared", async (_fixtures, testInfo) => {
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
 				? testInfo.project.use.baseURL
@@ -228,16 +215,12 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(
-					window as unknown as { __objexoom: ObjexoomDebugHooks }
-				).__objexoom.start();
+				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			for (let i = 0; i < 6; i += 1) {
 				await page.evaluate(() => {
-					const hooks = (
-						window as unknown as { __objexoom: ObjexoomDebugHooks }
-					).__objexoom;
+					const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
 					hooks.killAllEnemies();
 					hooks.collectKey();
 					hooks.triggerWin();
@@ -245,8 +228,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 				await page.waitForTimeout(900);
 			}
 			await page.evaluate(() => {
-				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks })
-					.__objexoom;
+				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
 				const state = hooks.getState() as {
 					playerSpawn?: { x: number; y: number };
 				};

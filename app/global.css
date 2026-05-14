@@ -16,13 +16,7 @@ body,
 	height: 100%;
 	background: #07060f;
 	color: #f3eedd;
-	font-family:
-		ui-sans-serif,
-		system-ui,
-		-apple-system,
-		BlinkMacSystemFont,
-		"Segoe UI",
-		sans-serif;
+	font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 	overflow: hidden;
 	-webkit-font-smoothing: antialiased;
 }

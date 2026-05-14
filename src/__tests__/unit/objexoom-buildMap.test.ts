@@ -22,12 +22,14 @@ describe("objexoom buildMap (A6)", () => {
 		it(`level=${level} returns a sector map (E1M${level})`, () => {
 			const map = buildMap(0, level satisfies LevelChoice);
 			expect(isSectorMap(map)).toBe(true);
+			if (!isSectorMap(map)) throw new Error("unreachable");
 			expect(map.sectors.length).toBeGreaterThan(0);
 		});
 
 		it(`level=${level} ignores the seed argument`, () => {
 			const a = buildMap(1, level satisfies LevelChoice);
 			const b = buildMap(999_999, level satisfies LevelChoice);
+			if (!isSectorMap(a) || !isSectorMap(b)) throw new Error("unreachable");
 			expect(a.sectors).toEqual(b.sectors);
 		});
 	}

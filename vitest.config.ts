@@ -1,6 +1,7 @@
 import path from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
+import type { BrowserProviderOption } from "vitest/node";
 
 export default defineConfig({
 	plugins: [react()],
@@ -32,7 +33,7 @@ export default defineConfig({
 					include: ["src/__tests__/browser/**/*.test.{ts,tsx}"],
 					browser: {
 						enabled: true,
-						provider: "playwright",
+						provider: "playwright" as unknown as BrowserProviderOption,
 						headless: true,
 						instances: [{ browser: "chromium" }],
 					},
