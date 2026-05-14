@@ -26,6 +26,7 @@ import { addObjexoomListener, dispatch } from "./events";
 import { type LampInstance, spawnLamps } from "./lampScatter";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
+import { type DebrisInstance, spawnDebris } from "./scatter/debrisScatter";
 import { type FloorTileInstance, spawnFloorTiles } from "./scatter/floorTiles";
 import { type PropInstance, spawnProps } from "./scatter/propScatter";
 import {
@@ -33,6 +34,7 @@ import {
 	BarrelMesh,
 	BodyPartField,
 	BulletField,
+	DebrisField,
 	EnemyMesh,
 	ExitPortal,
 	Flashlight,
@@ -125,6 +127,10 @@ export function ObjexoomScene({
 	// opts in via `useModularFloor: true`. Currently only refLevel 0
 	// sets the flag; the procedural floor stays everywhere else.
 	const floorTilesRef = useRef<FloorTileInstance[]>(spawnFloorTiles(map));
+	// COV5 step-2 — sector-body debris scatter. 3-5 piles per non-spawn
+	// sector, 4-tile skip-radius from anchors. Reads as "this place has
+	// been overrun."
+	const debrisRef = useRef<DebrisInstance[]>(spawnDebris(map));
 	// E2 — reactive "all bosses dead" flag that the visual portal/door
 	// components read so they don't appear open while a boss is still
 	// alive. Initialized true when the map has no bosses (single source
@@ -676,6 +682,10 @@ export function ObjexoomScene({
 			{/* COV3 step-1 — modular asphalt floor tiles. Empty unless
 			    the map opts in via `useModularFloor: true`. */}
 			<FloorTileField tiles={floorTilesRef.current} />
+
+			{/* COV5 step-2 — sector-body debris scatter (3-5 per sector,
+			    skip-radius 4 from spawn/exit/key). Reads as "overrun." */}
+			<DebrisField debris={debrisRef.current} />
 
 			{enemiesRef.current.map((enemy) => (
 				<EnemyMesh
