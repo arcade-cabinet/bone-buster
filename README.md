@@ -1,6 +1,6 @@
 ---
 title: OBJEXOOM
-updated: 2026-05-13
+updated: 2026-05-14
 status: current
 domain: onboarding
 ---
@@ -37,10 +37,13 @@ canvas-keyed input is hostile to scripted automation.
 | `pnpm check` | TypeScript no-emit |
 | `pnpm lint` | Biome lint |
 | `pnpm test` | Vitest unit suite (163 tests in 12 suites) |
-| `pnpm test:browser` | Vitest browser suite (real Chromium via Playwright) |
+| `pnpm test:browser` | Vitest browser suite (real Chromium via Playwright, 5 tests) |
 | `pnpm test:e2e` | Full Playwright e2e suite |
 | `pnpm test:e2e:screenshots` | Regenerate the canonical 5 screenshots under `test-results/objexoom-screenshots/` |
+| `pnpm verify` | The merge gate: lint + check + test + test:browser + assets:verify-runtime |
 | `pnpm assets:fbx-to-glb` | Re-bake FBX sources from `references/` into `public/assets/models/` |
+| `pnpm assets:verify-runtime` | Audit every GLB referenced by `models.ts`: exists at the resolved path, within per-category size budgets (22 URLs / 8.01 MB total today) |
+| `pnpm assets:prepare-wasm` | Sync WASM artifacts from `node_modules` to `public/assets/wasm/` (runs automatically at postinstall + prebuild) |
 
 ## Layout
 

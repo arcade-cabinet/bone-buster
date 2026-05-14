@@ -5,6 +5,12 @@ status: current
 domain: quality
 ---
 
+> **Parity reached.** Every reference mechanic is matched or elevated.
+> The last critical gap (PA16 — adaptive resolution) shipped in
+> 57dd8fa. The remaining shell-ejection-on-chaingun shape (PA9b) is a
+> partial-→-full upgrade, not a missing mechanic. Persistent save/load
+> ships via sql.js per E9.
+
 # DOOM reference clone parity audit
 
 Source: [`reference-codebases/js13k2019-yet-another-doom-clone/`](https://github.com/carlini/js13k2019-yet-another-doom-clone)
@@ -56,7 +62,7 @@ every reference mechanic and whether OBJEXOOM matches it.
 | Shell ejection | `Shell` class (chaingun shells) | `ShellEjectField` (shotgun only currently) | ⚠️ Partial — extend to chaingun |
 | Ammo cost | None (chaingun unlimited) | Per-weapon (chaingun infinite, shotgun consumes) | 🚀 Elevated |
 | Viewmodel | Hand-mesh `chaingun = [...]` | Real GLB per weapon, auto-bbox normalized | 🚀 Elevated |
-| Melee | None | **Pending** — 5 melee GLBs ready (axe/knife/machete/chainsaw/meathook) | 🚀 Elevated (queued) |
+| Melee | None | BLADE slot (machete viewmodel, 1.6-tile range, 55 dmg, infinite ammo, whoosh sfx). 4 additional melee GLBs staged for future tuning. | 🚀 Elevated |
 
 ## Enemies
 
@@ -153,7 +159,7 @@ every reference mechanic and whether OBJEXOOM matches it.
 | Body-part shards | 4-6 cubes per enemy death | `BodyPartField` same shape | ✅ Present |
 | Bullet sphere | One amber dot | `BulletField` pooled glowing spheres | ✅ Present |
 | Treasure chest at exit | None | `TreasureChest` decorative chest w/ brass band + lock | 🚀 Elevated |
-| Adaptive resolution | `set_resolution(-1)` on level transition | **Pending** — PA16, dynamic `gl.setPixelRatio` on low FPS | ❌ Missing |
+| Adaptive resolution | `set_resolution(-1)` on level transition | `AdaptiveResolution` r3f component, 60-frame rolling FPS sampler, 2-window debounce, drops `gl.setPixelRatio` toward 0.5 floor on sustained <30 FPS / raises toward devicePixelRatio cap on sustained >55 FPS. Debug HUD readout under `?objexoomDebug`. | 🚀 Elevated |
 | Wall variant texture | None | 3-variant tinted box per cell | 🚀 Elevated |
 
 ## Run / progression
@@ -164,28 +170,26 @@ every reference mechanic and whether OBJEXOOM matches it.
 | HP reset between levels | health=5 on death restart | Per-level HP preserved on advance, reset on death | 🚀 Elevated |
 | Run stats | None | Per-run kills + damage + time + levels cleared | 🚀 Elevated |
 | Difficulty cycle | Beat normal → unlocks hard | 4 tiers selectable from landing | 🚀 Elevated |
-| Save / load | None | **Pending** — sql.js persisted run stats | 🚀 Elevated (queued) |
+| Save / load | None | sql.js-backed `runHistory.ts`; one row per run (started_at, ended_at, levels_cleared, total_kills, total_damage_taken, level_set, outcome). Persisted as base64 in localStorage; public API: `insert`, `listRecent`, `bestRun`, `runCount`, `clear`. | 🚀 Elevated |
 
 ## Outstanding gaps (failures to fix)
 
-Sorted by priority:
+1. ⚠️ **Shell ejection only on shotgun (PA9b)** — extend `ShellEjectField` to chaingun fires (reference ejects on every chaingun shot). Acceptance criterion + asset list lives in [`docs/PRD.md` § PA9b](./PRD.md#pa9b).
+2. ⚠️ **Test 5 visual quality** — `mission-complete.png` currently captures mid-transition (the loop ran out of debug-hook stability before reaching the actual WIN overlay). Re-record after PARITY items below land.
 
-1. ❌ **Adaptive resolution (PA16)** — `gl.setPixelRatio` on low FPS. Mobile + low-tier devices need this or they tank. Reference does it crudely; OBJEXOOM must do it deliberately.
-2. ⚠️ **Shell ejection only on shotgun** — extend `ShellEjectField` to chaingun fires (reference ejects on every chaingun shot).
-3. ⚠️ **Test 5 visual quality** — `mission-complete.png` currently captures mid-transition (the loop ran out of debug-hook stability before reaching the actual WIN overlay). Re-record after PARITY items below land.
+The first one is "partial → full" not "missing", which is why the parity-reached banner at the top stands.
 
 ## Elevation queue (beyond parity)
 
-Tracked in [`ELEVATION.md`](./ELEVATION.md). Short list:
+Tracked in [`ELEVATION.md`](./ELEVATION.md) with full specs in
+[`PRD.md`](./PRD.md). Remaining work (Phase 1 complete):
 
-- Melee weapon slot (5 GLBs ready)
-- Boss enemies (rigged horror)
-- Decorative sector scatter (barrels, chains, lamps, traps)
-- Interactive props (destructible barrels, switches, secret walls)
-- Persistent run history (sql.js)
-- 3D HUD elements (floating key model)
-- Per-level ambient creature SFX
-- Real shadow-projecting lamps on lit props
+- **Phase 2 (mechanical):** E5 destructible barrels, E6 switches + secret walls
+- **Phase 3 (visual):** E2 bosses, E3 decorative scatter, E4 lit lamps with shadow projection
+- **Phase 4 (polish + variety):** E7 water/sewer biome, E8 flamethrower weapon, E10 3D HUD elements, E11 per-level ambient SFX layers, E13 procedural archetype deepening
+
+Shipped this branch: E1 melee, E9 sql.js run history, E12 adaptive
+resolution. Phase 1 of elevation queue complete.
 
 ## Verification
 

@@ -1,6 +1,6 @@
 ---
 title: Standards
-updated: 2026-05-13
+updated: 2026-05-14
 status: current
 domain: quality
 ---
@@ -39,7 +39,8 @@ preference, the standards win.
 - **Reference parity.** OBJEXOOM is a port of the structure of
   `reference-codebases/js13k2019-yet-another-doom-clone` (gitignored;
   developer-local). Behavior gaps vs the reference are bugs, not
-  features.
+  features. **100% reference parity reached** as of E12 (57dd8fa).
+  All forward work is **elevation** per [`docs/PRD.md`](./docs/PRD.md).
 - **Visuals are first-class.** Every render/UI/asset change must
   re-shoot `pnpm test:e2e:screenshots` AND be visually inspected.
   Visual blindness is a process bug — fix the harness if you can't

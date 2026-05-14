@@ -1,6 +1,6 @@
 ---
 title: Changelog
-updated: 2026-05-13
+updated: 2026-05-14
 status: current
 domain: history
 ---
@@ -8,6 +8,20 @@ domain: history
 # Changelog
 
 All notable changes to this project will be documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Conventional Commits](https://www.conventionalcommits.org).
+
+## [Unreleased]
+
+### Added
+
+- **E1 Melee weapon slot.** BLADE (machete viewmodel), slot 1, 1.6-tile range, 55 dmg, 420ms cooldown, infinite ammo. Procedural white-noise whoosh SFX via `playMelee`. `baseOwnedWeapons()` helper consolidates the per-run loadout literals. ([8d71475](https://github.com/objexiv/objexoom/commit/8d71475))
+- **E9 Persistent run history.** `src/runHistory.ts` opens a sql.js DB lazily on first run-end, serialized as base64 in localStorage. Schema includes start/end ts, levels cleared, total kills, total damage taken, level set, outcome. Public API: `insert`, `listRecent`, `bestRun`, `runCount`, `clear`. Real-Chromium browser test covers persistence across reopens. ([5d74778](https://github.com/objexiv/objexoom/commit/5d74778))
+- **E12 Adaptive resolution.** `src/scene/effects/AdaptiveResolution.tsx` — 60-frame rolling FPS sampler with 2-window debounce drops `gl.setPixelRatio` toward 0.5 floor on sustained <30 FPS, raises toward `devicePixelRatio` cap on sustained >55 FPS. Debug HUD readout `FPS N • DPR x.xx` under `?objexoomDebug`. **Closes the last critical-tier reference parity gap.** ([57dd8fa](https://github.com/objexiv/objexoom/commit/57dd8fa))
+- **Asset infra.** `scripts/prepare-web-wasm.mjs` (postinstall + prebuild) and `scripts/verify-runtime-assets.mjs` (CI gate, 22 URLs / 8.01 MB total). ([81ed15d](https://github.com/objexiv/objexoom/commit/81ed15d))
+- **`docs/PRD.md`** comprehensive remaining-work spec covering Phases 2-4 of the elevation roadmap plus B1.7/B2.1/B2.4/DS.7/AO.4-6/PA9b/PA-MOD7/INF2.
+
+### Changed
+
+- **100% reference parity reached.** PARITY.md banner updated; only "partial → full" upgrade items remain (shell ejection on chaingun fires).
 
 ## [0.2.0](https://github.com/objexiv/objexoom/compare/v0.1.0...v0.2.0) (2026-05-14)
 

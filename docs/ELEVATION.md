@@ -8,36 +8,32 @@ domain: product
 # Elevation roadmap
 
 The DOOM reference clone ([`PARITY.md`](./PARITY.md)) is the floor,
-not the ceiling. OBJEXOOM is at or above parity on every mechanic
-except adaptive resolution + a few shell-ejection edge cases. The
-real work is now **elevation** — features the reference's 13 KB
-budget couldn't dream of, leveraging the 1,400+ GLB depth in
+not the ceiling. OBJEXOOM **reached 100% reference parity** with
+57dd8fa (E12 adaptive resolution). The real work is now
+**elevation** — features the reference's 13 KB budget couldn't dream
+of, leveraging the 1,400+ GLB depth in
 [`ASSET_INVENTORY.md`](./ASSET_INVENTORY.md).
 
 Each section below proposes a feature, the assets it unlocks, the
 engine work required, and a rough priority.
 
-## E1 — Full melee weapon slot
+**Shipped this branch (Phase 1 complete):**
 
-**Status:** Assets ready, engine partial.
+- ✅ **E1** Full melee weapon slot — 8d71475
+- ✅ **E9** sql.js persistent run history — 5d74778
+- ✅ **E12** Adaptive resolution via `gl.setPixelRatio` — 57dd8fa
 
-OBJEXOOM ships 5 melee GLBs already (`axe`, `knife`, `machete`,
-`chainsaw`, `meathook`) but they aren't wired into the weapon
-switcher. Adding a 4th `weapon: "melee"` slot with sub-skin variants
-gives the player a starting-weapon-as-fallback when ammo runs out and
-opens the door to gore-heavy close-range gameplay.
+## E1 — Full melee weapon slot ✅ SHIPPED 8d71475
 
-Required:
+`WeaponId` union now `"melee" | "pistol" | "chaingun" | "shotgun"`.
+BLADE slot (machete viewmodel), 1.6-tile range, 55 dmg, 420ms
+cooldown, infinite ammo. Procedural white-noise whoosh + tail SFX
+via `playMelee` in `sfx.ts`. `baseOwnedWeapons()` helper consolidates
+the per-run loadout. 4 extra melee GLBs (axe, knife, chainsaw,
+meathook) stay staged for future variant cycling.
 
-- `WeaponId` union → `"pistol" | "chaingun" | "shotgun" | "melee"`
-- New `WeaponSpec` with `rangeTiles ≈ 1.5`, instant cooldown, infinite
-  ammo, swing animation on viewmodel
-- Per-skin pick (cycle through axe/knife/machete/etc by level seed,
-  similar to enemy roster)
-- HUD hotkey `4`
-- New SFX: `playSwoosh` + `playMeleeHit`
-
-**Priority:** High. Mechanically simple, huge gameplay payoff.
+Open follow-ups: per-skin seeded cycling (axe vs machete by level
+seed), explicit melee-hit SFX distinct from the swing whoosh.
 
 ## E2 — Bosses with rigged horror animations
 
@@ -171,26 +167,24 @@ Required:
 
 **Priority:** Medium.
 
-## E9 — Persistent run history (sql.js)
+## E9 — Persistent run history (sql.js) ✅ SHIPPED 5d74778
 
-**Status:** Asset ready (sql.js), infra missing.
+`src/runHistory.ts` opens a sql.js DB lazily on first run-end. Schema:
+one `runs` table keyed by autoincrement id with `started_at`,
+`ended_at`, `levels_cleared`, `total_kills`, `total_damage_taken`,
+`level_set`, `outcome`. Indexed by `ended_at DESC`. Serialized as
+base64 in `localStorage["objexoom.runHistory"]` — single key, single
+blob, rewritten on every insert. WASM loaded from
+`<base>/assets/wasm/sql-wasm.wasm` via the `prepare-web-wasm.mjs`
+postinstall + prebuild hook.
 
-Reference resets every browser refresh. OBJEXOOM should persist:
+Public API: `insert(record, now)`, `listRecent(limit)`, `bestRun()`,
+`runCount()`, `clear()`. ObjexoomShell records on every terminal
+status transition (`dead | won`), gated by a `runStartAt` ref to
+avoid double-insert under React 19 strict-mode.
 
-- High-score table (cleared levels × difficulty)
-- Total kills across all runs
-- Fastest sub-N-second per level
-- Difficulty unlocks
-
-Required:
-
-- Add `sql.js` dep, wire WASM via the postinstall pattern from
-  `arcade-cabinet/voxel-realms/scripts/prepare-web-wasm.mjs`
-- New `src/persistence.ts` w/ schema, query API
-- HUD: SCORES panel on landing, last-run summary overlay on death
-
-**Priority:** Medium. Mostly low-risk infra; pairs well with the
-WASM-sync task #53.
+Open follow-ups: landing-screen "best run" chip, debug-HUD recent-runs
+list, per-difficulty leaderboards.
 
 ## E10 — 3D HUD elements
 
@@ -225,22 +219,27 @@ Required:
 
 **Priority:** Medium.
 
-## E12 — Adaptive resolution / pixel ratio
+## E12 — Adaptive resolution / pixel ratio ✅ SHIPPED 57dd8fa
 
-**Status:** Engine missing (PA16, also listed as a parity GAP).
+`src/scene/effects/AdaptiveResolution.tsx` — r3f component that lives
+inside `<Canvas>` and samples `useFrame` deltas in a 60-frame rolling
+buffer. Every 60 frames it computes `avgFps`, then:
 
-`gl.setPixelRatio` adjustment based on rolling FPS. Required for
-mobile + low-tier desktop.
+- If `avgFps < 30` for 2 consecutive windows AND ratio > 0.5 → drop
+  by 0.1 step toward floor 0.5
+- If `avgFps > 55` for 2 consecutive windows AND ratio < cap → raise
+  by 0.1 step toward `devicePixelRatio`
+- Otherwise reset both counters (debounce against transient spikes)
 
-Required:
+2-second mount-warmup skip avoids tripping a downgrade on GLB load
++ Tone.js warmup. Calls `gl.setPixelRatio` directly.
 
-- FPS sampler in scene root (rolling 60-frame window)
-- If avg < 30 FPS: drop pixel ratio toward 0.5 in 0.1 steps
-- If avg > 55 FPS sustained: try raising it back up
-- HUD readout (FPS + render scale) in debug mode only
+Dispatches `objexoom:fpsUpdate` events with `{ fps, pixelRatio }`;
+ObjexoomHUD's `AdaptiveResolutionReadout` listens and renders a
+"FPS N • DPR x.xx" chip when `?objexoomDebug` is in the URL.
 
-**Priority:** **Critical for mobile.** This is the only true PARITY
-gap that blocks the game from running well on cheap hardware.
+**Closed the last critical-tier parity gap.** 100% reference parity
+achieved.
 
 ## E13 — Procedural level generator deepening
 
@@ -265,21 +264,21 @@ Required:
 
 ## Sequencing recommendation
 
-Phase 1 — Critical infra:
-1. **E12** (adaptive resolution) — unblocks mobile.
-2. **E9** (sql.js + WASM sync) — sets up infra for everything else.
+**Phase 1 — Critical infra ✅ COMPLETE**
+1. ✅ **E12** (adaptive resolution) — 57dd8fa
+2. ✅ **E9** (sql.js run history) — 5d74778
 
-Phase 2 — Mechanical elevation:
-3. **E1** (melee slot) — assets already there, mostly engine.
+**Phase 2 — Mechanical elevation (next):**
+3. ✅ **E1** (melee slot) — 8d71475
 4. **E5** (destructible barrels) — adds tactical depth.
 5. **E6** (switches + secret walls) — replayability.
 
-Phase 3 — Visual elevation:
+**Phase 3 — Visual elevation:**
 6. **E3** (sector prop scatter) — biggest visual ROI.
 7. **E4** (lit lamps with shadows) — pairs with E3.
 8. **E2** (bosses) — caps each archetype.
 
-Phase 4 — Polish + variety:
+**Phase 4 — Polish + variety:**
 9. **E13** (archetype deepening) — works once E3 + E2 land.
 10. **E7** (water + sewer biome).
 11. **E8** (flamethrower).
@@ -287,4 +286,5 @@ Phase 4 — Polish + variety:
 13. **E10** (3D HUD elements).
 
 This sequencing is a recommendation, not a contract. Reorder when a
-specific dependency surfaces.
+specific dependency surfaces. Full per-feature acceptance criteria
+live in [`PRD.md`](./PRD.md).

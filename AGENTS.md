@@ -1,6 +1,6 @@
 ---
 title: Agents protocol
-updated: 2026-05-13
+updated: 2026-05-14
 status: current
 domain: operating
 ---
@@ -25,10 +25,12 @@ Operating protocol for any AI agent working in this repository.
 
 When two docs disagree, use this order:
 
-1. [`docs/DESIGN.md`](./docs/DESIGN.md)
-2. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)
-3. [`docs/DECISIONS.md`](./docs/DECISIONS.md)
-4. [`docs/ROADMAP.md`](./docs/ROADMAP.md)
+1. [`docs/DESIGN.md`](./docs/DESIGN.md) — product truth
+2. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — system truth
+3. [`docs/DECISIONS.md`](./docs/DECISIONS.md) — binding decisions
+4. [`docs/PRD.md`](./docs/PRD.md) — remaining-work spec (acceptance criteria + DAG)
+5. [`docs/ROADMAP.md`](./docs/ROADMAP.md) — milestone summary
+6. [`.agent-state/directive.md`](./.agent-state/directive.md) — executable checklist mirror of PRD
 
 ## Stack rules
 
