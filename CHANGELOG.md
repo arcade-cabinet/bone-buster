@@ -13,6 +13,17 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- **POL7 HUD archetype label.** Top-left readout extends from `M1` to `M1 · CORRIDOR` so the player learns the 5 archetype names through play.
+- **E13 step-16 Per-archetype large-prop density.** DENSITY_BY_ARCHETYPE for COV2 vehicle/wreck anchor pieces. Library narrows to [0,1]; others preserve [1,2].
+- **Help pane describes the 5 archetypes.** HOW TO PLAY landing screen gains a per-archetype blurb so players know what to expect before encountering each flavor.
+- **Tip carousel expanded** from 4 to 9 tips, covering archetype awareness, secrets, loot mechanics, and environment hazards.
+- **YOU DIED + LEVEL COMPLETE cards show run stats.** Three of four overlay-card states now surface formatRunStats (was just PAUSED + MISSION COMPLETE).
+
+### Fixed
+
+- **README, CLAUDE.md test counts unstaled** to 498+ unit / 51+ suites / 6 browser.
+- **docs/PRD.md `Status at a glance` rewritten** — the Not-yet-shipped list named items shipped 100+ commits ago.
+
 - **POL6 Best-run chip on landing.** Async-opens runHistory on landing mount; renders `BEST {N}L · {N}K · {WON/DIED} · {N} SECRETS · {N} RUNS` below the menu. Hidden when no runs persisted (canonical byte-stability preserved).
 - **POL5 Secrets in run history.** RunRecord/RunInsert extended with `totalSecrets`. Additive ALTER TABLE migration in ensureSchema with try/catch (sql.js IF-NOT-EXISTS-on-ALTER fallback).
 - **POL4 Secrets HUD + RunStats integration.** New `runTotalSecrets` field + `secretFound` action. ObjexoomShell listens for `secretTriggered` event. HUD shows `SECRETS N` below KILLS/SCORE (hidden at 0). Win-screen summary gains `N SECRET[S]` segment.
