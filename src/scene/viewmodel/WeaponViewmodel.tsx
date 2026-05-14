@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 import { ROLE } from "../../design-tokens";
 import { addObjexoomListener } from "../../events";
+import { MELEE_SKIN_URLS, pickMeleeSkin } from "../../meleeSkins";
 import { WEAPON_MODELS } from "../../models";
 import { WEAPONS, type WeaponId } from "../../weapons";
 
@@ -64,9 +65,17 @@ const VIEWMODEL_TARGET_LENGTH = 0.32;
  */
 export function WeaponViewmodel({
 	weapon,
+	mapSeed,
 	onMuzzleAnchor,
 }: {
 	weapon: WeaponId;
+	/**
+	 * COV9 step-2 — seed used to pick the BLADE skin variant per run.
+	 * `pickMeleeSkin(mapSeed)` returns one of the 7 melee GLBs so each
+	 * refLevel / procedural map renders a different blade silhouette.
+	 * Has no effect for non-melee weapons (single canonical URL each).
+	 */
+	mapSeed: number;
 	/**
 	 * PA-MOD7 / D11 — invoked with the muzzle-anchor group once it mounts
 	 * (and with `null` on unmount). The world-position of this group is
@@ -80,7 +89,12 @@ export function WeaponViewmodel({
 	const camera = useThree((s) => s.camera);
 	const recoilUntil = useRef(0);
 	const model = WEAPON_MODELS[weapon];
-	const gltf = useGLTF(model.url);
+	// COV9 — for the melee slot, override the static WEAPON_MODELS.url
+	// with the per-seed picked skin so each run cycles through machete /
+	// axe / chainsaw / knife / meathook / cleaver / sword. Other weapons
+	// resolve to their single canonical URL.
+	const url = weapon === "melee" ? pickMeleeSkin(mapSeed) : model.url;
+	const gltf = useGLTF(url);
 	// Clone the cached GLTF scene per-mount: `useGLTF` shares the source
 	// tree across instances, so mutating `.material` on the original would
 	// leak to every other consumer and would not be disposed on unmount.
@@ -216,3 +230,6 @@ export function WeaponViewmodel({
 
 // Preload weapon GLBs so the very first swap doesn't stutter.
 for (const m of Object.values(WEAPON_MODELS)) useGLTF.preload(m.url);
+// COV9 — preload every melee skin variant too so per-seed swaps
+// don't stall the BLADE viewmodel on level-change.
+for (const url of MELEE_SKIN_URLS) useGLTF.preload(url);

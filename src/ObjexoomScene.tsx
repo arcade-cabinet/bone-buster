@@ -710,7 +710,7 @@ export function ObjexoomScene({
 			<ParticleBurstField />
 			<BodyPartField />
 			<ShellEjectField />
-			<WeaponViewmodel weapon={weapon} onMuzzleAnchor={onMuzzleAnchor} />
+			<WeaponViewmodel weapon={weapon} mapSeed={map.seed} onMuzzleAnchor={onMuzzleAnchor} />
 
 			<PlayerController map={map} active={active} hasKey={hasKey} settings={settings} />
 

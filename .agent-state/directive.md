@@ -1,6 +1,17 @@
 # Continuous Work Directive — objexoom
 
-**Status:** RELEASED
+**Status:** ACTIVE
+
+## Phase 5 — step-2 elevations (use the staged pools)
+
+ELEVATION-P5 wires the step-1 asset pools into actual gameplay /
+renderer paths so the in-game experience reflects the variety the
+asset pools enable.
+
+- [ ] **COV7 step-2** Swap RealDoor's procedural `boxGeometry` for the GLB picked by `pickDoorUrl(map.seed)`. Each refLevel + procedural map's exit door reads as a different variant.
+- [x] **COV9 step-2** Wired `pickMeleeSkin(map.seed)` into WeaponViewmodel. When `weapon === "melee"`, the GLB URL is resolved via the picker; other weapons resolve to their single canonical URL. ObjexoomScene now passes `mapSeed={map.seed}` into WeaponViewmodel. All 7 melee skins preloaded on module evaluation so per-seed swaps don't stall the BLADE viewmodel. Back-compat: seed 0 → machete (index 0), so refLevel 0's canonical screenshots stay byte-stable. 369 unit + 5 browser + 5 e2e screenshots green.
+- [ ] **COV5 step-2** Sector-body debris scatter via a `spawnDebris(map)` sibling of propScatter (≥3 per non-spawn sector). Reads as "this place has been overrun."
+- [ ] **COV6 step-2** Wall-face decal scatter (≥3 per sector by tile hash) mounted on SectorMapGeometry edges.
 **Owner:** Claude
 **Mandate:** "you are to treat NOTHING as pre-existing I WANT A FULLY POLISHED PLAYABLE GAME PORTED FROM THE REFERENCE DOOM CLONE" — carried over from the original `objexiv/objexiv@feat/objexoom-easter-egg` directive.
 
