@@ -13,6 +13,13 @@ export type RunStats = Readonly<{
 	 * summary line.
 	 */
 	runTotalScore: number;
+	/**
+	 * POL4 — total secrets triggered across all levels in this run.
+	 * Increments live on the `secretTriggered` event, survives
+	 * `clearLevel`, resets on `start` / `reset`. Surfaced on the
+	 * win-screen summary line and on the in-game HUD.
+	 */
+	runTotalSecrets: number;
 }>;
 
 export type RunAction =
@@ -23,6 +30,7 @@ export type RunAction =
 			damageThisLevel: number;
 			scoreThisLevel: number;
 	  }
+	| { type: "secretFound" }
 	| { type: "reset"; now: number };
 
 export const RUN_LENGTH = 5;
@@ -34,6 +42,7 @@ export function makeInitialRunStats(now: number): RunStats {
 		runTotalKills: 0,
 		runTotalDamageTaken: 0,
 		runTotalScore: 0,
+		runTotalSecrets: 0,
 	};
 }
 
@@ -51,6 +60,8 @@ export function runStatsReducer(state: RunStats, action: RunAction): RunStats {
 				runTotalDamageTaken: state.runTotalDamageTaken + action.damageThisLevel,
 				runTotalScore: state.runTotalScore + action.scoreThisLevel,
 			};
+		case "secretFound":
+			return { ...state, runTotalSecrets: state.runTotalSecrets + 1 };
 	}
 }
 

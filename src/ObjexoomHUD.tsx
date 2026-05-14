@@ -138,6 +138,25 @@ export function ObjexoomHUD({
 						SCORE {state.score}
 					</motion.div>
 				)}
+				{state.run.runTotalSecrets > 0 && (
+					<motion.div
+						data-testid="objexoom-secrets"
+						style={{
+							marginTop: 4,
+							fontFamily: FONT_FAMILY.display,
+							fontSize: 14,
+							fontWeight: FONT_WEIGHT.regular,
+							letterSpacing: LETTER_SPACING.display,
+							color: ROLE.actionKey,
+						}}
+						key={state.run.runTotalSecrets}
+						initial={{ scale: 1.4 }}
+						animate={{ scale: 1 }}
+						transition={{ type: "spring", stiffness: 320, damping: 18 }}
+					>
+						SECRETS {state.run.runTotalSecrets}
+					</motion.div>
+				)}
 				<div
 					data-testid="objexoom-key"
 					style={{
@@ -320,7 +339,9 @@ function formatRunStats(state: GameState): string {
 	const cleared = state.run.runLevelsCleared;
 	const score = state.run.runTotalScore;
 	const scoreSegment = score > 0 ? `  •  ${score} SCORE` : "";
-	return `${cleared} LEVEL${cleared === 1 ? "" : "S"} CLEARED  •  TIME ${time}  •  ${kills} KILLS  •  ${dmg} DMG TAKEN${scoreSegment}`;
+	const secrets = state.run.runTotalSecrets;
+	const secretsSegment = secrets > 0 ? `  •  ${secrets} SECRET${secrets === 1 ? "" : "S"}` : "";
+	return `${cleared} LEVEL${cleared === 1 ? "" : "S"} CLEARED  •  TIME ${time}  •  ${kills} KILLS  •  ${dmg} DMG TAKEN${scoreSegment}${secretsSegment}`;
 }
 
 const STICK_RADIUS = 56;

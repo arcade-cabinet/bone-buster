@@ -9,6 +9,7 @@ describe("objexoom runStatsReducer (B2)", () => {
 		expect(stats.runTotalKills).toBe(0);
 		expect(stats.runTotalDamageTaken).toBe(0);
 		expect(stats.runTotalScore).toBe(0);
+		expect(stats.runTotalSecrets).toBe(0);
 	});
 
 	it("start action initializes a fresh stats record", () => {
@@ -18,6 +19,7 @@ describe("objexoom runStatsReducer (B2)", () => {
 			runTotalKills: 42,
 			runTotalDamageTaken: 99,
 			runTotalScore: 200,
+			runTotalSecrets: 2,
 		} as const;
 		const next = runStatsReducer(prev, { type: "start", now: 5000 });
 		expect(next.runStartAt).toBe(5000);
@@ -25,6 +27,30 @@ describe("objexoom runStatsReducer (B2)", () => {
 		expect(next.runTotalKills).toBe(0);
 		expect(next.runTotalDamageTaken).toBe(0);
 		expect(next.runTotalScore).toBe(0);
+		expect(next.runTotalSecrets).toBe(0);
+	});
+
+	it("secretFound action increments runTotalSecrets without affecting other fields", () => {
+		const stats = makeInitialRunStats(0);
+		const after = runStatsReducer(stats, { type: "secretFound" });
+		expect(after.runTotalSecrets).toBe(1);
+		expect(after.runLevelsCleared).toBe(0);
+		expect(after.runTotalKills).toBe(0);
+		const after2 = runStatsReducer(after, { type: "secretFound" });
+		expect(after2.runTotalSecrets).toBe(2);
+	});
+
+	it("secrets survive clearLevel — only run start/reset clears them", () => {
+		const stats = runStatsReducer(makeInitialRunStats(0), { type: "secretFound" });
+		const afterLevel = runStatsReducer(stats, {
+			type: "clearLevel",
+			killsThisLevel: 3,
+			damageThisLevel: 5,
+			scoreThisLevel: 0,
+		});
+		expect(afterLevel.runTotalSecrets).toBe(1);
+		const reset = runStatsReducer(afterLevel, { type: "reset", now: 100 });
+		expect(reset.runTotalSecrets).toBe(0);
 	});
 
 	it("reset action also clears everything", () => {

@@ -572,6 +572,16 @@ export function ObjexoomShell() {
 		});
 	}, []);
 
+	// POL4 — increment the run's secret count on every secretTriggered event.
+	// The event itself is fired by fireResolution when the player shoots a
+	// secret switch. RunStats survives clearLevel so the win-screen totals
+	// reflect every secret found across the whole 5-level run.
+	useEffect(() => {
+		return addObjexoomListener("secretTriggered", () => {
+			setState((prev) => ({ ...prev, run: runStatsReducer(prev.run, { type: "secretFound" }) }));
+		});
+	}, []);
+
 	// E9 — persist run history on terminal status transitions. The handle is
 	// lazily opened once per shell lifetime; sql.js init is a few hundred ms
 	// of WASM compile so we don't want it on every record. The recorded-ref
