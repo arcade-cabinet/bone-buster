@@ -59,6 +59,18 @@ If none of the three answer cleanly, sit with the design before writing code.
 
 Spec: `docs/SLOT-ARCHITECTURE.md`. Reference shapes: `HitChromaticAberration` (POL14), `SecretFoundFlash` (POL21), `EnemyHitFlash` (POL19 retrofit), `WeaponSwapDip` (POL20).
 
+## Phase 14 — slot architecture remainder (audio bus + HUD overlay extraction)
+
+The slot architecture spec (`docs/SLOT-ARCHITECTURE.md`) calls out four
+slot types. Three are landed: HUD overlays (POL21/22/26), per-scene
+postprocessing (POL14), per-scene/entity feedback (POL19/20/23). The
+fourth — the audio bus — is still the explosion of free `playFoo`
+functions + `last*FireTime` globals. Phase 14 is the consolidation pass.
+
+- [ ] **AUDIO1 — AudioBus skeleton.** New `src/audioBus.ts`: typed channel registry where each entry owns its `lastFireTime` + a fire function. Channels enumerated as a `ChannelId` union (`pickup`, `flashlightClick`, `secretFound`, `bossDeath`, `playerDeath`, `boom`, `klaxon`, `hurt`, `chaingun`, `flamethrower`, etc — every existing `play*` function gets a channel). `bus.fire(channelId, schedule)` jitters internally via the channel's lastFireTime. ZERO call-site churn this commit — existing `play*` functions are kept as shells that call `bus.fire`. Tests pin: channel registry has every existing play function covered, fire returns a `t` always > previous `t` for the channel.
+- [ ] **AUDIO2 — migrate all `play*` call sites to `bus.fire`.** Sweep: every Shell/Scene/fireResolution/sfx call to `play*()` becomes `bus.fire(channelId, t => ...)`. Inline schedule blocks. Delete the now-orphaned `last*FireTime` globals from sfx.ts. Net: sfx.ts shrinks from 25 free functions + 15 globals to 1 bus.
+- [ ] **AUDIO3 — extract HUD overlays from `ObjexoomHUD.tsx`.** Today SecretFoundFlash + KeyPickupCeremony + GoingBackOverlay live as internal function components inside ObjexoomHUD.tsx (~1100 lines now). Extract to `src/hud/overlays/` with a single `<HUDOverlays state={state}>` aggregator that mounts all three. Drops ObjexoomHUD by ~150 lines and makes adding new overlays a pure new-file operation.
+
 ## Phase 13 — modernized-DOOM forward-sweep (legacy systems)
 
 Phase 12 raised the bar on the recently-shipped features. The pre-
