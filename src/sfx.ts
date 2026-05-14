@@ -202,12 +202,37 @@ export async function ensureSfx() {
 	}
 }
 
+/**
+ * POL8 — per-voice last-fire-time tracking to avoid Tone.js
+ * "Start time must be strictly greater than previous start time".
+ *
+ * Two consecutive `triggerAttackRelease` calls within the same audio
+ * frame produce identical `Tone.now()` values, and Tone refuses to
+ * schedule the second one. The fix: track the last-scheduled time per
+ * voice and bump forward by 1ms whenever we'd otherwise collide.
+ * The 1ms jitter is below human perception of timing.
+ *
+ * Voices that are gated by a per-weapon cooldown (pistol, shotgun,
+ * melee, flamethrower, hurt) can't collide because the cooldown is
+ * always > 1 audio frame; only chaingun (90ms cooldown which can fire
+ * twice per frame at 11/sec sustained), aggro alerts (N enemies aggro
+ * in one frame), skeleton deaths (chain-reactions), and pickup (paired
+ * E5+A5 fires) need this protection.
+ */
+function jitter(prevTime: number): number {
+	const now = Tone.now();
+	return Math.max(now, prevTime + 0.001);
+}
+
 export function playPistol() {
 	pistolSynth?.triggerAttackRelease("C2", "32n");
 }
 
+let lastChaingunFireTime = 0;
 export function playChaingun() {
-	chaingunSynth?.triggerAttackRelease("16n", Tone.now(), 0.6);
+	const t = jitter(lastChaingunFireTime);
+	lastChaingunFireTime = t;
+	chaingunSynth?.triggerAttackRelease("16n", t, 0.6);
 }
 
 export function playShotgun() {
@@ -224,17 +249,32 @@ export function playMelee() {
  * fires at 100ms cooldown overlap into a continuous hiss rather than
  * discrete shotgun blasts.
  */
+let lastFlamethrowerFireTime = 0;
 export function playFlamethrower() {
-	shotgunSynth?.triggerAttackRelease("32n");
+	// 100ms cooldown can also occasionally land twice per frame.
+	const t = jitter(lastFlamethrowerFireTime);
+	lastFlamethrowerFireTime = t;
+	shotgunSynth?.triggerAttackRelease("32n", t);
 }
 
+let lastHurtFireTime = 0;
 export function playHurt() {
-	hurtSynth?.triggerAttackRelease("E2", "16n");
+	// Multiple enemies hitting in one frame → multiple playHurt calls.
+	const t = jitter(lastHurtFireTime);
+	lastHurtFireTime = t;
+	hurtSynth?.triggerAttackRelease("E2", "16n", t);
 }
 
+let lastDeathFireTime = 0;
 export function playSkeletonDeath() {
-	deathSynth?.triggerAttackRelease("A1", Tone.now());
-	setTimeout(() => deathSynth?.triggerAttackRelease("D1", Tone.now()), 80);
+	const t = jitter(lastDeathFireTime);
+	lastDeathFireTime = t;
+	deathSynth?.triggerAttackRelease("A1", t);
+	setTimeout(() => {
+		const inner = jitter(lastDeathFireTime);
+		lastDeathFireTime = inner;
+		deathSynth?.triggerAttackRelease("D1", inner);
+	}, 80);
 }
 
 export function playPickup() {
@@ -349,13 +389,16 @@ export function playDoorTick() {
  * which the caller computes from enemy position + camera yaw. Pitch
  * is randomized slightly so a swarm doesn't unison-roar.
  */
+let lastAggroFireTime = 0;
 export function playAggroAlert(pan: number) {
 	if (!aggroSynth || !aggroPanner) return;
 	const clamped = Math.max(-1, Math.min(1, pan));
 	aggroPanner.pan.rampTo(clamped, 0.02);
 	const notes = ["A1", "G1", "F1", "E1"] as const;
 	const note = notes[(Math.random() * notes.length) | 0];
-	aggroSynth.triggerAttackRelease(note, "8n");
+	const t = jitter(lastAggroFireTime);
+	lastAggroFireTime = t;
+	aggroSynth.triggerAttackRelease(note, "8n", t);
 }
 
 /**
