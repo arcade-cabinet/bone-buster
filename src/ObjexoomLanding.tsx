@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "./design-tokens";
+import { openRunHistory, type RunRecord } from "./runHistory";
 import {
 	DIFFICULTY_BLURB,
 	DIFFICULTY_LABEL,
@@ -184,9 +185,65 @@ function MainMenu({
 			<MenuItem label="OPTIONS" onClick={onOptions} />
 			<MenuItem label="HOW TO PLAY" onClick={onHelp} />
 			<MenuItem label="QUIT" onClick={onQuit} />
+			<BestRunChip />
 		</motion.nav>
 	);
 }
+
+/**
+ * POL6 — Reads runHistory asynchronously on landing-mount. When at
+ * least one run has been persisted, shows a single-line chip with
+ * the count + best-run breakdown. Hidden during initial async load
+ * and when no runs exist (fresh install).
+ */
+function BestRunChip() {
+	const [best, setBest] = useState<RunRecord | null>(null);
+	const [count, setCount] = useState(0);
+	const [ready, setReady] = useState(false);
+	useEffect(() => {
+		let cancelled = false;
+		void (async () => {
+			try {
+				const db = await openRunHistory();
+				if (cancelled) return;
+				setBest(db.bestRun());
+				setCount(db.runCount());
+			} finally {
+				if (!cancelled) setReady(true);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+	if (!ready || count === 0 || !best) return null;
+	const outcomeLabel = best.outcome === "won" ? "WON" : "DIED";
+	const secretSuffix =
+		best.totalSecrets > 0
+			? ` · ${best.totalSecrets} SECRET${best.totalSecrets === 1 ? "" : "S"}`
+			: "";
+	return (
+		<div data-testid="objexoom-best-run-chip" style={bestRunChipStyle}>
+			<span style={{ opacity: 0.7 }}>BEST</span> {best.levelsCleared}L · {best.totalKills}K ·{" "}
+			{outcomeLabel}
+			{secretSuffix}
+			<span style={{ opacity: 0.5, marginLeft: 8 }}>·</span>
+			<span style={{ opacity: 0.7, marginLeft: 8 }}>
+				{count} RUN{count === 1 ? "" : "S"}
+			</span>
+		</div>
+	);
+}
+
+const bestRunChipStyle: CSSProperties = {
+	marginTop: 16,
+	fontFamily: FONT_FAMILY.display,
+	fontSize: 11,
+	fontWeight: FONT_WEIGHT.regular,
+	letterSpacing: LETTER_SPACING.hudLabel,
+	color: ROLE.accentPrimary,
+	textAlign: "center",
+};
 
 function DifficultyPane({
 	current,
