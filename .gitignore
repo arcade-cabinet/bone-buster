@@ -5,9 +5,22 @@ dist-android
 .vite
 *.log
 
-# Capacitor native generated dirs
-android
-ios
+# Capacitor native generated dirs.
+# Per Capacitor's "Adding Platforms" docs: the `android/` and `ios/`
+# directories ARE committed once `cap add android` / `cap add ios` has
+# scaffolded them — they hold project config (Gradle build files,
+# Info.plist, app icons, native plugin patches). What we DON'T commit
+# is the per-build output + machine-local config inside them.
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+android/app/release/
+android/captures/
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
 
 # Test artifacts
 test-results
