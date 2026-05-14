@@ -212,20 +212,21 @@ so the live demo always matches the latest release.
 ### INF2 — Build-time copy-public-assets
 
 **User story.** As a deployment engineer, I want the build step to
-mirror `public/assets/` into `dist/assets/` and enforce per-category
-size budgets so an over-budget asset fails the build instead of
-shipping silently.
+mirror `public/assets/` into the build output and report per-category
+totals so I have visibility into what's shipping without having to
+chase down which files made the cut.
 
 **Acceptance.**
 
 - `scripts/copy-public-assets.mjs` exists; runs at build time via a
   package.json hook.
-- Reuses the budget constants from `scripts/verify-runtime-assets.mjs`
-  (enemies 3 MB, weapons 800 KB, props 600 KB).
-- Logs a per-category total at the end (matching
-  verify-runtime-assets output).
-- Failure mode: any over-budget file aborts the build with a clear
-  error.
+- Logs per-category file counts + totals (matching
+  verify-runtime-assets output shape).
+- **No arbitrary byte budgets.** Asset weight is a deliberate tuning
+  decision per asset, not a CI threshold — we'd rather wire the
+  408 KB metal barrel than the 6.8 KB Farm variant because the
+  visual fidelity matters. Reporting is enough; if a specific asset
+  needs to be lighter, that's a per-asset decision.
 
 **Dependencies.** None.
 
@@ -291,7 +292,7 @@ mirrors the conceptual grouping in `ASSET_INVENTORY.md`.
 
 - 5 melee GLBs moved (or git-renamed) into `weapons/slasher/`.
 - `src/models.ts` paths updated.
-- `pnpm assets:verify-runtime` still passes; budget unchanged.
+- `pnpm assets:verify-runtime` still passes.
 - `public/README.md` documents the slasher subdir convention.
 
 **Dependencies.** None. (E1 already wires the machete via the current

@@ -7,6 +7,7 @@ import type { RefObject } from "react";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type * as Yuka from "yuka";
+import { type Barrel, pickRayBarrel, resolveExplosion, spawnBarrels } from "./barrels";
 import {
 	PLAYER_HEIGHT,
 	SKELETON_ATTACK_COOLDOWN_MS,
@@ -36,6 +37,7 @@ import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
 import {
 	AdaptiveResolution,
+	BarrelMesh,
 	BodyPartField,
 	BulletField,
 	EnemyMesh,
@@ -103,8 +105,10 @@ export function ObjexoomScene({
 		}),
 	);
 	const pickupsRef = useRef<Pickup[]>(spawnPickups(map));
+	const barrelsRef = useRef<Barrel[]>(spawnBarrels(map));
 	const enemyMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const pickupMeshes = useRef<Map<number, THREE.Group>>(new Map());
+	const barrelMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const camera = useThree((s) => s.camera);
 	const lastFireAt = useRef(0);
 	const lastWonAt = useRef(false);
@@ -527,6 +531,60 @@ export function ObjexoomScene({
 		};
 	}, [gameRef]);
 
+	// E5 — barrel explosion handler. Lives behind a ref so the fire-path
+	// (also a ref-closure) can call it without re-subscribing the
+	// useEffect listener every weapon swap. Chain reactions are
+	// processed as a queue so a barrel that ignites three neighbors
+	// doesn't recurse arbitrarily deep on the JS stack.
+	const explodeBarrelRef = useRef<(barrel: Barrel) => void>(() => {});
+	explodeBarrelRef.current = (initial: Barrel) => {
+		const queue: Barrel[] = [initial];
+		while (queue.length > 0) {
+			const b = queue.shift();
+			if (!b || b.exploded) continue;
+			b.exploded = true;
+			const mesh = barrelMeshes.current.get(b.id);
+			if (mesh) mesh.visible = false;
+			const result = resolveExplosion(b, enemiesRef.current, barrelsRef.current, {
+				x: camera.position.x,
+				y: camera.position.z,
+			});
+			window.dispatchEvent(
+				new CustomEvent("objexoom:burst", {
+					detail: { x: result.position.x, y: result.position.y, kind: "explode" },
+				}),
+			);
+			if (settings.soundEnabled) playBoom();
+			// Apply AoE enemy damage. Killed enemies emit body-parts +
+			// kill counter just like a weapon hit.
+			for (const enemyId of result.affectedEnemyIds) {
+				const enemy = enemiesRef.current.find((e) => e.id === enemyId);
+				if (!enemy || enemy.dead) continue;
+				enemy.hp -= result.enemyDamage;
+				if (enemy.hp <= 0) {
+					enemy.dead = true;
+					gameRef.current.onKill();
+					const enemyMesh = enemyMeshes.current.get(enemy.id);
+					if (enemyMesh) enemyMesh.visible = false;
+					window.dispatchEvent(
+						new CustomEvent("objexoom:bodyParts", {
+							detail: { x: enemy.position.x, y: enemy.position.y, kind: enemy.kind },
+						}),
+					);
+				}
+			}
+			if (result.hitsPlayer) {
+				gameRef.current.onHit(result.playerDamage);
+				window.dispatchEvent(new CustomEvent("objexoom:playerHit"));
+			}
+			// Enqueue chain barrels; the loop above pops them in turn.
+			for (const chainId of result.chainBarrelIds) {
+				const chain = barrelsRef.current.find((bb) => bb.id === chainId);
+				if (chain && !chain.exploded) queue.push(chain);
+			}
+		}
+	};
+
 	// Fire handler
 	// biome-ignore lint/correctness/useExhaustiveDependencies: refs (ammoRef, enemiesRef) are mutable and shouldn't trigger re-subscribe; lints fights with the imperative ref pattern.
 	useEffect(() => {
@@ -607,6 +665,27 @@ export function ObjexoomScene({
 					if (perp > 1.0) continue;
 					bestEnemy = enemy;
 					bestDist = t;
+				}
+				// E5 — barrel hit-test. Barrels are closer-than-enemy targets in
+				// the priority chain: if a barrel sits in the ray before the
+				// nearest enemy, the barrel takes the pellet instead. Wins ties.
+				const barrelHit = pickRayBarrel(origin, dir2, barrelsRef.current, bestDist);
+				if (barrelHit && barrelHit.dist <= bestDist) {
+					barrelHit.barrel.hp -= spec.damage;
+					window.dispatchEvent(
+						new CustomEvent("objexoom:burst", {
+							detail: {
+								x: barrelHit.barrel.position.x,
+								y: barrelHit.barrel.position.y,
+								kind: "damage",
+							},
+						}),
+					);
+					if (barrelHit.barrel.hp <= 0 && !barrelHit.barrel.exploded) {
+						explodeBarrelRef.current(barrelHit.barrel);
+					}
+					// Pellet consumed — skip the enemy-damage block below.
+					continue;
 				}
 				if (bestEnemy) {
 					bestEnemy.hp -= spec.damage;
@@ -739,6 +818,17 @@ export function ObjexoomScene({
 					register={(group) => {
 						if (group) pickupMeshes.current.set(pickup.id, group);
 						else pickupMeshes.current.delete(pickup.id);
+					}}
+				/>
+			))}
+
+			{barrelsRef.current.map((barrel) => (
+				<BarrelMesh
+					key={barrel.id}
+					barrel={barrel}
+					register={(group) => {
+						if (group) barrelMeshes.current.set(barrel.id, group);
+						else barrelMeshes.current.delete(barrel.id);
 					}}
 				/>
 			))}

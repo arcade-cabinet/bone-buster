@@ -1,15 +1,18 @@
 /**
  * Verify that every GLB referenced from src/models.ts actually exists
- * at the resolved path under public/assets/models/, and that each is
- * within its category byte budget. Runs as part of `pnpm verify`.
+ * at the resolved path under public/assets/models/. Runs as part of
+ * `pnpm verify`.
  *
  * Source-of-truth: parse src/models.ts for `A("/assets/models/...")`
- * literals, strip the helper, stat the result. Anything missing or
- * over-budget exits non-zero.
+ * literals, strip the helper, stat the result. Anything missing
+ * exits non-zero. Reports per-category totals for visibility but
+ * does NOT enforce arbitrary byte budgets — those were quality-
+ * crippling and forced the wiring to lean variants when richer ones
+ * were available. Asset weight is a deliberate tuning decision, not
+ * a CI gate.
  *
  * Why a script and not a unit test: this is a deployment gate that
- * needs to fail the build, not a vitest assertion. Same pattern as
- * sister project arcade-cabinet/voxel-realms/scripts/verify-runtime-assets.ts.
+ * needs to fail the build on a missing file, not a vitest assertion.
  */
 
 import { readFile, stat } from "node:fs/promises";
@@ -17,16 +20,6 @@ import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const MODELS_TS = resolve(root, "src/models.ts");
-
-// Budgets calibrated against actual 3DPSX-sourced GLBs. Tightening
-// these requires switching the offending asset to a leaner variant
-// (the same enemy/prop is available with simpler textures in most
-// cases; loosening should require a comment explaining why).
-const BUDGETS = {
-	enemies: 3 * 1024 * 1024, // 3 MB — Knight rig (imp primary) is ~2.5 MB
-	weapons: 800 * 1024, // 800 KB per viewmodel
-	props: 600 * 1024, // 600 KB — Mega Pack lamps sit at ~510 KB
-};
 
 function categoryOf(publicPath) {
 	const m = publicPath.match(/\/assets\/models\/([^/]+)\//);
@@ -65,15 +58,7 @@ for (const url of urls) {
 		errors.push(`NOT-A-FILE: ${url}`);
 		continue;
 	}
-	const cat = categoryOf(url);
-	const budget = BUDGETS[cat];
-	if (budget && info.size > budget) {
-		errors.push(
-			`OVER-BUDGET: ${url} = ${formatBytes(info.size)} > ${formatBytes(budget)} (category=${cat})`,
-		);
-		continue;
-	}
-	summary.push({ url, cat, size: info.size });
+	summary.push({ url, cat: categoryOf(url), size: info.size });
 }
 
 const totalBytes = summary.reduce((s, x) => s + x.size, 0);

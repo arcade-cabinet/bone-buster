@@ -294,6 +294,23 @@ export const PROP_MODELS = {
 } as const;
 
 /**
+ * E5 — destructible barrel pool. Five PSX Mega Pack II variants
+ * (four metal w/ different weathering, one wooden) seeded per-id so
+ * the same barrel always renders with the same skin across reloads.
+ */
+export const BARREL_MODEL_URLS: readonly string[] = [
+	A("/assets/models/props/barrel_metal_1.glb"),
+	A("/assets/models/props/barrel_metal_2.glb"),
+	A("/assets/models/props/barrel_metal_3.glb"),
+	A("/assets/models/props/barrel_metal_4.glb"),
+	A("/assets/models/props/barrel_wood.glb"),
+];
+
+export function pickBarrelModelUrl(id: number): string {
+	return BARREL_MODEL_URLS[Math.abs(id) % BARREL_MODEL_URLS.length];
+}
+
+/**
  * Preload list — caller can pass these to drei's `useGLTF.preload`
  * during the lazy-load splash screen so the first enemy spawn doesn't
  * stall on a network fetch.
@@ -302,6 +319,7 @@ export const ALL_MODEL_URLS: readonly string[] = [
 	...Object.values(ENEMY_MODELS).flatMap((m) => m.roster.map((s) => s.url)),
 	...Object.values(WEAPON_MODELS).map((m) => m.url),
 	...Object.values(PROP_MODELS),
+	...BARREL_MODEL_URLS,
 ];
 
 /**

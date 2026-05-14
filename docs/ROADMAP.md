@@ -70,7 +70,7 @@ in [`PRD.md`](./PRD.md).
 - **B2.4** GitHub Pages CD on release tag
 - **AO.4** Slasher weapon bundle reorg
 - **AO.5/.6** PWA manifest + favicon set
-- **INF2** Build-time copy-public-assets w/ budget enforcement
+- **INF2** Build-time copy-public-assets w/ per-category reporting
 - **DS.7** Design tokens into scene materials
 
 ### Phase 2 — Mechanical elevation

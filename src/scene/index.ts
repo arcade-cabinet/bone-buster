@@ -9,6 +9,7 @@ export { BulletField } from "./effects/BulletField";
 export { Flashlight } from "./effects/Flashlight";
 export { ParticleBurstField } from "./effects/ParticleBurstField";
 export { ShellEjectField } from "./effects/ShellEjectField";
+export { BarrelMesh } from "./entities/BarrelMesh";
 export { EnemyMesh } from "./entities/EnemyMesh";
 export { ExitPortal } from "./entities/ExitPortal";
 export { KeyMarker } from "./entities/KeyMarker";

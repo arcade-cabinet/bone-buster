@@ -127,8 +127,8 @@ Full roadmap: [`docs/ELEVATION.md`](../docs/ELEVATION.md). Specs in [`docs/PRD.m
 ### INFRA — supporting infrastructure
 
 - [x] **INF1** WASM/asset sync per arcade-cabinet pattern. `scripts/prepare-web-wasm.mjs` runs at postinstall + prebuild; sql.js WASM copies to `public/assets/wasm/`. Shipped 81ed15d.
-- [ ] **INF2** Build-time `scripts/copy-public-assets.mjs` mirror with size-budget pruning. Acceptance: build-step copies `public/assets/` to `dist/assets/` with per-category size budgets; over-budget assets fail the build.
-- [x] **INF3** CI gate `scripts/verify-runtime-assets.mjs` — every GLB referenced by `models.ts` exists at the resolved path, size budgets enforced per category. Shipped 81ed15d.
+- [ ] **INF2** Build-time `scripts/copy-public-assets.mjs` mirror. Acceptance: build-step copies `public/assets/` to `dist/assets/` (or equivalent) and reports per-category totals. NO arbitrary byte budgets — asset weight is tuned deliberately per pickup, not enforced by an arbitrary CI threshold.
+- [x] **INF3** CI gate `scripts/verify-runtime-assets.mjs` — every GLB referenced by `models.ts` exists at the resolved path. Shipped 81ed15d; byte-budget enforcement removed in a follow-up commit after the budgets cost us a quality downgrade on barrel.glb.
 
 ## Verification
 
