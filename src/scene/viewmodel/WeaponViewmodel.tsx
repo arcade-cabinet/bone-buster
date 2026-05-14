@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 import { ROLE } from "../../design-tokens";
+import { addObjexoomListener } from "../../events";
 import { WEAPON_MODELS } from "../../models";
 import { WEAPONS, type WeaponId } from "../../weapons";
 
@@ -134,11 +135,9 @@ export function WeaponViewmodel({
 	);
 
 	useEffect(() => {
-		const onFire = () => {
+		return addObjexoomListener("fire", () => {
 			recoilUntil.current = performance.now() + RECOIL_DURATION_MS;
-		};
-		window.addEventListener("objexoom:fire", onFire);
-		return () => window.removeEventListener("objexoom:fire", onFire);
+		});
 	}, []);
 
 	// PA-MOD7 / D11 — release the muzzle anchor on unmount so a stale

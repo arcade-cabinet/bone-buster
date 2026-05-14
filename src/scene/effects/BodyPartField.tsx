@@ -2,6 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
+import { addObjexoomListener } from "../../events";
 
 const COLOR_WRAITH = new THREE.Color(OBJEXOOM_PALETTE.enemyWraithSoul).getHex();
 const COLOR_IMP = new THREE.Color(OBJEXOOM_PALETTE.enemyImpMagma).getHex();
@@ -46,13 +47,7 @@ export function BodyPartField() {
 	const nextId = useRef(1);
 
 	useEffect(() => {
-		const onSpawn = (e: Event) => {
-			const ev = e as CustomEvent<{
-				x: number;
-				y: number;
-				kind: "skeleton" | "imp" | "wraith";
-			}>;
-			const detail = ev.detail;
+		return addObjexoomListener("bodyParts", (detail) => {
 			const count = 4 + ((Math.random() * 3) | 0); // 4-6
 			const baseColor =
 				detail.kind === "wraith" ? COLOR_WRAITH : detail.kind === "imp" ? COLOR_IMP : COLOR_BONE;
@@ -81,9 +76,7 @@ export function BodyPartField() {
 			while (shardsRef.current.length > MAX_BODY_SHARDS) {
 				shardsRef.current.shift();
 			}
-		};
-		window.addEventListener("objexoom:bodyParts", onSpawn);
-		return () => window.removeEventListener("objexoom:bodyParts", onSpawn);
+		});
 	}, []);
 
 	useFrame((_, dt) => {

@@ -25,6 +25,7 @@ import { type Barrel, pickRayBarrel } from "../../barrels";
 import { TILE } from "../../constants";
 import type { CollisionContext } from "../../engine";
 import { castRayAny, type Enemy, type ObjexoomMap } from "../../engine";
+import { dispatch } from "../../events";
 import type { GameRef, WeaponState } from "../../ObjexoomShell";
 import type { ObjexoomSettings } from "../../settings";
 import {
@@ -105,19 +106,16 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		const lateral = isChaingun ? 1.0 : 1.6;
 		const upward = isChaingun ? 0.9 : 1.2;
 		const scale = isChaingun ? 0.6 : 1.0;
-		window.dispatchEvent(
-			new CustomEvent("objexoom:shellEject", {
-				detail: {
-					x: camera.position.x + right.x * 0.3,
-					y: camera.position.y - 0.3,
-					z: camera.position.z + right.z * 0.3,
-					vx: right.x * lateral + (Math.random() - 0.5) * 0.4,
-					vy: upward,
-					vz: right.z * lateral + (Math.random() - 0.5) * 0.4,
-					scale,
-				},
-			}),
-		);
+		dispatch({
+			type: "shellEject",
+			x: camera.position.x + right.x * 0.3,
+			y: camera.position.y - 0.3,
+			z: camera.position.z + right.z * 0.3,
+			vx: right.x * lateral + (Math.random() - 0.5) * 0.4,
+			vy: upward,
+			vz: right.z * lateral + (Math.random() - 0.5) * 0.4,
+			scale,
+		});
 	}
 
 	const forwardBase = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
@@ -157,15 +155,12 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		const barrelHit = pickRayBarrel(origin, dir2, barrelsRef.current, bestDist);
 		if (barrelHit && barrelHit.dist <= bestDist) {
 			barrelHit.barrel.hp -= spec.damage;
-			window.dispatchEvent(
-				new CustomEvent("objexoom:burst", {
-					detail: {
-						x: barrelHit.barrel.position.x,
-						y: barrelHit.barrel.position.y,
-						kind: "damage",
-					},
-				}),
-			);
+			dispatch({
+				type: "burst",
+				x: barrelHit.barrel.position.x,
+				y: barrelHit.barrel.position.y,
+				kind: "damage",
+			});
 			if (barrelHit.barrel.hp <= 0 && !barrelHit.barrel.exploded) {
 				explodeBarrel(barrelHit.barrel);
 			}
@@ -173,41 +168,32 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		}
 		if (bestEnemy) {
 			bestEnemy.hp -= spec.damage;
-			window.dispatchEvent(
-				new CustomEvent("objexoom:burst", {
-					detail: {
-						x: bestEnemy.position.x,
-						y: bestEnemy.position.y,
-						kind: "damage",
-					},
-				}),
-			);
+			dispatch({
+				type: "burst",
+				x: bestEnemy.position.x,
+				y: bestEnemy.position.y,
+				kind: "damage",
+			});
 			if (bestEnemy.hp <= 0) {
 				bestEnemy.dead = true;
 				killsThisShot += 1;
 				const mesh = enemyMeshesRef.current.get(bestEnemy.id);
 				if (mesh) mesh.visible = false;
 				if (bestEnemy.kind === "imp") {
-					window.dispatchEvent(
-						new CustomEvent("objexoom:burst", {
-							detail: {
-								x: bestEnemy.position.x,
-								y: bestEnemy.position.y,
-								kind: "explode",
-							},
-						}),
-					);
+					dispatch({
+						type: "burst",
+						x: bestEnemy.position.x,
+						y: bestEnemy.position.y,
+						kind: "explode",
+					});
 				}
 				// I1 — body-part physics on death.
-				window.dispatchEvent(
-					new CustomEvent("objexoom:bodyParts", {
-						detail: {
-							x: bestEnemy.position.x,
-							y: bestEnemy.position.y,
-							kind: bestEnemy.kind,
-						},
-					}),
-				);
+				dispatch({
+					type: "bodyParts",
+					x: bestEnemy.position.x,
+					y: bestEnemy.position.y,
+					kind: bestEnemy.kind,
+				});
 			}
 		}
 	}

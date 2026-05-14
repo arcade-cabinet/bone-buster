@@ -2,6 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
+import { addObjexoomListener } from "../../events";
 
 const COLOR_BRASS = new THREE.Color(OBJEXOOM_PALETTE.shellBrass).getHex();
 const COLOR_BRASS_DEEP = new THREE.Color(OBJEXOOM_PALETTE.shellBrassDeep).getHex();
@@ -42,17 +43,7 @@ export function ShellEjectField() {
 	const nextId = useRef(1);
 
 	useEffect(() => {
-		const onEject = (e: Event) => {
-			const ev = e as CustomEvent<{
-				x: number;
-				y: number;
-				z: number;
-				vx: number;
-				vy: number;
-				vz: number;
-				scale?: number;
-			}>;
-			const d = ev.detail;
+		return addObjexoomListener("shellEject", (d) => {
 			shellsRef.current.push({
 				id: nextId.current++,
 				pos: { x: d.x, y: d.y, z: d.z },
@@ -64,12 +55,10 @@ export function ShellEjectField() {
 				},
 				createdAt: performance.now(),
 				bounced: false,
-				scale: d.scale ?? 1,
+				scale: d.scale,
 			});
 			while (shellsRef.current.length > MAX_SHELLS) shellsRef.current.shift();
-		};
-		window.addEventListener("objexoom:shellEject", onEject);
-		return () => window.removeEventListener("objexoom:shellEject", onEject);
+		});
 	}, []);
 
 	useFrame((_, dt) => {

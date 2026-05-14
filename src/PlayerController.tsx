@@ -7,6 +7,7 @@ import {
 	type ObjexoomMap,
 	resolveCollisionAny,
 } from "./engine";
+import { addObjexoomListener, dispatch } from "./events";
 import type { ObjexoomSettings } from "./settings";
 
 type Props = Readonly<{
@@ -15,8 +16,6 @@ type Props = Readonly<{
 	hasKey: boolean;
 	settings: ObjexoomSettings;
 }>;
-
-type StickEvent = CustomEvent<{ x: number; y: number }>;
 
 // H3 — jump physics. World-space units (1 unit ≈ 1 m of game world).
 const GRAVITY = 18; // m/s² — slightly punchier than real gravity for FPS feel
@@ -109,7 +108,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 		const onClick = (e: MouseEvent) => {
 			if (!document.pointerLockElement) return;
 			if (e.button !== 0) return;
-			window.dispatchEvent(new CustomEvent("objexoom:fire"));
+			dispatch({ type: "fire" });
 		};
 		window.addEventListener("mousemove", onMouseMove);
 		window.addEventListener("mousedown", onClick);
@@ -127,25 +126,22 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 				grounded.current = false;
 			}
 		};
-		const onJumpEvent = () => {
+		const teardownJump = addObjexoomListener("jump", () => {
 			if (active && grounded.current) {
 				verticalVelocity.current = JUMP_VELOCITY;
 				grounded.current = false;
 			}
-		};
+		});
 		window.addEventListener("keydown", onKey);
-		window.addEventListener("objexoom:jump", onJumpEvent);
 		return () => {
 			window.removeEventListener("keydown", onKey);
-			window.removeEventListener("objexoom:jump", onJumpEvent);
+			teardownJump();
 		};
 	}, [active]);
 
 	// Debug teleport (e2e harness).
 	useEffect(() => {
-		const onTeleport = (e: Event) => {
-			const ev = e as CustomEvent<{ x: number; y: number; yaw: number | null }>;
-			const { x, y, yaw: newYaw } = ev.detail ?? { x: 0, y: 0, yaw: null };
+		return addObjexoomListener("teleport", ({ x, y, yaw: newYaw }) => {
 			camera.position.x = x;
 			camera.position.z = y;
 			const floor = getFloorHeightAtAny(map, { x, y }) ?? 0;
@@ -154,41 +150,32 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 			grounded.current = true;
 			belowFloorSince.current = null;
 			if (newYaw != null) yaw.current = newYaw;
-		};
-		window.addEventListener("objexoom:teleport", onTeleport);
-		return () => window.removeEventListener("objexoom:teleport", onTeleport);
+		});
 	}, [camera, map]);
 
 	// Virtual joystick events from the HUD (mobile / coarse pointer).
 	useEffect(() => {
-		const onMove = (e: Event) => {
-			const ev = e as StickEvent;
-			moveStick.current = ev.detail;
-		};
-		const onLook = (e: Event) => {
-			const ev = e as StickEvent;
-			lookStick.current = ev.detail;
-		};
-		window.addEventListener("objexoom:move", onMove);
-		window.addEventListener("objexoom:look", onLook);
+		const teardownMove = addObjexoomListener("move", ({ x, y }) => {
+			moveStick.current = { x, y };
+		});
+		const teardownLook = addObjexoomListener("look", ({ x, y }) => {
+			lookStick.current = { x, y };
+		});
 		return () => {
-			window.removeEventListener("objexoom:move", onMove);
-			window.removeEventListener("objexoom:look", onLook);
+			teardownMove();
+			teardownLook();
 		};
 	}, []);
 
 	// I6 — listen for damage shake events. Shell dispatches this on every
 	// onHit() call with the damage amount; we accumulate into shakeRef.
 	useEffect(() => {
-		const onShake = (e: Event) => {
-			const ev = e as CustomEvent<{ amount: number }>;
+		return addObjexoomListener("shake", ({ amount }) => {
 			// L1 — damage is on a 0-9 scale; 0.15 per hp gives reasonable shake
 			// (1 hp → ~0.15, 3 hp big hit → ~0.45, capped at SHAKE_MAX).
-			const add = Math.max(0, ev.detail?.amount ?? 0) * 0.15;
+			const add = Math.max(0, amount) * 0.15;
 			shakeRef.current = Math.min(SHAKE_MAX, shakeRef.current + add);
-		};
-		window.addEventListener("objexoom:shake", onShake);
-		return () => window.removeEventListener("objexoom:shake", onShake);
+		});
 	}, []);
 
 	useFrame((_, deltaSeconds) => {
@@ -269,7 +256,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 			if (belowFloorSince.current === null) belowFloorSince.current = now;
 			if (now - belowFloorSince.current > FALL_GRACE_MS) {
 				belowFloorSince.current = null;
-				window.dispatchEvent(new CustomEvent("objexoom:fellToDeath"));
+				dispatch({ type: "fellToDeath" });
 			}
 		} else {
 			belowFloorSince.current = null;

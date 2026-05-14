@@ -9,6 +9,7 @@ import {
 	ROLE,
 	SCALE,
 } from "./design-tokens";
+import { addObjexoomListener, dispatch } from "./events";
 import type { GameState } from "./ObjexoomShell";
 import { LEVEL_LABEL, type LevelChoice } from "./settings";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "./weapons";
@@ -245,11 +246,9 @@ function AdaptiveResolutionReadout() {
 
 	useEffect(() => {
 		if (!enabled) return;
-		const onFps = (event: Event) => {
-			setInfo((event as CustomEvent<{ fps: number; pixelRatio: number }>).detail);
-		};
-		window.addEventListener("objexoom:fpsUpdate", onFps);
-		return () => window.removeEventListener("objexoom:fpsUpdate", onFps);
+		return addObjexoomListener("fpsUpdate", ({ fps, pixelRatio }) => {
+			setInfo({ fps, pixelRatio });
+		});
 	}, [enabled]);
 
 	if (!enabled || !info) return null;
@@ -294,8 +293,8 @@ const STICK_KNOB = 28;
 function TouchControls() {
 	return (
 		<>
-			<VirtualStick channel="objexoom:move" anchor="left" ariaLabel="Move" />
-			<VirtualStick channel="objexoom:look" anchor="right" ariaLabel="Aim" />
+			<VirtualStick channel="move" anchor="left" ariaLabel="Move" />
+			<VirtualStick channel="look" anchor="right" ariaLabel="Aim" />
 			<FireButton />
 		</>
 	);
@@ -306,7 +305,7 @@ function VirtualStick({
 	anchor,
 	ariaLabel,
 }: {
-	channel: "objexoom:move" | "objexoom:look";
+	channel: "move" | "look";
 	anchor: "left" | "right";
 	ariaLabel: string;
 }) {
@@ -314,9 +313,9 @@ function VirtualStick({
 	const pointerId = useRef<number | null>(null);
 	const baseCenter = useRef<{ x: number; y: number } | null>(null);
 
-	const dispatch = useCallback(
+	const dispatchStick = useCallback(
 		(x: number, y: number) => {
-			window.dispatchEvent(new CustomEvent(channel, { detail: { x, y } }));
+			dispatch({ type: channel, x, y });
 		},
 		[channel],
 	);
@@ -340,14 +339,14 @@ function VirtualStick({
 		const nx = mag === 0 ? 0 : (dx / mag) * clamped;
 		const ny = mag === 0 ? 0 : (dy / mag) * clamped;
 		setKnob({ x: nx, y: ny });
-		dispatch(nx / STICK_RADIUS, ny / STICK_RADIUS);
+		dispatchStick(nx / STICK_RADIUS, ny / STICK_RADIUS);
 	};
 	const onUp = (e: ReactPointerEvent<HTMLDivElement>) => {
 		if (e.pointerId !== pointerId.current) return;
 		pointerId.current = null;
 		baseCenter.current = null;
 		setKnob({ x: 0, y: 0 });
-		dispatch(0, 0);
+		dispatchStick(0, 0);
 	};
 
 	return (
@@ -398,7 +397,7 @@ function VirtualStick({
 
 function FireButton() {
 	const fire = useCallback(() => {
-		window.dispatchEvent(new CustomEvent("objexoom:fire"));
+		dispatch({ type: "fire" });
 	}, []);
 	return (
 		<button

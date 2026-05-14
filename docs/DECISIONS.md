@@ -251,6 +251,35 @@ PA-MOD7's original framing was "wire gltfjsx so muzzle bones become addressable 
 
 ---
 
+## D13 — Keep `objexoom:*` channels as window-event broadcasts, just type them
+
+**Status:** Locked. **Amends ARCH1 directive item.**
+**Date:** 2026-05-14
+
+ARCH1's original framing called for converting five "Shell↔Scene channels" (`fpsUpdate`, `shake`, `playerHit`, `fellToDeath`, `teleport`) from window-event broadcasts to direct ref callbacks on `GameRef` / `SceneRef`. Use-case enumeration before opening the migration revealed the actual cross-component traffic is NOT Shell↔Scene:
+
+| Channel | Producer | Consumer | Actual topology |
+|---|---|---|---|
+| `fpsUpdate` | `ObjexoomScene` (inside Canvas) | `ObjexoomHUD` (DOM sibling) | Scene → HUD, not Shell↔Scene |
+| `shake` | `ObjexoomShell` (onHit handler) | `PlayerController` (inside Scene) | Shell → grandchild |
+| `teleport` | `ObjexoomShell` (level-change effect) | `PlayerController` | Shell → grandchild |
+| `playerHit` | both Shell (onHit) AND Scene (explosion path) | Scene (burst emitter) | multi-source |
+| `fellToDeath` | `PlayerController` (fall detection) | `ObjexoomShell` (game-over) | grandchild → Shell |
+
+**Call:** keep all 14 `objexoom:*` channels as window-event broadcasts; just route every call site through the typed `dispatch` + `addObjexoomListener` helpers landed in ARCH1a. Topology stays; type-safety lands.
+
+**Why:**
+- Direct ref callbacks would force `ObjexoomShell` to receive imperative handles from grandchildren (`PlayerController` via `ObjexoomScene`), inverting the React data-flow direction it already establishes via `GameRef`.
+- Broadcast IS the right shape when producer and consumer are siblings or aunt/nephew — there's no shared parent that can plumb a callback without leaking implementation details.
+- The original ARCH1 framing was a categorization error (treating these as "Shell↔Scene" because the originating directive was written before the actual call-site map was inspected). Use-case enumeration before code is the standing rule per CLAUDE.md.
+- The full **win** of ARCH1 — type-checked event payloads, autocomplete on `e.detail.kind`, compile-time failure when a producer and consumer disagree on shape — lands fully from typed-dispatch alone.
+
+**Rejected:**
+- *Forcing five channels through ref callbacks* — would invert data flow, leak grandchild handles into Shell, and add coupling worse than the broadcast it replaced.
+- *Splitting the channel set into "ref-callback" + "broadcast"* — discoverability hit; future devs have to remember which channels live where. One uniform pattern is better.
+
+---
+
 ## Decisions log conventions
 
 - One section per decision, with a short slug (`## D11 — short title`).

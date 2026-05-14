@@ -5,6 +5,7 @@ import { buildMap } from "./buildMap";
 import { PLAYER_MAX_HP } from "./constants";
 import { ROLE, SCALE } from "./design-tokens";
 import type { ObjexoomMap, PickupKind } from "./engine";
+import { addObjexoomListener, dispatch } from "./events";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
@@ -240,12 +241,12 @@ export function ObjexoomShell() {
 			lastPlayerHitAt.current = now;
 			// I6 — camera shake amount scales with raw incoming damage; the
 			// controller decays at SHAKE_DECAY/sec and applies XZ jitter.
-			window.dispatchEvent(new CustomEvent("objexoom:shake", { detail: { amount: damage } }));
+			dispatch({ type: "shake", amount: damage });
 			// I2 — 30 red motes at the player on every successful enemy hit
 			// (post-iframe gate so the visual matches actual damage taken).
 			// Scene resolves the player position from the camera and emits the
 			// burst there; this is the wakeup, not the placement.
-			window.dispatchEvent(new CustomEvent("objexoom:playerHit"));
+			dispatch({ type: "playerHit" });
 			// J3 — red fade overlay scaled by damage. On the 0-9 HP scale,
 			// 3 hp = max-flash; 1 hp = 1/3.
 			triggerFadeRef.current("damage", Math.min(1, damage / 3));
@@ -478,15 +479,13 @@ export function ObjexoomShell() {
 	// has been below the local floor for longer than the grace window. Snap
 	// status to dead so the YOU DIED card surfaces.
 	useEffect(() => {
-		const onFellToDeath = () => {
+		return addObjexoomListener("fellToDeath", () => {
 			setState((prev) =>
 				prev.status === "playing"
 					? { ...prev, status: "dead", hp: 0, damageFlashAt: performance.now() }
 					: prev,
 			);
-		};
-		window.addEventListener("objexoom:fellToDeath", onFellToDeath);
-		return () => window.removeEventListener("objexoom:fellToDeath", onFellToDeath);
+		});
 	}, []);
 
 	// E9 — persist run history on terminal status transitions. The handle is
@@ -587,23 +586,19 @@ export function ObjexoomShell() {
 				onStartGameRef.current();
 			},
 			teleport: (x, y, yawRad) => {
-				window.dispatchEvent(
-					new CustomEvent("objexoom:teleport", {
-						detail: { x, y, yaw: yawRad ?? null },
-					}),
-				);
+				dispatch({ type: "teleport", x, y, yaw: yawRad ?? null });
 			},
 			fire: () => {
-				window.dispatchEvent(new CustomEvent("objexoom:fire"));
+				dispatch({ type: "fire" });
 			},
 			killAllEnemies: () => {
-				window.dispatchEvent(new CustomEvent("objexoom:debugKillAll"));
+				dispatch({ type: "debugKillAll" });
 			},
 			collectKey: () => {
 				gameRef.current.onPickupKey();
 			},
 			collectAllPickups: () => {
-				window.dispatchEvent(new CustomEvent("objexoom:debugCollectPickups"));
+				dispatch({ type: "debugCollectPickups" });
 			},
 			triggerWin: () => {
 				gameRef.current.onWin();

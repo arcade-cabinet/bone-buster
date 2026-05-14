@@ -64,16 +64,21 @@ export interface JumpEvent {
 	type: "jump";
 }
 
+/**
+ * Virtual-joystick look/move events from the mobile HUD sticks.
+ * Both carry the same normalized [-1, 1] x/y payload. PlayerController
+ * applies them per-frame to camera yaw/pitch (look) or movement (move).
+ */
 export interface LookEvent {
 	type: "look";
-	dx: number;
-	dy: number;
+	x: number;
+	y: number;
 }
 
 export interface MoveEvent {
 	type: "move";
-	// WASD bitmask: forward=1, back=2, left=4, right=8.
-	bits: number;
+	x: number;
+	y: number;
 }
 
 export interface DebugKillAllEvent {
@@ -91,11 +96,14 @@ export interface PlayerHitEvent {
 export interface FpsUpdateEvent {
 	type: "fpsUpdate";
 	fps: number;
+	pixelRatio: number;
 }
 
 export interface ShakeEvent {
 	type: "shake";
-	magnitude: number;
+	// Damage amount (0-9 scale). Receiver multiplies by 0.15 to get
+	// shake magnitude in world units.
+	amount: number;
 }
 
 export interface FellToDeathEvent {
@@ -104,6 +112,9 @@ export interface FellToDeathEvent {
 
 export interface TeleportEvent {
 	type: "teleport";
+	x: number;
+	y: number;
+	yaw: number | null;
 }
 
 export type ObjexoomEvent =

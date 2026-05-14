@@ -2,6 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
+import { addObjexoomListener } from "../../events";
 
 const COLOR_WRAITH = new THREE.Color(OBJEXOOM_PALETTE.enemyWraithSoul).getHex();
 const COLOR_IMP = new THREE.Color(OBJEXOOM_PALETTE.enemyImpMagma).getHex();
@@ -39,13 +40,7 @@ export function ParticleBurstField() {
 	const nextId = useRef(1);
 
 	useEffect(() => {
-		const onBurst = (e: Event) => {
-			const ev = e as CustomEvent<{
-				x: number;
-				y: number;
-				kind: "pickup" | "damage" | "explode" | "playerHit";
-			}>;
-			const detail = ev.detail;
+		return addObjexoomListener("burst", (detail) => {
 			const count =
 				detail.kind === "pickup"
 					? 8
@@ -78,9 +73,7 @@ export function ParticleBurstField() {
 				});
 			}
 			while (motesRef.current.length > MAX_MOTES) motesRef.current.shift();
-		};
-		window.addEventListener("objexoom:burst", onBurst);
-		return () => window.removeEventListener("objexoom:burst", onBurst);
+		});
 	}, []);
 
 	useFrame((_, dt) => {

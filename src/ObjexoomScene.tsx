@@ -20,6 +20,7 @@ import {
 	spawnPickups,
 	stepEnemyBullet,
 } from "./engine";
+import { addObjexoomListener, dispatch } from "./events";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
 import {
@@ -160,19 +161,14 @@ export function ObjexoomScene({
 	// hit (post-iframe). Resolve the camera position and emit the actual
 	// burst at the player's XZ so 30 red motes spawn in-place.
 	useEffect(() => {
-		const onPlayerHit = () => {
-			window.dispatchEvent(
-				new CustomEvent("objexoom:burst", {
-					detail: {
-						x: camera.position.x,
-						y: camera.position.z,
-						kind: "playerHit",
-					},
-				}),
-			);
-		};
-		window.addEventListener("objexoom:playerHit", onPlayerHit);
-		return () => window.removeEventListener("objexoom:playerHit", onPlayerHit);
+		return addObjexoomListener("playerHit", () => {
+			dispatch({
+				type: "burst",
+				x: camera.position.x,
+				y: camera.position.z,
+				kind: "playerHit",
+			});
+		});
 	}, [camera]);
 
 	// H8 — when phase transitions out → going_back, re-aggro every alive
@@ -347,15 +343,12 @@ export function ObjexoomScene({
 				if (mesh) mesh.visible = false;
 				gameRef.current.onCollectPickup(pickup.kind);
 				playPickup();
-				window.dispatchEvent(
-					new CustomEvent("objexoom:burst", {
-						detail: {
-							x: pickup.position.x,
-							y: pickup.position.y,
-							kind: "pickup",
-						},
-					}),
-				);
+				dispatch({
+					type: "burst",
+					x: pickup.position.x,
+					y: pickup.position.y,
+					kind: "pickup",
+				});
 			}
 		}
 
@@ -439,11 +432,11 @@ export function ObjexoomScene({
 				gameRef.current.onCollectPickup(pickup.kind);
 			}
 		};
-		window.addEventListener("objexoom:debugKillAll", onDebugKillAll);
-		window.addEventListener("objexoom:debugCollectPickups", onDebugCollectPickups);
+		const teardownKill = addObjexoomListener("debugKillAll", onDebugKillAll);
+		const teardownCollect = addObjexoomListener("debugCollectPickups", onDebugCollectPickups);
 		return () => {
-			window.removeEventListener("objexoom:debugKillAll", onDebugKillAll);
-			window.removeEventListener("objexoom:debugCollectPickups", onDebugCollectPickups);
+			teardownKill();
+			teardownCollect();
 		};
 	}, [gameRef]);
 
@@ -465,11 +458,7 @@ export function ObjexoomScene({
 				x: camera.position.x,
 				y: camera.position.z,
 			});
-			window.dispatchEvent(
-				new CustomEvent("objexoom:burst", {
-					detail: { x: result.position.x, y: result.position.y, kind: "explode" },
-				}),
-			);
+			dispatch({ type: "burst", x: result.position.x, y: result.position.y, kind: "explode" });
 			if (settings.soundEnabled) playBoom();
 			// Apply AoE enemy damage. Killed enemies emit body-parts +
 			// kill counter just like a weapon hit.
@@ -482,16 +471,17 @@ export function ObjexoomScene({
 					gameRef.current.onKill();
 					const enemyMesh = enemyMeshes.current.get(enemy.id);
 					if (enemyMesh) enemyMesh.visible = false;
-					window.dispatchEvent(
-						new CustomEvent("objexoom:bodyParts", {
-							detail: { x: enemy.position.x, y: enemy.position.y, kind: enemy.kind },
-						}),
-					);
+					dispatch({
+						type: "bodyParts",
+						x: enemy.position.x,
+						y: enemy.position.y,
+						kind: enemy.kind,
+					});
 				}
 			}
 			if (result.hitsPlayer) {
 				gameRef.current.onHit(result.playerDamage);
-				window.dispatchEvent(new CustomEvent("objexoom:playerHit"));
+				dispatch({ type: "playerHit" });
 			}
 			// Enqueue chain barrels; the loop above pops them in turn.
 			for (const chainId of result.chainBarrelIds) {
@@ -527,8 +517,7 @@ export function ObjexoomScene({
 			});
 		};
 
-		window.addEventListener("objexoom:fire", onFire);
-		return () => window.removeEventListener("objexoom:fire", onFire);
+		return addObjexoomListener("fire", onFire);
 	}, [active, camera, map, hasKey, gameRef, weapon, ammoRef, settings]);
 
 	useFrame(() => {
@@ -630,11 +619,7 @@ export function ObjexoomScene({
 
 			{/* E12/PA16 — adaptive pixel ratio. Lives inside Canvas so it
 			    can call useFrame + useThree.gl.setPixelRatio directly. */}
-			<AdaptiveResolution
-				onUpdate={(info) =>
-					window.dispatchEvent(new CustomEvent("objexoom:fpsUpdate", { detail: info }))
-				}
-			/>
+			<AdaptiveResolution onUpdate={(info) => dispatch({ type: "fpsUpdate", ...info })} />
 
 			<EffectComposer>
 				<Bloom intensity={0.45} luminanceThreshold={0.55} luminanceSmoothing={0.2} />

@@ -34,11 +34,12 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 	it("dispatch + addObjexoomListener round-trips an FpsUpdateEvent", () => {
 		const received: FpsUpdateEvent[] = [];
 		const teardown = addObjexoomListener("fpsUpdate", (e) => received.push(e));
-		dispatch({ type: "fpsUpdate", fps: 144 });
+		dispatch({ type: "fpsUpdate", fps: 144, pixelRatio: 1.5 });
 		teardown();
 		expect(received).toHaveLength(1);
 		expect(received[0].type).toBe("fpsUpdate");
 		expect(received[0].fps).toBe(144);
+		expect(received[0].pixelRatio).toBe(1.5);
 	});
 
 	it("returned teardown removes the listener", () => {
