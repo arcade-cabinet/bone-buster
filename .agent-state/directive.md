@@ -46,6 +46,28 @@ shipped at the minimal bar (e.g. POL10 boss-death sting is two notes,
 POL3 floor is a flat color), re-open the equivalent polish-pass item
 under Phase 12 and ship the modernized version.
 
+## Phase 13 — modernized-DOOM forward-sweep (legacy systems)
+
+Phase 12 raised the bar on the recently-shipped features. The pre-
+Phase-12 systems shipped at the lower bar and need the same lens.
+Each item below is a redo of an existing system that — judged against
+DOOM Eternal / 2016 — reads as student-grade in its current shape.
+
+- [ ] **POL17 — pickup glow upgrade.** Current: amber emissive pulse. Modernized: layered halo (inner bright core + outer soft falloff via two materials) + slight buoyancy bob + per-pickup-type glyph (heart for HP, ammo-cell shape for ammo, key glyph for keys) so the player reads what they're picking up peripherally. Pickup categories: ammo / health / score / key — each gets its own layered visual.
+- [ ] **POL18 — door open animation polish.** Current: linear lift. Modernized: spring-eased lift (slight overshoot then settle), particle puff at the threshold (dust kicked up), audio layering matches POL10-v2 pattern (mechanical click + low groan + air-release hiss).
+- [ ] **POL19 — enemy hit reactions.** Current: enemy continues advancing on hit (no flinch). Modernized: 60-80ms stagger frame on each non-killing hit (movement velocity scaled by 0.2 for the window), brief tint shift (white → original over 120ms), per-enemy-tier reaction (skeleton flinches harder than boss). Combine with POL12 hitstop only on the killing blow.
+- [ ] **POL20 — weapon-swap animation.** Current: instant swap. Modernized: 200ms lower-then-raise GLB animation on viewmodel (Y position dips then rises), audio "clack" on swap-complete, holster glyph overlay during the transition for input read-out.
+- [ ] **POL21 — secret discovery moment.** Current: switch toggles and wall lifts. Modernized: brief screen flash (white at 0.15 opacity for 80ms), trumpet/chime sting on secretTriggered (use the existing portalSynth or new bell voice), HUD readout pulse ("SECRET FOUND" amber text fade in/out for 1.2s).
+- [ ] **POL22 — key pickup ceremony.** Current: amber glow + tone. Modernized: brief slow-mo (timeScale 0.6 for 350ms on the player tick only — NOT the camera), gold-amber screen vignette, camera-shake-zero (calm beat), HUD key-icon enters from below with bounce.
+- [ ] **POL23 — exit portal pull.** Current: static teleport on enter. Modernized: 600ms inward pull animation as the player approaches the portal (camera dolly toward center, FOV widen 75 → 95 → 75 cycle), audio rise (portalSynth swell), white-flash transition into the next level.
+- [ ] **POL24 — flashlight battery indicator.** Current: flashlight is permanent, no battery meter. Modernized: add a battery resource (drains slowly during use, refills on rest), HUD bar in bottom-left (amber when full, blood-red when <20%), audible click-on / click-off + brief muzzle-light brighten on power-up. Decision tradeoff: this introduces resource management which may conflict with the "you absolutely need the flashlight" mandate — first commit the spec doc decision before code.
+- [ ] **POL25 — enemy death body-part settle.** Current: gibs fly + freeze on contact. Modernized: 800ms physics simulation after spawn (existing) but extend with: a settle pose (gibs rest on the ground after motion damps, then fade out over 4s rather than instant despawn), blood decals at the rest position (PSX library has these), per-archetype rest fade speed (faster in arena/combat-tight, slower in library).
+- [ ] **POL26 — going-back strobe upgrade.** Current: solid ember overlay + alarm tone. Modernized: animated red caution-stripe overlay (diagonal stripes scrolling), klaxon audio (low-high two-tone alarm on loop), camera-edge vignette pulses in/out, HUD timer reads in monospace red descending. Reads as the modernized DOOM "you angered the demon horde" moment.
+
+Each item: write the spec note in the commit body, list which polish
+dimensions were applied (see the Phase 12 preamble checklist), green
+the full verify gate, then flip [x].
+
 ## Phase 12 — modernized-DOOM polish-pass (forward-sweep)
 
 Each item here is a REDO of a prior item that shipped at the minimal
