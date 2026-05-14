@@ -18,6 +18,8 @@ ambiguous design question that flips scope.
 
 ## Phase 11 — continuing polish
 
+- [x] **POL7 — HUD shows archetype label.** Shipped. `ObjexoomHUD` gains an `archetype: PropArchetype` prop. Top-left readout now reads `LEVEL · ARCHETYPE` (e.g. "RANDOM · SEWER", "M1 · CORRIDOR") so the player learns the 5 archetype names through play. ObjexoomShell threads `pickArchetype(map)` via the existing JSX site (HUD mount is inside the active-map scope so the map is in lexical reach). 498 unit + 6 browser + 5 canonical + 5 archetype green.
+
 - [x] **POL6 — best-run chip on landing.** Shipped. New `BestRunChip` component in `ObjexoomLanding.tsx` mounts on the main pane. On mount, asynchronously opens runHistory, reads `bestRun()` + `runCount()`, and renders a single-line chip below the menu items: `BEST {N}L · {N}K · {WON/DIED} · {N} SECRET[S] · {N} RUN[S]`. Hidden while async load is pending AND when no runs have been persisted yet (so fresh installs / canonical screenshots stay byte-identical). 496 unit + 5 browser + 5 canonical green.
 
 - [x] **E13 step-15 — per-archetype decal pool.** Shipped. `decals.ts` gains `DECALS_BY_ARCHETYPE` (corridor uses combined `DECAL_VARIANTS_ALL` for byte-stability; arena+sewer favor graffiti; courtyard+library favor posters) and `pickDecalUrlByArchetype(archetype, hash)`. `decalScatter.spawnDecals` threads the archetype through `decalsOnEdge` and calls the archetype-keyed picker instead of `pickDecalUrl`. Corridor procedural maps now show the original 12-decal pool unchanged; arena maps lean graffiti (4-variant pool), library maps lean printed posters (8-variant). 496 unit + 5 browser + 5 canonical green. Canonical bytes preserved (corridor uses the same combined pool the legacy picker used).

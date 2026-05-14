@@ -11,6 +11,7 @@ import {
 } from "./design-tokens";
 import { addObjexoomListener, dispatch } from "./events";
 import type { GameState } from "./ObjexoomShell";
+import type { PropArchetype } from "./scatter/propPool";
 import { HudKey3D } from "./scene/hud/HudKey3D";
 import { LEVEL_LABEL, type LevelChoice } from "./settings";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "./weapons";
@@ -24,6 +25,12 @@ type ObjexoomHUDProps = Readonly<{
 	onSelectWeapon: (weapon: WeaponId) => void;
 	// M5 — current level identity for the top-left HUD readout.
 	level: LevelChoice;
+	/**
+	 * POL7 — current archetype for the top-left readout. Appended to the
+	 * level label so the player learns the name (`RANDOM · ARENA`,
+	 * `M1 · CORRIDOR`).
+	 */
+	archetype: PropArchetype;
 }>;
 
 export function ObjexoomHUD({
@@ -34,6 +41,7 @@ export function ObjexoomHUD({
 	onQuit,
 	onSelectWeapon,
 	level,
+	archetype,
 }: ObjexoomHUDProps) {
 	const currentSpec = WEAPONS[state.weapon];
 	const currentAmmo = state.ammo[state.weapon];
@@ -80,7 +88,8 @@ export function ObjexoomHUD({
 							textShadow: `0 0 10px ${ROLE.accentPrimary}66`,
 						}}
 					>
-						{LEVEL_LABEL[level]}
+						{LEVEL_LABEL[level]} <span style={{ opacity: 0.5 }}>·</span>{" "}
+						<span style={{ opacity: 0.85 }}>{archetype.toUpperCase()}</span>
 					</div>
 				)}
 				<div style={hudLabelStyle}>HEALTH</div>

@@ -1,7 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ARCHETYPE_NAMES } from "./archetype";
+import { ARCHETYPE_NAMES, pickArchetype } from "./archetype";
 import { buildMap } from "./buildMap";
 import { PLAYER_MAX_HP } from "./constants";
 import { ROLE, SCALE } from "./design-tokens";
@@ -866,6 +866,7 @@ export function ObjexoomShell() {
 								onQuit={onQuit}
 								onSelectWeapon={onSelectWeapon}
 								level={settings.level}
+								archetype={pickArchetype(map)}
 							/>
 							<AnimatePresence>
 								{fadeTrigger && <FadeOverlay key={fadeTrigger.id} trigger={fadeTrigger} />}
