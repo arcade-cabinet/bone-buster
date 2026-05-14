@@ -32,6 +32,7 @@ const SOURCE_FILES = [
 	resolve(root, "src/debris.ts"),
 	resolve(root, "src/largeProps.ts"),
 	resolve(root, "src/meleeSkins.ts"),
+	resolve(root, "src/vehicles.ts"),
 ];
 
 function categoryOf(publicPath) {
