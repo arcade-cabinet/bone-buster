@@ -61,6 +61,7 @@ import {
 	EnemyHitFlash,
 	EnemyMesh,
 	ExitPortal,
+	ExitPortalApproach,
 	Flashlight,
 	FloorTileField,
 	HitChromaticAberration,
@@ -822,6 +823,14 @@ export function ObjexoomScene({
 				position={map.exitPosition}
 				unlocked={hasKey && allBossesDead}
 				hueIndex={(map.seed >>> 0) % 5}
+			/>
+			{/* POL23 — exit-portal approach FOV-widen slot per
+			    docs/SLOT-ARCHITECTURE.md. The base FOV of 75 mirrors
+			    the ObjexoomShell Canvas camera config. */}
+			<ExitPortalApproach
+				portalPosition={map.exitPosition}
+				unlocked={hasKey && allBossesDead}
+				baseFov={75}
 			/>
 			<RealDoor position={map.exitPosition} unlocked={hasKey && allBossesDead} mapSeed={map.seed} />
 			<TreasureChest position={map.exitPosition} />

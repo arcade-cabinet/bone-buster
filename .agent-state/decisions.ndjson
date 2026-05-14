@@ -66,3 +66,4 @@
 {"ts":"2026-05-14T20:22:29.671Z","sha":"f83897dc5761","subject":"fix(audio): POL8 — Tone.js audio-time collision protection","decision":null,"why":null,"resolves":["directive Phase 11 POL8."],"overrides":[]}
 {"ts":"2026-05-14T20:32:29.026Z","sha":"20d444c80217","subject":"feat(audio): POL9 — player-death sting","decision":null,"why":null,"resolves":["directive Phase 11 POL9."],"overrides":[]}
 {"ts":"2026-05-14T20:36:14.913Z","sha":"b38604370d0a","subject":"feat(audio): POL10 — boss-down sting","decision":null,"why":null,"resolves":["directive Phase 11 POL10."],"overrides":[]}
+{"ts":"2026-05-14T21:43:53.755Z","sha":"635cd004cf4d","subject":"feat(hud): POL22 — key pickup ceremony slot","decision":"punted the 'brief slow-mo' sub-feature from the","why":null,"resolves":[],"overrides":[]}

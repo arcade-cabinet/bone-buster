@@ -17,6 +17,7 @@ export { DecalField } from "./entities/DecalField";
 export { EnemyHitFlash } from "./entities/EnemyHitFlash";
 export { EnemyMesh } from "./entities/EnemyMesh";
 export { ExitPortal } from "./entities/ExitPortal";
+export { ExitPortalApproach } from "./entities/ExitPortalApproach";
 export { FloorTileField } from "./entities/FloorTileField";
 export { KeyMarker } from "./entities/KeyMarker";
 export { KitchenField } from "./entities/KitchenField";
