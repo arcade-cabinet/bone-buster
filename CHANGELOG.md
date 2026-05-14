@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- **POL9 Player-death sting.** Slow descending E2 → B1 → E1 sequence on the existing deathSynth, distinct from the skeleton-death two-note cascade. Fires on both HP-zero transition and fellToDeath path.
+- **POL8 Tone.js audio-time collision protection.** Shared jitter() helper bumps Tone.now() by 1ms on collision; protects chaingun/flamethrower/aggro/hurt/death voices.
 - **POL7 HUD archetype label.** Top-left readout extends from `M1` to `M1 · CORRIDOR` so the player learns the 5 archetype names through play.
 - **E13 step-16 Per-archetype large-prop density.** DENSITY_BY_ARCHETYPE for COV2 vehicle/wreck anchor pieces. Library narrows to [0,1]; others preserve [1,2].
 - **Help pane describes the 5 archetypes.** HOW TO PLAY landing screen gains a per-archetype blurb so players know what to expect before encountering each flavor.

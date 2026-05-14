@@ -64,3 +64,4 @@
 {"ts":"2026-05-14T20:08:31.117Z","sha":"433cf6b610b3","subject":"feat(hud): POL7 — HUD shows archetype label","decision":null,"why":null,"resolves":["directive Phase 11 POL7."],"overrides":[]}
 {"ts":"2026-05-14T20:17:37.409Z","sha":"05623a78a666","subject":"feat(scatter): E13 step-16 — per-archetype large-prop density","decision":null,"why":null,"resolves":["directive Phase 11 E13 step-16."],"overrides":[]}
 {"ts":"2026-05-14T20:22:29.671Z","sha":"f83897dc5761","subject":"fix(audio): POL8 — Tone.js audio-time collision protection","decision":null,"why":null,"resolves":["directive Phase 11 POL8."],"overrides":[]}
+{"ts":"2026-05-14T20:32:29.026Z","sha":"20d444c80217","subject":"feat(audio): POL9 — player-death sting","decision":null,"why":null,"resolves":["directive Phase 11 POL9."],"overrides":[]}
