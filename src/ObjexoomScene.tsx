@@ -8,7 +8,6 @@ import type * as Yuka from "yuka";
 import { pickArchetype } from "./archetype";
 import { type Barrel, resolveExplosion, spawnBarrels } from "./barrels";
 import { PLAYER_HEIGHT, TILE } from "./constants";
-import { OBJEXOOM_PALETTE } from "./design-tokens";
 import { remapEnemyMix } from "./enemyMix";
 import {
 	computePortalEdges,
@@ -788,7 +787,7 @@ export function ObjexoomScene({
 			    signal in low-lit play; biggest visual lever for archetype-
 			    distinctness. Corridor still resolves to OBJEXOOM_PALETTE.ink. */}
 			<fog attach="fog" args={[lightPalette.fogColor, 6, TILE * 12]} />
-			<color attach="background" args={[OBJEXOOM_PALETTE.ink]} />
+			<color attach="background" args={[lightPalette.fogColor]} />
 
 			{map.kind === "grid" ? (
 				<MapGeometry map={map} doorOpen={hasKey} />
