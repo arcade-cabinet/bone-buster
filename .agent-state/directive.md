@@ -59,6 +59,20 @@ If none of the three answer cleanly, sit with the design before writing code.
 
 Spec: `docs/SLOT-ARCHITECTURE.md`. Reference shapes: `HitChromaticAberration` (POL14), `SecretFoundFlash` (POL21), `EnemyHitFlash` (POL19 retrofit), `WeaponSwapDip` (POL20).
 
+## Phase 16 — forward-sweep polish (next mechanical-loop steps)
+
+Phase 15 PT1-4 + folds drained the playtest-driven gaps. Forward
+sweep now picks up the documented step-3 polish items left as
+follow-ons after each COV/E step-2 mechanical-loop shipped. The
+ordering bias is "what does a real player feel next?" — flamethrower
+particle stream + trap damage tick + NPC ambient idle all touch
+the in-game-feeling layer most directly.
+
+- [ ] **E8 step-2 — flamethrower particle stream visual.** Today flamethrower fires use ParticleBurstField's generic `damage` burst kind. The weapon-identity demand from "modernized polished DOOM" is a distinct continuous orange-yellow stream visual (DOOM Eternal-style fire cone), not a 5x-spammed generic burst. Acceptance: new `kind: "flameStream"` burst variant in ParticleBurstField with: long-lived (300ms) orange/yellow particles, additive blend, scaled velocity toward the spread cone direction (not the camera-forward), smoke trail follower. fireResolution.ts dispatches `flameStream` when `weapon === "flamethrower"` instead of `damage`. Re-run PT1 with weapon=flamethrower equipped to verify the cone visual reads.
+- [ ] **COV8 step-3 — trap damage tick + lever disarm.** Traps currently render as decoration (POL16 sector scatter). The mechanical loop is missing: spikes/blades/rolling traps should tick damage when the player's collision overlaps a trap's blockerCircle (1 HP/sec for spike, 2 HP/touch for blade), and trigger-kind traps act as switches that disarm a nearby spike/blade pair (paired by sectorId). Acceptance: `src/scatter/trapScatter.ts` adds `TrapInstance.blockerCircle` (radius 0.4 for spike, 0.6 for blade), `src/scene/hooks/playerTickLoop.ts` checks overlap once per tick and dispatches a `playerHit` with damage scaled by trap kind. 4 new unit tests pin the damage-per-kind table and overlap geometry. Re-run PT1 with player walking THROUGH the COV8 scatter to verify HP ticks down (and POL14 chromatic aberration fires).
+- [ ] **COV14 step-3 — NPC ambient idle animations.** ChibiCharacters in library archetype today render as static rigged GLBs (per CLAUDE.md "0-2/sector, no AI"). For onboarding-quality polish they should at least play their idle clip if the GLB carries one (the rigged Chibi pack typically has Idle + Walk + Attack). Acceptance: `src/scene/entities/NpcMesh.tsx` uses `useAnimations(gltf.animations, gltf.scene)` and plays the first clip whose name matches `/idle/i` on mount; no FSM, just an ambient animation loop so the library reads as inhabited. If no idle clip exists for a given chibi, fall back to static (current behavior).
+- [ ] **OBS1 — frame-time / draw-call HUD overlay (debug only).** Phase 15 caught visual gaps; the next class of gap is PERFORMANCE. Mounting a small frame-time + draw-call readout (gated on `?objexoomDebug` like `AdaptiveResolutionReadout`) gives the agent a way to catch frame drops before the user does. Acceptance: new `<PerfReadout>` in HUD that reads `gl.info.render` (calls, triangles) + a 60-frame avg of `useFrame.deltaSeconds`, displays in bottom-right corner under FPS readout, only mounts when debug flag present.
+
 ## Phase 15 — playtest + visual judgement (catch what canonical bytes miss)
 
 Phase 12-14 shipped 20+ polish items + slot architecture. Every commit
