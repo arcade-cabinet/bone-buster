@@ -90,9 +90,20 @@ const isCoarsePointer = () =>
 	window.matchMedia("(pointer: coarse)").matches;
 
 const baseAmmo = (): Record<WeaponId, number> => ({
+	melee: WEAPONS.melee.startingAmmo,
 	pistol: WEAPONS.pistol.startingAmmo,
 	chaingun: WEAPONS.chaingun.startingAmmo,
 	shotgun: WEAPONS.shotgun.startingAmmo,
+});
+
+// E1 — every fresh run starts with the blade + pistol; chaingun and
+// shotgun are world pickups. Centralized so adding a weapon to the
+// default loadout is a one-line change.
+const baseOwnedWeapons = (): Record<WeaponId, boolean> => ({
+	melee: true,
+	pistol: true,
+	chaingun: false,
+	shotgun: false,
 });
 
 const ammoIncrement: Record<
@@ -168,7 +179,7 @@ export function ObjexoomShell() {
 		hasFlashlight: false,
 		weapon: "pistol",
 		ammo: baseAmmo(),
-		ownedWeapons: { pistol: true, chaingun: false, shotgun: false },
+		ownedWeapons: baseOwnedWeapons(),
 		damageFlashAt: 0,
 		run: makeInitialRunStats(0),
 		phase: "out",
@@ -384,7 +395,7 @@ export function ObjexoomShell() {
 			hasFlashlight: false,
 			weapon: "pistol",
 			ammo: baseAmmo(),
-			ownedWeapons: { pistol: true, chaingun: false, shotgun: false },
+			ownedWeapons: baseOwnedWeapons(),
 			damageFlashAt: 0,
 			run: makeInitialRunStats(performance.now()),
 			phase: "out",
@@ -491,19 +502,18 @@ export function ObjexoomShell() {
 		if (state.status !== "dead" && state.status !== "won") return;
 		if (recordedRunRef.current === state.run.runStartAt) return;
 		recordedRunRef.current = state.run.runStartAt;
-		const outcome = state.status === "won" ? "won" : "died";
-		const startedAt = state.run.runStartAt;
-		const levelsCleared = state.run.runLevelsCleared;
-		const totalKills = state.run.runTotalKills;
-		const totalDamageTaken = state.run.runTotalDamageTaken;
-		const level = settings.level;
 		void (async () => {
 			try {
-				if (!runHistoryRef.current) {
-					runHistoryRef.current = await openRunHistory();
-				}
+				if (!runHistoryRef.current) runHistoryRef.current = await openRunHistory();
 				runHistoryRef.current.insert(
-					{ startedAt, levelsCleared, totalKills, totalDamageTaken, level, outcome },
+					{
+						startedAt: state.run.runStartAt,
+						levelsCleared: state.run.runLevelsCleared,
+						totalKills: state.run.runTotalKills,
+						totalDamageTaken: state.run.runTotalDamageTaken,
+						level: settings.level,
+						outcome: state.status === "won" ? "won" : "died",
+					},
 					performance.now(),
 				);
 			} catch {
@@ -536,7 +546,7 @@ export function ObjexoomShell() {
 				hasFlashlight: false,
 				weapon: "pistol",
 				ammo: baseAmmo(),
-				ownedWeapons: { pistol: true, chaingun: false, shotgun: false },
+				ownedWeapons: baseOwnedWeapons(),
 				damageFlashAt: 0,
 			}));
 		}, TRANSITION_HOLD_MS);

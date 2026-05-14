@@ -261,6 +261,14 @@ export type WeaponModel = {
  * "hip-hold" DOOM tilt.
  */
 export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
+	melee: {
+		// E1 — machete silhouette reads cleanly at FPS scale + camera tilt.
+		// The 3DPSX kitchen knife / cleaver are too short to read on-screen
+		// without an unnatural offset.
+		url: A("/assets/models/weapons/melee_machete.glb"),
+		rotation: [0.15, Math.PI, 0],
+		offset: [0.22, -0.16, -0.3],
+	},
 	pistol: {
 		url: A("/assets/models/weapons/pistol.glb"),
 		rotation: [0.15, Math.PI, 0],

@@ -239,22 +239,16 @@ export function ObjexoomHUD({
 // renders a tiny FPS + DPR readout in the bottom-left corner.
 function AdaptiveResolutionReadout() {
 	const [info, setInfo] = useState<{ fps: number; pixelRatio: number } | null>(null);
-	const [enabled, setEnabled] = useState(false);
-
-	useEffect(() => {
-		if (typeof window === "undefined") return;
-		try {
-			setEnabled(new URL(window.location.href).searchParams.has("objexoomDebug"));
-		} catch {
-			setEnabled(false);
-		}
-	}, []);
+	const [enabled] = useState(
+		() =>
+			typeof window !== "undefined" &&
+			new URLSearchParams(window.location.search).has("objexoomDebug"),
+	);
 
 	useEffect(() => {
 		if (!enabled) return;
 		const onFps = (event: Event) => {
-			const detail = (event as CustomEvent<{ fps: number; pixelRatio: number }>).detail;
-			if (detail) setInfo(detail);
+			setInfo((event as CustomEvent<{ fps: number; pixelRatio: number }>).detail);
 		};
 		window.addEventListener("objexoom:fpsUpdate", onFps);
 		return () => window.removeEventListener("objexoom:fpsUpdate", onFps);

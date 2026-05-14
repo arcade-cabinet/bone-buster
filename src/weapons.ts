@@ -1,4 +1,4 @@
-export type WeaponId = "pistol" | "chaingun" | "shotgun";
+export type WeaponId = "melee" | "pistol" | "chaingun" | "shotgun";
 
 export type WeaponSpec = Readonly<{
 	id: WeaponId;
@@ -16,6 +16,23 @@ export type WeaponSpec = Readonly<{
 }>;
 
 export const WEAPONS: Record<WeaponId, WeaponSpec> = {
+	melee: {
+		id: "melee",
+		label: "BLADE",
+		// E1 — slow swing (no skill ceiling matching the pistol). Tuned so
+		// you'd rather draw the pistol against anything that isn't already
+		// at point-blank, but you reach for the blade when ammo runs dry.
+		cooldownMs: 420,
+		damage: 55,
+		pellets: 1,
+		spreadRad: 0.08,
+		rangeTiles: 1.6,
+		ammoCostPerShot: 0,
+		startingAmmo: Number.POSITIVE_INFINITY,
+		pickupAmmo: 0,
+		muzzleColor: "#ef4444",
+		hudHotkey: "1",
+	},
 	pistol: {
 		id: "pistol",
 		label: "PISTOL",
@@ -28,7 +45,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		startingAmmo: Number.POSITIVE_INFINITY,
 		pickupAmmo: 0,
 		muzzleColor: "#6172f3",
-		hudHotkey: "1",
+		hudHotkey: "2",
 	},
 	chaingun: {
 		id: "chaingun",
@@ -44,7 +61,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		startingAmmo: Number.POSITIVE_INFINITY,
 		pickupAmmo: 0,
 		muzzleColor: "#a855f7",
-		hudHotkey: "2",
+		hudHotkey: "3",
 	},
 	shotgun: {
 		id: "shotgun",
@@ -58,8 +75,8 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		startingAmmo: 0,
 		pickupAmmo: 8,
 		muzzleColor: "#f59e0b",
-		hudHotkey: "3",
+		hudHotkey: "4",
 	},
 };
 
-export const WEAPON_ORDER: readonly WeaponId[] = ["pistol", "chaingun", "shotgun"];
+export const WEAPON_ORDER: readonly WeaponId[] = ["melee", "pistol", "chaingun", "shotgun"];

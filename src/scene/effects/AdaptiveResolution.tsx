@@ -36,10 +36,6 @@ export function AdaptiveResolution({
 	const consecutiveLow = useRef(0);
 	const consecutiveHigh = useRef(0);
 	const lastUpdateAt = useRef(performance.now());
-
-	// Track our authoritative pixel-ratio target separately from
-	// whatever the Canvas dpr prop / device-pixel-ratio reports.
-	// gl.getPixelRatio() returns the currently-applied value.
 	const ratioRef = useRef<number>(Math.min(window.devicePixelRatio || 1, 1.5));
 
 	useEffect(() => {
@@ -55,29 +51,27 @@ export function AdaptiveResolution({
 		deltaBuf.current = [];
 
 		const now = performance.now();
-		// Skip the very first window after mount — initial frames
-		// include GLB load + Tone.js warmup which always look slow
-		// and would trip an immediate downgrade.
+		// Skip the very first window after mount — initial frames include
+		// GLB load + Tone.js warmup which would otherwise trip a downgrade.
 		if (now - lastUpdateAt.current < 2000) return;
 		lastUpdateAt.current = now;
 
 		const cap = window.devicePixelRatio || 1;
-		const floor = 0.5;
 		const current = ratioRef.current;
 		let next = current;
 
 		if (avgFps < 30) {
 			consecutiveLow.current += 1;
 			consecutiveHigh.current = 0;
-			if (consecutiveLow.current >= 2 && current > floor) {
-				next = Math.max(floor, Math.round((current - 0.1) * 10) / 10);
+			if (consecutiveLow.current >= 2 && current > 0.5) {
+				next = Math.max(0.5, (current * 10 - 1) / 10);
 				consecutiveLow.current = 0;
 			}
 		} else if (avgFps > 55) {
 			consecutiveHigh.current += 1;
 			consecutiveLow.current = 0;
 			if (consecutiveHigh.current >= 2 && current < cap) {
-				next = Math.min(cap, Math.round((current + 0.1) * 10) / 10);
+				next = Math.min(cap, (current * 10 + 1) / 10);
 				consecutiveHigh.current = 0;
 			}
 		} else {

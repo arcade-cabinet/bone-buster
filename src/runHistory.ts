@@ -1,35 +1,20 @@
 /**
- * E9 — persistent run history backed by sql.js.
+ * E9 — persistent run history backed by sql.js, serialized into a single
+ * base64 blob under `localStorage["objexoom.runHistory"]`. Rows are ~50
+ * bytes each so the 5MB localStorage budget covers ~100k runs.
  *
- * Persistence strategy:
- *  - sql.js compiles SQLite to a single in-memory WASM database.
- *  - On open, hydrate from `localStorage["objexoom.runHistory"]` (base64
- *    blob). On every write, re-serialize and re-save. Single key, single
- *    blob — runs grow ~50 bytes each so even 10k runs fit under the 5MB
- *    localStorage budget comfortably.
- *  - WASM loaded from `<base>/assets/wasm/sql-wasm.wasm` (copied at
- *    postinstall + prebuild by `scripts/prepare-web-wasm.mjs`).
- *
- * Why not OPFS / IndexedDB:
- *  - OPFS requires a Worker and is gated by cross-origin isolation on
- *    iOS Safari. Not worth it for ~50-byte rows.
- *  - IndexedDB has the same write-the-whole-blob-back pattern but adds
- *    an async boundary on every write. localStorage is synchronous and
- *    fits the volume.
- *
- * If the localStorage budget ever bites, swap the open/persist pair for
- * IndexedDB without touching the public API. The SQL schema and query
- * shapes stay identical.
+ * WASM loaded from `<base>/assets/wasm/sql-wasm.wasm`, copied at
+ * postinstall + prebuild by `scripts/prepare-web-wasm.mjs`.
  */
 
-import initSqlJs, { type Database, type SqlJsStatic } from "sql.js";
+import initSqlJs, { type Database } from "sql.js";
 import { A } from "./assetUrl";
 import type { LevelChoice } from "./settings";
 
 const STORAGE_KEY = "objexoom.runHistory";
 
 /** Outcome of a single run. */
-export type RunOutcome = "won" | "died" | "abandoned";
+export type RunOutcome = "won" | "died";
 
 /** A single completed run as persisted in the history table. */
 export type RunRecord = Readonly<{
@@ -53,18 +38,6 @@ export type RunInsert = Readonly<{
 	level: LevelChoice;
 	outcome: RunOutcome;
 }>;
-
-let cachedSql: SqlJsStatic | null = null;
-
-async function loadSql(): Promise<SqlJsStatic> {
-	if (cachedSql) return cachedSql;
-	cachedSql = await initSqlJs({
-		// Resolve via the asset-url helper so GitHub-Pages base prefix
-		// + Capacitor file:// origins both work.
-		locateFile: () => A("/assets/wasm/sql-wasm.wasm"),
-	});
-	return cachedSql;
-}
 
 function decodeStoredBlob(): Uint8Array | null {
 	if (typeof localStorage === "undefined") return null;
@@ -124,7 +97,11 @@ export type RunHistory = Readonly<{
 }>;
 
 export async function openRunHistory(): Promise<RunHistory> {
-	const SQL = await loadSql();
+	const SQL = await initSqlJs({
+		// Resolve via the asset-url helper so GitHub-Pages base prefix
+		// + Capacitor file:// origins both work.
+		locateFile: () => A("/assets/wasm/sql-wasm.wasm"),
+	});
 	const existing = decodeStoredBlob();
 	const db = existing ? new SQL.Database(existing) : new SQL.Database();
 	ensureSchema(db);

@@ -12,6 +12,9 @@ import { WEAPONS, type WeaponId } from "../../weapons";
  * snappier than chaingun, shotgun snappier than both.
  */
 const RECOIL_DISTANCE: Record<WeaponId, number> = {
+	// E1 — melee is a forward-thrust swing rather than a kickback; bigger
+	// forward translation, no z-bounce-back.
+	melee: 0.12,
 	pistol: 0.04,
 	chaingun: 0.025,
 	shotgun: 0.08,
