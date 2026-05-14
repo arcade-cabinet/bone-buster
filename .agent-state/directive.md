@@ -79,15 +79,53 @@ while queue has [ ] items: implement → verify → commit → dispatch reviewer
 - [ ] **AO.5** Add PWA manifest + favicon set (apple-touch-icon, 192/512 maskable, theme-color from `--obx-bg-void`).
 - [ ] **AO.6** Verify `index.html` head references the manifest + favicons.
 
-### PARITY — carried over from the Objexiv directive
+### PARITY — DOOM reference clone
 
-(Closes once each item is shipped + verified visually against `reference-codebases/js13k2019-yet-another-doom-clone/`.)
+Full audit: [`docs/PARITY.md`](../docs/PARITY.md). Most reference
+mechanics are already present or elevated; only 2 true gaps remain.
 
-- [x] **PA-MOD2** Visually verify all 5 screenshot poses render cleanly post-extraction (landing types render in Black Ops One + Rajdhani with the warmer wordmark gradient; in-game HUD adopts the token palette; key pickup GLB + pistol viewmodel load from the new `/assets/models/` paths).
-- [ ] **PA1** ManyEnemies spawner — verify already wired in `src/refLevel.ts` survives extraction.
-- [ ] **PA9** Shell ejection on shotgun fire.
-- [ ] **PA10** Weapon recoil offset on viewmodel.
+- [x] **PA-MOD2** Visually verify all 5 screenshot poses render cleanly post-extraction.
+- [x] **PA1** ManyEnemies spawner — wired in `src/refLevel.ts`.
+- [x] **PA9** Shell ejection on shotgun fire (`ShellEjectField` active).
+- [x] **PA10** Weapon recoil offset on viewmodel (per-weapon `RECOIL_DISTANCE`).
+- [x] **PA11** Body-part physics: gravity arc + spin on death (`BodyPartField` active).
+- [x] **PA-FULL** End-to-end deep dive — complete; result captured in `docs/PARITY.md`.
+- [ ] **PA9b** Extend shell ejection to chaingun fires (reference ejects on every chaingun shot; we currently only fire on shotgun).
 - [ ] **PA-MOD7** Wire `gltfjsx` to auto-generate typed React components per GLB (so muzzle bones become addressable).
-- [ ] **PA11** Body-part physics: gravity arc + spin on death.
-- [ ] **PA16** Adaptive resolution via `gl.setPixelRatio` on low FPS.
-- [ ] **PA-FULL** End-to-end deep dive against the reference clone — log every mechanic the reference has and OBJEXOOM doesn't, then close the gap one commit at a time on this branch.
+- [ ] **PA16** Adaptive resolution via `gl.setPixelRatio` on low FPS — **only critical-tier parity gap left**, blocks mobile perf.
+
+### ELEVATION — beyond reference parity
+
+Full roadmap: [`docs/ELEVATION.md`](../docs/ELEVATION.md). Sequenced
+across 4 phases.
+
+**Phase 1 — Critical infra:**
+
+- [ ] **E12** Adaptive resolution via `gl.setPixelRatio` (also PA16; mobile-blocking).
+- [ ] **E9** sql.js persistent run history; pairs with WASM-sync infra (task #53).
+
+**Phase 2 — Mechanical elevation:**
+
+- [ ] **E1** Full melee weapon slot — 5 GLBs already shipped, wire into `WeaponId` + viewmodel + spec.
+- [ ] **E5** Destructible barrels with AoE damage.
+- [ ] **E6** Switches + secret walls + hidden rooms.
+
+**Phase 3 — Visual elevation:**
+
+- [ ] **E3** Decorative sector prop scatter (3DPSX Mega Pack has 200+ modular props).
+- [ ] **E4** Lit lamp props with real shadow projection (lamp_on.glb shipped, never spawned).
+- [ ] **E2** Boss enemies using `final_rigged.fbx` horror tier.
+
+**Phase 4 — Polish + variety:**
+
+- [ ] **E13** Procedural level archetype deepening (corridor / arena / courtyard / sewer / library).
+- [ ] **E7** Animated water + sewer biome (`PSX-Ocean-Surface` unmined).
+- [ ] **E8** Flamethrower weapon (continuous-fire AoE; `Flamethrower.glb` shipped).
+- [ ] **E11** Per-level ambient creature SFX layers.
+- [ ] **E10** 3D HUD elements (floating key mini-model, etc).
+
+### INFRA — supporting infrastructure
+
+- [ ] **INF1** WASM/asset sync per arcade-cabinet pattern (`scripts/prepare-web-wasm.mjs` postinstall + prebuild hook for sql.js et al). Task #53.
+- [ ] **INF2** Build-time `scripts/copy-public-assets.mjs` mirror with size-budget pruning.
+- [ ] **INF3** CI gate `scripts/verify-runtime-assets.ts` — every GLB referenced by `models.ts` exists at the resolved path, size budgets enforced per category.

@@ -12,6 +12,8 @@
 	},
 	"license": "UNLICENSED",
 	"scripts": {
+		"postinstall": "node scripts/prepare-web-wasm.mjs",
+		"prebuild": "node scripts/prepare-web-wasm.mjs",
 		"dev": "vite",
 		"build": "vite build",
 		"build:pages": "vite build --mode github-pages",
@@ -40,7 +42,9 @@
 		"test:e2e:screenshots": "playwright test tests/e2e/screenshots.spec.ts --workers=1",
 		"assets:fbx-to-glb": "node scripts/convert-fbx.mjs",
 		"assets:publish-screenshots": "bash scripts/publish-screenshots.sh",
-		"verify": "pnpm check && pnpm lint && pnpm test && pnpm test:browser"
+		"assets:verify-runtime": "node scripts/verify-runtime-assets.mjs",
+		"assets:prepare-wasm": "node scripts/prepare-web-wasm.mjs",
+		"verify": "pnpm check && pnpm lint && pnpm test && pnpm test:browser && pnpm assets:verify-runtime"
 	},
 	"dependencies": {
 		"@react-three/drei": "^10.7.7",
@@ -50,6 +54,7 @@
 		"postprocessing": "^6.39.1",
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5",
+		"sql.js": "^1.14.1",
 		"three": "^0.184.0",
 		"three-stdlib": "^2.36.1",
 		"tone": "^15.1.22",

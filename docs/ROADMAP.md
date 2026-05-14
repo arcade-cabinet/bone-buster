@@ -38,50 +38,70 @@ done. See [`DECISIONS.md` D8](./DECISIONS.md#d8) for the rationale.
 - Standalone root docs: this ROADMAP plus DESIGN, ARCHITECTURE,
   DECISIONS, TESTING, DEPLOYMENT
 
+- ObjexoomScene.tsx decomposition (1988 → 758 line root + 15 focused
+  modules under `src/scene/`)
+- Standalone browser smoke tests (real Chromium, no mocks)
+- OBJEXOOM cut out of Objexiv via archive tag
+- DOOM reference parity audit complete — [`PARITY.md`](./PARITY.md)
+- 3DPSX asset inventory complete — [`ASSET_INVENTORY.md`](./ASSET_INVENTORY.md)
+- Elevation roadmap drafted — [`ELEVATION.md`](./ELEVATION.md)
+- All script aliases aligned with arcade-cabinet sister projects
+
 ## In flight
 
-- ObjexoomScene.tsx decomposition (~1900 lines → focused modules)
-- Standalone browser smoke tests against ObjexoomShell
-- Objexiv-side cutover (delete easter-egg dir, prune deps, open PR)
+- WASM/asset sync infrastructure (postinstall + prebuild hook,
+  copy-public-assets, verify-runtime-assets CI gate)
 
 ## Remaining queue
 
-### DS — design system rollout
+### PARITY — true gaps vs reference (2 items)
+
+Only items left are real ❌/⚠️ from the audit. See
+[`PARITY.md`](./PARITY.md) for the full table.
+
+- PA16 / E12: Adaptive resolution via `gl.setPixelRatio` on low FPS —
+  **only critical-tier parity gap left**, blocks mobile perf
+- PA9b: Extend shell ejection to chaingun fires (reference ejects on
+  every chaingun shot; we currently only fire on shotgun)
+- PA-MOD7: Wire `gltfjsx` to auto-generate typed React components per
+  GLB (so muzzle bones become addressable)
+
+### ELEVATION — beyond reference (E1-E13)
+
+Full doc: [`ELEVATION.md`](./ELEVATION.md). Sequencing:
+
+**Phase 1 — critical infra:**
+
+- E12: Adaptive resolution (also PA16)
+- E9: sql.js persistent run history
+
+**Phase 2 — mechanical elevation:**
+
+- E1: Full melee weapon slot (5 GLBs already shipped)
+- E5: Destructible barrels with AoE damage
+- E6: Switches + secret walls + hidden rooms
+
+**Phase 3 — visual elevation:**
+
+- E3: Decorative sector prop scatter (3DPSX Mega Pack has 200+)
+- E4: Lit lamp props with shadow projection
+- E2: Boss enemies (rigged horror final_rigged.fbx tier)
+
+**Phase 4 — polish + variety:**
+
+- E13: Level archetype deepening
+- E7: Animated water + sewer biome
+- E8: Flamethrower weapon
+- E11: Per-level ambient creature SFX
+- E10: 3D HUD elements
+
+### Outstanding minor work
 
 - DS.7: tokens into scene materials (lava, key glow, fire muzzle,
   pickup tint)
-
-### AO — asset organization
-
-- AO.4: slasher (melee) weapon GLBs into a `slasher/` subdir once the
-  melee slot wires up
-- AO.5: PWA manifest + favicon set (apple-touch-icon, 192/512
-  maskable, theme-color from `--obx-bg-void`)
-- AO.6: `index.html` head wires manifest + favicons
-
-### B2 — mobile + CI
-
-- B2.1: `cap add android` and verify `pnpm build:native` produces an
-  APK
-- B2.4: `.github/workflows/cd.yml` deploys `pnpm build:pages` to
-  GitHub Pages on release tag
-
-### PARITY — reference-clone parity
-
-(Closes once each item ships + is verified visually against
-`reference-codebases/js13k2019-yet-another-doom-clone/`.)
-
-- PA1: ManyEnemies spawner — verify the existing `src/refLevel.ts`
-  hook still drives correctly post-extraction
-- PA9: Shell ejection on shotgun fire
-- PA10: Weapon recoil offset on viewmodel
-- PA-MOD7: Wire `gltfjsx` to auto-generate typed React components per
-  GLB (so muzzle bones become addressable)
-- PA11: Body-part physics — gravity arc + spin on death
-- PA16: Adaptive resolution via `gl.setPixelRatio` on low FPS
-- PA-FULL: End-to-end deep dive against the reference clone — log
-  every mechanic the reference has and OBJEXOOM doesn't, then close
-  the gap one commit at a time
+- AO.5/AO.6: PWA manifest + favicon set + head wiring
+- B2.1: `cap add android` and verify APK build
+- B2.4: `cd.yml` deploys `pnpm build:pages` to GitHub Pages on release
 
 ## Released
 

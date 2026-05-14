@@ -35,6 +35,9 @@ This file is the **map**, not a source of truth.
 | [`DESIGN.md`](./DESIGN.md) | product | Vision, identity, palette, references, what the game IS |
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | technical | Engine, scene, HUD, SFX, AI architecture and data flow |
 | [`DECISIONS.md`](./DECISIONS.md) | technical | ADRs — binding decisions + what was rejected |
+| [`PARITY.md`](./PARITY.md) | quality | DOOM reference clone parity audit — every mechanic ✅/🚀/⚠️/❌ |
+| [`ELEVATION.md`](./ELEVATION.md) | product | Roadmap for features beyond reference parity (E1-E13) |
+| [`ASSET_INVENTORY.md`](./ASSET_INVENTORY.md) | media | What 3DPSX assets we have, use, and haven't tapped yet |
 | [`ROADMAP.md`](./ROADMAP.md) | context | Active queue + completed milestones (mirrors `.agent-state/directive.md`) |
 | [`TESTING.md`](./TESTING.md) | quality | Test strategy, how to run unit / browser / e2e suites |
 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | ops | Pages deploy, Capacitor mobile, env requirements |
