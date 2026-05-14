@@ -73,4 +73,18 @@ describe("runHistory (sql.js, real browser)", () => {
 		const reopened = await openRunHistory();
 		expect(reopened.runCount()).toBe(0);
 	});
+
+	it("POL5 — totalSecrets round-trips through insert + read + reopen", async () => {
+		const first = await openRunHistory();
+		first.insert({ ...SAMPLE, totalSecrets: 4 }, 1_700_000_600_000);
+		first.insert({ ...SAMPLE, totalSecrets: 0 }, 1_700_000_700_000);
+
+		const recent = first.listRecent(10);
+		expect(recent.map((r) => r.totalSecrets).sort()).toEqual([0, 4]);
+
+		// Survive reopen.
+		const reopened = await openRunHistory();
+		const recentAfter = reopened.listRecent(10);
+		expect(recentAfter.map((r) => r.totalSecrets).sort()).toEqual([0, 4]);
+	});
 });
