@@ -1,3 +1,10 @@
+---
+title: Public asset layout
+updated: 2026-05-13
+status: current
+domain: layout
+---
+
 # `public/` — static asset layout
 
 Anything served verbatim by Vite goes here. Files keep their original

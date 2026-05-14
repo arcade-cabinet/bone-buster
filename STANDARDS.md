@@ -1,55 +1,115 @@
+---
+title: Standards
+updated: 2026-05-13
+status: current
+domain: quality
+---
+
 # STANDARDS
 
-Non-negotiable quality + brand rules. These survive across sessions and contributors.
+Non-negotiable quality + brand rules. These survive across sessions
+and contributors. When something here conflicts with a contributor's
+preference, the standards win.
 
 ## Code
 
-- **Strict TypeScript.** `strict: true`, no `any` without an inline `// type-safety: <reason>` justification.
-- **Biome only.** No ESLint, no Prettier. `biome.json` is the single source.
-- **Tab indent**, double quotes, trailing commas everywhere, semicolons always (the biome defaults this repo's config sets).
-- **Conventional Commits** — `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `perf:`, `test:`, `ci:`, `build:`.
+- **Strict TypeScript.** `strict: true`, no `any` without an inline
+  `// type-safety: <reason>` justification.
+- **Biome only.** No ESLint, no Prettier. `biome.json` is the single
+  source. See [`DECISIONS.md` D4](./docs/DECISIONS.md#d4).
+- **Tab indent**, double quotes, trailing commas everywhere,
+  semicolons always (the biome defaults this repo's config sets).
+- **Conventional Commits** — `feat:`, `fix:`, `chore:`, `docs:`,
+  `refactor:`, `perf:`, `test:`, `ci:`, `build:`.
 - **Squash-merge PRs.** No merge commits on `main`.
 - **No `--no-verify`**, no `--admin` merges, no force-push to main.
+- **Decompose by responsibility, not line count.** A 400-line config
+  table is fine; a 250-line file owning three subsystems is not. The
+  reader-can-hold-it-in-head test is the gate.
 
 ## Game design
 
-- **Procedural geometry + curated assets** — the mix, not one or the other. Walls, sectors, lighting, particles come from code; enemies, weapons, props come from GLBs.
-- **Determinism in the sim.** No `Math.random()`, no `performance.now()` in `engine.ts`/`enemyAi.ts`/`buildMap.ts`/`turtle.ts`/`runStats.ts`. Seedable RNG only.
-- **Reference parity.** OBJEXOOM is a port of `~/src/reference-codebases/js13k2019-yet-another-doom-clone`. Behavior gaps vs the reference are bugs, not features.
-- **Visuals are first-class.** Every render/UI/asset change updates `docs/assets/screenshots/` in the same commit (or carries a `// no-visual-impact: ...` skip with ≥10-word justification).
+- **Procedural geometry + curated assets** — the mix, not one or the
+  other. Walls, sectors, lighting, particles come from code; enemies,
+  weapons, props come from GLBs.
+- **Determinism in the sim.** No `Math.random()`, no
+  `performance.now()` in `engine.ts` / `enemyAi.ts` / `buildMap.ts` /
+  `turtle.ts` / `runStats.ts`. Seedable RNG only. The commit-gate
+  enforces this.
+- **Reference parity.** OBJEXOOM is a port of the structure of
+  `reference-codebases/js13k2019-yet-another-doom-clone` (gitignored;
+  developer-local). Behavior gaps vs the reference are bugs, not
+  features.
+- **Visuals are first-class.** Every render/UI/asset change must
+  re-shoot `pnpm test:e2e:screenshots` AND be visually inspected.
+  Visual blindness is a process bug — fix the harness if you can't
+  capture.
 
-## Brand / palette
+## Design tokens
 
-(To be locked in `src/constants.ts → OBJEXOOM_PALETTE` once the visual language stabilizes. Currently:)
-
-- **Ink**: deep navy backgrounds, `#07060f` neighborhood
-- **Indigo**: cool secondary, `#1c1f3a` family
-- **Violet**: enemy emissive accent
-- **Amber**: pickups, fire, HUD action highlight, lava
-- **Lime**: rare highlight
-
-Hex codes drift gets enforced via `gates.json → ban_patterns` once a strict palette lands.
+- Component code references the semantic `ROLE.*` layer from
+  [`src/design-tokens/`](./src/design-tokens/) — NOT raw hex, NOT
+  rgba, NOT scale steps. See
+  [`DECISIONS.md` D7](./docs/DECISIONS.md#d7).
+- Typography uses `FONT_FAMILY.display` (Black Ops One) or
+  `FONT_FAMILY.body` (Rajdhani). Never `"Inter"` / `"Poppins"` /
+  `"Helvetica"` literals — those bypass the offline-safe fontset.
+- The four `LINEAGE.*` anchors in
+  [`src/design-tokens/colors.ts`](./src/design-tokens/colors.ts) are
+  Objexiv-brand load-bearing. Edits there require a brand decision,
+  not a tweak.
+- New visual axis? Add a scale + ROLE entry; don't reach for an
+  off-palette literal. The CSS mirror in
+  [`app/tokens.css`](./app/tokens.css) gets updated in the same commit.
 
 ## Audio
 
 - Procedural via Tone.js — no audio files shipped.
-- All SFX have a panForPosition variant so spatialization stays consistent.
+- All SFX have a `panForPosition` variant so spatialization stays
+  consistent across sectors.
 
 ## Testing
 
-- **Unit (`pnpm test`)** must run in under 5 seconds total. Anything slower belongs in browser/e2e.
+- **Unit (`pnpm test`)** runs in under 2 seconds total. Anything
+  slower belongs in browser/e2e.
 - **Browser tests** drive real Chromium via `@vitest/browser`.
-- **E2E tests** drive the built game via Playwright with the `?objexoomDebug` hook contract.
-- **No test is "flaky" — it's broken.** Fix the race or replace the wait with a deterministic poll.
+- **E2E tests** drive the built game via Playwright on port 5191 with
+  the `?objexoomDebug` hook contract.
+- **No test is "flaky" — it's broken.** Fix the race or replace the
+  wait with a deterministic poll. Don't quarantine.
+- See [`docs/TESTING.md`](./docs/TESTING.md) for the full strategy.
 
 ## Mobile
 
-- Touch input is primary; pointer-lock + keyboard is the desktop add-on.
-- Mid-tier device (Pixel 5a class) is the perf target — test there, not on flagship.
+- Touch input is primary; pointer-lock + keyboard is the desktop
+  add-on.
+- Mid-tier device (Pixel 5a class) is the perf target — test there,
+  not on flagship.
 - Respect safe areas (`env(safe-area-inset-*)`).
 
 ## Documentation
 
-- Every commit that changes behavior updates the relevant doc in the same commit.
-- `CHANGELOG.md` is generated by release-please from Conventional Commit messages.
-- Frontmatter (`title:`, `updated:`, `status:`, `domain:`) on all `.md` files in root and `docs/`.
+- Every commit that changes behavior updates the relevant doc in the
+  same commit. Stale docs are bugs.
+- `CHANGELOG.md` is generated by release-please from Conventional
+  Commit messages. Don't hand-edit it.
+- Frontmatter (`title:`, `updated:`, `status:`, `domain:`) on all
+  `.md` files in root and `docs/`.
+- Decisions are append-only in
+  [`docs/DECISIONS.md`](./docs/DECISIONS.md). Supersede; don't
+  overwrite.
+
+## Asset URLs
+
+Every asset URL in `src/models.ts` flows through `A()` so
+`import.meta.env.BASE_URL` is honored. Raw `/assets/...` literals in
+loader call sites are bugs (will 404 in gh-pages). See
+[`DECISIONS.md` D10](./docs/DECISIONS.md#d10).
+
+## Git hygiene
+
+- One commit per logical change.
+- Never amend a pushed commit.
+- Long-running branch is `feat/objexoom-game-buildout`; small
+  unrelated fixes still get focused PRs.
+- Tag releases via release-please, not by hand.
