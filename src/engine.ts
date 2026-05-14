@@ -122,6 +122,17 @@ const MIN_ROOM = 3;
 const MAX_ROOM = 6;
 const ROOM_TRIES = 90;
 
+/**
+ * E13 step-5 — optional shape override for `generateMap`. When absent,
+ * uses the pre-step-5 defaults (MIN_ROOM=3, MAX_ROOM=6, ROOM_TRIES=90)
+ * so callers that don't know about archetypes get the same behavior.
+ */
+export type GenerateMapShape = Readonly<{
+	minRoom: number;
+	maxRoom: number;
+	roomTries: number;
+}>;
+
 function mulberry32(seed: number) {
 	let s = seed >>> 0;
 	return () => {
@@ -223,16 +234,19 @@ function roomsIntersect(a: Room, b: Room, padding: number) {
 	);
 }
 
-export function generateMap(seed: number): ObjexoomGridMap {
+export function generateMap(seed: number, shape?: GenerateMapShape): ObjexoomGridMap {
 	const rand = mulberry32(seed);
 	const width = MAP_WIDTH;
 	const height = MAP_HEIGHT;
+	const minRoom = shape?.minRoom ?? MIN_ROOM;
+	const maxRoom = shape?.maxRoom ?? MAX_ROOM;
+	const roomTries = shape?.roomTries ?? ROOM_TRIES;
 	const cells: Cell[][] = Array.from({ length: height }, () => new Array<Cell>(width).fill("wall"));
 
 	const rooms: Room[] = [];
-	for (let i = 0; i < ROOM_TRIES; i += 1) {
-		const w = MIN_ROOM + Math.floor(rand() * (MAX_ROOM - MIN_ROOM + 1));
-		const h = MIN_ROOM + Math.floor(rand() * (MAX_ROOM - MIN_ROOM + 1));
+	for (let i = 0; i < roomTries; i += 1) {
+		const w = minRoom + Math.floor(rand() * (maxRoom - minRoom + 1));
+		const h = minRoom + Math.floor(rand() * (maxRoom - minRoom + 1));
 		const gx = 1 + Math.floor(rand() * (width - w - 2));
 		const gy = 1 + Math.floor(rand() * (height - h - 2));
 		const room: Room = { gx, gy, width: w, height: h };
