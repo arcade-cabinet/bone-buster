@@ -54,7 +54,15 @@ import { tickEnemyLoop } from "./scene/hooks/enemyTickLoop";
 import { resolveFire } from "./scene/hooks/fireResolution";
 import { type Secret, spawnSecrets } from "./secrets";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
-import { playBoom, playHurt, playPickup, playPortal, stopAmbient } from "./sfx";
+import {
+	playBoom,
+	playHurt,
+	playPickup,
+	playPortal,
+	setAmbientArchetype,
+	setAmbientPhase,
+	stopAmbient,
+} from "./sfx";
 import type { WeaponId } from "./weapons";
 import { clearYuka, makeYukaEntityAt, removeYukaEntity, tickYuka } from "./yukaIntegration";
 
@@ -212,6 +220,24 @@ export function ObjexoomScene({
 			});
 		});
 	}, [camera]);
+
+	// E11 — push the per-map archetype to the ambient bed on mount.
+	// Each archetype shifts the drone's pitch + base volume so different
+	// runs sound distinct. The picker (E13) already chose the archetype;
+	// this just plumbs it to sfx.
+	useEffect(() => {
+		setAmbientArchetype(archetype);
+	}, [archetype]);
+
+	// E11 — phase-reactive ambient volume. `out` plays the archetype
+	// base; `going_back` swells +6dB so the "everything aggros" beat
+	// reads sonically too. The actual stopAmbient() in the going_back
+	// useEffect below still fires (the explosion stinger marks the
+	// flip), but `setAmbientPhase` would otherwise hold the swell across
+	// the phase boundary if a future commit removes the stopAmbient.
+	useEffect(() => {
+		setAmbientPhase(phase === "going_back" ? "going_back" : "out");
+	}, [phase]);
 
 	// H8 — when phase transitions out → going_back, re-aggro every alive
 	// enemy (FSM state 1 = chase, bypass LOS), stop the ambient music, and

@@ -248,6 +248,72 @@ export function stopAmbient() {
 	ambientDrone?.triggerRelease();
 }
 
+// E11 — per-archetype ambient bed. Each archetype shifts the drone's
+// pitch + volume so corridor/arena/courtyard/sewer/library each have
+// a distinct ambient character. `setAmbientArchetype` is idempotent.
+// Phase-reactive volume: when the player flips into `going_back`,
+// `setAmbientPhase("going_back")` swells the drone +6dB so the
+// "everything aggros, sprint back" beat reads sonically too.
+export type AmbientArchetype = "corridor" | "arena" | "courtyard" | "sewer" | "library";
+
+const ARCHETYPE_AMBIENT: Record<AmbientArchetype, { pitch: string; volumeDb: number }> = {
+	corridor: { pitch: "C1", volumeDb: -32 },
+	arena: { pitch: "G1", volumeDb: -30 }, // brighter, slightly louder
+	courtyard: { pitch: "D1", volumeDb: -34 }, // open-air, quieter
+	sewer: { pitch: "A0", volumeDb: -28 }, // sub-bass, oppressive
+	library: { pitch: "E1", volumeDb: -36 }, // delicate, near-silent
+};
+
+let currentArchetype: AmbientArchetype = "corridor";
+let currentPhase: "out" | "going_back" = "out";
+
+function applyAmbientGain() {
+	if (!ambientDrone) return;
+	const base = ARCHETYPE_AMBIENT[currentArchetype].volumeDb;
+	const phaseBoost = currentPhase === "going_back" ? 6 : 0;
+	ambientDrone.volume.rampTo(base + phaseBoost, 0.8);
+}
+
+export function setAmbientArchetype(archetype: AmbientArchetype) {
+	if (archetype === currentArchetype) return;
+	currentArchetype = archetype;
+	if (!ambientDrone) return;
+	const target = ARCHETYPE_AMBIENT[archetype];
+	// Re-trigger at the new pitch so the drone shifts character.
+	ambientDrone.triggerRelease();
+	ambientDrone.triggerAttack(target.pitch);
+	applyAmbientGain();
+}
+
+export function setAmbientPhase(phase: "out" | "going_back") {
+	if (phase === currentPhase) return;
+	currentPhase = phase;
+	applyAmbientGain();
+}
+
+/** Test-only: snapshot the current ambient state without touching audio. */
+export function getAmbientStateForTesting(): {
+	archetype: AmbientArchetype;
+	phase: "out" | "going_back";
+	resolvedPitch: string;
+	resolvedVolumeDb: number;
+} {
+	const base = ARCHETYPE_AMBIENT[currentArchetype].volumeDb;
+	const phaseBoost = currentPhase === "going_back" ? 6 : 0;
+	return {
+		archetype: currentArchetype,
+		phase: currentPhase,
+		resolvedPitch: ARCHETYPE_AMBIENT[currentArchetype].pitch,
+		resolvedVolumeDb: base + phaseBoost,
+	};
+}
+
+/** Test-only: reset to defaults so tests don't bleed state. */
+export function resetAmbientStateForTesting() {
+	currentArchetype = "corridor";
+	currentPhase = "out";
+}
+
 // K1 — explosion stinger. Membrane sub-boom + brown-noise transient.
 export function playBoom() {
 	boomSynth?.triggerAttackRelease("C1", "8n");
