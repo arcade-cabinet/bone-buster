@@ -162,7 +162,7 @@ default by one step) imports `SCALE` directly with a `// scale-step:
 
 ## D8 — `feat/objexoom-game-buildout` is one long-running branch
 
-**Status:** Active
+**Status:** Superseded by D12 on 2026-05-14
 **Date:** 2026-05-13
 
 The branch that lands every design-system + GLB-wiring + reference-
@@ -206,6 +206,48 @@ prefixes `import.meta.env.BASE_URL`.
 which respects the document base, NOT Vite's `base` env. In gh-pages
 mode where `base: "/objexoom/"`, raw `/assets/...` URLs 404. The
 helper applies the prefix once, every site stays readable.
+
+---
+
+## D11 — Muzzle tip via per-weapon offset table, not gltfjsx-generated bone refs
+
+**Status:** Locked
+**Date:** 2026-05-14
+
+PA-MOD7's original framing was "wire gltfjsx so muzzle bones become addressable as named refs." Investigation showed the wired GLBs (`pistol.glb`, `chaingun.glb`, `shotgun.glb`, `melee_machete.glb`) ship with only generic node names like `Gun` / `Bullet` — no muzzle/barrel/tip bones to address. gltfjsx would have generated typed components over those generic names, but the muzzle position would still need to be specified out-of-band.
+
+**Call:** add a `muzzleOffset: [x, y, z]` to `WeaponModel` in `src/models.ts` measured in weapon-local space (after the same `autoScale` + `rotation` the viewmodel applies). `WeaponViewmodel` renders an empty `<group ref={muzzleRef}>` at that offset. `ObjexoomScene` reads the world-position of the muzzle ref each frame instead of `camera.position` for `muzzleLightRef`.
+
+**Why:**
+- Solves the user-visible outcome (muzzle light at the barrel tip rather than camera center) without a codegen step, new devDep, or per-asset re-export.
+- Per-weapon offsets live in the same `models.ts` table where rotation and offset already do — single source of truth.
+- gltfjsx-generated components add a tracked codegen surface (re-run on every GLB swap, diff churn) for no marginal benefit when the bones don't exist.
+- Future-proof: if a future GLB DOES ship with a muzzle bone, the viewmodel can detect that node by name in the loaded scene graph and `<group>`-attach the muzzleRef to it inside the cloned scene — no codegen required.
+
+**Rejected:**
+- *Adopting gltfjsx as authored* — generates typed components, but the GLBs lack muzzle bones, so the typed access doesn't deliver the outcome.
+- *Adding muzzle bones in Blender to each GLB and re-exporting* — pulls 4+ external authoring passes per weapon swap; tracks externally-authored binaries; couples gameplay to manual asset surgery.
+- *Hardcoding the world offset at the ObjexoomScene call site* — couples scene to the per-weapon barrel geometry; explodes if we ever swap weapons.
+
+---
+
+## D12 — Per-item feature branches off latest main, not one long-running branch
+
+**Status:** Locked. **Supersedes D8.**
+**Date:** 2026-05-14
+
+`feat/objexoom-game-buildout`, the single-long-running branch policy from D8, was squash-merged as PR #12 on 2026-05-14 and deleted on the remote. New work ships as **one feature branch per directive item (or tight cluster of related items)**, opened off the latest pulled `origin/main`, PR'd and squash-merged.
+
+**Why:**
+- The long-running branch grew to ~50 commits and ~12k LOC of churn before review. Review feedback at that scale loops indefinitely.
+- Per-item branches keep CI feedback tight and let reviews focus on one acceptance criterion.
+- Squash-merging per-item keeps `main` log readable (one commit per item or cluster) without sacrificing per-branch atomic history.
+
+**Branch naming:** `feat/<item-id>-<slug>` (e.g. `feat/pa-mod7-muzzle-offset`, `feat/e6-switches-secrets`).
+
+**Rejected:**
+- *Keeping the long-running branch and rebasing on main periodically* — review fatigue + merge-conflict surface only grows.
+- *PR per commit* — too granular when one acceptance criterion legitimately spans 3-4 commits.
 
 ---
 
