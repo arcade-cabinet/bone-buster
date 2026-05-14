@@ -18,17 +18,30 @@
  *    `blocking: true` + a `blockingRadius` consumed by collision).
  */
 
+import { pickArchetype } from "../archetype";
 import type { ObjexoomMap, Vec2 } from "../engine";
 import { polygonContains } from "../engine";
 import type { LargePropDef } from "../largeProps";
 import { LARGE_PROPS, pickLargePropDef } from "../largeProps";
+import type { PropArchetype } from "./propPool";
 
 const SKIP_RADIUS = 5;
 const MIN_LARGE_SPACING = 2.5;
-const LARGE_PER_SECTOR_MIN = 1;
-const LARGE_PER_SECTOR_MAX = 2;
 const MAX_SAMPLE_ATTEMPTS = 16;
 const ID_STRIDE = 100;
+
+/**
+ * E13 step-16 — per-archetype large-prop density. Corridor preserves
+ * `[1, 2]` for canonical byte-stability. Arena denser (more debris-as-cover);
+ * library sparser (clean study halls); courtyard mid; sewer middle.
+ */
+const DENSITY_BY_ARCHETYPE: Readonly<Record<PropArchetype, readonly [number, number]>> = {
+	corridor: [1, 2],
+	arena: [1, 2],
+	courtyard: [1, 2],
+	sewer: [1, 2],
+	library: [0, 1],
+};
 
 export interface LargePropInstance {
 	/** Stable per-map id — `sectorId * 100 + indexInSector`. */
@@ -84,12 +97,13 @@ export function spawnLargeProps(map: ObjexoomMap): LargePropInstance[] {
 	const out: LargePropInstance[] = [];
 	const rng = mulberry32((map.seed >>> 0) ^ 0x4c415250);
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
+	const archetype = pickArchetype(map);
+	const [minPerSector, maxPerSector] = DENSITY_BY_ARCHETYPE[archetype];
 
 	for (const sector of map.sectors) {
 		if (sector.vertices.length < 3) continue;
 		const { minX, maxX, minY, maxY } = bboxOf(sector.vertices);
-		const target =
-			LARGE_PER_SECTOR_MIN + Math.floor(rng() * (LARGE_PER_SECTOR_MAX - LARGE_PER_SECTOR_MIN + 1));
+		const target = minPerSector + Math.floor(rng() * (maxPerSector - minPerSector + 1));
 
 		const placed: Vec2[] = [];
 		for (let i = 0; i < target; i += 1) {
