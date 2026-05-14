@@ -10,8 +10,8 @@
  * audio sting, hitstop+stagger combine), or just a "bigger enemy"?
  */
 
-import { chromium } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import { chromium } from "@playwright/test";
 
 const BASE = "http://localhost:5191";
 const OUT = "test-results/pt3-boss";
@@ -79,7 +79,9 @@ if (!bossInfo) {
 }
 
 const { target, player } = bossInfo;
-console.log(`PT3.2 — teleport near nearest enemy at (${target.x.toFixed(1)}, ${target.y.toFixed(1)})`);
+console.log(
+	`PT3.2 — teleport near nearest enemy at (${target.x.toFixed(1)}, ${target.y.toFixed(1)})`,
+);
 await page.evaluate(
 	({ target, player }) => {
 		const hooks = window.__objexoom;
