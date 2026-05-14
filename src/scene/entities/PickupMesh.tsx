@@ -1,9 +1,7 @@
-"use client";
-
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import type * as THREE from "three";
-import { OBJEXOOM_PALETTE } from "../../design-tokens";
+import { OBJEXOOM_PALETTE, ROLE } from "../../design-tokens";
 import type { Pickup } from "../../engine";
 
 /**
@@ -47,16 +45,16 @@ export function PickupMesh({
 					<mesh>
 						<boxGeometry args={[0.5, 0.15, 0.15]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.amber}
-							emissive={OBJEXOOM_PALETTE.amber}
+							color={ROLE.actionPickup}
+							emissive={ROLE.actionPickup}
 							emissiveIntensity={1.0}
 						/>
 					</mesh>
 					<mesh>
 						<boxGeometry args={[0.15, 0.5, 0.15]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.amber}
-							emissive={OBJEXOOM_PALETTE.amber}
+							color={ROLE.actionPickup}
+							emissive={ROLE.actionPickup}
 							emissiveIntensity={1.0}
 						/>
 					</mesh>
@@ -98,8 +96,8 @@ export function PickupMesh({
 					<mesh position={[-0.15, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
 						<cylinderGeometry args={[0.13, 0.13, 0.36, 12]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.amber}
-							emissive={OBJEXOOM_PALETTE.amber}
+							color={ROLE.actionPickup}
+							emissive={ROLE.actionPickup}
 							emissiveIntensity={0.95}
 							roughness={0.4}
 						/>
@@ -107,8 +105,8 @@ export function PickupMesh({
 					<mesh position={[0.15, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
 						<cylinderGeometry args={[0.13, 0.13, 0.36, 12]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.amber}
-							emissive={OBJEXOOM_PALETTE.amber}
+							color={ROLE.actionPickup}
+							emissive={ROLE.actionPickup}
 							emissiveIntensity={0.95}
 							roughness={0.4}
 						/>
@@ -148,8 +146,8 @@ export function PickupMesh({
 					<mesh position={[0.24, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
 						<cylinderGeometry args={[0.18, 0.13, 0.08, 12]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.amber}
-							emissive={OBJEXOOM_PALETTE.amber}
+							color={ROLE.actionPickup}
+							emissive={ROLE.actionPickup}
 							emissiveIntensity={1.8}
 						/>
 					</mesh>

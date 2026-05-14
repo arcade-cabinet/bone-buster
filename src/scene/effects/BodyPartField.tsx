@@ -1,8 +1,11 @@
-"use client";
-
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { OBJEXOOM_PALETTE } from "../../design-tokens";
+
+const COLOR_WRAITH = new THREE.Color(OBJEXOOM_PALETTE.enemyWraithSoul).getHex();
+const COLOR_IMP = new THREE.Color(OBJEXOOM_PALETTE.enemyImpMagma).getHex();
+const COLOR_BONE = new THREE.Color(OBJEXOOM_PALETTE.enemyBone).getHex();
 
 type BodyShard = {
 	id: number;
@@ -52,7 +55,7 @@ export function BodyPartField() {
 			const detail = ev.detail;
 			const count = 4 + ((Math.random() * 3) | 0); // 4-6
 			const baseColor =
-				detail.kind === "wraith" ? 0xa855f7 : detail.kind === "imp" ? 0xdc2626 : 0xd4d4d8;
+				detail.kind === "wraith" ? COLOR_WRAITH : detail.kind === "imp" ? COLOR_IMP : COLOR_BONE;
 			const now = performance.now();
 			for (let i = 0; i < count; i += 1) {
 				const theta = Math.random() * Math.PI * 2;

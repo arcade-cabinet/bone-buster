@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo } from "react";
 import { TILE } from "../../constants";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";

@@ -1,5 +1,3 @@
-"use client";
-
 import * as Tone from "tone";
 
 let initialized = false;

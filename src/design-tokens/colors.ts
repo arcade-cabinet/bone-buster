@@ -218,6 +218,14 @@ export const OBJEXOOM_PALETTE = {
 	chestWoodDeep: "#241a0a", // treasure chest band
 	portalTeal: "#22d3a8", // ExitPortal hue variant
 	portalRose: "#f43f5e", // ExitPortal hue variant
+	// Enemy/event body-part + burst colors (DS.7 follow-up — promoted
+	// from raw hex in ParticleBurstField / BodyPartField / ShellEjectField).
+	enemyWraithSoul: SCALE.violet[400], // wraith hit burst + body parts
+	enemyImpMagma: SCALE.blood[400], // imp hit + player-hit burst
+	actionPickupGlow: SCALE.amber[400], // pickup burst + explosion amber
+	shellBrass: SCALE.amber[600], // chaingun shell mesh body
+	shellBrassDeep: "#92400e", // chaingun shell mesh emissive (SCALE.amber[700])
+	enemyBone: "#d4d4d8", // generic skeletal body parts
 } as const;
 
 export type ScaleStep = keyof typeof SCALE.ink;

@@ -1,5 +1,3 @@
-"use client";
-
 import { motion } from "framer-motion";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -547,6 +545,8 @@ const overlayStyle: CSSProperties = {
 	inset: 0,
 	display: "grid",
 	placeItems: "center",
+	// scale-step: overlay scrim wants the deepest-ink available (ink[950]) at
+	// ~78% alpha — there is no semantic ROLE for "modal scrim" yet.
 	background: `${SCALE.ink[950]}c7`,
 	pointerEvents: "auto",
 	padding: 24,
@@ -601,7 +601,10 @@ function weaponChipStyle(active: boolean, owned: boolean, accent: string): CSSPr
 		background: active
 			? `${accent}22`
 			: owned
-				? `${SCALE.parchment[50]}0d`
+				? // scale-step: weapon-row backgrounds use highest-contrast
+					// parchment (50) at tiny alpha (0d/05) for a subtle off-state
+					// fill — no semantic ROLE captures "weapon-slot row tint".
+					`${SCALE.parchment[50]}0d`
 				: `${SCALE.parchment[50]}05`,
 		color: owned ? ROLE.textPrimary : ROLE.textMuted,
 		opacity: owned ? 1 : 0.5,

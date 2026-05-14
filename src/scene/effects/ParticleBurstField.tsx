@@ -1,8 +1,11 @@
-"use client";
-
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { OBJEXOOM_PALETTE } from "../../design-tokens";
+
+const COLOR_WRAITH = new THREE.Color(OBJEXOOM_PALETTE.enemyWraithSoul).getHex();
+const COLOR_IMP = new THREE.Color(OBJEXOOM_PALETTE.enemyImpMagma).getHex();
+const COLOR_AMBER = new THREE.Color(OBJEXOOM_PALETTE.actionPickupGlow).getHex();
 
 type Mote = {
 	id: number;
@@ -53,10 +56,10 @@ export function ParticleBurstField() {
 							: 15;
 			const colorHex =
 				detail.kind === "damage"
-					? 0xa855f7 // violet — enemy hit
+					? COLOR_WRAITH // violet — enemy hit
 					: detail.kind === "playerHit"
-						? 0xdc2626 // red — player hit
-						: 0xf59e0b; // amber — pickup / explode
+						? COLOR_IMP // red — player hit
+						: COLOR_AMBER; // amber — pickup / explode
 			const now = performance.now();
 			for (let i = 0; i < count; i += 1) {
 				const theta = Math.random() * Math.PI * 2;

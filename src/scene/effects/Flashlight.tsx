@@ -1,5 +1,3 @@
-"use client";
-
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef } from "react";
 import * as THREE from "three";
@@ -13,17 +11,21 @@ import { OBJEXOOM_PALETTE } from "../../design-tokens";
  * each frame to a point 8 m ahead of the camera so the cone projects
  * where the player is looking.
  */
+const FORWARD_BASE = new THREE.Vector3(0, 0, -1);
+
 export function Flashlight() {
 	const camera = useThree((s) => s.camera);
 	const spotRef = useRef<THREE.SpotLight | null>(null);
 	const targetRef = useRef<THREE.Object3D | null>(null);
+	// Scratch vector — reused every frame to avoid per-frame GC pressure.
+	const forwardRef = useRef(new THREE.Vector3());
 
 	useFrame(() => {
 		const spot = spotRef.current;
 		const target = targetRef.current;
 		if (!spot || !target) return;
 		spot.position.copy(camera.position);
-		const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+		const forward = forwardRef.current.copy(FORWARD_BASE).applyQuaternion(camera.quaternion);
 		target.position.set(
 			camera.position.x + forward.x * 8,
 			camera.position.y + forward.y * 8,

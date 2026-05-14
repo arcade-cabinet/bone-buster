@@ -35,7 +35,7 @@
 		"test": "vitest run --project=unit",
 		"test:watch": "vitest --project=unit",
 		"test:browser": "vitest run --project=browser",
-		"test:browser:headed": "HEADED=1 vitest run --project=browser",
+		"test:browser:headed": "vitest run --project=browser --browser.headless=false",
 		"test:browser:watch": "vitest --project=browser",
 		"test:coverage": "vitest run --project=unit --coverage",
 		"test:e2e": "playwright test",

@@ -1,9 +1,8 @@
-"use client";
-
 import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { SkeletonUtils } from "three-stdlib";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import { WEAPON_MODELS } from "../../models";
 import { WEAPONS, type WeaponId } from "../../weapons";
@@ -57,29 +56,26 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 	const recoilUntil = useRef(0);
 	const model = WEAPON_MODELS[weapon];
 	const gltf = useGLTF(model.url);
-	const scene = gltf.scene;
+	// Clone the cached GLTF scene per-mount: `useGLTF` shares the source
+	// tree across instances, so mutating `.material` on the original would
+	// leak to every other consumer and would not be disposed on unmount.
+	const scene = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
 
-	const { autoScale, center } = useMemo(() => {
+	const { autoScale, center, replacedMaterials } = useMemo(() => {
 		const bbox = new THREE.Box3().setFromObject(scene);
 		const size = new THREE.Vector3();
 		bbox.getSize(size);
 		const c = new THREE.Vector3();
 		bbox.getCenter(c);
 		const longest = Math.max(size.x, size.y, size.z, 1e-3);
-		return {
-			autoScale: VIEWMODEL_TARGET_LENGTH / longest,
-			center: c,
-		};
-	}, [scene]);
-
-	useEffect(() => {
+		const replaced: THREE.MeshStandardMaterial[] = [];
 		scene.traverse((node) => {
 			if (!(node instanceof THREE.Mesh)) return;
 			const m = node.material;
 			const isUntexturedStd = m instanceof THREE.MeshStandardMaterial && !m.map;
 			const isUntexturedBasic = m instanceof THREE.MeshBasicMaterial && !m.map;
 			if (isUntexturedStd || isUntexturedBasic) {
-				node.material = new THREE.MeshStandardMaterial({
+				const mat = new THREE.MeshStandardMaterial({
 					color:
 						weapon === "pistol"
 							? OBJEXOOM_PALETTE.weaponMetalLight
@@ -89,9 +85,23 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 					metalness: 0.7,
 					roughness: 0.35,
 				});
+				node.material = mat;
+				replaced.push(mat);
 			}
 		});
+		return {
+			autoScale: VIEWMODEL_TARGET_LENGTH / longest,
+			center: c,
+			replacedMaterials: replaced,
+		};
 	}, [scene, weapon]);
+
+	useEffect(
+		() => () => {
+			for (const m of replacedMaterials) m.dispose();
+		},
+		[replacedMaterials],
+	);
 
 	useEffect(() => {
 		const onFire = () => {
@@ -113,7 +123,18 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 		let recoilOffset = 0;
 		if (remaining > 0) {
 			const t = 1 - remaining / RECOIL_DURATION_MS;
-			recoilOffset = Math.sin(t * Math.PI) * RECOIL_DISTANCE[weapon];
+			if (weapon === "melee") {
+				// Forward-thrust: ease-out (1-(1-t)^2) drives the blade
+				// forward (-Z in camera-local) over the full window and
+				// holds — no bounce-back. The full pose snaps back to
+				// neutral when remaining ≤ 0.
+				recoilOffset = -(1 - (1 - t) * (1 - t)) * RECOIL_DISTANCE[weapon];
+			} else {
+				// Kickback: sin(πt) bumps the weapon away from camera
+				// (+Z in camera-local) and returns to neutral over the
+				// window.
+				recoilOffset = Math.sin(t * Math.PI) * RECOIL_DISTANCE[weapon];
+			}
 		}
 
 		// In camera-local space:

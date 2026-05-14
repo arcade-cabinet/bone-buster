@@ -1,5 +1,3 @@
-"use client";
-
 import { Canvas } from "@react-three/fiber";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -397,7 +395,7 @@ export function ObjexoomShell() {
 			ammo: baseAmmo(),
 			ownedWeapons: baseOwnedWeapons(),
 			damageFlashAt: 0,
-			run: makeInitialRunStats(performance.now()),
+			run: makeInitialRunStats(Date.now()),
 			phase: "out",
 		});
 	}, [settings.soundEnabled, maxHp, map.enemySpawns.length]);
@@ -514,7 +512,7 @@ export function ObjexoomShell() {
 						level: settings.level,
 						outcome: state.status === "won" ? "won" : "died",
 					},
-					performance.now(),
+					Date.now(),
 				);
 			} catch {
 				// run-history is a nice-to-have; never block gameplay on it

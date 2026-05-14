@@ -11,7 +11,7 @@ Three suites, three purposes. All run from the repo root with `pnpm`.
 
 ## Unit — `pnpm test`
 
-12 suites, 163 tests, vitest in jsdom. Lives at
+13 suites, 177 tests, vitest in jsdom. Lives at
 [`src/__tests__/unit/`](../src/__tests__/unit/).
 
 Covers the pure-TS simulation: engine math, build-map output,
@@ -31,12 +31,12 @@ pnpm test -- engine
 ## Browser — `pnpm test:browser`
 
 vitest browser project (real Chromium via `@vitest/browser-playwright`).
-Currently empty — first standalone smoke tests are queued
-([ROADMAP](./ROADMAP.md) → standalone browser smoke).
+2 suites, 5 tests passing. Lives at `src/__tests__/browser/`.
 
-Lives at `src/__tests__/browser/`. Covers anything that needs a real
-DOM + real fonts + real WebGL: HUD render snapshots, Shell lifecycle
-transitions, pointer-lock fallback paths, font-loaded layout shifts.
+Covers anything that needs a real DOM + real fonts + real WebGL:
+sql.js run-history persistence (`runHistory.browser.test.ts`),
+ObjexoomShell mount + HUD render (`ObjexoomShell.browser.test.tsx`).
+New surface that touches DOM, fonts, or WebGL lands here.
 
 ## End-to-end — `pnpm test:e2e`
 

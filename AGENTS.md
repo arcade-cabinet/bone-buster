@@ -110,7 +110,7 @@ inline justification.
 
 Full doc: [`docs/TESTING.md`](./docs/TESTING.md).
 
-- **Unit (`pnpm test`)** — 163 tests, pure-TS, no DOM, no canvas.
+- **Unit (`pnpm test`)** — 177 tests across 13 suites, pure-TS, no DOM, no canvas.
   Should run in under 2 seconds.
 - **Browser (`pnpm test:browser`)** — Vitest in real Chromium. Empty
   for now; first standalone smoke tests queued.

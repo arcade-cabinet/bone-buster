@@ -1,8 +1,10 @@
-"use client";
-
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { OBJEXOOM_PALETTE } from "../../design-tokens";
+
+const COLOR_BRASS = new THREE.Color(OBJEXOOM_PALETTE.shellBrass).getHex();
+const COLOR_BRASS_DEEP = new THREE.Color(OBJEXOOM_PALETTE.shellBrassDeep).getHex();
 
 type Shell = {
 	id: number;
@@ -100,8 +102,8 @@ export function ShellEjectField() {
 				const m = new THREE.Mesh(
 					new THREE.CylinderGeometry(0.025, 0.025, 0.07, 8),
 					new THREE.MeshStandardMaterial({
-						color: 0xb45309,
-						emissive: 0x92400e,
+						color: COLOR_BRASS,
+						emissive: COLOR_BRASS_DEEP,
 						emissiveIntensity: 0.4,
 						metalness: 0.7,
 						roughness: 0.35,

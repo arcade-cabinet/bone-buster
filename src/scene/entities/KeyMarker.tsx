@@ -1,9 +1,7 @@
-"use client";
-
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import type * as THREE from "three";
-import { OBJEXOOM_PALETTE } from "../../design-tokens";
+import { ROLE } from "../../design-tokens";
 
 /**
  * Floating amber torus marking the level's key pickup. Bobs + spins so
@@ -28,8 +26,8 @@ export function KeyMarker({
 		<mesh ref={ref} position={[position.x, 0.7, position.y]} visible={visible}>
 			<torusGeometry args={[0.28, 0.09, 8, 18]} />
 			<meshStandardMaterial
-				color={OBJEXOOM_PALETTE.amber}
-				emissive={OBJEXOOM_PALETTE.amber}
+				color={ROLE.actionKey}
+				emissive={ROLE.actionKey}
 				emissiveIntensity={0.95}
 			/>
 		</mesh>

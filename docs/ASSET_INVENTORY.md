@@ -71,7 +71,7 @@ Still-zipped packs:
 - **PSX-Ocean-Surface.zip** — animated water surface (could fill
   underground sewer-level pools)
 - **Stylized Guns 3D Models PRO.zip** — additional gun roster
-  (revolver, sawn-off, etc — potential weapon slots 4-6)
+  (revolver, sawn-off, etc. — potential weapon slots 4-6)
 - **PSX-Knives.zip** — knife variants (replace single-knife melee
   with a real knife roster)
 - **Chainsaw_2.0.zip** — newer chainsaw mesh (replace current

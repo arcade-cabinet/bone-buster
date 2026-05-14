@@ -1,5 +1,3 @@
-"use client";
-
 import { motion, useReducedMotion } from "framer-motion";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";

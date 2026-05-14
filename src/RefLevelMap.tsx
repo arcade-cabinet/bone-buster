@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Renders a turtle-decoded reference level as r3f geometry.
  *

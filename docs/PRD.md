@@ -94,7 +94,7 @@ library:
 The DAG below shows what must ship before what. Independent leaves
 can run in parallel; everything else waits on its ancestors.
 
-```
+```text
                               ┌──────────────────┐
                               │ INF2             │
                               │ copy-assets      │

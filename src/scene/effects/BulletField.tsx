@@ -1,10 +1,19 @@
-"use client";
-
 import { useFrame } from "@react-three/fiber";
 import { type RefObject, useRef } from "react";
 import * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import type { EnemyBullet } from "../../engine";
+
+// Shared geometry + material across every bullet mesh. All bullets are
+// identical visually, so allocating one of each at module load and
+// reusing them across the pool cuts per-spawn GPU upload and JS GC
+// churn. Materials/geometries owned at module scope; never disposed.
+const BULLET_GEOMETRY = new THREE.SphereGeometry(0.18, 10, 10);
+const BULLET_MATERIAL = new THREE.MeshStandardMaterial({
+	color: OBJEXOOM_PALETTE.amber,
+	emissive: OBJEXOOM_PALETTE.amber,
+	emissiveIntensity: 1.8,
+});
 
 /**
  * Renders all currently-alive enemy bullets. The bullet array lives
@@ -30,14 +39,7 @@ export function BulletField({
 			let mesh = register.current?.get(bullet.id);
 			if (!mesh && groupRef.current) {
 				const g = new THREE.Group();
-				const inner = new THREE.Mesh(
-					new THREE.SphereGeometry(0.18, 10, 10),
-					new THREE.MeshStandardMaterial({
-						color: OBJEXOOM_PALETTE.amber,
-						emissive: OBJEXOOM_PALETTE.amber,
-						emissiveIntensity: 1.8,
-					}),
-				);
+				const inner = new THREE.Mesh(BULLET_GEOMETRY, BULLET_MATERIAL);
 				g.add(inner);
 				groupRef.current.add(g);
 				register.current?.set(bullet.id, g);

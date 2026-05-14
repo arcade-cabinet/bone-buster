@@ -47,7 +47,7 @@ If `/Volumes/home/assets/3DPSX/` is detached, the COV* items are blocked but eve
 ## Repo-specific
 
 - **Run:** `pnpm dev` (Vite at http://localhost:5191 — pinned via `strictPort`)
-- **Test:** `pnpm test` (vitest unit, 163 passing) + `pnpm test:browser` (real-Chromium browser-mode, 5 passing) + `pnpm test:e2e` (Playwright)
+- **Test:** `pnpm test` (vitest unit, 177 passing across 13 suites) + `pnpm test:browser` (real-Chromium browser-mode, 5 passing across 2 suites) + `pnpm test:e2e` (Playwright)
 - **Verify:** `pnpm verify` runs lint + check + test + test:browser + assets:verify-runtime (the merge gate).
 - **Build:** `pnpm build` (web), `pnpm build:native` (web + cap sync), `pnpm build:pages` (GH Pages base path)
 - **Deploy:** GitHub Pages via `.github/workflows/cd.yml` on release-please tag (B2.4, not yet wired — see [`docs/PRD.md` § B2.4](docs/PRD.md#b24--github-pages-cd-on-release-tag)).
