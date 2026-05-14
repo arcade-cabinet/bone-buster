@@ -11,6 +11,7 @@ import {
 } from "./design-tokens";
 import { addObjexoomListener, dispatch } from "./events";
 import type { GameState } from "./ObjexoomShell";
+import { HudKey3D } from "./scene/hud/HudKey3D";
 import { LEVEL_LABEL, type LevelChoice } from "./settings";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "./weapons";
 
@@ -38,6 +39,16 @@ export function ObjexoomHUD({
 	const currentAmmo = state.ammo[state.weapon];
 	const ammoLabel = Number.isFinite(currentAmmo) ? `${currentAmmo}` : "∞";
 
+	// E10 — track when the HUD key model should flash red. `flashUntil`
+	// is a wall-clock deadline; the HudKey3D renderer ramps emissive
+	// from amber to blood as long as `now < flashUntil`.
+	const [keyFlashUntil, setKeyFlashUntil] = useState(0);
+	useEffect(() => {
+		return addObjexoomListener("playerHit", () => {
+			setKeyFlashUntil(performance.now() + 250);
+		});
+	}, []);
+
 	return (
 		<section
 			aria-label="OBJEXOOM heads-up display"
@@ -49,6 +60,10 @@ export function ObjexoomHUD({
 				color: ROLE.textPrimary,
 			}}
 		>
+			{/* E10 — 3D spinning key model. Mounts only when hasKey is
+			    true (no Canvas → no WebGL cost otherwise). Flashes red on
+			    player-hit via the keyFlashUntil deadline. */}
+			<HudKey3D hasKey={state.hasKey} flashUntil={keyFlashUntil} />
 			<div style={cornerStyle("top-left")}>
 				{/* M5 — level identity. Hidden on touch (cramped screen real
 				    estate) to keep the HP pip row + warning legible. */}
