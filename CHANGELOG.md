@@ -9,6 +9,13 @@ domain: history
 
 All notable changes to this project will be documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Conventional Commits](https://www.conventionalcommits.org).
 
+## [0.2.1](https://github.com/objexiv/objexoom/compare/v0.2.0...v0.2.1) (2026-05-15)
+
+
+### Bug Fixes
+
+* **scripts:** PT1 playtest mkdir output dir ([#18](https://github.com/objexiv/objexoom/issues/18)) ([eb09806](https://github.com/objexiv/objexoom/commit/eb0980619875fd3a6222354a30eb95e7d4104731))
+
 ## [Unreleased]
 
 ### Added
