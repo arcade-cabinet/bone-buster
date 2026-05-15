@@ -95,7 +95,7 @@ Picking order: top-down. CONV1+CONV2+CONV3 first — they're prereqs or unblock 
 
 - [x] **QW8 — move non-hook files from `src/scene/hooks/` → `src/scene/tick/`.** Shipped. 4 files moved (`enemyTickLoop`, `fireResolution`, `returnBearing`, `timeScaleBus`) — all zero-React-hooks tick-loop modules. `useGameRef.ts` STAYS in `scene/hooks/` because it's a real React hook (uses `useRef`); the COMPLEXITY F6 finding pre-dated CONV2. Updated 7 import sites (ObjexoomScene.tsx, GoingBackOverlay.tsx, ReturnToSpawnBearingWriter.tsx, 2 unit tests, 2 stale comments). 631 unit + 6 browser green.
 
-- [ ] **QW9 — fix objexoom-fade.test.ts tautology.** `src/__tests__/unit/objexoom-fade.test.ts:13-23` asserts against a local copy of COLOR_BY_KIND/PEAK_BY_KIND. Either import the real table from ObjexoomShell (extract to a shared module first if needed) or delete the test. Source: TEST S1, COMPLEXITY F12.
+- [x] **QW9 — fix objexoom-fade.test.ts tautology.** Shipped. Extracted `FADE_COLOR_BY_KIND` + `FADE_PEAK_BY_KIND` + `computeFadePeak` from inline ObjexoomShell.tsx into new `src/fadeTriggers.ts`. Test imports the SAME table the runtime uses (`triggerFade` now reads `FADE_COLOR_BY_KIND[kind]` + `computeFadePeak(kind, intensity)`). The "drift canary" is now a real canary. Source: TEST S1, COMPLEXITY F12.
 
 - [x] **QW10 — pin AdaptiveResolution useFrame to priority={2}.** Shipped. `useFrame(..., 2)` runs post-render so `gl.info.render.{calls,triangles}` samples THIS frame's totals instead of LAST frame's (the prior default-priority placement was a latent OBS1 bug per PERF #8). Comment updated to name the contract.
 
@@ -113,7 +113,7 @@ Picking order: top-down. CONV1+CONV2+CONV3 first — they're prereqs or unblock 
 
 - [ ] **A6 — `src/archetype/registry.ts`.** Aggregate import + re-export of every archetype-keyed table (lighting palette, structures, decals, floor textures, enemy mix, sfx ambient, scatter density tuples, propPool, archetypeMapShape). `ArchetypeAxis` interface listing each axis name + module owner. DESIGN.md updated to link to the registry. When the 6th archetype lands, this file is the checklist. 0.5 day. Source: ARCHITECTURE §2.4.
 
-- [ ] **A7 — DECISIONS.md backfill D15-D18.** D15 = AUDIO1 (channel-per-synth audio bus), D16 = ARCH2 (scene-hook extraction — enemyTickLoop, fireResolution), D17 = ARCH3 (sql.js removal Phase 20), D18 = persistence stack (@capacitor-community/sqlite + jeep-sqlite + @capacitor/preferences). Each one paragraph, cite PRs. 2 hours. Source: ARCHITECTURE §7.5.
+- [x] **A7 — DECISIONS.md backfill D15-D18.** Shipped. D15 (AUDIO1 — channel-per-synth audio bus), D16 (ARCH2a/2b + QW8 — scene/tick/* extraction), D17 (ARCH3 — sql.js removal), D18 (persistence stack — @capacitor-community/sqlite + jeep-sqlite). Each documents the call + why + rejected alternatives + cites the relevant source files. Frontmatter `updated:` bumped to 2026-05-15. Source: ARCHITECTURE §7.5.
 
 ### T — test gate hardening
 
