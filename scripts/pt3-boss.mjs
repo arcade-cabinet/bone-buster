@@ -90,8 +90,9 @@ await page.evaluate(
 		const len = Math.hypot(dx, dy) || 1;
 		const ux = dx / len;
 		const uy = dy / len;
-		// 3 tiles back from target, facing it.
-		hooks.teleport(target.x - ux * 3, target.y - uy * 3, Math.atan2(ux, -uy));
+		// 5 tiles back from target, facing it. Boss is 1.6x scale +
+		// POL29 emissive rim — closer than 5 tiles fills the frame.
+		hooks.teleport(target.x - ux * 5, target.y - uy * 5, Math.atan2(ux, -uy));
 	},
 	{ target, player },
 );

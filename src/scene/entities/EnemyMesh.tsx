@@ -36,6 +36,33 @@ export function EnemyMesh({
 	// across multiple instances — a plain .clone() shares skeletons and
 	// every instance animates in lockstep.
 	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
+
+	// POL29 — boss-tier enemies get a permanent emissive blood-red rim
+	// so the bigger silhouette ALSO reads as visually distinct at low
+	// light, not just "skeleton scaled up". Mutate the cloned material
+	// once (per instance, not per frame) — POL19 hit-flash already
+	// owns per-frame material mutation via the EnemyHitFlash slot, so
+	// the static rim doesn't interfere.
+	useMemo(() => {
+		if (enemy.tier !== "boss") return;
+		cloned.traverse((obj) => {
+			const mesh = obj as THREE.Mesh;
+			if (!mesh.isMesh) return;
+			const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+			for (const mat of mats) {
+				const std = mat as THREE.MeshStandardMaterial;
+				if (!std.emissive) continue;
+				// Clone the material so the rim only applies to this
+				// instance, not every enemy sharing the cached GLB
+				// material. POL19 EnemyHitFlash relies on per-instance
+				// clones for the same reason.
+				const own = std.clone();
+				own.emissive = new THREE.Color(0xdc2626); // blood[600]
+				own.emissiveIntensity = 0.22;
+				mesh.material = own;
+			}
+		});
+	}, [cloned, enemy.tier]);
 	// Normalize size against measured bbox. Use the LONGEST axis (not
 	// just Y) because some horror meshes ship lying on the wrong axis
 	// — picking the biggest dim and matching it to heightTiles gives
