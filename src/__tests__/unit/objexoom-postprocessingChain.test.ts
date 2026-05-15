@@ -74,6 +74,37 @@ describe("A3 — stepLowQuality state machine", () => {
 		expect(f2.consecutiveLow).toBe(0);
 	});
 
+	it("boundary: pixelRatio=0.55 (exact gate) ARMS the trigger (<=)", () => {
+		// 0.55 is the literal PIXEL_RATIO_FLOOR_GATE constant; the
+		// gate uses `<=` so this value is on the armed side. Pinning
+		// the exact equality so a future change from `<=` to `<`
+		// (which would silently disarm the trigger right at floor)
+		// is caught here.
+		const r = stepLowQuality({
+			avgFps: 25,
+			pixelRatio: 0.55,
+			lowQuality: false,
+			consecutiveLow: 0,
+			consecutiveHigh: 0,
+		});
+		expect(r.consecutiveLow).toBe(1);
+		expect(r.lowQuality).toBe(false);
+	});
+
+	it("boundary: pixelRatio=0.551 (just above gate) DISARMS the trigger", () => {
+		// Mirror of the gate test — one ULP above 0.55 must fall
+		// into the in-band branch and clear counters.
+		const r = stepLowQuality({
+			avgFps: 25,
+			pixelRatio: 0.551,
+			lowQuality: false,
+			consecutiveLow: 0,
+			consecutiveHigh: 0,
+		});
+		expect(r.consecutiveLow).toBe(0);
+		expect(r.lowQuality).toBe(false);
+	});
+
 	it("low fps with pixel-ratio still above floor does NOT trip (tier gate)", () => {
 		// AdaptiveResolution hasn't drained its lever yet — A3 must
 		// wait. Two consecutive low windows at full pixel-ratio
