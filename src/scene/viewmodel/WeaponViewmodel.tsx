@@ -170,6 +170,18 @@ export function WeaponViewmodel({
 	// weapon ref doesn't keep a swapped-out weapon's group alive.
 	useEffect(() => () => onMuzzleAnchor?.(null), [onMuzzleAnchor]);
 
+	// PR #16 fold (Gemini medium): priority=-1 makes this useFrame run
+	// BEFORE the scene's default-priority (0) useFrame that reads the
+	// muzzle anchor's world position. Verified against r3f 9.6 source
+	// (events-*.cjs.prod.js): subscribers are sorted ascending by
+	// priority (`a.priority - b.priority`), and ONLY `priority > 0`
+	// flips the internal manual-render flag — so negative priorities
+	// simply run earlier within the auto-rendered set without disabling
+	// the auto-render. Without this the scene reads last-frame's
+	// matrix and the muzzle-flash light trails the rendered barrel by
+	// 16ms (one frame at 60fps) — functionally invisible against the
+	// 250ms muzzle-flash decay window, but correctness costs nothing
+	// here so close the gap.
 	useFrame(() => {
 		const group = groupRef.current;
 		if (!group) return;
@@ -207,7 +219,7 @@ export function WeaponViewmodel({
 		group.translateX(model.offset[0]);
 		group.translateY(model.offset[1] + dipY);
 		group.translateZ(model.offset[2] + recoilOffset);
-	});
+	}, -1);
 
 	return (
 		<group

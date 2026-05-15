@@ -303,13 +303,22 @@ export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
 		url: A("/assets/models/weapons/chaingun.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.18, -0.16, -0.38],
-		// Chaingun (Uzi/Flamethrower body): bbox size 1.19 × 0.37 × 0.13,
-		// long axis is +X in the native (un-rotated) GLB frame. The
-		// muzzleBboxFrac picker uses the bbox BEFORE the viewmodel
-		// rotation is applied — so the +X corner of the bbox is the
-		// barrel tip and the WeaponViewmodel projects it through the
-		// rotation matrix at runtime to land at the correct world
-		// position. Empirically validated against the muzzle-flash light.
+		// Chaingun (Uzi/Flamethrower body): bbox size 1.19 × 0.37 × 0.13.
+		// Long axis is +X in the native (un-rotated) GLB frame. Note that
+		// in three.js, camera-forward is -Z (not -X) — `rotation_Y=π`
+		// alone would point this barrel at camera-left, not forward.
+		// That's intentional: the FULL transform that lands the muzzle
+		// in front of the camera is the `<group rotation={[0.15, π, 0]}>`
+		// applied INSIDE `WeaponViewmodel`, which sits in turn inside
+		// the camera-anchored group at world offset [0.18, -0.16, -0.38]
+		// (Z negative = in front of camera). The muzzleBboxFrac picker
+		// resolves [fx, fy, fz] against the bbox BEFORE that rotation —
+		// so the +X corner (fx=0.97) is the native-frame barrel tip; the
+		// runtime rotation then carries the anchor to the visible world
+		// position. WeaponViewmodel.useFrame samples the anchor's world
+		// position each frame so any pose change (recoil, sway, look)
+		// keeps the muzzle flash co-located with the rendered barrel.
+		// Empirically validated against the muzzle-flash light.
 		muzzleBboxFrac: [0.97, 0.55, 0.5],
 	},
 	shotgun: {

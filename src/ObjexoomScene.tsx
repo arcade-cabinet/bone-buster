@@ -495,15 +495,12 @@ export function ObjexoomScene({
 			muzzleLightRef.current.color.copy(muzzleColorRef.current);
 			const anchor = muzzleAnchorRef.current;
 			if (anchor) {
-				// Read the muzzle anchor's world position. Note: this
-				// reads from the most-recently-updated matrix, which is
-				// last frame's (WeaponViewmodel's useFrame runs AFTER this
-				// one in registration order). The resulting 1-frame lag
-				// (~16ms at 60fps) is functionally invisible against the
-				// muzzle flash's 250ms decay window — flagged by PR #16
-				// review, accepted as a known minor imperfection. A future
-				// refactor can re-architect this as a positive-priority
-				// useFrame if the lag ever becomes perceptible.
+				// PR #16 fold (Gemini medium): WeaponViewmodel's useFrame
+				// is wired at priority=-1 so it runs BEFORE this default-
+				// priority (0) useFrame each frame — the anchor's matrix
+				// is therefore THIS frame's pose, not last frame's, when
+				// we read it here. No more 16ms lag against the rendered
+				// barrel.
 				anchor.getWorldPosition(muzzleWorldPos);
 				muzzleLightRef.current.position.copy(muzzleWorldPos);
 			} else {

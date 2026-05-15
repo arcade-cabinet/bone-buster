@@ -346,7 +346,7 @@ Pick the topmost `[ ]` item from the highest-priority lane that has remaining wo
 1. **PARITY** — reference-clone gaps (all currently `[x]`; if any regress, fix first). PA-MOD7 + the rest of the PARITY items are done; this lane is currently empty.
 2. **ARCH** — architectural maintenance raised by reviews. **ARCH2 (re-decomp) blocks E3.** Pick first if it's the gate.
 3. **ELEVATION Phase 2** — mechanical (E5 ✅ shipped; E6 next).
-4. **ELEVATION Phase 3** — visual. Order: PA-MOD7 → COV1 → E4 → COV4 → E3 → COV3 → E2. (Lane-interplay table below explains why.)
+4. **ELEVATION Phase 3** — visual. PA-MOD7 / COV1 / E4 / COV4 / E3 / COV3 / E2 are ALL `[x]`. Lane currently empty; forward-sweep items live in Phase 17+ instead.
 5. **ELEVATION Phase 4** — polish (E13, E7, E8, E11, E10). E13 depends on COV3.
 6. **COV*** — 3DPSX coverage NOT paired with an E. Requires `/Volumes/home/assets/3DPSX/` mounted. NAS mount is verified at session start; if it goes away mid-run, remount or skip the COV lane and pick the next executable item from a different lane.
 7. **INFRA** — INF2 (build-time asset copy).
@@ -536,7 +536,7 @@ Before flipping any [ ] to [x]:
 1. `pnpm verify` green (lint + check + test + test:browser + assets:verify-runtime).
 2. For any UI/scene change, the relevant canonical screenshot re-shot and visually compared against `docs/assets/objexoom/`.
 3. For any new mechanic, at least one unit or browser test pinning the contract.
-4. Commit pushed to `feat/objexoom-game-buildout`.
+4. Commit pushed to the active long-running branch (per the user-directed single-branch policy: `feat/directive-autonomy-hardening` currently — never open new branches; fold reviewer feedback forward on the same branch).
 
 ## Self-assessment after every commit
 
