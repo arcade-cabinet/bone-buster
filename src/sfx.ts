@@ -452,6 +452,50 @@ export function playPortal() {
 	fire("portal", (t) => portalSynth?.triggerAttackRelease("G3", "1n", t));
 }
 
+/**
+ * POL38 — exit-portal audio swell. POL23 deferred this pending an
+ * AudioBus slot; AudioBus shipped in AUDIO1/AUDIO2 so the swell can
+ * land cleanly. As the player closes within the 4-tile approach
+ * radius, ramp the portal synth volume inversely with distance via
+ * a Tone.Param ramp. ExitPortalApproach (which already watches the
+ * camera-to-portal distance per frame for the FOV widen) drives
+ * this directly; no additional state owner.
+ *
+ * Inputs:
+ *   distance — current player→portal distance in tiles. Caller
+ *              clamps to the radius; we just translate to gain.
+ *   radius   — the approach radius (4 tiles per POL23). Used so
+ *              the gain curve matches the FOV widen exactly.
+ *
+ * Behavior:
+ *   distance >= radius → volume = -Infinity (silent baseline)
+ *   distance == 0      → volume = SFX_VOLUMES.portal (full)
+ *   between            → linearly interpolated dB
+ *
+ * No new synth, no new channel — reuses portalSynth which already
+ * exists for playPortal(). The ramp uses Tone.Param.linearRampToValueAtTime
+ * with a 50ms smoothing so successive per-frame updates don't click.
+ */
+const PORTAL_SWELL_MIN_DB = -36; // effectively silent at radius edge
+export function setPortalSwellVolume(distance: number, radius: number): void {
+	if (!portalSynth) return;
+	const clamped = Math.max(0, Math.min(distance, radius));
+	const proximity = 1 - clamped / radius; // 0..1, 1 at portal touch
+	const baseline = SFX_VOLUMES.portal; // -16 dB
+	const target = PORTAL_SWELL_MIN_DB + (baseline - PORTAL_SWELL_MIN_DB) * proximity;
+	const now = Tone.now();
+	portalSynth.volume.cancelScheduledValues(now);
+	portalSynth.volume.linearRampToValueAtTime(target, now + 0.05);
+}
+
+/** Restore the portal synth volume to baseline (silent until next playPortal). */
+export function resetPortalSwell(): void {
+	if (!portalSynth) return;
+	const now = Tone.now();
+	portalSynth.volume.cancelScheduledValues(now);
+	portalSynth.volume.linearRampToValueAtTime(SFX_VOLUMES.portal, now + 0.1);
+}
+
 export function startAmbient() {
 	ambientDrone?.triggerAttack("C1");
 }
