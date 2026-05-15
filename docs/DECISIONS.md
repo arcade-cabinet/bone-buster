@@ -1,6 +1,6 @@
 ---
 title: Decisions
-updated: 2026-05-13
+updated: 2026-05-15
 status: current
 domain: technical
 ---
@@ -301,6 +301,98 @@ AO.5's original acceptance referenced "Lighthouse PWA score ≥ 90." Lighthouse 
 **Rejected:**
 - *Pinning Lighthouse to a pre-12 version that still has `pwa`* — masks the truth and ships against deprecated tooling.
 - *Switching to PWABuilder's report.* — third-party dependency for a thing Lighthouse already covers via separate categories.
+
+---
+
+## D15 — AudioBus: channel-per-synth, not channel-per-cue (AUDIO1)
+
+**Status:** Locked.
+**Date:** 2026-04-30 (shipped); backfilled 2026-05-15 per ARCHITECTURE audit §7.5
+
+`src/audioBus.ts` keys channels by SYNTH INSTANCE, not by cue. Multiple cues (e.g. `playPickup`, `playSecretFound`) that share the underlying `Tone.PolySynth` route through the SAME channel; channels schedule via a strictly-increasing `t` so Tone's "Start time must be strictly greater than previous start time" check never trips.
+
+**Why:**
+- Pre-AUDIO1, every cue had its own scheduling state. Two cues firing into the same synth in the same JS tick (e.g. pickup chime + secret-found chime via overlapping pickups) would race on Tone's per-synth precondition and throw mid-frame.
+- The synth-instance keying is what the precondition actually cares about; cue keying was the wrong axis.
+- Reduces N×M scheduling complexity (N cues × M synths) to N synth channels with a single jitter pool each.
+
+**Rejected:**
+- *One channel per cue with explicit synth re-binding.* — would just move the race condition into the binding layer; doesn't actually solve the precondition.
+- *Single global Tone scheduler.* — couples unrelated cues; one slow cue stalls the global timeline.
+
+Source: `src/audioBus.ts:30-65` documents the synth-to-cue map inline.
+
+---
+
+## D16 — Per-frame work extracted from ObjexoomScene to `src/scene/tick/*` (ARCH2a/b + QW8)
+
+**Status:** Locked.
+**Date:** 2026-05-10 (ARCH2a enemyTickLoop) / 2026-05-13 (ARCH2b fireResolution) / 2026-05-15 (QW8 directory rename)
+
+Per-frame logic that doesn't belong in the r3f scene-render path lives in pure-function modules under `src/scene/tick/`:
+- `enemyTickLoop.ts` — per-frame enemy AI loop (FSM step + collision + LOS + bullet emission).
+- `fireResolution.ts` — single-shot fire resolution (ray cast + barrel/enemy hit dispatch).
+- `returnBearing.ts` — module-scope ref + `computeBearingRad` pure helper for the going-back HUD arrow.
+- `timeScaleBus.ts` — combined-min time-scale reservation bus (POL35 hitstop + POL22 key-acquire stacking).
+
+These take an explicit "context" object (refs + game state) and return nothing — pure-fn signatures, testable without mounting React. The Scene's useFrame body becomes "build the context, call the tick fn."
+
+QW8 (Phase 21) moved the files from `src/scene/hooks/` to `src/scene/tick/` because none of them are React hooks (no `use*` calls). `src/scene/hooks/` still exists but now only holds genuine React hooks (CONV2's `useGameRef.ts`).
+
+**Why:**
+- ObjexoomScene was a 1000+ LOC braid of declarative scene-graph + imperative tick logic; extracting tick logic let each side be reasoned about independently.
+- Pure-function shape means unit tests don't need r3f's test renderer; they assert against the context state directly.
+
+**Rejected:**
+- *Custom useFrame hooks (one per behavior).* — coupling between hooks via shared refs would have meant N hooks each reading the same ~10 refs; the pure-function pattern keeps the ref set explicit at the call site.
+
+Source: ARCHITECTURE.md (rendering layer table). Files in `src/scene/tick/`.
+
+---
+
+## D17 — sql.js removed after STO1b migration grace window (ARCH3)
+
+**Status:** Locked.
+**Date:** 2026-05-15 (PR #39)
+
+Pre-STO1b, run history was an sql.js `Database` blob in `localStorage["objexoom.runHistory"]`. STO1b shipped the Capacitor SQLite + jeep-sqlite migration (D18 below) with a one-time legacy-blob read+import. ARCH3 (Phase 20) removed sql.js entirely:
+- `package.json`: removed `sql.js` + `@types/sql.js` deps.
+- `src/runHistory.ts:79-104`: the legacy-blob branch now logs a warning, drops the localStorage key, and continues — no import path.
+- `scripts/prepare-web-wasm.mjs`: emptied the WASM artifact list (was just `sql-wasm.wasm`).
+
+**Why:**
+- Any install with the legacy blob that hadn't yet opened the game between STO1b shipping (2026-05-11) and ARCH3 shipping (2026-05-15) is vanishingly rare. The grace window was real; the warning catches the edge case visibly.
+- Carrying sql.js was 1.1MB of wasm + a duplicate persistence path for a contract STO1b already satisfied.
+
+**Rejected:**
+- *Indefinite grace window with sql.js as a fallback.* — defers the cleanup forever; STO1b's whole point was to unify on one persistence API.
+
+Source: `src/runHistory.ts:79-104`, `src/__tests__/unit/objexoom-sqljsRemoval.test.ts` (pins the absence contract).
+
+---
+
+## D18 — Persistence stack: `@capacitor-community/sqlite` native + `jeep-sqlite` web (STO1b)
+
+**Status:** Locked.
+**Date:** 2026-05-11 (shipped); backfilled 2026-05-15
+
+`src/persistence/createDatabase.ts` returns a `DatabaseAdapter` backed by:
+- **Native (iOS/Android):** `@capacitor-community/sqlite` via the Capacitor bridge → a real SQLite database in the app sandbox.
+- **Web:** `jeep-sqlite` (IndexedDB-backed sql.js shim via a custom element). The element is mounted once at app boot via `src/persistence/initJeepSqlite.ts`.
+
+Settings (light, hot-read) use `@capacitor/preferences` instead — also localStorage-backed on web, native KV store on native.
+
+**Why:**
+- Pre-STO1b, persistence was sql.js + base64-into-localStorage. That works on web but doesn't survive Capacitor's native runtime (no shared `window.localStorage` write path) and forces two parallel storage APIs in the codebase.
+- The Capacitor SQLite plugin gives both targets a real SQL surface; we keep one query layer (`runHistory.ts`) on top of one adapter contract.
+- `"no-encryption"` is intentional — the only persisted data is run history (scores, secrets-found counts) which is non-sensitive. Encryption would add a passphrase-management surface we don't need for a single-player game.
+
+**Rejected:**
+- *Drizzle / Prisma / etc.* — overhead for a 1-table schema with ≤500 rows lifetime.
+- *Pure IndexedDB.* — DIY query layer is bigger than the persistence module itself.
+- *sql.js everywhere.* — preserves the localStorage roundtrip that breaks under Capacitor.
+
+Source: `src/persistence/createDatabase.ts`, `src/persistence/database.ts`, `src/runHistory.ts`, `capacitor.config.ts:13-17` (encryption opt-out rationale).
 
 ---
 

@@ -7,6 +7,7 @@ import { PLAYER_MAX_HP } from "./constants";
 import { ROLE, SCALE } from "./design-tokens";
 import type { ObjexoomMap, PickupKind } from "./engine";
 import { addObjexoomListener, dispatch } from "./events";
+import { computeFadePeak, FADE_COLOR_BY_KIND } from "./fadeTriggers";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
@@ -316,23 +317,11 @@ export function ObjexoomShell() {
 	const fadeIdRef = useRef(1);
 	const triggerFadeRef = useRef<(kind: FadeKind, intensity?: number) => void>(() => undefined);
 	const triggerFade = useCallback((kind: FadeKind, intensity = 1) => {
-		const colorByKind: Record<FadeKind, string> = {
-			damage: ROLE.actionDamage,
-			key: SCALE.amber[400],
-			flash: SCALE.parchment[50],
-			win: SCALE.parchment[50],
-		};
-		const peakByKind: Record<FadeKind, number> = {
-			damage: 0.55,
-			key: 0.4,
-			flash: 0.5,
-			win: 0.85,
-		};
 		setFadeTrigger({
 			id: fadeIdRef.current++,
 			kind,
-			color: colorByKind[kind],
-			peak: Math.min(1, peakByKind[kind] * intensity),
+			color: FADE_COLOR_BY_KIND[kind],
+			peak: computeFadePeak(kind, intensity),
 		});
 	}, []);
 	useEffect(() => {
