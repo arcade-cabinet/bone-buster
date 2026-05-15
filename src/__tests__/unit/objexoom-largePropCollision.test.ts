@@ -10,6 +10,7 @@ import { resolveCollisionAny } from "../../engine";
 const farSector: ObjexoomSectorMap = {
 	kind: "sectors",
 	seed: 0,
+	archetype: "corridor",
 	sectors: [
 		{
 			id: 0,

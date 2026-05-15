@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { ARCHETYPE_NAMES } from "../../archetype";
 import type { ObjexoomSectorMap, Vec2 } from "../../engine";
 import { spawnNature } from "../../scatter/natureScatter";
 
@@ -15,7 +16,9 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 	];
 }
 
-// Courtyard archetype = seed % 5 === 2.
+// Courtyard archetype = seed % 5 === 2. Post-CONV3 the archetype is a
+// stored field on the map; we derive it from seed here to preserve the
+// original test semantics (seed 0 → corridor, seed 2 → courtyard).
 function courtyardMap(seed: number): ObjexoomSectorMap {
 	const sectors = [];
 	for (let i = 0; i < 5; i += 1) {
@@ -29,6 +32,7 @@ function courtyardMap(seed: number): ObjexoomSectorMap {
 	return {
 		kind: "sectors",
 		seed,
+		archetype: ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length],
 		sectors,
 		playerSpawn: { x: -100, y: -100 },
 		playerYaw: 0,

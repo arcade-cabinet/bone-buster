@@ -225,6 +225,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		const sectorMap: ObjexoomSectorMap = {
 			kind: "sectors",
 			seed: 0,
+			archetype: "corridor",
 			sectors,
 			playerSpawn: { x: 0, y: 0 },
 			playerYaw: 0,
@@ -252,6 +253,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		const sectorMap: ObjexoomSectorMap = {
 			kind: "sectors",
 			seed: 0,
+			archetype: "corridor",
 			sectors,
 			playerSpawn: { x: 0, y: 0 },
 			playerYaw: 0,
@@ -291,6 +293,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		const sectorMap: ObjexoomSectorMap = {
 			kind: "sectors",
 			seed: 0,
+			archetype: "corridor",
 			sectors: [{ id: 0, vertices: square(0, 0, 5), floorHeight: 0, ceilingHeight: 10 }],
 			playerSpawn: { x: 0, y: 0 },
 			playerYaw: 0,
@@ -309,6 +312,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		const sectorMap: ObjexoomSectorMap = {
 			kind: "sectors",
 			seed: 0,
+			archetype: "corridor",
 			sectors: [
 				{
 					id: 0,
@@ -334,6 +338,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		const sectorMap: ObjexoomSectorMap = {
 			kind: "sectors",
 			seed: 0,
+			archetype: "corridor",
 			sectors: [
 				{
 					id: 0,
@@ -365,6 +370,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		const sectorMap: ObjexoomSectorMap = {
 			kind: "sectors",
 			seed: 0,
+			archetype: "corridor",
 			sectors: [
 				{
 					id: 0,
@@ -406,6 +412,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		const sectorMap: ObjexoomSectorMap = {
 			kind: "sectors",
 			seed: 0,
+			archetype: "corridor",
 			sectors: [
 				{
 					id: 0,
@@ -446,6 +453,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		const sectorMap: ObjexoomSectorMap = {
 			kind: "sectors",
 			seed: 0,
+			archetype: "corridor",
 			sectors: [
 				{
 					id: 0,
@@ -477,6 +485,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		const sectorMap: ObjexoomSectorMap = {
 			kind: "sectors",
 			seed: 0,
+			archetype: "corridor",
 			sectors: [
 				{
 					id: 0,
@@ -528,6 +537,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 		const sectorMap: ObjexoomSectorMap = {
 			kind: "sectors",
 			seed: 0,
+			archetype: "corridor",
 			sectors,
 			playerSpawn: { x: 0, y: 0 },
 			playerYaw: 0,
@@ -552,6 +562,7 @@ describe("objexoom engine — Section H (jump/fall/lava/heights)", () => {
 	const sectorMap: ObjexoomSectorMap = {
 		kind: "sectors",
 		seed: 0,
+		archetype: "corridor",
 		sectors: [
 			{
 				id: 0,

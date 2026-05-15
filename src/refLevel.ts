@@ -12,6 +12,7 @@
  *   9 = ManyEnemies (squad spawn — emits one wraith + one skeleton at the position)
  */
 
+import { ARCHETYPE_NAMES } from "./archetype";
 import type { EnemySpawn, MapSector, ObjexoomSectorMap, PickupSpawn, Vec2 } from "./engine";
 import type { Difficulty } from "./settings";
 import { decodeRefLevel, levelBounds, type RefLevelIndex } from "./turtle";
@@ -222,6 +223,7 @@ export function loadRefLevel(
 	return {
 		kind: "sectors",
 		seed: index,
+		archetype: ARCHETYPE_NAMES[(index >>> 0) % ARCHETYPE_NAMES.length],
 		sectors,
 		playerSpawn,
 		playerYaw: 0,

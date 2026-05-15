@@ -1,5 +1,6 @@
 import { PISTOL_MAX_RANGE, PLAYER_RADIUS, SKELETON_HP, TILE } from "./constants";
 import { mulberry32 } from "./prng";
+import type { PropArchetype } from "./scatter/propPool";
 
 export type Cell = "empty" | "wall" | "door" | "spawn" | "exit" | "key" | "lava";
 
@@ -52,6 +53,17 @@ export type Room = Readonly<{
  */
 export type ObjexoomMapBase = Readonly<{
 	seed: number;
+	/**
+	 * CONV3 — denormalized archetype dispatch. Populated once at map
+	 * construction (generateMap / loadRefLevel) via `ARCHETYPE_NAMES[seed % 5]`.
+	 * Every consumer reads `map.archetype` instead of recomputing the
+	 * modulus inline. `pickArchetype(map)` is a trivial accessor for
+	 * legacy call-site readability.
+	 *
+	 * Canonical-byte-stability invariant: seed 0 → "corridor". Don't
+	 * recompute this from another source — buildMap is the only writer.
+	 */
+	archetype: PropArchetype;
 	playerSpawn: Vec2;
 	playerYaw: number;
 	enemySpawns: readonly EnemySpawn[];
@@ -359,13 +371,21 @@ export function generateMap(seed: number, shape?: GenerateMapShape): ObjexoomGri
 		[enemyCandidates[i], enemyCandidates[j]] = [enemyCandidates[j], enemyCandidates[i]];
 	}
 	// E13 step-10 — per-archetype enemy-count multiplier. Resolved
-	// inline as `(seed >>> 0) % 5` because `pickArchetype` operates
-	// on a built map and we're still building it here. Index order
-	// MUST match ARCHETYPE_NAMES: 0=corridor, 1=arena, 2=courtyard,
-	// 3=sewer, 4=library. Corridor multiplier is 1.0 — canonical
-	// byte-stability for the procedural-corridor path.
+	// inline as `(seed >>> 0) % 5` because we're building the map and
+	// `pickArchetype` operates on a built map. CONV3 (2026-05-15)
+	// denormalized `archetype` onto the map type; that field is set in
+	// the return value below using this same idx, keeping the one
+	// source-of-truth invariant: seed 0 → idx 0 → "corridor".
 	const ARCHETYPE_ENEMY_MULTIPLIER = [1.0, 1.4, 0.9, 1.1, 0.8] as const;
+	const ARCHETYPE_NAMES_INLINE = [
+		"corridor",
+		"arena",
+		"courtyard",
+		"sewer",
+		"library",
+	] as const satisfies readonly PropArchetype[];
 	const archetypeIdx = (seed >>> 0) % 5;
+	const archetype = ARCHETYPE_NAMES_INLINE[archetypeIdx];
 	const baseEnemyCount = Math.max(6, Math.floor(rooms.length * 1.2));
 	const totalEnemies = Math.min(
 		16,
@@ -404,6 +424,7 @@ export function generateMap(seed: number, shape?: GenerateMapShape): ObjexoomGri
 	return {
 		kind: "grid",
 		seed,
+		archetype,
 		width,
 		height,
 		cells,

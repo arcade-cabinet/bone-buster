@@ -24,6 +24,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 const SECTOR_FIXTURE: ObjexoomSectorMap = {
 	kind: "sectors",
 	seed: 0,
+	archetype: "corridor",
 	sectors: [
 		{ id: 0, vertices: bigSquare(0, 0, 10), floorHeight: 0, ceilingHeight: 10 },
 		{ id: 1, vertices: bigSquare(30, 0, 10), floorHeight: 0, ceilingHeight: 10 },

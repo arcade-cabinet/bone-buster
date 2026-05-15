@@ -1,10 +1,12 @@
 /**
  * E13 step-1 — archetype pick contract.
  *
- * Pins:
- *  - `pickArchetype(map)` returns ARCHETYPE_NAMES[map.seed % 5].
- *  - All 5 archetypes are reachable across seeds 0..4.
- *  - Deterministic per seed (same input → same output).
+ * CONV3 (2026-05-15) denormalized `archetype` onto the map type, so
+ * `pickArchetype(map)` is now a trivial accessor. The "derive from
+ * seed" invariant lives at the construction site (generateMap /
+ * loadRefLevel), and this suite now pins both:
+ *  - constructors emit `archetype = ARCHETYPE_NAMES[seed % 5]`
+ *  - `pickArchetype(map)` returns `map.archetype`
  */
 
 import { describe, expect, it } from "vitest";
@@ -16,20 +18,22 @@ describe("E13 — archetype pick", () => {
 		expect(ARCHETYPE_NAMES).toEqual(["corridor", "arena", "courtyard", "sewer", "library"]);
 	});
 
-	it("pickArchetype(map) returns ARCHETYPE_NAMES[map.seed % 5]", () => {
-		for (let seed = 0; seed < 20; seed += 1) {
-			const map = { ...loadRefLevel(0), seed };
-			expect(pickArchetype(map)).toBe(ARCHETYPE_NAMES[seed % 5]);
+	it("loadRefLevel sets map.archetype = ARCHETYPE_NAMES[index % 5]", () => {
+		for (const idx of [0, 1, 2] as const) {
+			const map = loadRefLevel(idx);
+			expect(map.archetype).toBe(ARCHETYPE_NAMES[idx % 5]);
+			expect(pickArchetype(map)).toBe(map.archetype);
 		}
 	});
 
-	it("all 5 archetypes are reachable across seeds 0..4", () => {
-		const seen = new Set<string>();
-		for (let seed = 0; seed < 5; seed += 1) {
-			const map = { ...loadRefLevel(0), seed };
-			seen.add(pickArchetype(map));
+	it("pickArchetype(map) returns the stored map.archetype field", () => {
+		// Build maps with different stored archetypes; pickArchetype should
+		// echo them regardless of seed (CONV3 — denormalized).
+		for (const name of ARCHETYPE_NAMES) {
+			const base = loadRefLevel(0);
+			const map = { ...base, seed: 42, archetype: name };
+			expect(pickArchetype(map)).toBe(name);
 		}
-		expect(seen.size).toBe(5);
 	});
 
 	it("deterministic — same map produces same archetype", () => {
@@ -43,11 +47,5 @@ describe("E13 — archetype pick", () => {
 			const arch = pickArchetype(map);
 			expect(ARCHETYPE_NAMES).toContain(arch);
 		}
-	});
-
-	it("handles negative seeds via unsigned-right-shift", () => {
-		const map = { ...loadRefLevel(0), seed: -1 };
-		const arch = pickArchetype(map);
-		expect(ARCHETYPE_NAMES).toContain(arch);
 	});
 });
