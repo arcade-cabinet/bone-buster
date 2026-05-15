@@ -9,8 +9,12 @@ import {
 	ROLE,
 	SCALE,
 } from "./design-tokens";
+import { addObjexoomListener, dispatch } from "./events";
+import { HUDOverlays } from "./hud/overlays/HUDOverlays";
 import type { GameState } from "./ObjexoomShell";
-import { LEVEL_LABEL, type LevelChoice } from "./settings";
+import type { PropArchetype } from "./scatter/propPool";
+import { HudKey3D } from "./scene/hud/HudKey3D";
+import { type Difficulty, LEVEL_LABEL, type LevelChoice } from "./settings";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "./weapons";
 
 type ObjexoomHUDProps = Readonly<{
@@ -22,6 +26,17 @@ type ObjexoomHUDProps = Readonly<{
 	onSelectWeapon: (weapon: WeaponId) => void;
 	// M5 — current level identity for the top-left HUD readout.
 	level: LevelChoice;
+	/**
+	 * POL7 — current archetype for the top-left readout. Appended to the
+	 * level label so the player learns the name (`RANDOM · ARENA`,
+	 * `M1 · CORRIDOR`).
+	 */
+	archetype: PropArchetype;
+	// POL31 — chosen difficulty + monotonic run id; threaded through to
+	// the DifficultyChip overlay slot which fires its 2s acknowledgment
+	// every time runId advances.
+	difficulty: Difficulty;
+	runId: number;
 }>;
 
 export function ObjexoomHUD({
@@ -32,10 +47,23 @@ export function ObjexoomHUD({
 	onQuit,
 	onSelectWeapon,
 	level,
+	archetype,
+	difficulty,
+	runId,
 }: ObjexoomHUDProps) {
 	const currentSpec = WEAPONS[state.weapon];
 	const currentAmmo = state.ammo[state.weapon];
 	const ammoLabel = Number.isFinite(currentAmmo) ? `${currentAmmo}` : "∞";
+
+	// E10 — track when the HUD key model should flash red. `flashUntil`
+	// is a wall-clock deadline; the HudKey3D renderer ramps emissive
+	// from amber to blood as long as `now < flashUntil`.
+	const [keyFlashUntil, setKeyFlashUntil] = useState(0);
+	useEffect(() => {
+		return addObjexoomListener("playerHit", () => {
+			setKeyFlashUntil(performance.now() + 250);
+		});
+	}, []);
 
 	return (
 		<section
@@ -48,6 +76,23 @@ export function ObjexoomHUD({
 				color: ROLE.textPrimary,
 			}}
 		>
+			{/* AUDIO3 — transient HUD overlays (POL21 secret-found, POL22
+			    key-acquired, POL26 going-back klaxon) live in
+			    src/hud/overlays/ per docs/SLOT-ARCHITECTURE.md §1.
+			    HUDOverlays mounts all four and forwards phase + state. */}
+			<HUDOverlays
+				phase={state.phase}
+				state={state}
+				difficulty={difficulty}
+				runId={runId}
+				onReturnToMenu={onReturnToLanding}
+				onResume={onResume}
+				onQuit={onQuit}
+			/>
+			{/* E10 — 3D spinning key model. Mounts only when hasKey is
+			    true (no Canvas → no WebGL cost otherwise). Flashes red on
+			    player-hit via the keyFlashUntil deadline. */}
+			<HudKey3D hasKey={state.hasKey} flashUntil={keyFlashUntil} />
 			<div style={cornerStyle("top-left")}>
 				{/* M5 — level identity. Hidden on touch (cramped screen real
 				    estate) to keep the HP pip row + warning legible. */}
@@ -64,7 +109,8 @@ export function ObjexoomHUD({
 							textShadow: `0 0 10px ${ROLE.accentPrimary}66`,
 						}}
 					>
-						{LEVEL_LABEL[level]}
+						{LEVEL_LABEL[level]} <span style={{ opacity: 0.5 }}>·</span>{" "}
+						<span style={{ opacity: 0.85 }}>{archetype.toUpperCase()}</span>
 					</div>
 				)}
 				<div style={hudLabelStyle}>HEALTH</div>
@@ -103,6 +149,44 @@ export function ObjexoomHUD({
 				>
 					{state.kills} / {state.totalEnemies}
 				</motion.div>
+				{state.score > 0 && (
+					<motion.div
+						data-testid="objexoom-score"
+						style={{
+							marginTop: 4,
+							fontFamily: FONT_FAMILY.display,
+							fontSize: 14,
+							fontWeight: FONT_WEIGHT.regular,
+							letterSpacing: LETTER_SPACING.display,
+							color: ROLE.actionKey,
+						}}
+						key={state.score}
+						initial={{ scale: 1.4 }}
+						animate={{ scale: 1 }}
+						transition={{ type: "spring", stiffness: 320, damping: 18 }}
+					>
+						SCORE {state.score}
+					</motion.div>
+				)}
+				{state.run.runTotalSecrets > 0 && (
+					<motion.div
+						data-testid="objexoom-secrets"
+						style={{
+							marginTop: 4,
+							fontFamily: FONT_FAMILY.display,
+							fontSize: 14,
+							fontWeight: FONT_WEIGHT.regular,
+							letterSpacing: LETTER_SPACING.display,
+							color: ROLE.actionKey,
+						}}
+						key={state.run.runTotalSecrets}
+						initial={{ scale: 1.4 }}
+						animate={{ scale: 1 }}
+						transition={{ type: "spring", stiffness: 320, damping: 18 }}
+					>
+						SECRETS {state.run.runTotalSecrets}
+					</motion.div>
+				)}
 				<div
 					data-testid="objexoom-key"
 					style={{
@@ -183,8 +267,12 @@ export function ObjexoomHUD({
 
 			{state.status === "playing" && touchMode && <TouchControls />}
 
+			{/* PT4A — prepend movement hint so a new player who clicks
+			    NEW GAME doesn't stand still wondering how to walk. */}
 			{state.status === "playing" && !touchMode && (
-				<div style={hintStyle}>ESC TO PAUSE · 1/2/3 OR SCROLL TO SWAP · LMB TO FIRE</div>
+				<div style={hintStyle}>
+					WASD TO MOVE · MOUSE TO LOOK · LMB TO FIRE · 1-5 OR SCROLL TO SWAP · ESC TO PAUSE
+				</div>
 			)}
 
 			{/* M4 — "Click to engage" prompt when in playing state but pointer
@@ -192,37 +280,29 @@ export function ObjexoomHUD({
 			    cursor free). Hidden on touch (no pointer-lock concept). */}
 			{state.status === "playing" && !touchMode && <ClickToEngagePrompt />}
 
-			{state.status !== "playing" && (
+			{/* POL34 — `paused` state moved to the PauseOverlay HUD slot
+			    (src/hud/overlays/PauseOverlay.tsx). The slot owns its
+			    own AnimatePresence wrapper so we don't gate on
+			    status !== "playing" here for paused. */}
+			{(state.status === "dead" || state.status === "transitioning") && (
 				<div style={overlayStyle}>
-					{state.status === "paused" && (
-						<OverlayCard
-							title="PAUSED"
-							body={`The corridors will wait.\n\n${formatRunStats(state)}`}
-							primary={{ label: "RESUME", onClick: onResume }}
-							secondary={{ label: "MAIN MENU", onClick: onReturnToLanding }}
-							tertiary={{ label: "QUIT", onClick: onQuit }}
-						/>
-					)}
 					{state.status === "dead" && (
 						<OverlayCard
 							title="YOU DIED"
-							body=""
+							body={formatRunStats(state)}
 							primary={{ label: "TRY AGAIN", onClick: onReturnToLanding }}
 							secondary={{ label: "QUIT", onClick: onQuit }}
 						/>
 					)}
-					{state.status === "won" && (
-						<OverlayCard
-							title="MISSION COMPLETE"
-							body={formatRunStats(state)}
-							primary={{ label: "NEXT RUN", onClick: onReturnToLanding }}
-							secondary={{ label: "QUIT", onClick: onQuit }}
-						/>
-					)}
+					{/* PT1B — MISSION COMPLETE is now owned by the
+					    MissionCompleteCeremony HUD overlay slot. The
+					    generic OverlayCard isn't celebratory enough for
+					    a campaign-clear; the dedicated slot adds tick-up
+					    stats, layered vignette, and spring-eased CTA. */}
 					{state.status === "transitioning" && (
 						<OverlayCard
 							title="LEVEL COMPLETE"
-							body={`ADVANCING TO M${state.run.runLevelsCleared + 1}`}
+							body={`ADVANCING TO M${state.run.runLevelsCleared + 1}\n\n${formatRunStats(state)}`}
 						/>
 					)}
 				</div>
@@ -235,8 +315,23 @@ export function ObjexoomHUD({
 // E12/PA16 — only mounts when ?objexoomDebug is in the URL. Listens to
 // the `objexoom:fpsUpdate` event dispatched from inside the Canvas and
 // renders a tiny FPS + DPR readout in the bottom-left corner.
+// OBS2 — perf budget thresholds. If draw-calls or triangles
+// exceed these for 3 consecutive report windows, the readout
+// border flashes red + a one-shot console warning fires.
+const OBS2_CALL_BUDGET = 400;
+const OBS2_TRI_BUDGET = 50_000;
+const OBS2_CONSECUTIVE_WINDOWS = 3;
+
 function AdaptiveResolutionReadout() {
-	const [info, setInfo] = useState<{ fps: number; pixelRatio: number } | null>(null);
+	const [info, setInfo] = useState<{
+		fps: number;
+		pixelRatio: number;
+		drawCalls?: number;
+		triangles?: number;
+	} | null>(null);
+	const [overBudget, setOverBudget] = useState(false);
+	const consecutiveOverRef = useRef(0);
+	const warnedRef = useRef(false);
 	const [enabled] = useState(
 		() =>
 			typeof window !== "undefined" &&
@@ -245,14 +340,40 @@ function AdaptiveResolutionReadout() {
 
 	useEffect(() => {
 		if (!enabled) return;
-		const onFps = (event: Event) => {
-			setInfo((event as CustomEvent<{ fps: number; pixelRatio: number }>).detail);
-		};
-		window.addEventListener("objexoom:fpsUpdate", onFps);
-		return () => window.removeEventListener("objexoom:fpsUpdate", onFps);
+		return addObjexoomListener("fpsUpdate", ({ fps, pixelRatio, drawCalls, triangles }) => {
+			setInfo({ fps, pixelRatio, drawCalls, triangles });
+			// OBS2 — accumulate consecutive over-budget windows.
+			const overCalls = drawCalls != null && drawCalls > OBS2_CALL_BUDGET;
+			const overTris = triangles != null && triangles > OBS2_TRI_BUDGET;
+			if (overCalls || overTris) {
+				consecutiveOverRef.current += 1;
+				if (consecutiveOverRef.current >= OBS2_CONSECUTIVE_WINDOWS) {
+					setOverBudget(true);
+					if (!warnedRef.current) {
+						warnedRef.current = true;
+						console.warn(
+							`[OBS2] perf-budget exceeded for ${OBS2_CONSECUTIVE_WINDOWS} consecutive windows: ` +
+								`calls=${drawCalls ?? "?"} (budget ${OBS2_CALL_BUDGET}), ` +
+								`triangles=${triangles ?? "?"} (budget ${OBS2_TRI_BUDGET})`,
+						);
+					}
+				}
+			} else {
+				consecutiveOverRef.current = 0;
+				setOverBudget(false);
+			}
+		});
 	}, [enabled]);
 
 	if (!enabled || !info) return null;
+	const triFmt = (n: number | undefined) => {
+		if (n == null) return "";
+		if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+		if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+		return String(n);
+	};
+	const borderColor = overBudget ? "#ef4444" : `${ROLE.accentPrimary}55`;
+	const textColor = overBudget ? "#fca5a5" : ROLE.accentPrimary;
 	return (
 		<div
 			data-testid="objexoom-fps-readout"
@@ -263,15 +384,28 @@ function AdaptiveResolutionReadout() {
 				fontFamily: FONT_FAMILY.body,
 				fontSize: 11,
 				letterSpacing: LETTER_SPACING.hudLabel,
-				color: ROLE.accentPrimary,
+				color: textColor,
 				background: `${OBJEXOOM_PALETTE.ink}cc`,
 				padding: "4px 8px",
 				borderRadius: 4,
-				border: `1px solid ${ROLE.accentPrimary}55`,
+				border: `1px solid ${borderColor}`,
 				pointerEvents: "none",
+				display: "flex",
+				flexDirection: "column",
+				gap: 2,
+				lineHeight: 1.2,
 			}}
 		>
-			FPS {info.fps.toFixed(0)} • DPR {info.pixelRatio.toFixed(2)}
+			<div>
+				FPS {info.fps.toFixed(0)} • DPR {info.pixelRatio.toFixed(2)}
+			</div>
+			{(info.drawCalls != null || info.triangles != null) && (
+				<div style={{ opacity: 0.85 }}>
+					{info.drawCalls != null && <>CALLS {info.drawCalls}</>}
+					{info.drawCalls != null && info.triangles != null && <> • </>}
+					{info.triangles != null && <>TRIS {triFmt(info.triangles)}</>}
+				</div>
+			)}
 		</div>
 	);
 }
@@ -285,7 +419,11 @@ function formatRunStats(state: GameState): string {
 	const kills = state.run.runTotalKills;
 	const dmg = state.run.runTotalDamageTaken;
 	const cleared = state.run.runLevelsCleared;
-	return `${cleared} LEVEL${cleared === 1 ? "" : "S"} CLEARED  •  TIME ${time}  •  ${kills} KILLS  •  ${dmg} DMG TAKEN`;
+	const score = state.run.runTotalScore;
+	const scoreSegment = score > 0 ? `  •  ${score} SCORE` : "";
+	const secrets = state.run.runTotalSecrets;
+	const secretsSegment = secrets > 0 ? `  •  ${secrets} SECRET${secrets === 1 ? "" : "S"}` : "";
+	return `${cleared} LEVEL${cleared === 1 ? "" : "S"} CLEARED  •  TIME ${time}  •  ${kills} KILLS  •  ${dmg} DMG TAKEN${scoreSegment}${secretsSegment}`;
 }
 
 const STICK_RADIUS = 56;
@@ -294,8 +432,8 @@ const STICK_KNOB = 28;
 function TouchControls() {
 	return (
 		<>
-			<VirtualStick channel="objexoom:move" anchor="left" ariaLabel="Move" />
-			<VirtualStick channel="objexoom:look" anchor="right" ariaLabel="Aim" />
+			<VirtualStick channel="move" anchor="left" ariaLabel="Move" />
+			<VirtualStick channel="look" anchor="right" ariaLabel="Aim" />
 			<FireButton />
 		</>
 	);
@@ -306,7 +444,7 @@ function VirtualStick({
 	anchor,
 	ariaLabel,
 }: {
-	channel: "objexoom:move" | "objexoom:look";
+	channel: "move" | "look";
 	anchor: "left" | "right";
 	ariaLabel: string;
 }) {
@@ -314,9 +452,9 @@ function VirtualStick({
 	const pointerId = useRef<number | null>(null);
 	const baseCenter = useRef<{ x: number; y: number } | null>(null);
 
-	const dispatch = useCallback(
+	const dispatchStick = useCallback(
 		(x: number, y: number) => {
-			window.dispatchEvent(new CustomEvent(channel, { detail: { x, y } }));
+			dispatch({ type: channel, x, y });
 		},
 		[channel],
 	);
@@ -340,14 +478,14 @@ function VirtualStick({
 		const nx = mag === 0 ? 0 : (dx / mag) * clamped;
 		const ny = mag === 0 ? 0 : (dy / mag) * clamped;
 		setKnob({ x: nx, y: ny });
-		dispatch(nx / STICK_RADIUS, ny / STICK_RADIUS);
+		dispatchStick(nx / STICK_RADIUS, ny / STICK_RADIUS);
 	};
 	const onUp = (e: ReactPointerEvent<HTMLDivElement>) => {
 		if (e.pointerId !== pointerId.current) return;
 		pointerId.current = null;
 		baseCenter.current = null;
 		setKnob({ x: 0, y: 0 });
-		dispatch(0, 0);
+		dispatchStick(0, 0);
 	};
 
 	return (
@@ -398,7 +536,7 @@ function VirtualStick({
 
 function FireButton() {
 	const fire = useCallback(() => {
-		window.dispatchEvent(new CustomEvent("objexoom:fire"));
+		dispatch({ type: "fire" });
 	}, []);
 	return (
 		<button
@@ -687,7 +825,15 @@ function ClickToEngagePrompt() {
 			window.clearInterval(id);
 		};
 	}, []);
-	if (locked) return null;
+	// PT1A — debug/playtest runs (`?objexoomDebug`) drive the game via
+	// `window.__objexoom.*` and can't acquire pointer-lock without a real
+	// user gesture. The prompt is for human players; debug runs already
+	// drive input through the hook contract, so hide the overlay so
+	// scripted screenshot captures see the real gameplay framing.
+	const debug =
+		typeof window !== "undefined" &&
+		new URL(window.location.href).searchParams.has("objexoomDebug");
+	if (locked || debug) return null;
 	return (
 		<div
 			data-testid="objexoom-click-to-engage"

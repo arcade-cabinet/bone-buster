@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Batch-convert the curated FBX assets under `references/_extracted/` into
- * GLB form under `public/objexoom/models/`. Run on demand whenever the
+ * GLB form under `public/assets/models/`. Run on demand whenever the
  * curated source list below changes.
  *
  * Why this exists: a few of the most usable horror creatures (plague
@@ -11,9 +11,13 @@
  * convert at build/seed time.
  *
  * Usage:
- *   pnpm exec node scripts/objexoom-convert-fbx.mjs
+ *   pnpm assets:fbx-to-glb            # or `node scripts/convert-fbx.mjs`
  *
  * Idempotent — skips outputs that are newer than their FBX source.
+ *
+ * Source-of-truth for which FBX maps to which GLB: see
+ * `docs/ASSET_PROVENANCE.md` — every JOBS entry here MUST have a row
+ * in that doc (provenance, license, conversion notes).
  */
 import { mkdirSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -28,53 +32,53 @@ const JOBS = [
 	// already-shipping GLB variants of the same packs).
 	{
 		fbx: "references/_extracted/horror_rigged/PSX Horror-Fantasy Megapack/abomination/final_rigged.fbx",
-		glb: "public/objexoom/models/enemies/horror/abomination_rigged.glb",
+		glb: "public/assets/models/enemies/horror/abomination_rigged.glb",
 		label: "abomination (rigged)",
 	},
 	{
 		fbx: "references/_extracted/horror_rigged/PSX Horror-Fantasy Megapack/plague doctor/final_rigged.fbx",
-		glb: "public/objexoom/models/enemies/horror/plague_doctor.glb",
+		glb: "public/assets/models/enemies/horror/plague_doctor.glb",
 		label: "plague doctor",
 	},
 	{
 		fbx: "references/_extracted/horror_rigged/PSX Horror-Fantasy Megapack/elkdemon/final_rigged.fbx",
-		glb: "public/objexoom/models/enemies/horror/elk_demon.glb",
+		glb: "public/assets/models/enemies/horror/elk_demon.glb",
 		label: "elk demon",
 	},
 	{
 		fbx: "references/_extracted/horror_rigged/PSX Horror-Fantasy Megapack/clowns pack/1/final_rigged.fbx",
-		glb: "public/objexoom/models/enemies/horror/clown_1.glb",
+		glb: "public/assets/models/enemies/horror/clown_1.glb",
 		label: "clown 1",
 	},
 	{
 		fbx: "references/_extracted/horror_rigged/PSX Horror-Fantasy Megapack/clowns pack/3/final_rigged.fbx",
-		glb: "public/objexoom/models/enemies/horror/clown_3.glb",
+		glb: "public/assets/models/enemies/horror/clown_3.glb",
 		label: "clown 3",
 	},
 	// Slasher melee weapons — bonus melee viewmodel options.
 	{
 		fbx: "references/_extracted/slasher/Axe/Axe.fbx",
-		glb: "public/objexoom/models/weapons/melee_axe.glb",
+		glb: "public/assets/models/weapons/slasher/melee_axe.glb",
 		label: "axe",
 	},
 	{
 		fbx: "references/_extracted/slasher/Chainsaw/Chainsaw.fbx",
-		glb: "public/objexoom/models/weapons/melee_chainsaw.glb",
+		glb: "public/assets/models/weapons/slasher/melee_chainsaw.glb",
 		label: "chainsaw",
 	},
 	{
 		fbx: "references/_extracted/slasher/Kitchen Knife/kitchenKnife.fbx",
-		glb: "public/objexoom/models/weapons/melee_knife.glb",
+		glb: "public/assets/models/weapons/slasher/melee_knife.glb",
 		label: "kitchen knife",
 	},
 	{
 		fbx: "references/_extracted/slasher/Machete/Machete.fbx",
-		glb: "public/objexoom/models/weapons/melee_machete.glb",
+		glb: "public/assets/models/weapons/slasher/melee_machete.glb",
 		label: "machete",
 	},
 	{
 		fbx: "references/_extracted/slasher/Meat Hook/MeatHook.fbx",
-		glb: "public/objexoom/models/weapons/melee_meathook.glb",
+		glb: "public/assets/models/weapons/slasher/melee_meathook.glb",
 		label: "meat hook",
 	},
 ];

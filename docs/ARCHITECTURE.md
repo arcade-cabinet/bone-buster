@@ -99,6 +99,22 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 | `app/tokens.css` | CSS-custom-property mirror (`--obx-*`) |
 | `app/fonts.css` | 12 `@font-face` declarations |
 
+### Persistence layer (STO1a, partial; STO1b pending)
+
+| Module | Owns |
+| --- | --- |
+| `src/persistence/preferences.ts` | Thin facade over `@capacitor/preferences` — `readPref`/`writePref`/`removePref` + JSON variants. App code MUST go through this module; **direct `localStorage` access in `src/**` is forbidden**. Best-effort writes (swallows quota/lock failures). |
+| `src/persistence/settingsStore.ts` | KV settings persistence — `validateSettings(unknown)` runtime narrows foreign blobs to the live `ObjexoomSettings` shape; `loadSettings()` / `saveSettings()` are the public surface for `ObjexoomShell` to async-hydrate + auto-save settings across sessions. |
+| `src/runHistory.ts` | E9 run history — currently sql.js + manual base64 blob (STO1b will replace with `@capacitor-community/sqlite` + jeep-sqlite WASM). Exports `openRunHistory()`, `RunRecord`, `RunInsert`, `formatRunDuration` (POL32 — shared formatter for landing chip + future HUD surfaces). |
+
+**Settings persistence flow:**
+1. Mount: `ObjexoomShell` initializes with `DEFAULT_SETTINGS` (or `{...DEFAULT_SETTINGS, level: "procedural"}` when URL has `?objexoomArchetype`).
+2. Async-hydrate effect: `loadSettings()` reads from Preferences; if a valid blob exists, `setSettings(persisted)`. Flag `settingsHydratedRef.current = true`.
+3. Save-on-change effect: gated on `settingsHydratedRef.current`, writes the current settings to Preferences on every change. The guard prevents the boot DEFAULT_SETTINGS from clobbering a persisted blob during the brief async window.
+4. URL override (`?objexoomArchetype`) wins as a per-load short-circuit — the debug harness path that swaps to procedural maps without first clearing storage.
+
+**Why this lives in `src/persistence/` instead of `src/settings.ts`:** the settings module is pure type + constants (no async, no I/O); the persistence module is the boundary where Capacitor lives. Keeping them separate means `src/settings.ts` stays trivially unit-testable without mocking the native plugin.
+
 ## Data flow — single frame
 
 1. Vite serves `app/main.tsx` → mounts `<ObjexoomShell />`.
@@ -161,3 +177,28 @@ URL param — neither alone enables it.
   are expensive. Game state that ticks every frame (positions,
   rotations, velocities, animation phase) lives in `useRef` and
   mutates in `useFrame`; React only learns about it on a phase change.
+- **HUD slot pattern.** Every transient HUD ceremony (SecretFoundFlash,
+  KeyPickupCeremony, PickupChip, DifficultyChip, GoingBackOverlay,
+  MissionCompleteCeremony) is a sibling component under
+  `src/hud/overlays/` mounted via `<HUDOverlays>`. Each slot is
+  self-contained: listens for its trigger (event OR prop), renders an
+  AnimatePresence-wrapped element with spring-eased entry/exit, fades
+  itself out. Adding a new slot is one-file + one-line in HUDOverlays.
+  Spec: [`docs/SLOT-ARCHITECTURE.md`](SLOT-ARCHITECTURE.md).
+- **Slot trigger choice — event vs. prop.** Two trigger styles coexist:
+  - **Event-driven** (`addObjexoomListener("type", h)`): the slot is
+    already mounted when the event fires. Examples: `SecretFoundFlash`,
+    `KeyPickupCeremony`, `PickupChip`. Cheap to wire; works because the
+    HUD is up.
+  - **Prop-driven** (monotonic counter prop): the slot is part of a
+    subtree that **mounts AFTER the trigger condition flips**. Example:
+    `DifficultyChip` (POL31) — the HUD subtree only renders when
+    `status !== "landing"`, and `<AnimatePresence mode="wait">` on the
+    landing→game transition adds a ~350ms exit animation before the
+    new subtree mounts. An event dispatched at transition time would
+    fire BEFORE the listener registered. The fix is to drive the slot
+    from a prop the parent owns (e.g. `runId: number` bumped per
+    transition); the slot's `useEffect(() => trigger, [runId])` runs
+    on first mount and is race-free by construction.
+  Rule: if the slot's subtree mounts after the trigger event would
+  fire, **use a prop**, not an event listener.

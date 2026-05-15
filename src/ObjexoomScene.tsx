@@ -1,72 +1,106 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { Bloom, ChromaticAberration, EffectComposer, Vignette } from "@react-three/postprocessing";
-import { BlendFunction } from "postprocessing";
+import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import type { RefObject } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type * as Yuka from "yuka";
-import { type Barrel, pickRayBarrel, resolveExplosion, spawnBarrels } from "./barrels";
+import { pickArchetype } from "./archetype";
+import { type Barrel, resolveExplosion, spawnBarrels } from "./barrels";
+import { PLAYER_HEIGHT, TILE } from "./constants";
+import { remapEnemyMix } from "./enemyMix";
 import {
-	PLAYER_HEIGHT,
-	SKELETON_ATTACK_COOLDOWN_MS,
-	SKELETON_ATTACK_RANGE,
-	SKELETON_DAMAGE,
-	TILE,
-} from "./constants";
-import { OBJEXOOM_PALETTE } from "./design-tokens";
-import { tickEnemyFsm } from "./enemyAi";
-import {
-	castRayAny,
 	computePortalEdges,
 	ENEMY_BULLET_DAMAGE,
 	type Enemy,
 	type EnemyBullet,
-	hasLineOfSightAny,
-	makeEnemyBullet,
+	isSectorMap,
 	type ObjexoomMap,
 	type Pickup,
 	polygonContains,
-	resolveCollisionAny,
 	spawnEnemies,
 	spawnPickups,
 	stepEnemyBullet,
 } from "./engine";
+import { addObjexoomListener, dispatch } from "./events";
+import { type LampInstance, spawnLamps } from "./lampScatter";
+import { getArchetypeLightPalette } from "./lighting/archetypePalette";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
+import { type DebrisInstance, spawnDebris } from "./scatter/debrisScatter";
+import { type DecalInstance, spawnDecals } from "./scatter/decalScatter";
+import { type FloorTileInstance, spawnFloorTiles } from "./scatter/floorTiles";
+import { type KitchenInstance, spawnKitchen } from "./scatter/kitchenScatter";
+import {
+	blockerCirclesOf,
+	type LargePropInstance,
+	spawnLargeProps,
+} from "./scatter/largePropScatter";
+import { lootPickupSpawn } from "./scatter/lootScatter";
+import { type NatureInstance, spawnNature } from "./scatter/natureScatter";
+import { type NpcInstance, spawnNpcs } from "./scatter/npcScatter";
+import { type PropInstance, spawnProps } from "./scatter/propScatter";
+import {
+	disarmSector,
+	spawnTraps,
+	TRAP_OVERLAP_RADIUS,
+	TRAP_TICK_COOLDOWN_MS,
+	TRAP_TICK_DAMAGE,
+	TRIGGER_OVERLAP_RADIUS,
+	type TrapInstance,
+	trapAt,
+	triggerAt,
+} from "./scatter/trapScatter";
 import {
 	AdaptiveResolution,
 	BarrelMesh,
 	BodyPartField,
 	BulletField,
+	DamageNumberField,
+	DebrisField,
+	DecalField,
+	EnemyHitFlash,
 	EnemyMesh,
 	ExitPortal,
+	ExitPortalApproach,
 	Flashlight,
+	FloorTileField,
+	HitChromaticAberration,
 	KeyMarker,
+	KitchenField,
+	LampField,
+	LargePropField,
 	MapGeometry,
+	NatureField,
+	NpcField,
 	ParticleBurstField,
 	PickupMesh,
+	PropField,
 	RealDoor,
+	SecretField,
 	SectorMapGeometry,
 	ShellEjectField,
+	TrapField,
 	TreasureChest,
+	VehicleWreck,
+	WeaponSwapDip,
 	WeaponViewmodel,
 } from "./scene";
+import { tickEnemyLoop } from "./scene/hooks/enemyTickLoop";
+import { resolveFire } from "./scene/hooks/fireResolution";
+import { type Secret, spawnSecrets } from "./secrets";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 import {
-	panForPosition,
-	playAggroAlert,
 	playBoom,
-	playChaingun,
+	playBossDeath,
 	playHurt,
-	playMelee,
 	playPickup,
-	playPistol,
 	playPortal,
-	playShotgun,
 	playSkeletonDeath,
+	setAmbientArchetype,
+	setAmbientPhase,
 	stopAmbient,
 } from "./sfx";
-import { WEAPONS, type WeaponId } from "./weapons";
+import type { WeaponId } from "./weapons";
 import { clearYuka, makeYukaEntityAt, removeYukaEntity, tickYuka } from "./yukaIntegration";
 
 type SceneProps = Readonly<{
@@ -96,14 +130,132 @@ export function ObjexoomScene({
 	hasFlashlight,
 }: SceneProps) {
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
-	const enemiesRef = useRef<Enemy[]>(
-		spawnEnemies(map).map((e) => {
-			const scaledHp = Math.max(1, Math.round(e.hp * tuning.enemyHpMultiplier));
-			return { ...e, hp: scaledHp, maxHp: scaledHp };
-		}),
-	);
-	const pickupsRef = useRef<Pickup[]>(spawnPickups(map));
+	// E13 step-3 — per-archetype enemy mix. Remap spawn `kind`s through
+	// the archetype's weight table before spawnEnemies consumes them.
+	// pickArchetype is pure + trivial; safe to call inline for the
+	// useRef initializer.
+	const initialEnemies = spawnEnemies(
+		map,
+		remapEnemyMix(map.enemySpawns, pickArchetype(map), map.seed),
+	).map((e) => {
+		const scaledHp = Math.max(1, Math.round(e.hp * tuning.enemyHpMultiplier));
+		return { ...e, hp: scaledHp, maxHp: scaledHp };
+	});
+	const enemiesRef = useRef<Enemy[]>(initialEnemies);
+	// COV12 step-2 — exactly 1 loot pickup per sector map at the far-
+	// centroid. Appended to the base spawnPickups output with a stable
+	// id derived from the base length so collected/un-collected tracking
+	// stays consistent across reloads of the same seed.
+	const initialPickups = ((): Pickup[] => {
+		const base = spawnPickups(map);
+		const loot = lootPickupSpawn(map);
+		if (loot === null) return base;
+		return [
+			...base,
+			{ id: base.length, kind: loot.kind, position: { ...loot.position }, collected: false },
+		];
+	})();
+	const pickupsRef = useRef<Pickup[]>(initialPickups);
 	const barrelsRef = useRef<Barrel[]>(spawnBarrels(map));
+	// E6 — secret switches/walls for the current map. Grid maps don't
+	// carry secrets in this slice; sector maps may have a `secrets` field
+	// that lists 1+ SecretSpec. spawnSecrets initializes the runtime
+	// state (triggered=false, liftProgress=0) per Spec.
+	const secretsRef = useRef<Secret[]>(
+		isSectorMap(map) && map.secrets ? spawnSecrets(map.secrets) : [],
+	);
+	// COV1 — per-map lamp scatter from PSX Mega Pack II Light Sources.
+	// Sector maps only in this slice; grid maps return []. E4 will flip
+	// the lit-subset's `on` flag and wire pointLights.
+	const lampsRef = useRef<LampInstance[]>(spawnLamps(map));
+	// E13 step-1 — pick the map's archetype deterministically from
+	// `map.seed % 5`. Step-1 only wires the prop-pool axis; future
+	// steps will add lighting palette + enemy mix + SFX bed axes per
+	// PRD §E13. The archetype is constant for the lifetime of the
+	// Scene mount (re-keyed on level change).
+	const archetype = useMemo(() => pickArchetype(map), [map]);
+	// E13 step-2 — per-archetype lighting palette tint. The corridor
+	// entry preserves the pre-step-2 literal colors so refLevel 0's
+	// canonical screenshots stay byte-stable; the other 4 archetypes
+	// each pull a contrasting ambient + directional pair.
+	const lightPalette = useMemo(() => getArchetypeLightPalette(archetype), [archetype]);
+	// COV4 + E3 — per-map decorative prop scatter, now using E13's
+	// per-map archetype pick instead of the hardcoded "corridor".
+	const propsRef = useRef<PropInstance[]>(spawnProps(map, archetype));
+	// COV3 step-1 — modular asphalt floor tiles. Empty unless the map
+	// opts in via `useModularFloor: true`. Currently only refLevel 0
+	// sets the flag; the procedural floor stays everywhere else.
+	const floorTilesRef = useRef<FloorTileInstance[]>(spawnFloorTiles(map));
+	// COV5 step-2 — sector-body debris scatter. 3-5 piles per non-spawn
+	// sector, 4-tile skip-radius from anchors. Reads as "this place has
+	// been overrun."
+	const debrisRef = useRef<DebrisInstance[]>(spawnDebris(map));
+	// COV2 step-2 — anchor-piece large-prop scatter. 1-2 per sector,
+	// sparser than props/debris. The 2 blocking variants opt into
+	// circle collision via the blockers list fed to resolveCollisionAny.
+	const largePropsRef = useRef<LargePropInstance[]>(spawnLargeProps(map));
+	const largePropBlockers = useMemo(() => blockerCirclesOf(largePropsRef.current), []);
+	// COV13 step-2 — library-archetype kitchen scatter. Empty list on
+	// non-library maps. 20% of library sectors get 1-3 kitchen props.
+	const kitchenRef = useRef<KitchenInstance[]>(spawnKitchen(map));
+	// COV11 step-2 — courtyard-archetype nature scatter. Empty list on
+	// non-courtyard maps. Each instance is a scaled-down clone of the
+	// Mega_Nature.glb aggregate (4-8 per sector, varied yaw + scale).
+	const natureRef = useRef<NatureInstance[]>(spawnNature(map));
+	// COV14 step-2 — library-archetype ambient NPC scatter. Empty list on
+	// non-library maps. NPCs are pure set-dressing (no AI, no LOS, no
+	// damage). 0-2 chibis per library sector picked deterministically.
+	const npcsRef = useRef<NpcInstance[]>(spawnNpcs(map));
+	// COV8 step-2 — per-map trap scatter (hazards + triggers per sector).
+	// Tick damage + lever-disarm-sector handled in the main per-frame loop.
+	const trapsRef = useRef<TrapInstance[]>(spawnTraps(map));
+	// Per-trap last-tick timestamp so the player takes one damage pulse
+	// per TRAP_TICK_COOLDOWN_MS while overlapping a hazard.
+	const lastTrapTickAt = useRef<Map<number, number>>(new Map());
+	// COV6 step-2 — wall-face decal scatter. 0-2 decals per sector edge
+	// via tile hash, aggregate ≥3 per sector across edges.
+	const decalsRef = useRef<DecalInstance[]>(spawnDecals(map));
+	// COV10 step-2 — courtyard-archetype RV wreck. Placed at the
+	// centroid of the sector farthest from playerSpawn (the hero
+	// position the boss also uses). Null on non-courtyard maps.
+	const wreckPosition = useMemo(() => {
+		if (archetype !== "courtyard") return null;
+		if (!isSectorMap(map) || map.sectors.length === 0) return null;
+		let best = map.sectors[0];
+		let bestDistSq = Number.NEGATIVE_INFINITY;
+		for (const sector of map.sectors) {
+			let cx = 0;
+			let cy = 0;
+			for (const v of sector.vertices) {
+				cx += v.x;
+				cy += v.y;
+			}
+			cx /= sector.vertices.length;
+			cy /= sector.vertices.length;
+			const dx = cx - map.playerSpawn.x;
+			const dy = cy - map.playerSpawn.y;
+			const d2 = dx * dx + dy * dy;
+			if (d2 > bestDistSq) {
+				bestDistSq = d2;
+				best = sector;
+			}
+		}
+		let cx = 0;
+		let cy = 0;
+		for (const v of best.vertices) {
+			cx += v.x;
+			cy += v.y;
+		}
+		return { x: cx / best.vertices.length, y: cy / best.vertices.length };
+	}, [archetype, map]);
+	// E2 — reactive "all bosses dead" flag that the visual portal/door
+	// components read so they don't appear open while a boss is still
+	// alive. Initialized true when the map has no bosses (single source
+	// of truth: enemiesRef at mount time). The per-frame loop flips it
+	// when the last boss dies. Reviewer-caught issue from E2 review.
+	const [allBossesDead, setAllBossesDead] = useState(
+		() => !enemiesRef.current.some((e) => e.tier === "boss"),
+	);
 	const enemyMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const pickupMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const barrelMeshes = useRef<Map<number, THREE.Group>>(new Map());
@@ -126,11 +278,38 @@ export function ObjexoomScene({
 		phaseRef.current = phase;
 	}, [phase]);
 
-	// I11 — muzzle-flash light. Fires on every shot at the camera position
-	// in the weapon's muzzleColor; intensity decays over ~80 ms.
+	// I11 — muzzle-flash light. Fires on every shot at the weapon's
+	// barrel tip (PA-MOD7 / D11) in the weapon's muzzleColor; intensity
+	// decays over ~80 ms.
 	const muzzleLightRef = useRef<THREE.PointLight | null>(null);
 	const muzzleFlashUntil = useRef(0);
 	const muzzleColorRef = useRef<THREE.Color>(new THREE.Color("#6172f3"));
+	// POL13 — per-weapon bloom tier multiplier set on every shot by
+	// fireResolution; muzzle decay block applies it to base intensity.
+	const muzzleIntensityScaleRef = useRef(1.0);
+	// POL12 — hitstop window. fireResolution sets this to `now + 80ms`
+	// (or 150ms for boss kills) on any enemy kill; enemyTickLoop reads
+	// it and scales its dt down to 5% inside the window so enemies
+	// appear to "freeze" — reads as a weighty kill-confirm punch.
+	const hitstopUntilRef = useRef(0);
+	// POL20 — shared Y-offset ref between WeaponSwapDip (writer) and
+	// WeaponViewmodel (reader). Slot architecture: the dip animation
+	// lives in its own component, the viewmodel just reads the value.
+	const weaponSwapDipOffsetRef = useRef(0);
+	// PA-MOD7 — the WeaponViewmodel registers its muzzle-anchor group
+	// here; per-frame we copy its world-position into muzzleLightRef so
+	// the flash bloom originates from the barrel tip rather than the
+	// camera. Falls back to camera.position when the ref is null (very
+	// first frame after weapon swap, or in test harnesses with no GLB).
+	const muzzleAnchorRef = useRef<THREE.Group | null>(null);
+	const muzzleWorldPos = useMemo(() => new THREE.Vector3(), []);
+	// Stable callback identity so WeaponViewmodel's `useEffect(..., [onMuzzleAnchor])`
+	// cleanup doesn't re-run (and briefly null muzzleAnchorRef) on every
+	// parent render unrelated to a weapon swap. Reviewer-caught issue from
+	// PA-MOD7 review of 2f3369d.
+	const onMuzzleAnchor = useCallback((group: THREE.Group | null) => {
+		muzzleAnchorRef.current = group;
+	}, []);
 
 	// I7 — track which enemies have already fired their aggro alert so we
 	// don't re-play it on every re-entry to chase state. Reset implicitly
@@ -167,20 +346,33 @@ export function ObjexoomScene({
 	// hit (post-iframe). Resolve the camera position and emit the actual
 	// burst at the player's XZ so 30 red motes spawn in-place.
 	useEffect(() => {
-		const onPlayerHit = () => {
-			window.dispatchEvent(
-				new CustomEvent("objexoom:burst", {
-					detail: {
-						x: camera.position.x,
-						y: camera.position.z,
-						kind: "playerHit",
-					},
-				}),
-			);
-		};
-		window.addEventListener("objexoom:playerHit", onPlayerHit);
-		return () => window.removeEventListener("objexoom:playerHit", onPlayerHit);
+		return addObjexoomListener("playerHit", () => {
+			dispatch({
+				type: "burst",
+				x: camera.position.x,
+				y: camera.position.z,
+				kind: "playerHit",
+			});
+		});
 	}, [camera]);
+
+	// E11 — push the per-map archetype to the ambient bed on mount.
+	// Each archetype shifts the drone's pitch + base volume so different
+	// runs sound distinct. The picker (E13) already chose the archetype;
+	// this just plumbs it to sfx.
+	useEffect(() => {
+		setAmbientArchetype(archetype);
+	}, [archetype]);
+
+	// E11 — phase-reactive ambient volume. `out` plays the archetype
+	// base; `going_back` swells +6dB so the "everything aggros" beat
+	// reads sonically too. The actual stopAmbient() in the going_back
+	// useEffect below still fires (the explosion stinger marks the
+	// flip), but `setAmbientPhase` would otherwise hold the swell across
+	// the phase boundary if a future commit removes the stopAmbient.
+	useEffect(() => {
+		setAmbientPhase(phase === "going_back" ? "going_back" : "out");
+	}, [phase]);
 
 	// H8 — when phase transitions out → going_back, re-aggro every alive
 	// enemy (FSM state 1 = chase, bypass LOS), stop the ambient music, and
@@ -210,10 +402,10 @@ export function ObjexoomScene({
 		() => (map.kind === "sectors" ? computePortalEdges(map) : new Set<string>()),
 		[map],
 	);
-	const collisionCtxRef = useRef({ portals, doorOpen: hasKey });
+	const collisionCtxRef = useRef({ portals, doorOpen: hasKey, blockers: largePropBlockers });
 	useEffect(() => {
-		collisionCtxRef.current = { portals, doorOpen: hasKey };
-	}, [portals, hasKey]);
+		collisionCtxRef.current = { portals, doorOpen: hasKey, blockers: largePropBlockers };
+	}, [portals, hasKey, largePropBlockers]);
 
 	useEffect(() => {
 		camera.position.set(map.playerSpawn.x, PLAYER_HEIGHT, map.playerSpawn.y);
@@ -261,7 +453,12 @@ export function ObjexoomScene({
 		if (currentPhase === "out") {
 			const dxExit = px - map.exitPosition.x;
 			const dyExit = py - map.exitPosition.y;
-			if (hasKey && dxExit * dxExit + dyExit * dyExit < TILE * TILE * 0.4) {
+			// E2 — portal stays locked until every boss enemy is dead, even
+			// if the key has been collected. Sync the reactive flag on the
+			// same tick so the visual portal/door reflects the gate state.
+			const allBossesDeadNow = enemiesRef.current.every((e) => e.tier !== "boss" || e.dead);
+			if (allBossesDeadNow !== allBossesDead) setAllBossesDead(allBossesDeadNow);
+			if (hasKey && allBossesDeadNow && dxExit * dxExit + dyExit * dyExit < TILE * TILE * 0.4) {
 				if (!lastWonAt.current) {
 					lastWonAt.current = true;
 					gameRef.current.onWin();
@@ -281,26 +478,52 @@ export function ObjexoomScene({
 		}
 
 		// I11 — muzzle flash decay. Stays bright until muzzleFlashUntil, then
-		// linearly fades to 0 over the remaining window. The light position
-		// follows the camera 1:1 (it lives in world space attached to camera).
+		// linearly fades to 0 over the remaining window. PA-MOD7 / D11:
+		// position tracks the WeaponViewmodel's muzzle anchor (the actual
+		// barrel tip in the GLB), falling back to camera.position when no
+		// anchor is registered yet.
 		if (muzzleLightRef.current) {
 			const muzzleNow = now;
 			const remaining = muzzleFlashUntil.current - muzzleNow;
-			const intensity = remaining > 0 ? Math.min(4, remaining / 20) : 0;
+			// POL13 — bloom-tier scale per weapon. Baseline intensity
+			// (remaining / 20) hits 4.0 at fresh-flash; the per-weapon
+			// scale multiplies that so pistol reads 2.4 max, chaingun
+			// 3.6, shotgun 5.6, flamethrower 4.4, melee 0.
+			const baseIntensity = remaining > 0 ? Math.min(4, remaining / 20) : 0;
+			const intensity = baseIntensity * muzzleIntensityScaleRef.current;
 			muzzleLightRef.current.intensity = intensity;
 			muzzleLightRef.current.color.copy(muzzleColorRef.current);
-			muzzleLightRef.current.position.set(camera.position.x, camera.position.y, camera.position.z);
+			const anchor = muzzleAnchorRef.current;
+			if (anchor) {
+				// PR #16 fold (Gemini medium): WeaponViewmodel's useFrame
+				// is wired at priority=-1 so it runs BEFORE this default-
+				// priority (0) useFrame each frame — the anchor's matrix
+				// is therefore THIS frame's pose, not last frame's, when
+				// we read it here. No more 16ms lag against the rendered
+				// barrel.
+				anchor.getWorldPosition(muzzleWorldPos);
+				muzzleLightRef.current.position.copy(muzzleWorldPos);
+			} else {
+				muzzleLightRef.current.position.set(
+					camera.position.x,
+					camera.position.y,
+					camera.position.z,
+				);
+			}
 		}
 
 		// H8 — light strobe during going_back. 200-frame cycle, 10 frames bright.
+		// POL27 — strobe levels respect per-archetype darkness multipliers
+		// so a dark-sewer going_back still flickers proportionally to the
+		// archetype's lighting baseline rather than blasting bright.
 		if (currentPhase === "going_back") {
 			strobeFrameRef.current = (strobeFrameRef.current + 1) % 200;
 			const bright = strobeFrameRef.current < 10;
 			if (ambientLightRef.current) {
-				ambientLightRef.current.intensity = bright ? 1.4 : 0.2;
+				ambientLightRef.current.intensity = (bright ? 1.4 : 0.2) * lightPalette.ambientMul;
 			}
 			if (directionalLightRef.current) {
-				directionalLightRef.current.intensity = bright ? 2.0 : 0.35;
+				directionalLightRef.current.intensity = (bright ? 2.0 : 0.35) * lightPalette.directionalMul;
 			}
 		}
 
@@ -331,6 +554,30 @@ export function ObjexoomScene({
 			playHurt();
 		}
 
+		// COV8 step-2 — trap tick damage + lever-disarm-sector.
+		// First check for trigger overlap (disarms the whole sector).
+		const trigger = triggerAt(trapsRef.current, { x: px, y: py }, TRIGGER_OVERLAP_RADIUS);
+		if (trigger) {
+			trigger.disarmed = true;
+			const count = disarmSector(trapsRef.current, trigger.sectorId);
+			if (count > 1) playPickup();
+		}
+		// Then check for hazard overlap (per-trap ticked damage).
+		const hazard = trapAt(trapsRef.current, { x: px, y: py }, TRAP_OVERLAP_RADIUS);
+		if (hazard) {
+			const lastTick = lastTrapTickAt.current.get(hazard.id) ?? 0;
+			if (now - lastTick > TRAP_TICK_COOLDOWN_MS) {
+				lastTrapTickAt.current.set(hazard.id, now);
+				const kind = hazard.def.kind;
+				const damage =
+					kind === "spike" || kind === "blade" || kind === "rolling" ? TRAP_TICK_DAMAGE[kind] : 0;
+				if (damage > 0) {
+					gameRef.current.onHit(damage);
+					playHurt();
+				}
+			}
+		}
+
 		// Pickup collection
 		for (const pickup of pickupsRef.current) {
 			if (pickup.collected) continue;
@@ -342,126 +589,37 @@ export function ObjexoomScene({
 				if (mesh) mesh.visible = false;
 				gameRef.current.onCollectPickup(pickup.kind);
 				playPickup();
-				window.dispatchEvent(
-					new CustomEvent("objexoom:burst", {
-						detail: {
-							x: pickup.position.x,
-							y: pickup.position.y,
-							kind: "pickup",
-						},
-					}),
-				);
+				dispatch({
+					type: "burst",
+					x: pickup.position.x,
+					y: pickup.position.y,
+					kind: "pickup",
+				});
 			}
 		}
 
-		// Enemy AI — FSM driven (state 0=patrol, 1=chase, 3=shoot). Skeletons
-		// also melee on contact via the legacy attack-range/cooldown path.
-		const allEnemies = enemiesRef.current;
-		for (const enemy of allEnemies) {
-			if (enemy.dead) continue;
-			const dxp = px - enemy.position.x;
-			const dyp = py - enemy.position.y;
-			const distToPlayer = Math.hypot(dxp, dyp);
-			if (distToPlayer === 0) continue;
-
-			const wraith = enemy.kind === "wraith";
-			const lastSeen = lastSeenRef.current.get(enemy.id) ?? -Infinity;
-			const prevState = enemy.fsmState;
-			const out = tickEnemyFsm({
-				enemy,
-				player: { x: px, y: py },
-				map,
-				ctx: collisionCtxRef.current,
-				now,
-				dt,
-				allEnemies,
-				lastSeenAt: lastSeen,
-				playerVelocity: playerVelocityRef.current,
-			});
-			enemy.fsmState = out.nextState;
-			// I7 — first-time patrol → chase transition fires a panned aggro
-			// growl. The Set is per-Scene-instance; remounting on level change
-			// resets it implicitly.
-			if (prevState === 0 && out.nextState === 1 && !aggroFiredRef.current.has(enemy.id)) {
-				aggroFiredRef.current.add(enemy.id);
-				if (settings.soundEnabled) {
-					const pan = panForPosition(enemy.position, {
-						x: px,
-						y: py,
-						yaw: camera.rotation.y,
-					});
-					playAggroAlert(pan);
-				}
-			}
-			lastSeenRef.current.set(enemy.id, out.lastSeenAt);
-			for (const helpId of out.gethelpFromIds) {
-				const helped = allEnemies.find((e) => e.id === helpId);
-				if (helped && !helped.dead) helped.fsmState = 1;
-			}
-
-			if (out.moveTarget) {
-				enemy.position = wraith
-					? out.moveTarget
-					: resolveCollisionAny(out.moveTarget, map, collisionCtxRef.current, 0.5);
-			}
-
-			if (out.fireBullet) {
-				bulletsRef.current.push(
-					makeEnemyBullet(
-						nextBulletIdRef.current++,
-						enemy.id,
-						enemy.position,
-						{ x: px, y: py },
-						now,
-					),
-				);
-				enemy.lastShotAt = now;
-			}
-
-			// Skeleton melee — short-range contact damage (legacy path; skeletons
-			// don't shoot, so they need a close-quarters threat). Imps and wraiths
-			// rely on ranged.
-			if (
-				enemy.kind === "skeleton" &&
-				distToPlayer < SKELETON_ATTACK_RANGE &&
-				now - enemy.lastAttackAt > SKELETON_ATTACK_COOLDOWN_MS
-			) {
-				const sees = hasLineOfSightAny(
-					enemy.position,
-					{ x: px, y: py },
-					map,
-					collisionCtxRef.current,
-				);
-				if (sees) {
-					enemy.lastAttackAt = now;
-					gameRef.current.onHit(SKELETON_DAMAGE);
-					playHurt();
-				}
-			}
-
-			const mesh = enemyMeshes.current.get(enemy.id);
-			if (mesh) {
-				mesh.position.x = enemy.position.x;
-				mesh.position.z = enemy.position.y;
-				mesh.position.y = wraith
-					? 1.4 + Math.sin(now * 0.003 + enemy.id) * 0.25
-					: 0.8 + Math.sin(now * 0.003 + enemy.id) * 0.06;
-				mesh.lookAt(px, mesh.position.y, py);
-			}
-
-			// Y1 — mirror the FSM-computed enemy position into its yuka
-			// GameEntity so EntityManager.update sees real coordinates each
-			// frame. Drop the entity from the manager when the enemy dies.
-			const yukaEntity = yukaEntitiesRef.current.get(enemy.id);
-			if (yukaEntity) {
-				if (enemy.dead) {
-					removeYukaEntity(yukaEntity);
-					yukaEntitiesRef.current.delete(enemy.id);
-				} else {
-					yukaEntity.position.set(enemy.position.x, 0, enemy.position.y);
-				}
-			}
-		}
+		// ARCH2a — per-frame enemy AI loop lives in src/scene/hooks/enemyTickLoop.ts.
+		// Behavior is byte-identical; this call site is a pure relocation.
+		tickEnemyLoop({
+			enemiesRef,
+			yukaEntitiesRef,
+			bulletsRef,
+			nextBulletIdRef,
+			enemyMeshesRef: enemyMeshes,
+			lastSeenRef,
+			aggroFiredRef,
+			collisionCtxRef,
+			gameRef,
+			map,
+			camera,
+			settings,
+			playerVelocity: playerVelocityRef.current,
+			playerX: px,
+			playerY: py,
+			now,
+			dt,
+			hitstopUntilRef,
+		});
 
 		// Bullet integration — advance, check wall/player, retire dead bullets.
 		const bullets = bulletsRef.current;
@@ -493,13 +651,18 @@ export function ObjexoomScene({
 	// effect tick, the dead-spawn-position set blocks double-credit.
 	const debugKilledSpawnsRef = useRef<Set<string>>(new Set());
 	useEffect(() => {
-		const onDebugKillAll = () => {
+		const runDebugKill = (predicate: (e: Enemy) => boolean) => {
+			let killsThisTick = 0;
+			let bossKillsThisTick = 0;
 			for (const enemy of enemiesRef.current) {
+				if (!predicate(enemy)) continue;
 				const tag = `${enemy.id}@${enemy.position.x.toFixed(3)},${enemy.position.y.toFixed(3)}`;
 				if (debugKilledSpawnsRef.current.has(tag)) continue;
 				if (enemy.dead) continue;
 				debugKilledSpawnsRef.current.add(tag);
 				enemy.dead = true;
+				killsThisTick += 1;
+				if (enemy.tier === "boss") bossKillsThisTick += 1;
 				const mesh = enemyMeshes.current.get(enemy.id);
 				if (mesh) mesh.visible = false;
 				// Y1 — debug-kill also drops the enemy's yuka GameEntity so the
@@ -509,9 +672,37 @@ export function ObjexoomScene({
 					removeYukaEntity(yukaEntity);
 					yukaEntitiesRef.current.delete(enemy.id);
 				}
+				// PT1 fold-forward — debug kill dispatches the same
+				// death side-effects as the real fire path so playtest
+				// captures see POL16 layered burst + POL25 body-part
+				// settle + POL12 hitstop.
+				dispatch({
+					type: "burst",
+					x: enemy.position.x,
+					y: enemy.position.y,
+					kind: enemy.kind === "imp" ? "explode" : "damage",
+				});
+				dispatch({
+					type: "bodyParts",
+					x: enemy.position.x,
+					y: enemy.position.y,
+					kind: enemy.kind,
+				});
 				gameRef.current.onKill();
 			}
+			if (killsThisTick > 0) {
+				// POL12 hitstop window — debug-kills should feel the same
+				// punch as real kills.
+				const hitstopMs = bossKillsThisTick > 0 ? 150 : 80;
+				hitstopUntilRef.current = performance.now() + hitstopMs;
+				// POL10-v2 boss death + skeleton death audio.
+				playSkeletonDeath();
+				if (bossKillsThisTick > 0) playBossDeath();
+				if (settings.soundEnabled) playBoom();
+			}
 		};
+		const onDebugKillAll = () => runDebugKill(() => true);
+		const onDebugKillBoss = () => runDebugKill((e) => e.tier === "boss");
 		const onDebugCollectPickups = () => {
 			for (const pickup of pickupsRef.current) {
 				if (pickup.collected) continue;
@@ -521,13 +712,15 @@ export function ObjexoomScene({
 				gameRef.current.onCollectPickup(pickup.kind);
 			}
 		};
-		window.addEventListener("objexoom:debugKillAll", onDebugKillAll);
-		window.addEventListener("objexoom:debugCollectPickups", onDebugCollectPickups);
+		const teardownKillAll = addObjexoomListener("debugKillAll", onDebugKillAll);
+		const teardownKillBoss = addObjexoomListener("debugKillBoss", onDebugKillBoss);
+		const teardownCollect = addObjexoomListener("debugCollectPickups", onDebugCollectPickups);
 		return () => {
-			window.removeEventListener("objexoom:debugKillAll", onDebugKillAll);
-			window.removeEventListener("objexoom:debugCollectPickups", onDebugCollectPickups);
+			teardownKillAll();
+			teardownKillBoss();
+			teardownCollect();
 		};
-	}, [gameRef]);
+	}, [gameRef, settings.soundEnabled]);
 
 	// E5 — barrel explosion handler. Lives behind a ref so the fire-path
 	// (also a ref-closure) can call it without re-subscribing the
@@ -547,11 +740,7 @@ export function ObjexoomScene({
 				x: camera.position.x,
 				y: camera.position.z,
 			});
-			window.dispatchEvent(
-				new CustomEvent("objexoom:burst", {
-					detail: { x: result.position.x, y: result.position.y, kind: "explode" },
-				}),
-			);
+			dispatch({ type: "burst", x: result.position.x, y: result.position.y, kind: "explode" });
 			if (settings.soundEnabled) playBoom();
 			// Apply AoE enemy damage. Killed enemies emit body-parts +
 			// kill counter just like a weapon hit.
@@ -564,16 +753,17 @@ export function ObjexoomScene({
 					gameRef.current.onKill();
 					const enemyMesh = enemyMeshes.current.get(enemy.id);
 					if (enemyMesh) enemyMesh.visible = false;
-					window.dispatchEvent(
-						new CustomEvent("objexoom:bodyParts", {
-							detail: { x: enemy.position.x, y: enemy.position.y, kind: enemy.kind },
-						}),
-					);
+					dispatch({
+						type: "bodyParts",
+						x: enemy.position.x,
+						y: enemy.position.y,
+						kind: enemy.kind,
+					});
 				}
 			}
 			if (result.hitsPlayer) {
 				gameRef.current.onHit(result.playerDamage);
-				window.dispatchEvent(new CustomEvent("objexoom:playerHit"));
+				dispatch({ type: "playerHit" });
 			}
 			// Enqueue chain barrels; the loop above pops them in turn.
 			for (const chainId of result.chainBarrelIds) {
@@ -583,173 +773,37 @@ export function ObjexoomScene({
 		}
 	};
 
-	// Fire handler
-	// biome-ignore lint/correctness/useExhaustiveDependencies: refs (ammoRef, enemiesRef) are mutable and shouldn't trigger re-subscribe; lints fights with the imperative ref pattern.
+	// ARCH2b — single-shot resolution moved to src/scene/hooks/fireResolution.ts.
+	// The useEffect that wires `objexoom:fire` stays here (it owns the
+	// listener lifecycle); the body is one call into the pure helper.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: refs are mutable and shouldn't trigger re-subscribe; matches the imperative ref pattern.
 	useEffect(() => {
 		const onFire = () => {
-			if (!active) return;
-			const spec = WEAPONS[weapon];
-			const now = performance.now();
-			if (now - lastFireAt.current < spec.cooldownMs) return;
-
-			if (spec.ammoCostPerShot > 0) {
-				const remaining = ammoRef.current.ammo[weapon];
-				if (remaining < spec.ammoCostPerShot) return;
-			}
-
-			lastFireAt.current = now;
-			gameRef.current.onSpendAmmo(weapon, spec.ammoCostPerShot);
-
-			// I11 — muzzle-flash light. 80 ms of weapon-colored bloom from
-			// the camera position. The light decays in the per-frame block.
-			muzzleFlashUntil.current = now + 80;
-			muzzleColorRef.current.set(spec.muzzleColor);
-
-			if (weapon === "melee") playMelee();
-			else if (weapon === "pistol") playPistol();
-			else if (weapon === "chaingun") playChaingun();
-			else playShotgun();
-
-			// I10 / PA9b — shell ejection. Shotgun ejects one large brass
-			// shell per trigger pull; chaingun ejects a smaller shell on
-			// every individual pulse (~11/sec at 90ms cooldown). Both
-			// flick to the camera's right with random spin; gravity +
-			// ground bounce; 4 s despawn via ShellEjectField.
-			if (weapon === "shotgun" || weapon === "chaingun") {
-				const isChaingun = weapon === "chaingun";
-				const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-				// Chaingun shells lateral velocity is a touch lower so the
-				// dense stream doesn't fling shells halfway across the room.
-				const lateral = isChaingun ? 1.0 : 1.6;
-				const upward = isChaingun ? 0.9 : 1.2;
-				const scale = isChaingun ? 0.6 : 1.0;
-				window.dispatchEvent(
-					new CustomEvent("objexoom:shellEject", {
-						detail: {
-							x: camera.position.x + right.x * 0.3,
-							y: camera.position.y - 0.3,
-							z: camera.position.z + right.z * 0.3,
-							vx: right.x * lateral + (Math.random() - 0.5) * 0.4,
-							vy: upward,
-							vz: right.z * lateral + (Math.random() - 0.5) * 0.4,
-							scale,
-						},
-					}),
-				);
-			}
-
-			const forwardBase = new THREE.Vector3(0, 0, -1)
-				.applyQuaternion(camera.quaternion)
-				.normalize();
-			const origin = { x: camera.position.x, y: camera.position.z };
-
-			let killsThisShot = 0;
-			for (let pelletIdx = 0; pelletIdx < spec.pellets; pelletIdx += 1) {
-				const spreadX = (Math.random() - 0.5) * spec.spreadRad;
-				const spreadY = (Math.random() - 0.5) * spec.spreadRad;
-				const forward = forwardBase
-					.clone()
-					.applyAxisAngle(new THREE.Vector3(0, 1, 0), spreadX)
-					.applyAxisAngle(new THREE.Vector3(1, 0, 0), spreadY);
-				const dir2 = { x: forward.x, y: forward.z };
-				const len2 = Math.hypot(dir2.x, dir2.y) || 1;
-				dir2.x /= len2;
-				dir2.y /= len2;
-
-				const maxDist = spec.rangeTiles * TILE;
-				const wallHit = castRayAny(origin, dir2, map, collisionCtxRef.current, maxDist);
-				let bestEnemy: Enemy | null = null;
-				let bestDist = wallHit.dist;
-				for (const enemy of enemiesRef.current) {
-					if (enemy.dead) continue;
-					const ex = enemy.position.x - origin.x;
-					const ey = enemy.position.y - origin.y;
-					const t = ex * dir2.x + ey * dir2.y;
-					if (t <= 0 || t > bestDist) continue;
-					const perpX = ex - dir2.x * t;
-					const perpY = ey - dir2.y * t;
-					const perp = Math.hypot(perpX, perpY);
-					if (perp > 1.0) continue;
-					bestEnemy = enemy;
-					bestDist = t;
-				}
-				// E5 — barrel hit-test. Barrels are closer-than-enemy targets in
-				// the priority chain: if a barrel sits in the ray before the
-				// nearest enemy, the barrel takes the pellet instead. Wins ties.
-				const barrelHit = pickRayBarrel(origin, dir2, barrelsRef.current, bestDist);
-				if (barrelHit && barrelHit.dist <= bestDist) {
-					barrelHit.barrel.hp -= spec.damage;
-					window.dispatchEvent(
-						new CustomEvent("objexoom:burst", {
-							detail: {
-								x: barrelHit.barrel.position.x,
-								y: barrelHit.barrel.position.y,
-								kind: "damage",
-							},
-						}),
-					);
-					if (barrelHit.barrel.hp <= 0 && !barrelHit.barrel.exploded) {
-						explodeBarrelRef.current(barrelHit.barrel);
-					}
-					// Pellet consumed — skip the enemy-damage block below.
-					continue;
-				}
-				if (bestEnemy) {
-					bestEnemy.hp -= spec.damage;
-					// D5 — damage burst at hit point.
-					window.dispatchEvent(
-						new CustomEvent("objexoom:burst", {
-							detail: {
-								x: bestEnemy.position.x,
-								y: bestEnemy.position.y,
-								kind: "damage",
-							},
-						}),
-					);
-					if (bestEnemy.hp <= 0) {
-						bestEnemy.dead = true;
-						killsThisShot += 1;
-						const mesh = enemyMeshes.current.get(bestEnemy.id);
-						if (mesh) mesh.visible = false;
-						// D1-style imp explode-on-death: extra burst at higher count.
-						if (bestEnemy.kind === "imp") {
-							window.dispatchEvent(
-								new CustomEvent("objexoom:burst", {
-									detail: {
-										x: bestEnemy.position.x,
-										y: bestEnemy.position.y,
-										kind: "explode",
-									},
-								}),
-							);
-						}
-						// I1 — body-part physics. Spawn 4-6 chunky meshes with
-						// urandom spin + gravity at the death location.
-						window.dispatchEvent(
-							new CustomEvent("objexoom:bodyParts", {
-								detail: {
-									x: bestEnemy.position.x,
-									y: bestEnemy.position.y,
-									kind: bestEnemy.kind,
-								},
-							}),
-						);
-					}
-				}
-			}
-
-			if (killsThisShot > 0) {
-				for (let i = 0; i < killsThisShot; i += 1) gameRef.current.onKill();
-				playSkeletonDeath();
-				// K1 — every kill ships a (subtler) explosion stinger so
-				// crowd-kill moments have weight, not just the death pluck.
-				if (settings.soundEnabled) playBoom();
-			}
+			resolveFire({
+				active,
+				weapon,
+				now: performance.now(),
+				camera,
+				map,
+				settings,
+				ammoRef,
+				gameRef,
+				enemiesRef,
+				barrelsRef,
+				secretsRef,
+				enemyMeshesRef: enemyMeshes,
+				collisionCtxRef,
+				lastFireAtRef: lastFireAt,
+				muzzleFlashUntilRef: muzzleFlashUntil,
+				muzzleColorRef,
+				muzzleIntensityScaleRef,
+				hitstopUntilRef,
+				explodeBarrel: (b) => explodeBarrelRef.current(b),
+			});
 		};
 
-		window.addEventListener("objexoom:fire", onFire);
-		return () => window.removeEventListener("objexoom:fire", onFire);
-	}, [active, camera, map, hasKey, gameRef, weapon, ammoRef]);
+		return addObjexoomListener("fire", onFire);
+	}, [active, camera, map, hasKey, gameRef, weapon, ammoRef, settings]);
 
 	useFrame(() => {
 		if (!active || hasKey) return;
@@ -768,14 +822,14 @@ export function ObjexoomScene({
 			    the flashlight spotlight is the only practical fill. */}
 			<ambientLight
 				ref={ambientLightRef}
-				intensity={hasFlashlight ? 0.55 : 0.12}
-				color={OBJEXOOM_PALETTE.violet}
+				intensity={(hasFlashlight ? 0.55 : 0.12) * lightPalette.ambientMul}
+				color={lightPalette.ambientColor}
 			/>
 			<directionalLight
 				ref={directionalLightRef}
 				position={[10, 16, 8]}
-				intensity={hasFlashlight ? 0.9 : 0.18}
-				color={OBJEXOOM_PALETTE.parchment}
+				intensity={(hasFlashlight ? 0.9 : 0.18) * lightPalette.directionalMul}
+				color={lightPalette.directionalColor}
 				castShadow
 				shadow-mapSize={[1024, 1024]}
 				shadow-camera-left={-20}
@@ -786,12 +840,15 @@ export function ObjexoomScene({
 				shadow-camera-far={60}
 			/>
 			{hasFlashlight && <Flashlight />}
-			<hemisphereLight args={[OBJEXOOM_PALETTE.indigo, OBJEXOOM_PALETTE.ink, 0.35]} />
+			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.35]} />
 			{/* I11 — muzzle-flash point light. Lives at camera position,
 			    driven by useFrame so it can decay between renders. */}
 			<pointLight ref={muzzleLightRef} intensity={0} distance={8} decay={1.5} />
-			<fog attach="fog" args={[OBJEXOOM_PALETTE.ink, 6, TILE * 12]} />
-			<color attach="background" args={[OBJEXOOM_PALETTE.ink]} />
+			{/* E13 step-4 — per-archetype fog tint. Dominant depth-fade
+			    signal in low-lit play; biggest visual lever for archetype-
+			    distinctness. Corridor still resolves to OBJEXOOM_PALETTE.ink. */}
+			<fog attach="fog" args={[lightPalette.fogColor, 6, TILE * lightPalette.fogFarTiles]} />
+			<color attach="background" args={[lightPalette.fogColor]} />
 
 			{map.kind === "grid" ? (
 				<MapGeometry map={map} doorOpen={hasKey} />
@@ -799,29 +856,106 @@ export function ObjexoomScene({
 				<SectorMapGeometry map={map} />
 			)}
 			<KeyMarker visible={!hasKey} position={map.keyPosition} />
-			<ExitPortal position={map.exitPosition} unlocked={hasKey} hueIndex={(map.seed >>> 0) % 5} />
-			<RealDoor position={map.exitPosition} unlocked={hasKey} />
+			<ExitPortal
+				position={map.exitPosition}
+				unlocked={hasKey && allBossesDead}
+				hueIndex={(map.seed >>> 0) % 5}
+			/>
+			{/* POL23 — exit-portal approach FOV-widen slot per
+			    docs/SLOT-ARCHITECTURE.md. The base FOV of 75 mirrors
+			    the ObjexoomShell Canvas camera config. */}
+			<ExitPortalApproach
+				portalPosition={map.exitPosition}
+				unlocked={hasKey && allBossesDead}
+				baseFov={75}
+			/>
+			<RealDoor position={map.exitPosition} unlocked={hasKey && allBossesDead} mapSeed={map.seed} />
 			<TreasureChest position={map.exitPosition} />
 			{/* H8 — second RealDoor at the original spawn. Opens during the
 			    going_back phase so the player has a clear visual goal to
 			    sprint toward while every enemy aggros. */}
-			<RealDoor position={map.playerSpawn} unlocked={phase === "going_back"} />
+			<RealDoor
+				position={map.playerSpawn}
+				unlocked={phase === "going_back"}
+				mapSeed={map.seed ^ 0x676f6e67 /* "gong" tag — different variant for the spawn-side door */}
+			/>
+
+			{/* E6 — secret switches + their hidden walls. Empty when the
+			    current map has no `secrets` field (grid maps + future
+			    secret-free ref levels). */}
+			<SecretField secretsRef={secretsRef} />
+
+			{/* COV1 — PSX Mega Pack II lamp scatter. Empty on grid maps
+			    in this slice. E4 will flip a subset to `on` + wire
+			    scoped pointLights. */}
+			<LampField lamps={lampsRef.current} lightColor={lightPalette.lampLightColor} />
+
+			{/* COV4 + E3 — decorative prop scatter from PSX Mega Pack II
+			    Props pool. Step-1: "corridor" archetype default for
+			    every sector; E13 will pick archetypes per map.seed. */}
+			<PropField props={propsRef.current} />
+
+			{/* COV2 step-2 — anchor-piece large-prop scatter (1-2 per
+			    sector). Blocking entries (machinery, shipping container)
+			    push the player out via the collision blocker list. */}
+			<LargePropField props={largePropsRef.current} />
+
+			{/* COV8 step-2 — trap scatter (0-2 hazards + 1 trigger per
+			    sector, archetype-biased). Tick damage + lever-disarm
+			    flow lives in the per-frame loop in ObjexoomScene. */}
+			<TrapField traps={trapsRef.current} />
+
+			{/* COV13 step-2 — library-archetype kitchen scatter.
+			    Empty on non-library archetypes. */}
+			<KitchenField props={kitchenRef.current} />
+
+			{/* COV11 step-2 — courtyard-archetype nature scatter.
+			    Empty on non-courtyard archetypes. */}
+			<NatureField instances={natureRef.current} />
+
+			{/* COV14 step-2 — library-archetype ambient NPCs. Pure
+			    set-dressing; no AI/LOS/damage tracks. */}
+			<NpcField instances={npcsRef.current} />
+
+			{/* COV3 step-1 — modular asphalt floor tiles. Empty unless
+			    the map opts in via `useModularFloor: true`. */}
+			<FloorTileField tiles={floorTilesRef.current} />
+
+			{/* COV5 step-2 — sector-body debris scatter (3-5 per sector,
+			    skip-radius 4 from spawn/exit/key). Reads as "overrun." */}
+			<DebrisField debris={debrisRef.current} />
+
+			{/* COV6 step-2.1 — wall-face decals as billboard quads with
+			    the GLB's primary texture extracted onto a 1.2×0.8 plane
+			    aligned to the sector edge normal. */}
+			<DecalField decals={decalsRef.current} />
+
+			{/* COV10 step-2 — one RV wreck at the courtyard archetype's
+			    farthest-sector centroid. Null on non-courtyard maps. */}
+			{wreckPosition && <VehicleWreck position={wreckPosition} seed={map.seed} />}
 
 			{enemiesRef.current.map((enemy) => (
-				<EnemyMesh
-					key={enemy.id}
-					enemy={enemy}
-					register={(group) => {
-						if (group) enemyMeshes.current.set(enemy.id, group);
-						else enemyMeshes.current.delete(enemy.id);
-					}}
-				/>
+				<group key={enemy.id}>
+					<EnemyMesh
+						enemy={enemy}
+						register={(group) => {
+							if (group) enemyMeshes.current.set(enemy.id, group);
+							else enemyMeshes.current.delete(enemy.id);
+						}}
+					/>
+					{/* POL19 — hit-flash slot. Sibling to EnemyMesh per
+					    docs/SLOT-ARCHITECTURE.md. Reads enemy.staggerUntil,
+					    looks up the registered mesh via enemyMeshes, clones
+					    + modulates materials. Returns null. */}
+					<EnemyHitFlash enemy={enemy} meshLookup={enemyMeshes} />
+				</group>
 			))}
 
 			{pickupsRef.current.map((pickup) => (
 				<PickupMesh
 					key={pickup.id}
 					pickup={pickup}
+					mapSeed={map.seed}
 					register={(group) => {
 						if (group) pickupMeshes.current.set(pickup.id, group);
 						else pickupMeshes.current.delete(pickup.id);
@@ -844,21 +978,25 @@ export function ObjexoomScene({
 			<ParticleBurstField />
 			<BodyPartField />
 			<ShellEjectField />
-			<WeaponViewmodel weapon={weapon} />
+			<DamageNumberField />
+			<WeaponViewmodel
+				weapon={weapon}
+				mapSeed={map.seed}
+				onMuzzleAnchor={onMuzzleAnchor}
+				swapDipOffsetRef={weaponSwapDipOffsetRef}
+			/>
+			{/* POL20 — weapon-swap dip slot per docs/SLOT-ARCHITECTURE.md. */}
+			<WeaponSwapDip weapon={weapon} dipOffsetRef={weaponSwapDipOffsetRef} />
 
 			<PlayerController map={map} active={active} hasKey={hasKey} settings={settings} />
 
 			{/* E12/PA16 — adaptive pixel ratio. Lives inside Canvas so it
 			    can call useFrame + useThree.gl.setPixelRatio directly. */}
-			<AdaptiveResolution
-				onUpdate={(info) =>
-					window.dispatchEvent(new CustomEvent("objexoom:fpsUpdate", { detail: info }))
-				}
-			/>
+			<AdaptiveResolution onUpdate={(info) => dispatch({ type: "fpsUpdate", ...info })} />
 
 			<EffectComposer>
 				<Bloom intensity={0.45} luminanceThreshold={0.55} luminanceSmoothing={0.2} />
-				<ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={[0.0015, 0.0015]} />
+				<HitChromaticAberration />
 				<Vignette eskil={false} offset={0.25} darkness={0.7} />
 			</EffectComposer>
 		</>

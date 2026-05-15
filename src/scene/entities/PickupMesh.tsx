@@ -1,8 +1,86 @@
+import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
-import type * as THREE from "three";
+import { useEffect, useMemo, useRef } from "react";
+import * as THREE from "three";
+import { SkeletonUtils } from "three-stdlib";
 import { OBJEXOOM_PALETTE, ROLE } from "../../design-tokens";
 import type { Pickup } from "../../engine";
+import { LOOT_URL_LIST, LOOT_URLS, type LootKind, pickLootKind } from "../../loot";
+
+/**
+ * POL17 — per-pickup-kind halo color. Picks the dominant emissive
+ * tone of the pickup body so the halo reads as a coherent extension
+ * of the object, not an arbitrary glow.
+ */
+function haloColorFor(kind: Pickup["kind"]): string {
+	switch (kind) {
+		case "chaingunAmmo":
+			return OBJEXOOM_PALETTE.indigo;
+		case "loot":
+			return OBJEXOOM_PALETTE.amber; // treasure-tier glow
+		default:
+			return ROLE.actionPickup;
+	}
+}
+
+/**
+ * POL17 — layered halo. Inner bright core + outer soft falloff at
+ * two scale tiers. Mounted as a sibling to the pickup body group,
+ * fluctuates radius + opacity with a slow sin so the halo "breathes."
+ */
+function PickupHalo({ color }: { color: string }) {
+	const innerRef = useRef<THREE.Mesh | null>(null);
+	const outerRef = useRef<THREE.Mesh | null>(null);
+	const innerColor = useMemo(() => new THREE.Color(color), [color]);
+	useFrame((state) => {
+		const t = state.clock.elapsedTime;
+		const pulse = 0.5 + 0.5 * Math.sin(t * 1.6);
+		if (innerRef.current) {
+			const mat = innerRef.current.material as THREE.MeshBasicMaterial;
+			mat.opacity = 0.16 + pulse * 0.08;
+			const s = 0.95 + pulse * 0.1;
+			innerRef.current.scale.set(s, s, s);
+		}
+		if (outerRef.current) {
+			const mat = outerRef.current.material as THREE.MeshBasicMaterial;
+			mat.opacity = 0.05 + pulse * 0.04;
+			const s = 1.4 + pulse * 0.18;
+			outerRef.current.scale.set(s, s, s);
+		}
+	});
+	return (
+		<>
+			<mesh
+				ref={(node) => {
+					innerRef.current = node;
+				}}
+			>
+				<sphereGeometry args={[0.42, 16, 16]} />
+				<meshBasicMaterial
+					color={innerColor}
+					transparent
+					opacity={0.2}
+					depthWrite={false}
+					side={THREE.BackSide}
+				/>
+			</mesh>
+			<mesh
+				ref={(node) => {
+					outerRef.current = node;
+				}}
+			>
+				<sphereGeometry args={[0.62, 16, 16]} />
+				<meshBasicMaterial
+					color={innerColor}
+					transparent
+					opacity={0.06}
+					depthWrite={false}
+					side={THREE.BackSide}
+				/>
+			</mesh>
+		</>
+	);
+}
 
 /**
  * Floating pickup mesh — bobs + spins. Each `pickup.kind` renders as a
@@ -17,20 +95,36 @@ import type { Pickup } from "../../engine";
 export function PickupMesh({
 	pickup,
 	register,
+	mapSeed,
 }: {
 	pickup: Pickup;
 	register: (group: THREE.Group | null) => void;
+	/**
+	 * COV12 step-2 — used to resolve `lootKind` for `kind === "loot"`
+	 * pickups via `pickLootKind(mapSeed)`. Other kinds ignore it.
+	 */
+	mapSeed: number;
 }) {
 	const ref = useRef<THREE.Group | null>(null);
 	useEffect(() => {
 		register(ref.current);
 		return () => register(null);
 	}, [register]);
+	// POL17 — buoyancy bob. The pre-POL17 path used a single sin for
+	// vertical. Adds a sin of half-frequency on top for a "two-cycle"
+	// motion plus a small roll on the local Z axis so the pickup
+	// feels weightless rather than mechanically reciprocating.
 	useFrame((s) => {
 		if (!ref.current) return;
-		ref.current.rotation.y = s.clock.elapsedTime * 1.4;
-		ref.current.position.y = 0.7 + Math.sin(s.clock.elapsedTime * 2 + pickup.id) * 0.1;
+		const t = s.clock.elapsedTime;
+		ref.current.rotation.y = t * 1.4;
+		const primary = Math.sin(t * 2 + pickup.id) * 0.1;
+		const secondary = Math.sin(t * 0.9 + pickup.id * 1.7) * 0.04;
+		ref.current.position.y = 0.7 + primary + secondary;
+		ref.current.rotation.z = Math.sin(t * 1.1 + pickup.id) * 0.07;
 	});
+
+	const haloColor = haloColorFor(pickup.kind);
 
 	return (
 		<group
@@ -39,6 +133,8 @@ export function PickupMesh({
 			}}
 			position={[pickup.position.x, 0.7, pickup.position.y]}
 		>
+			{/* POL17 — layered halo behind the pickup body. */}
+			<PickupHalo color={haloColor} />
 			{pickup.kind === "health" && (
 				<>
 					{/* D2 — amber cross. Two crossed bars in brand amber. */}
@@ -130,6 +226,7 @@ export function PickupMesh({
 					</mesh>
 				</group>
 			)}
+			{pickup.kind === "loot" && <LootPickupMesh lootKind={pickLootKind(mapSeed)} />}
 			{pickup.kind === "flashlight" && (
 				/* J1 — flashlight pickup: parchment cylinder w/ amber lens */
 				<group>
@@ -156,3 +253,24 @@ export function PickupMesh({
 		</group>
 	);
 }
+
+/**
+ * COV12 step-2 — loot pickup body. Renders the COV12 GLB matching the
+ * resolved `lootKind`. The GLBs are scene-aggregate exports (Bottles,
+ * Books and Scrolls, Treasure) — we scale them down to ~0.6 world
+ * units so they read as a single hero pickup rather than a stage of
+ * props. SkeletonUtils.clone for the standard per-mount tree-isolation
+ * pattern.
+ */
+function LootPickupMesh({ lootKind }: { lootKind: LootKind }) {
+	const url = LOOT_URLS[lootKind];
+	const gltf = useGLTF(url);
+	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
+	return (
+		<group scale={[0.6, 0.6, 0.6]}>
+			<primitive object={cloned} />
+		</group>
+	);
+}
+
+for (const url of LOOT_URL_LIST) useGLTF.preload(url);

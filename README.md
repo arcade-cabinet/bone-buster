@@ -36,8 +36,8 @@ canvas-keyed input is hostile to scripted automation.
 | `pnpm build:native` | Build + `cap sync` for Android/iOS |
 | `pnpm check` | TypeScript no-emit |
 | `pnpm lint` | Biome lint |
-| `pnpm test` | Vitest unit suite (163 tests in 12 suites) |
-| `pnpm test:browser` | Vitest browser suite (real Chromium via Playwright, 5 tests) |
+| `pnpm test` | Vitest unit suite (498+ tests across 51+ suites) |
+| `pnpm test:browser` | Vitest browser suite (real Chromium via Playwright, 6 tests) |
 | `pnpm test:e2e` | Full Playwright e2e suite |
 | `pnpm test:e2e:screenshots` | Regenerate the canonical 5 screenshots under `test-results/objexoom-screenshots/` |
 | `pnpm verify` | The merge gate: lint + check + test + test:browser + assets:verify-runtime |

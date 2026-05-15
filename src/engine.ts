@@ -22,7 +22,15 @@ export type PickupKind =
 	| "shotgunAmmo"
 	// J1 — flashlight pickup. Carrying it grants a forward cone of
 	// directional light; without it the level reads as dark.
-	| "flashlight";
+	| "flashlight"
+	// COV12 step-2 — rare hero-tier bonus drop. Exactly one per map,
+	// placed at the centroid of the sector farthest from playerSpawn.
+	// On collect, dispatches a kind-specific bonus picked from the COV12
+	// LootKind via `pickLootKind(map.seed)`:
+	//   bottles  → +5 health (potion stash)
+	//   books    → +chaingun + shotgun ammo (knowledge → reload)
+	//   treasure → +score (shipped as a 50-point one-shot bonus)
+	| "loot";
 
 export type PickupSpawn = Readonly<{
 	kind: PickupKind;
@@ -78,6 +86,29 @@ export type ObjexoomSectorMap = ObjexoomMapBase &
 			maxX: number;
 			maxY: number;
 		}>;
+		/**
+		 * E6 — optional list of secret switch/wall pairs. Step-1 slice
+		 * is "one per ref level"; the type is plural so a future step
+		 * can scatter several per level without re-shaping the map.
+		 * Grid maps don't carry secrets in this slice.
+		 */
+		secrets?: readonly import("./secrets").SecretSpec[];
+		/**
+		 * COV3 step-1 — when true, SectorMapGeometry OMITS the procedural
+		 * floor shape and FloorTileField renders modular asphalt tiles
+		 * instead. Walls + ceiling stay procedural until COV3 step-2.
+		 * Default false; only refLevel 0 sets this true in the current
+		 * slice.
+		 */
+		useModularFloor?: boolean;
+		/**
+		 * COV3 step-2 — when true, SectorMapGeometry OMITS the procedural
+		 * `<boxGeometry>` wall quads and mounts modular wall GLBs along
+		 * non-portal sector edges instead. Portal edges (sector-to-sector
+		 * openings) skip walls regardless. Default false; only refLevel
+		 * 0 sets it true in this slice.
+		 */
+		useModularWalls?: boolean;
 	}>;
 
 export type MapSector = Readonly<{
@@ -85,6 +116,12 @@ export type MapSector = Readonly<{
 	vertices: readonly Vec2[];
 	floorHeight: number;
 	ceilingHeight: number;
+	/**
+	 * E7 — when true, this sector renders with the UV-scrolled water
+	 * surface mesh and applies WATER_SPEED_MULTIPLIER to player movement
+	 * while overlapping. Defaults to false (regular floor).
+	 */
+	isWater?: boolean;
 }>;
 
 export type ObjexoomMap = ObjexoomGridMap | ObjexoomSectorMap;
@@ -100,6 +137,17 @@ const MAP_HEIGHT = 24;
 const MIN_ROOM = 3;
 const MAX_ROOM = 6;
 const ROOM_TRIES = 90;
+
+/**
+ * E13 step-5 — optional shape override for `generateMap`. When absent,
+ * uses the pre-step-5 defaults (MIN_ROOM=3, MAX_ROOM=6, ROOM_TRIES=90)
+ * so callers that don't know about archetypes get the same behavior.
+ */
+export type GenerateMapShape = Readonly<{
+	minRoom: number;
+	maxRoom: number;
+	roomTries: number;
+}>;
 
 function mulberry32(seed: number) {
 	let s = seed >>> 0;
@@ -202,16 +250,19 @@ function roomsIntersect(a: Room, b: Room, padding: number) {
 	);
 }
 
-export function generateMap(seed: number): ObjexoomGridMap {
+export function generateMap(seed: number, shape?: GenerateMapShape): ObjexoomGridMap {
 	const rand = mulberry32(seed);
 	const width = MAP_WIDTH;
 	const height = MAP_HEIGHT;
+	const minRoom = shape?.minRoom ?? MIN_ROOM;
+	const maxRoom = shape?.maxRoom ?? MAX_ROOM;
+	const roomTries = shape?.roomTries ?? ROOM_TRIES;
 	const cells: Cell[][] = Array.from({ length: height }, () => new Array<Cell>(width).fill("wall"));
 
 	const rooms: Room[] = [];
-	for (let i = 0; i < ROOM_TRIES; i += 1) {
-		const w = MIN_ROOM + Math.floor(rand() * (MAX_ROOM - MIN_ROOM + 1));
-		const h = MIN_ROOM + Math.floor(rand() * (MAX_ROOM - MIN_ROOM + 1));
+	for (let i = 0; i < roomTries; i += 1) {
+		const w = minRoom + Math.floor(rand() * (maxRoom - minRoom + 1));
+		const h = minRoom + Math.floor(rand() * (maxRoom - minRoom + 1));
 		const gx = 1 + Math.floor(rand() * (width - w - 2));
 		const gy = 1 + Math.floor(rand() * (height - h - 2));
 		const room: Room = { gx, gy, width: w, height: h };
@@ -317,7 +368,19 @@ export function generateMap(seed: number): ObjexoomGridMap {
 		const j = Math.floor(rand() * (i + 1));
 		[enemyCandidates[i], enemyCandidates[j]] = [enemyCandidates[j], enemyCandidates[i]];
 	}
-	const totalEnemies = Math.min(12, Math.max(6, Math.floor(rooms.length * 1.2)));
+	// E13 step-10 — per-archetype enemy-count multiplier. Resolved
+	// inline as `(seed >>> 0) % 5` because `pickArchetype` operates
+	// on a built map and we're still building it here. Index order
+	// MUST match ARCHETYPE_NAMES: 0=corridor, 1=arena, 2=courtyard,
+	// 3=sewer, 4=library. Corridor multiplier is 1.0 — canonical
+	// byte-stability for the procedural-corridor path.
+	const ARCHETYPE_ENEMY_MULTIPLIER = [1.0, 1.4, 0.9, 1.1, 0.8] as const;
+	const archetypeIdx = (seed >>> 0) % 5;
+	const baseEnemyCount = Math.max(6, Math.floor(rooms.length * 1.2));
+	const totalEnemies = Math.min(
+		16,
+		Math.max(4, Math.round(baseEnemyCount * ARCHETYPE_ENEMY_MULTIPLIER[archetypeIdx])),
+	);
 	const enemySpawns: EnemySpawn[] = enemyCandidates.slice(0, totalEnemies).map((position, idx) => ({
 		kind: idx % 3 === 2 ? "wraith" : "skeleton",
 		position,
@@ -327,9 +390,20 @@ export function generateMap(seed: number): ObjexoomGridMap {
 	// Chaingun is permanent (L3) and shotgun arrives from the goal drop
 	// (not the floor). One shotgun-ammo every 4 slots keeps procedural
 	// runs distinct from ref-level pickup layouts.
+	//
+	// E13 step-11 — per-archetype pickup-count multiplier. Combat-heavy
+	// archetypes need more pickups (arena, sewer); cleaner ones less.
+	// Corridor multiplier 1.0 + base count 8 = pre-step-11 output exactly,
+	// preserves canonical bytes for the procedural-corridor path.
+	const ARCHETYPE_PICKUP_MULTIPLIER = [1.0, 1.3, 1.0, 1.2, 0.7] as const;
 	const pickupCandidates = enemyCandidates.slice(totalEnemies);
+	const basePickupCount = Math.min(8, pickupCandidates.length);
+	const pickupTotal = Math.min(
+		pickupCandidates.length,
+		Math.max(2, Math.round(basePickupCount * ARCHETYPE_PICKUP_MULTIPLIER[archetypeIdx])),
+	);
 	const pickupSpawns: PickupSpawn[] = pickupCandidates
-		.slice(0, Math.min(8, pickupCandidates.length))
+		.slice(0, pickupTotal)
 		.map((position, idx) => {
 			if (idx % 4 === 0) return { kind: "shotgunAmmo", position };
 			return { kind: "health", position };
@@ -499,6 +573,16 @@ export type Enemy = {
 	fsmState: EnemyFsmState;
 	patrolBearing: number; // radians; only used in state 0
 	lastShotAt: number;
+	/** E2 — when "boss", HP is BOSS_HP_MULTIPLIER × base and the portal stays locked until dead. */
+	tier?: "boss";
+	/**
+	 * POL19 — non-killing-hit stagger. Set to `now + 70ms` (or 100ms
+	 * for bosses) on every damage event the enemy survives. enemyTickLoop
+	 * scales the enemy's per-frame movement by STAGGER_SPEED_FACTOR
+	 * while `now < staggerUntil`. EnemyMesh reads it for the tint flash.
+	 * 0 when not staggered.
+	 */
+	staggerUntil?: number;
 };
 
 function enemyBaseHp(kind: EnemyKind): number {
@@ -512,9 +596,48 @@ function enemyBaseHp(kind: EnemyKind): number {
 	}
 }
 
-export function spawnEnemies(map: ObjexoomMap): Enemy[] {
-	return map.enemySpawns.map((spawn, i) => {
-		const hp = enemyBaseHp(spawn.kind);
+/** E2 — boss HP scaling factor over the kind's base HP (PRD §E2: "3-5×"). */
+export const BOSS_HP_MULTIPLIER = 4;
+
+/** E2 — visual scale applied to boss meshes so they read as bigger/scarier. */
+export const BOSS_VISUAL_SCALE = 1.6;
+
+/**
+ * E2 — pick which spawn becomes the boss. Returns the spawn-index
+ * farthest from `map.playerSpawn` (the "final sector" per PRD §E2).
+ * Returns -1 if there are no spawns. Deterministic given the map.
+ */
+export function pickBossSpawnIndex(map: ObjexoomMap): number {
+	if (map.enemySpawns.length === 0) return -1;
+	let bestIdx = 0;
+	// Use -Infinity (not -1) so the comparison is independent of the loop
+	// starting index — if a future refactor skips the first spawn for any
+	// reason, the picker still works. Reviewer-caught issue from E2.
+	let bestDistSq = Number.NEGATIVE_INFINITY;
+	for (let i = 0; i < map.enemySpawns.length; i += 1) {
+		const dx = map.enemySpawns[i].position.x - map.playerSpawn.x;
+		const dy = map.enemySpawns[i].position.y - map.playerSpawn.y;
+		const d2 = dx * dx + dy * dy;
+		if (d2 > bestDistSq) {
+			bestDistSq = d2;
+			bestIdx = i;
+		}
+	}
+	return bestIdx;
+}
+
+/**
+ * @param spawnsOverride — optional pre-remapped spawn list (E13 step-3
+ * enemy mix). When absent, uses `map.enemySpawns` directly. Length and
+ * order must match `map.enemySpawns` so bossIdx still aligns.
+ */
+export function spawnEnemies(map: ObjexoomMap, spawnsOverride?: readonly EnemySpawn[]): Enemy[] {
+	const spawns = spawnsOverride ?? map.enemySpawns;
+	const bossIdx = pickBossSpawnIndex(map);
+	return spawns.map((spawn, i) => {
+		const isBoss = i === bossIdx;
+		const baseHp = enemyBaseHp(spawn.kind);
+		const hp = isBoss ? baseHp * BOSS_HP_MULTIPLIER : baseHp;
 		// Patrol bearings deterministic from spawn index — same seed → same
 		// patrol pattern, which keeps headed e2e + screenshots reproducible.
 		const bearing = (i * 1.732) % (Math.PI * 2);
@@ -529,6 +652,7 @@ export function spawnEnemies(map: ObjexoomMap): Enemy[] {
 			fsmState: 0 as const,
 			patrolBearing: bearing,
 			lastShotAt: 0,
+			...(isBoss ? { tier: "boss" as const } : {}),
 		};
 	});
 }
@@ -557,6 +681,12 @@ export function spawnPickups(map: ObjexoomMap): Pickup[] {
 export type CollisionContext = Readonly<{
 	portals?: Set<string>;
 	doorOpen?: boolean;
+	/**
+	 * COV2 step-2 — circle blockers from large-prop anchor pieces.
+	 * Each entry pushes the actor out by `radius + actorRadius` if it
+	 * overlaps. Optional; absent → no extra blockers (back-compat).
+	 */
+	blockers?: readonly { position: Vec2; radius: number }[];
 }>;
 
 export function resolveCollisionAny(
@@ -566,12 +696,55 @@ export function resolveCollisionAny(
 	radius: number = PLAYER_RADIUS,
 ): Vec2 {
 	if (map.kind === "grid") {
-		return resolveCollision(desired, map, ctx.doorOpen ?? false, radius);
+		const resolved = resolveCollision(desired, map, ctx.doorOpen ?? false, radius);
+		return ctx.blockers && ctx.blockers.length > 0
+			? pushOutBlockers(resolved, ctx.blockers, radius)
+			: resolved;
 	}
 	if (!ctx.portals) {
 		throw new Error("resolveCollisionAny: sector map requires portals set");
 	}
-	return resolveCollisionSectors(desired, map, ctx.portals, radius);
+	const resolved = resolveCollisionSectors(desired, map, ctx.portals, radius);
+	return ctx.blockers && ctx.blockers.length > 0
+		? pushOutBlockers(resolved, ctx.blockers, radius)
+		: resolved;
+}
+
+/**
+ * COV2 step-2 — push the actor out of each circular blocker. Walks
+ * the blocker list (O(n), n ≤ 2 * sectors in practice) and applies a
+ * radial pushout. Used after the wall-pushout so the actor never ends
+ * up inside a blocker even on a corner-into-blocker desired move.
+ */
+function pushOutBlockers(
+	desired: Vec2,
+	blockers: readonly { position: Vec2; radius: number }[],
+	actorRadius: number,
+): Vec2 {
+	let { x, y } = desired;
+	for (let iter = 0; iter < 3; iter += 1) {
+		let moved = false;
+		for (const b of blockers) {
+			const dx = x - b.position.x;
+			const dy = y - b.position.y;
+			const min = b.radius + actorRadius;
+			const d2 = dx * dx + dy * dy;
+			if (d2 >= min * min) continue;
+			if (d2 < EPS) {
+				// Actor exactly on the blocker centre — pop east by min.
+				x = b.position.x + min;
+				y = b.position.y;
+			} else {
+				const d = Math.sqrt(d2);
+				const push = min - d;
+				x += (dx / d) * push;
+				y += (dy / d) * push;
+			}
+			moved = true;
+		}
+		if (!moved) break;
+	}
+	return { x, y };
 }
 
 export function hasLineOfSightAny(
@@ -762,6 +935,20 @@ export function getFloorHeightAt(map: ObjexoomSectorMap, point: Vec2, cache?: Se
 	return sector ? sector.floorHeight : -100;
 }
 
+/** E7 — multiplier applied to PLAYER_MOVE_SPEED when player overlaps a water sector. */
+export const WATER_SPEED_MULTIPLIER = 0.6;
+
+/**
+ * E7 — true if `point` lies inside a water-flagged sector. Used by
+ * PlayerController to apply the wading slowdown. Returns false for
+ * grid maps + for points outside any sector.
+ */
+export function isInWaterAt(map: ObjexoomMap, point: Vec2, cache?: SectorCache): boolean {
+	if (map.kind !== "sectors") return false;
+	const sector = getSectorAtPoint(map, point, cache);
+	return sector?.isWater === true;
+}
+
 export function getCeilingHeightAt(
 	map: ObjexoomSectorMap,
 	point: Vec2,
@@ -861,7 +1048,7 @@ export function hasLineOfSightSectors(a: Vec2, b: Vec2, map: ObjexoomSectorMap):
 
 const EPS = 1e-6;
 
-function edgeKey(a: Vec2, b: Vec2): string {
+export function edgeKey(a: Vec2, b: Vec2): string {
 	// Order-independent so shared edges match regardless of winding direction.
 	const ax = Math.round(a.x * 1000) / 1000;
 	const ay = Math.round(a.y * 1000) / 1000;

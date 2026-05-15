@@ -1,20 +1,40 @@
 import { Canvas } from "@react-three/fiber";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ARCHETYPE_NAMES, pickArchetype } from "./archetype";
 import { buildMap } from "./buildMap";
 import { PLAYER_MAX_HP } from "./constants";
 import { ROLE, SCALE } from "./design-tokens";
 import type { ObjexoomMap, PickupKind } from "./engine";
+import { addObjexoomListener, dispatch } from "./events";
+import { pickLootKind } from "./loot";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
+import { loadSettings, saveSettings } from "./persistence/settingsStore";
 import { openRunHistory, type RunHistory } from "./runHistory";
-import { advanceLevel, makeInitialRunStats, type RunStats, runStatsReducer } from "./runStats";
-import { DEFAULT_SETTINGS, DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
+import {
+	advanceLevel,
+	makeInitialRunStats,
+	nextStatusAfterTransition,
+	type RunStats,
+	runStatsReducer,
+} from "./runStats";
+import {
+	DEFAULT_SETTINGS,
+	DIFFICULTY_TUNING,
+	type Difficulty,
+	type ObjexoomSettings,
+} from "./settings";
 import {
 	ensureSfx,
+	playFlashlightClick,
 	playHitSting,
+	playKlaxon,
 	playPickup,
+	playPlayerDeath,
+	playSecretFound,
+	setMusicIntensityForDifficulty,
 	setMusicMood,
 	startAmbient,
 	startMusic,
@@ -50,6 +70,12 @@ export type GameState = {
 	hp: number;
 	maxHp: number;
 	kills: number;
+	/**
+	 * POL1 — running score across the current level. Earned from
+	 * COV12 treasure-loot pickups (+50 each) and reset on level
+	 * advance / death. Surfaced on the HUD next to KILLS.
+	 */
+	score: number;
 	totalEnemies: number;
 	hasKey: boolean;
 	// J1 — player owns a flashlight after picking up class 7. Without it
@@ -92,30 +118,41 @@ const baseAmmo = (): Record<WeaponId, number> => ({
 	pistol: WEAPONS.pistol.startingAmmo,
 	chaingun: WEAPONS.chaingun.startingAmmo,
 	shotgun: WEAPONS.shotgun.startingAmmo,
+	flamethrower: WEAPONS.flamethrower.startingAmmo,
 });
 
-// E1 — every fresh run starts with the blade + pistol; chaingun and
-// shotgun are world pickups. Centralized so adding a weapon to the
-// default loadout is a one-line change.
+// E1 — every fresh run starts with the blade + pistol; chaingun,
+// shotgun, and (E8) flamethrower are world pickups. Centralized so
+// adding a weapon to the default loadout is a one-line change.
 const baseOwnedWeapons = (): Record<WeaponId, boolean> => ({
 	melee: true,
 	pistol: true,
 	chaingun: false,
 	shotgun: false,
+	flamethrower: false,
 });
 
 const ammoIncrement: Record<
 	PickupKind,
-	{ weapon: WeaponId; amount: number } | "health" | "flashlight"
+	{ weapon: WeaponId; amount: number } | "health" | "flashlight" | "loot"
 > = {
 	health: "health",
 	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
 	shotgunAmmo: { weapon: "shotgun", amount: WEAPONS.shotgun.pickupAmmo },
 	// J1 — flashlight is a binary owned/not-owned switch on GameState.
 	flashlight: "flashlight",
+	// COV12 step-2 — sentinel; per-lootKind bonus resolution happens at
+	// collect time using `pickLootKind(seed)` because the discriminator
+	// lives on the map seed, not on the PickupKind itself.
+	loot: "loot",
 };
 
 function readSeedFromUrl(): number {
+	const base = readBaseSeedFromUrl();
+	return applyArchetypeOverride(base, readArchetypeFromUrl());
+}
+
+function readBaseSeedFromUrl(): number {
 	if (typeof window === "undefined") return Date.now() & 0xffffffff;
 	try {
 		const url = new URL(window.location.href);
@@ -127,6 +164,33 @@ function readSeedFromUrl(): number {
 		// fall through
 	}
 	return Date.now() & 0xffffffff;
+}
+
+function readArchetypeFromUrl(): string | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const url = new URL(window.location.href);
+		return url.searchParams.get("objexoomArchetype");
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * INF3 — rewrite a seed so `pickArchetype(map)` lands on the requested
+ * archetype. The mapping in `archetype.ts` is `seed % 5`, so we shift
+ * `seed` by `-(seed % 5) + wantedIndex`. Returns the seed unchanged
+ * when `archetype` is null / unknown.
+ *
+ * Exported for the unit test that pins the invariant: after override
+ * the seed satisfies `seed % 5 === wantedIndex` for every input seed.
+ */
+export function applyArchetypeOverride(seed: number, archetype: string | null): number {
+	if (!archetype) return seed;
+	const idx = ARCHETYPE_NAMES.indexOf(archetype as (typeof ARCHETYPE_NAMES)[number]);
+	if (idx < 0) return seed;
+	const s = seed >>> 0;
+	return ((s - (s % ARCHETYPE_NAMES.length) + idx) >>> 0) & 0xffffffff;
 }
 
 function debugHooksEnabled(): boolean {
@@ -147,16 +211,74 @@ declare global {
 			teleport: (x: number, y: number, yawRad?: number) => void;
 			fire: () => void;
 			killAllEnemies: () => void;
+			killBoss: () => void;
+			selectWeapon: (weapon: WeaponId) => void;
 			collectKey: () => void;
 			collectAllPickups: () => void;
 			triggerWin: () => void;
+			forceMissionComplete: () => void;
+			// POL31 — debug-only difficulty setter so playtest scripts can
+			// capture the DifficultyChip in each of the 5 palettes without
+			// driving the landing-page Settings panel (touch-hostile in
+			// Playwright). Settings is the source of truth; this hook
+			// mutates it the same way the landing settings UI would.
+			setDifficulty: (difficulty: Difficulty) => void;
+			getSettings: () => ObjexoomSettings;
 		};
 	}
 }
 
 export function ObjexoomShell() {
 	const [seed, setSeed] = useState(readSeedFromUrl);
-	const [settings, setSettings] = useState<ObjexoomSettings>(DEFAULT_SETTINGS);
+	// INF3 — when `?objexoomArchetype` is present, switch the level to
+	// procedural so the seed rewrite (and thus the archetype pick)
+	// actually drives map generation. Without this override the default
+	// `level: 1` would load the baked refLevel 0 (corridor) and the
+	// archetype flag would silently no-op.
+	const [settings, setSettings] = useState<ObjexoomSettings>(() =>
+		readArchetypeFromUrl() ? { ...DEFAULT_SETTINGS, level: "procedural" } : DEFAULT_SETTINGS,
+	);
+	// STO1a — track whether the async load-from-Preferences pass has
+	// resolved. Used to gate the save-on-change effect so the bootstrap
+	// load doesn't trigger a redundant write of DEFAULT_SETTINGS back
+	// over the same blob.
+	const settingsHydratedRef = useRef(false);
+	// STO1a — async-hydrate persisted settings on mount. The override
+	// for `?objexoomArchetype` still wins (URL flag → procedural) so
+	// the test/debug harness can short-circuit the persisted value
+	// without first clearing storage. If no blob exists, the loaded
+	// value equals DEFAULT_SETTINGS and the setSettings call is a
+	// no-op against initial state — no extra render.
+	useEffect(() => {
+		let cancelled = false;
+		void (async () => {
+			const persisted = await loadSettings();
+			if (cancelled) return;
+			// `loadSettings()` returns null when no blob exists (fresh
+			// install). In that case the initial DEFAULT_SETTINGS state
+			// is already correct — skip the setSettings call so we
+			// don't clobber any code-side `setSettings` that landed
+			// during the async window (e.g. `__objexoom.setDifficulty`
+			// called from a playtest script BEFORE this load resolved).
+			if (persisted !== null) {
+				const archetypeOverride = readArchetypeFromUrl();
+				setSettings(archetypeOverride ? { ...persisted, level: "procedural" } : persisted);
+			}
+			settingsHydratedRef.current = true;
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+	// STO1a — save settings back on every change AFTER hydration. The
+	// guard prevents the first paint from clobbering a persisted blob
+	// with DEFAULT_SETTINGS during the brief window before the load
+	// resolves. Write is best-effort (preferences.ts swallows quota /
+	// lock failures); the app never blocks on a failed save.
+	useEffect(() => {
+		if (!settingsHydratedRef.current) return;
+		void saveSettings(settings);
+	}, [settings]);
 	const map: ObjexoomMap = useMemo(
 		// I4 — difficulty plumbed through so ManyEnemies (class 9) expands
 		// per the ref formula. Procedural maps don't read it.
@@ -172,6 +294,7 @@ export function ObjexoomShell() {
 		hp: maxHp,
 		maxHp,
 		kills: 0,
+		score: 0,
 		totalEnemies: map.enemySpawns.length,
 		hasKey: false,
 		hasFlashlight: false,
@@ -240,12 +363,12 @@ export function ObjexoomShell() {
 			lastPlayerHitAt.current = now;
 			// I6 — camera shake amount scales with raw incoming damage; the
 			// controller decays at SHAKE_DECAY/sec and applies XZ jitter.
-			window.dispatchEvent(new CustomEvent("objexoom:shake", { detail: { amount: damage } }));
+			dispatch({ type: "shake", amount: damage });
 			// I2 — 30 red motes at the player on every successful enemy hit
 			// (post-iframe gate so the visual matches actual damage taken).
 			// Scene resolves the player position from the camera and emits the
 			// burst there; this is the wakeup, not the placement.
-			window.dispatchEvent(new CustomEvent("objexoom:playerHit"));
+			dispatch({ type: "playerHit" });
 			// J3 — red fade overlay scaled by damage. On the 0-9 HP scale,
 			// 3 hp = max-flash; 1 hp = 1/3.
 			triggerFadeRef.current("damage", Math.min(1, damage / 3));
@@ -256,6 +379,13 @@ export function ObjexoomShell() {
 				if (prev.status !== "playing") return prev;
 				const finalDamage = Math.round(damage * tuning.enemyDamageMultiplier);
 				const hp = Math.max(0, prev.hp - finalDamage);
+				// POL9 — player-death sting fires exactly once on the HP→0
+				// transition. Inside the setState updater so React 19 strict-
+				// mode's double-invoke doesn't double-play; we read prev.hp
+				// (was > 0) and current hp (now 0) as the gate.
+				if (prev.hp > 0 && hp === 0 && settings.soundEnabled) {
+					playPlayerDeath();
+				}
 				return {
 					...prev,
 					hp,
@@ -292,6 +422,9 @@ export function ObjexoomShell() {
 			playPickup();
 			triggerFadeRef.current("key");
 			setState((prev) => ({ ...prev, hasKey: true }));
+			// POL22 — fire the typed event consumed by the
+			// KeyPickupCeremony HUD overlay slot.
+			dispatch({ type: "keyPickedUp" });
 		},
 		onWin: () => {
 			// H8 — first "win" trigger (player crossed the RealDoor) flips
@@ -310,10 +443,12 @@ export function ObjexoomShell() {
 						...prev.ownedWeapons,
 						chaingun: true,
 						shotgun: true,
+						flamethrower: true,
 					},
 					ammo: {
 						...prev.ammo,
 						shotgun: Math.max(prev.ammo.shotgun, WEAPONS.shotgun.pickupAmmo + 4),
+						flamethrower: Math.max(prev.ammo.flamethrower, WEAPONS.flamethrower.pickupAmmo + 10),
 					},
 				};
 			});
@@ -328,6 +463,7 @@ export function ObjexoomShell() {
 					type: "clearLevel",
 					killsThisLevel: 0,
 					damageThisLevel: 0,
+					scoreThisLevel: prev.score,
 				});
 				return {
 					...prev,
@@ -347,6 +483,11 @@ export function ObjexoomShell() {
 			}));
 		},
 		onCollectPickup: (kind) => {
+			// POL30 — fire the pickup-collected event so the PickupChip
+			// HUD overlay can render its kind-specific teach moment.
+			// Key pickups don't route through onCollectPickup — they
+			// have their own onPickupKey + POL22 ceremony.
+			dispatch({ type: "pickupCollected", kind });
 			const action = ammoIncrement[kind];
 			setState((prev) => {
 				if (action === "health") {
@@ -355,7 +496,35 @@ export function ObjexoomShell() {
 				}
 				if (action === "flashlight") {
 					triggerFadeRef.current("flash");
+					// POL28 — flashlight click-on sting + typed event.
+					// Distinct from the pickup chime; reads as the
+					// flashlight literally being turned on.
+					playFlashlightClick();
+					dispatch({ type: "flashlightAcquired" });
 					return { ...prev, hasFlashlight: true };
+				}
+				if (action === "loot") {
+					// COV12 step-2 — kind-specific bonus driven by the map seed
+					// (pickLootKind(seed) resolved the variant at spawn time).
+					// We don't have seed access here; resolve via the current
+					// map's seed which is stable for the duration of this call.
+					const lootKind = pickLootKind(seed);
+					if (lootKind === "bottles") {
+						// +5 HP (potion stash) — clamp to maxHp.
+						return { ...prev, hp: Math.min(prev.maxHp, prev.hp + 5) };
+					}
+					if (lootKind === "books") {
+						// Knowledge → bonus ammo across both ranged weapons.
+						return {
+							...prev,
+							ammo: {
+								...prev.ammo,
+								chaingun: prev.ammo.chaingun + WEAPONS.chaingun.pickupAmmo,
+								shotgun: prev.ammo.shotgun + WEAPONS.shotgun.pickupAmmo,
+							},
+						};
+					}
+					return { ...prev, score: prev.score + 50 };
 				}
 				return {
 					...prev,
@@ -380,6 +549,10 @@ export function ObjexoomShell() {
 			startAmbient();
 			// K5 — boot the procedural music loop in exploration mood.
 			setMusicMood("exploration");
+			// POL33 — bus-gain shift per chosen difficulty. NIGHTMARE reads
+			// sonically hotter than TOO YOUNG TO DIE without changing the
+			// note material itself.
+			setMusicIntensityForDifficulty(settings.difficulty);
 			startMusic();
 		}
 		// Reset run state — preserves chosen settings + map seed.
@@ -388,6 +561,7 @@ export function ObjexoomShell() {
 			hp: maxHp,
 			maxHp,
 			kills: 0,
+			score: 0,
 			totalEnemies: map.enemySpawns.length,
 			hasKey: false,
 			hasFlashlight: false,
@@ -398,7 +572,7 @@ export function ObjexoomShell() {
 			run: makeInitialRunStats(Date.now()),
 			phase: "out",
 		});
-	}, [settings.soundEnabled, maxHp, map.enemySpawns.length]);
+	}, [settings.soundEnabled, settings.difficulty, maxHp, map.enemySpawns.length]);
 
 	const onReturnToLanding = useCallback(() => {
 		stopAmbient();
@@ -425,6 +599,24 @@ export function ObjexoomShell() {
 			prev.status === "landing" && prev.hp > 0 ? { ...prev, status: "playing" } : prev,
 		);
 	}, []);
+
+	// POL31 — monotonic run id, bumped on every landing→playing
+	// transition. Threaded into ObjexoomHUD → HUDOverlays → DifficultyChip
+	// where a useEffect on `runId` triggers the 2-second acknowledgment
+	// chip. Prop-driven (not event-driven) because the HUD subtree only
+	// mounts AFTER the landing→playing transition (AnimatePresence
+	// mode="wait" adds a ~350ms exit animation), so an event would fire
+	// before the listener exists; the chip's first effect after mount
+	// runs *after* runId is non-zero, which is the natural trigger.
+	const [runId, setRunId] = useState(0);
+	const prevStatusRef = useRef<GameStatus>(state.status);
+	useEffect(() => {
+		const prev = prevStatusRef.current;
+		prevStatusRef.current = state.status;
+		if (prev === "landing" && state.status === "playing") {
+			setRunId((id) => id + 1);
+		}
+	}, [state.status]);
 	const hasPausedRun =
 		state.status === "landing" &&
 		state.run.runStartAt > 0 &&
@@ -462,6 +654,20 @@ export function ObjexoomShell() {
 	// K5 — switch music mood based on phase. exploration → combat once
 	// the player has taken any hit / is mid-fight; going_back overrides
 	// when phase flips. Cheap heuristic: HP < maxHp signals engagement.
+	// POL26 — fire the going-back klaxon once on the out → going_back
+	// transition. The music-mood effect below handles ongoing audio;
+	// this is the discrete "the alarm has gone off" sting.
+	const lastPhaseRef = useRef<LevelPhase>(state.phase);
+	useEffect(() => {
+		if (!settings.soundEnabled) return;
+		if (state.status !== "playing") return;
+		const prevPhase = lastPhaseRef.current;
+		lastPhaseRef.current = state.phase;
+		if (prevPhase !== "going_back" && state.phase === "going_back") {
+			playKlaxon();
+		}
+	}, [settings.soundEnabled, state.status, state.phase]);
+
 	useEffect(() => {
 		if (!settings.soundEnabled) return;
 		if (state.status !== "playing") return;
@@ -478,15 +684,28 @@ export function ObjexoomShell() {
 	// has been below the local floor for longer than the grace window. Snap
 	// status to dead so the YOU DIED card surfaces.
 	useEffect(() => {
-		const onFellToDeath = () => {
-			setState((prev) =>
-				prev.status === "playing"
-					? { ...prev, status: "dead", hp: 0, damageFlashAt: performance.now() }
-					: prev,
-			);
-		};
-		window.addEventListener("objexoom:fellToDeath", onFellToDeath);
-		return () => window.removeEventListener("objexoom:fellToDeath", onFellToDeath);
+		return addObjexoomListener("fellToDeath", () => {
+			setState((prev) => {
+				if (prev.status !== "playing") return prev;
+				// POL9 — player-death sting also on fall-to-death.
+				if (settings.soundEnabled) playPlayerDeath();
+				return { ...prev, status: "dead", hp: 0, damageFlashAt: performance.now() };
+			});
+		});
+	}, [settings.soundEnabled]);
+
+	// POL4 — increment the run's secret count on every secretTriggered event.
+	// The event itself is fired by fireResolution when the player shoots a
+	// secret switch. RunStats survives clearLevel so the win-screen totals
+	// reflect every secret found across the whole 5-level run.
+	useEffect(() => {
+		return addObjexoomListener("secretTriggered", () => {
+			setState((prev) => ({ ...prev, run: runStatsReducer(prev.run, { type: "secretFound" }) }));
+			// POL21 — secret-found audio sting. Distinct 4-note ascending
+			// chime + brief reverb push so the discovery moment is
+			// audible even with the eyes elsewhere.
+			playSecretFound();
+		});
 	}, []);
 
 	// E9 — persist run history on terminal status transitions. The handle is
@@ -503,12 +722,13 @@ export function ObjexoomShell() {
 		void (async () => {
 			try {
 				if (!runHistoryRef.current) runHistoryRef.current = await openRunHistory();
-				runHistoryRef.current.insert(
+				await runHistoryRef.current.insert(
 					{
 						startedAt: state.run.runStartAt,
 						levelsCleared: state.run.runLevelsCleared,
 						totalKills: state.run.runTotalKills,
 						totalDamageTaken: state.run.runTotalDamageTaken,
+						totalSecrets: state.run.runTotalSecrets,
 						level: settings.level,
 						outcome: state.status === "won" ? "won" : "died",
 					},
@@ -535,11 +755,18 @@ export function ObjexoomShell() {
 					setSettings((prev) => ({ ...prev, level: next }));
 				}
 			}
+			// PT1E — pure function decides "playing" vs "won". Bug
+			// before: unconditionally set "playing", leaving the
+			// player stuck at spawn with phase=going_back +
+			// lastReachedSpawnAt=true on the final map (no remount
+			// since level didn't advance, key didn't change).
+			const nextStatus = nextStatusAfterTransition(settings.level, state.run.runLevelsCleared);
 			setState((prev) => ({
 				...prev,
-				status: "playing",
+				status: nextStatus,
 				hp: prev.maxHp,
 				kills: 0,
+				score: 0,
 				hasKey: false,
 				hasFlashlight: false,
 				weapon: "pistol",
@@ -564,6 +791,8 @@ export function ObjexoomShell() {
 	stateRef.current = state;
 	const mapRef = useRef(map);
 	mapRef.current = map;
+	const settingsRef = useRef(settings);
+	settingsRef.current = settings;
 	const onStartGameRef = useRef(onStartGame);
 	onStartGameRef.current = onStartGame;
 
@@ -587,27 +816,53 @@ export function ObjexoomShell() {
 				onStartGameRef.current();
 			},
 			teleport: (x, y, yawRad) => {
-				window.dispatchEvent(
-					new CustomEvent("objexoom:teleport", {
-						detail: { x, y, yaw: yawRad ?? null },
-					}),
-				);
+				dispatch({ type: "teleport", x, y, yaw: yawRad ?? null });
 			},
 			fire: () => {
-				window.dispatchEvent(new CustomEvent("objexoom:fire"));
+				dispatch({ type: "fire" });
 			},
 			killAllEnemies: () => {
-				window.dispatchEvent(new CustomEvent("objexoom:debugKillAll"));
+				dispatch({ type: "debugKillAll" });
+			},
+			// PT3A — boss-only kill for isolated boss-tier visual capture.
+			killBoss: () => {
+				dispatch({ type: "debugKillBoss" });
+			},
+			// E8 step-2 / PT4 — debug weapon switch so playtest can frame
+			// individual weapon visuals without going through pickup +
+			// keyboard 1-5 swap. Also grants pickupAmmo for the weapon
+			// so a debug fire isn't a no-op for weapons with
+			// startingAmmo=0 (chaingun/shotgun/flamethrower).
+			selectWeapon: (weapon: WeaponId) => {
+				setState((prev) => ({
+					...prev,
+					weapon,
+					ownedWeapons: { ...prev.ownedWeapons, [weapon]: true },
+					ammo: {
+						...prev.ammo,
+						[weapon]: Math.max(prev.ammo[weapon], WEAPONS[weapon].pickupAmmo),
+					},
+				}));
 			},
 			collectKey: () => {
 				gameRef.current.onPickupKey();
 			},
 			collectAllPickups: () => {
-				window.dispatchEvent(new CustomEvent("objexoom:debugCollectPickups"));
+				dispatch({ type: "debugCollectPickups" });
 			},
 			triggerWin: () => {
 				gameRef.current.onWin();
 			},
+			// PT1B — short-circuit to the win state so playtest/e2e can verify
+			// the MissionCompleteCeremony renders without grinding through
+			// all RUN_LENGTH levels (which has its own engine timing quirks).
+			forceMissionComplete: () => {
+				setState((prev) => ({ ...prev, status: "won" }));
+			},
+			setDifficulty: (difficulty: Difficulty) => {
+				setSettings((prev) => ({ ...prev, difficulty }));
+			},
+			getSettings: () => settingsRef.current,
 		};
 		return () => {
 			delete window.__objexoom;
@@ -775,6 +1030,9 @@ export function ObjexoomShell() {
 								onQuit={onQuit}
 								onSelectWeapon={onSelectWeapon}
 								level={settings.level}
+								archetype={pickArchetype(map)}
+								difficulty={settings.difficulty}
+								runId={runId}
 							/>
 							<AnimatePresence>
 								{fadeTrigger && <FadeOverlay key={fadeTrigger.id} trigger={fadeTrigger} />}

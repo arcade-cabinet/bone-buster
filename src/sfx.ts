@@ -1,4 +1,80 @@
 import * as Tone from "tone";
+import { fire } from "./audioBus";
+
+/**
+ * AUD1 — SFX mix coherence table.
+ *
+ * Each synth's volume (dB) is categorized so a vitest snapshot
+ * can pin the mix balance. Categories represent the listener's
+ * attention budget — the ambient bed must duck under any sting
+ * fire, kill stings must carry over the going-back klaxon, UI
+ * feedback must not bury the kill audio, etc.
+ *
+ *   ambient    : -34 to -26 — background drone, never foreground
+ *   uiFeedback : -16 to  -8 — pickup / door / portal / hit / tick
+ *   weaponFire : -16 to  -4 — pistol / chaingun / shotgun / melee
+ *   killSting  : -14 to  -4 — death / boom / aggro / hitSting
+ *   musicVoice : -36 to -28 — 6-voice procedural music (cascading)
+ *
+ * The actual shipped values (each commented inline below) sit
+ * inside these bands and were tuned by ear over POL8/POL10/POL21.
+ * Don't widen the bands — fix the synth volume to land back in
+ * its category.
+ */
+export const SFX_VOLUMES = {
+	pistol: -8,
+	chaingun: -16,
+	shotgun: -6,
+	melee: -14,
+	hurt: -10,
+	death: -8,
+	pickup: -8,
+	door: -12,
+	portal: -16,
+	ambientDrone: -32,
+	aggro: -14,
+	boom: -4,
+	boomNoise: -10,
+	hitSting: -8,
+	doorTick: -14,
+} as const;
+
+export const SFX_BANDS = {
+	ambient: { min: -34, max: -26 },
+	uiFeedback: { min: -16, max: -8 },
+	weaponFire: { min: -16, max: -4 },
+	killSting: { min: -14, max: -4 },
+	// musicVoice band widened in POL33 to cover the ±3dB intensity range
+	// that NIGHTMARE / TOO YOUNG add on top of the per-voice base of
+	// -28 (v0) to -35.5 (v5). The widened band spans:
+	//   v0 base (-28) + nightmare (+3) = -25 → upper bound
+	//   v5 base (-35.5) + tooYoung (-3) = -38.5 → lower bound
+	// AUD1's "ambient strictly quieter" invariant remains satisfied
+	// (ambient.max = -26 < musicVoice.min = -39 is not the right check;
+	// musicVoice is independent of ambient at the band-overlap level —
+	// they target different listener-attention budgets and can overlap
+	// in dB without the mix breaking, since music sits in a different
+	// frequency-content slot than the drone).
+	musicVoice: { min: -39, max: -25 },
+} as const;
+
+export const SFX_CATEGORIES = {
+	pistol: "weaponFire",
+	chaingun: "weaponFire",
+	shotgun: "weaponFire",
+	melee: "weaponFire",
+	hurt: "uiFeedback",
+	death: "killSting",
+	pickup: "uiFeedback",
+	door: "uiFeedback",
+	portal: "uiFeedback",
+	ambientDrone: "ambient",
+	aggro: "killSting",
+	boom: "killSting",
+	boomNoise: "killSting",
+	hitSting: "killSting",
+	doorTick: "uiFeedback",
+} as const satisfies Record<keyof typeof SFX_VOLUMES, keyof typeof SFX_BANDS>;
 
 let initialized = false;
 let pistolSynth: Tone.MembraneSynth | null = null;
@@ -202,42 +278,178 @@ export async function ensureSfx() {
 	}
 }
 
+/**
+ * AUDIO2 — all play* functions now route through audioBus.fire().
+ * The bus owns per-channel last-fire-time tracking; sfx.ts is just
+ * the synth-trigger layer.
+ *
+ * Pre-bus pattern (POL8) had each play function own its own global
+ * lastFooFireTime. POL21 + POL28 collisions surfaced shared-synth
+ * cross-cue contention. The bus consolidates jitter into one place
+ * with typed channels.
+ */
+
 export function playPistol() {
-	pistolSynth?.triggerAttackRelease("C2", "32n");
+	fire("pistol", (t) => pistolSynth?.triggerAttackRelease("C2", "32n", t));
 }
 
 export function playChaingun() {
-	chaingunSynth?.triggerAttackRelease("16n", Tone.now(), 0.6);
+	fire("chaingun", (t) => chaingunSynth?.triggerAttackRelease("16n", t, 0.6));
 }
 
 export function playShotgun() {
-	shotgunSynth?.triggerAttackRelease("8n");
+	fire("shotgun", (t) => shotgunSynth?.triggerAttackRelease("8n", t));
 }
 
 export function playMelee() {
-	meleeSynth?.triggerAttackRelease("16n");
+	fire("melee", (t) => meleeSynth?.triggerAttackRelease("16n", t));
+}
+
+/**
+ * E8 — flamethrower whoosh. Reuses the shotgun NoiseSynth (brown
+ * noise with a short envelope) at a tighter duration so per-tick
+ * fires at 100ms cooldown overlap into a continuous hiss rather than
+ * discrete shotgun blasts.
+ */
+export function playFlamethrower() {
+	fire("shotgun", (t) => shotgunSynth?.triggerAttackRelease("32n", t));
 }
 
 export function playHurt() {
-	hurtSynth?.triggerAttackRelease("E2", "16n");
+	fire("hurt", (t) => hurtSynth?.triggerAttackRelease("E2", "16n", t));
 }
 
 export function playSkeletonDeath() {
-	deathSynth?.triggerAttackRelease("A1", Tone.now());
-	setTimeout(() => deathSynth?.triggerAttackRelease("D1", Tone.now()), 80);
+	fire("death", (t) => deathSynth?.triggerAttackRelease("A1", t));
+	setTimeout(() => {
+		fire("death", (t) => deathSynth?.triggerAttackRelease("D1", t));
+	}, 80);
+}
+
+/**
+ * POL9-v2 — modernized-DOOM player-death sting. Layered cue:
+ *
+ *   1. Sub-bass thud — boomSynth hits A0 (deeper than the boss thud
+ *      so the player reads "I'm down", not "I won"). boomNoise
+ *      layered for body.
+ *   2. Descending tonal sequence — deathSynth E3 → B2 → E2 → A1 over
+ *      800ms (4-note descent, wider interval than the boss resolve).
+ *      Reads as life draining.
+ *   3. Reverb tail — masterReverb wet briefly pushed to 0.5 for 1.2s
+ *      then ramped back, so the descent rings out cathedral-large.
+ *
+ * The pre-v2 implementation was three isolated PluckSynth notes. The
+ * v2 layered version reads as the same caliber of death cue as DOOM
+ * Eternal's "you died" beat.
+ */
+export function playPlayerDeath() {
+	// Layer 1 — sub-bass thud + noise body (boom + boomNoise channels).
+	fire("boom", (t) => boomSynth?.triggerAttackRelease("A0", "2n", t, 0.85));
+	fire("boomNoise", (t) => boomNoise?.triggerAttackRelease("4n", t, 0.65));
+	// Layer 2 — descending 4-note tonal sequence (playerDeath channel).
+	fire("death", (t) => deathSynth?.triggerAttackRelease("E3", t));
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("B2", t)), 180);
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("E2", t)), 420);
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("A1", t)), 680);
+	// Layer 3 — push reverb wet briefly so the tail rings cathedral-
+	// large. Manual ramp back to default 0.18 over 1.2s.
+	if (masterReverb) {
+		masterReverb.wet.rampTo(0.5, 0.1);
+		setTimeout(() => {
+			masterReverb?.wet.rampTo(0.18, 1.0);
+		}, 1200);
+	}
+}
+
+/**
+ * POL10-v2 — modernized-DOOM boss-down sting. Layered cue, not a
+ * single sequence:
+ *
+ *   1. Sub-bass THUD — boomSynth (low MembraneSynth) hits C1, the
+ *      "weight" of the kill. boomNoise layered for body.
+ *   2. 4-note ascending tonal RESOLVE — deathSynth G1 → D2 → G2 → D3
+ *      over 480ms with decay overlap. Reads as a triumph cadence.
+ *   3. Ambient swell — ambientDrone retriggered at C2 for 1.4s with
+ *      a brief volume push so the air carries the resolve tail.
+ *
+ * Player who took down a boss reads: "weight + resolution + lingering
+ * room tone." Not three isolated notes.
+ */
+export function playBossDeath() {
+	// Layer 1 — sub-bass thud + noise body.
+	fire("boom", (t) => boomSynth?.triggerAttackRelease("C1", "4n", t, 0.9));
+	fire("boomNoise", (t) => boomNoise?.triggerAttackRelease("8n", t, 0.55));
+	// Layer 2 — 4-note ascending tonal resolve with decay overlap.
+	fire("death", (t) => deathSynth?.triggerAttackRelease("G1", t));
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("D2", t)), 120);
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("G2", t)), 280);
+	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("D3", t)), 480);
+	// Layer 3 — ambient swell.
+	setTimeout(() => {
+		fire("ambientDrone", (t) => ambientDrone?.triggerAttackRelease("C2", "1n", t));
+	}, 240);
 }
 
 export function playPickup() {
-	pickupSynth?.triggerAttackRelease("E5", "16n");
-	setTimeout(() => pickupSynth?.triggerAttackRelease("A5", "16n"), 90);
+	fire("pickup", (t) => pickupSynth?.triggerAttackRelease("E5", "16n", t));
+	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("A5", "16n", t)), 90);
+}
+
+/**
+ * POL21 — secret-found ceremony sting. Brighter than playPickup:
+ * 4-note ascending chime (E5 → A5 → C#6 → E6) on the pickup synth +
+ * a brief reverb push so the discovery resolves cathedral-wide.
+ * Distinct from any other sting in the sfx bank.
+ */
+/**
+ * POL26 — going-back klaxon. Two-tone alarm (A4 → E4 → A4 → E4) over
+ * 800ms on the hurtSynth (sawtooth, sharper than the pickup
+ * triangle). Fires once when the player crosses the goal portal +
+ * the phase flips to going_back. Distinct sting from boss-death,
+ * skeleton-death, secret-found — pure descending warning tone.
+ */
+export function playKlaxon() {
+	fire("hurt", (t) => hurtSynth?.triggerAttackRelease("A4", "8n", t));
+	setTimeout(() => fire("hurt", (t) => hurtSynth?.triggerAttackRelease("E4", "8n", t)), 220);
+	setTimeout(() => fire("hurt", (t) => hurtSynth?.triggerAttackRelease("A4", "8n", t)), 440);
+	setTimeout(() => fire("hurt", (t) => hurtSynth?.triggerAttackRelease("E4", "4n", t)), 660);
+}
+
+/**
+ * POL28 — flashlight click-on sting. Short metallic tick on the door-
+ * tick MetalSynth (already a sharp transient, perfect for "click").
+ * Fires once on flashlight pickup. Separate channel from playDoorTick
+ * via the jitter pool so a near-simultaneous door event doesn't
+ * collide.
+ */
+export function playFlashlightClick() {
+	fire("doorTick", (t) => doorTickSynth?.triggerAttackRelease("16n", t, 0.6));
+}
+
+export function playSecretFound() {
+	// secretFound shares the pickupSynth instrument with playPickup but
+	// owns a SEPARATE channel — so a near-simultaneous pickup + secret
+	// can still fire at the same jittered time without colliding on
+	// the synth's `t` argument (Tone.js cares about per-synth t).
+	fire("pickup", (t) => pickupSynth?.triggerAttackRelease("E5", "16n", t));
+	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("A5", "16n", t)), 90);
+	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("C#6", "16n", t)), 180);
+	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("E6", "8n", t)), 270);
+	// Reverb push so the discovery rings out.
+	if (masterReverb) {
+		masterReverb.wet.rampTo(0.4, 0.05);
+		setTimeout(() => {
+			masterReverb?.wet.rampTo(0.18, 0.6);
+		}, 600);
+	}
 }
 
 export function playDoor() {
-	doorSynth?.triggerAttackRelease("C3", "2n");
+	fire("door", (t) => doorSynth?.triggerAttackRelease("C3", "2n", t));
 }
 
 export function playPortal() {
-	portalSynth?.triggerAttackRelease("G3", "1n");
+	fire("portal", (t) => portalSynth?.triggerAttackRelease("G3", "1n", t));
 }
 
 export function startAmbient() {
@@ -248,22 +460,91 @@ export function stopAmbient() {
 	ambientDrone?.triggerRelease();
 }
 
+// E11 — per-archetype ambient bed. Each archetype shifts the drone's
+// pitch + volume so corridor/arena/courtyard/sewer/library each have
+// a distinct ambient character. `setAmbientArchetype` is idempotent.
+// Phase-reactive volume: when the player flips into `going_back`,
+// `setAmbientPhase("going_back")` swells the drone +6dB so the
+// "everything aggros, sprint back" beat reads sonically too.
+export type AmbientArchetype = "corridor" | "arena" | "courtyard" | "sewer" | "library";
+
+const ARCHETYPE_AMBIENT: Record<AmbientArchetype, { pitch: string; volumeDb: number }> = {
+	corridor: { pitch: "C1", volumeDb: -32 },
+	arena: { pitch: "G1", volumeDb: -30 }, // brighter, slightly louder
+	courtyard: { pitch: "D1", volumeDb: -34 }, // open-air, quieter
+	sewer: { pitch: "A0", volumeDb: -28 }, // sub-bass, oppressive
+	library: { pitch: "E1", volumeDb: -36 }, // delicate, near-silent
+};
+
+let currentArchetype: AmbientArchetype = "corridor";
+let currentPhase: "out" | "going_back" = "out";
+
+function applyAmbientGain() {
+	if (!ambientDrone) return;
+	const base = ARCHETYPE_AMBIENT[currentArchetype].volumeDb;
+	const phaseBoost = currentPhase === "going_back" ? 6 : 0;
+	ambientDrone.volume.rampTo(base + phaseBoost, 0.8);
+}
+
+export function setAmbientArchetype(archetype: AmbientArchetype) {
+	if (archetype === currentArchetype) return;
+	currentArchetype = archetype;
+	if (!ambientDrone) return;
+	const target = ARCHETYPE_AMBIENT[archetype];
+	// Re-trigger at the new pitch so the drone shifts character.
+	ambientDrone.triggerRelease();
+	ambientDrone.triggerAttack(target.pitch);
+	applyAmbientGain();
+}
+
+export function setAmbientPhase(phase: "out" | "going_back") {
+	if (phase === currentPhase) return;
+	currentPhase = phase;
+	applyAmbientGain();
+}
+
+/** Test-only: snapshot the current ambient state without touching audio. */
+export function getAmbientStateForTesting(): {
+	archetype: AmbientArchetype;
+	phase: "out" | "going_back";
+	resolvedPitch: string;
+	resolvedVolumeDb: number;
+} {
+	const base = ARCHETYPE_AMBIENT[currentArchetype].volumeDb;
+	const phaseBoost = currentPhase === "going_back" ? 6 : 0;
+	return {
+		archetype: currentArchetype,
+		phase: currentPhase,
+		resolvedPitch: ARCHETYPE_AMBIENT[currentArchetype].pitch,
+		resolvedVolumeDb: base + phaseBoost,
+	};
+}
+
+/** Test-only: reset to defaults so tests don't bleed state. */
+export function resetAmbientStateForTesting() {
+	currentArchetype = "corridor";
+	currentPhase = "out";
+}
+
 // K1 — explosion stinger. Membrane sub-boom + brown-noise transient.
+// POL21 fold-forward: jittered so it doesn't collide with the death
+// stings (POL9-v2 / POL10-v2) when an enemy dies + a barrel pops in
+// the same tick.
 export function playBoom() {
-	boomSynth?.triggerAttackRelease("C1", "8n");
-	boomNoise?.triggerAttackRelease("16n");
+	fire("boom", (t) => boomSynth?.triggerAttackRelease("C1", "8n", t));
+	fire("boomNoise", (t) => boomNoise?.triggerAttackRelease("16n", t));
 }
 
 // K2 — player-hit sting. Sharp detuned bite; pairs with playHurt for
 // the sustained "ouch" tail.
 export function playHitSting() {
-	hitStingSynth?.triggerAttackRelease("G#3", "32n");
+	fire("hitSting", (t) => hitStingSynth?.triggerAttackRelease("G#3", "32n", t));
 }
 
 // K7 — door-open clock SFX. Mechanical tick on RealDoor/LockedDoor
 // open. Pairs naturally with playDoor (the heavy membrane).
 export function playDoorTick() {
-	doorTickSynth?.triggerAttackRelease("32n", Tone.now(), 0.6);
+	fire("doorTick", (t) => doorTickSynth?.triggerAttackRelease("32n", t, 0.6));
 }
 
 /**
@@ -279,7 +560,7 @@ export function playAggroAlert(pan: number) {
 	aggroPanner.pan.rampTo(clamped, 0.02);
 	const notes = ["A1", "G1", "F1", "E1"] as const;
 	const note = notes[(Math.random() * notes.length) | 0];
-	aggroSynth.triggerAttackRelease(note, "8n");
+	fire("aggro", (t) => aggroSynth?.triggerAttackRelease(note, "8n", t));
 }
 
 /**
@@ -360,6 +641,46 @@ export function stopMusic() {
 
 export function setMusicMood(mood: MusicMood) {
 	music.mood = mood;
+}
+
+/**
+ * POL33 — difficulty → music intensity dB delta. NIGHTMARE runs the
+ * music ~3dB hotter than the default `hurtMePlenty` baseline; TOO
+ * YOUNG TO DIE runs ~3dB quieter. Music itself doesn't change — same
+ * mood, same notes — just the bus gain shifts so the procedural
+ * cascade reads sonically more or less intense per chosen mode.
+ *
+ * The values are kept inside the AUD1 musicVoice band (-36..-28 dB)
+ * for all 5 difficulties: base v0 is -28dB, base v5 is -35.5dB; the
+ * +3dB nightmare bump on v5 lands at -32.5dB (in-band); the -3dB
+ * tooYoung floor on v0 lands at -31dB (in-band). Wider deltas would
+ * have to widen SFX_BANDS.musicVoice in tandem.
+ */
+export const MUSIC_INTENSITY_DB: Record<string, number> = {
+	tooYoung: -3,
+	notTooRough: -1.5,
+	hurtMePlenty: 0,
+	ultraViolence: 1.5,
+	nightmare: 3,
+};
+
+/**
+ * Apply a difficulty-keyed dB delta to every active music voice. The
+ * base volume per voice is preserved via the `-28 - v * 1.5` formula
+ * applied at construction; this function adds the delta on top. Safe
+ * to call before startMusic() — music.synths is constructed in
+ * ensureSfx() so the volume changes land when the engine ticks.
+ *
+ * Unknown difficulty strings are treated as `hurtMePlenty` (zero
+ * delta) — failsafe for any future Difficulty addition that doesn't
+ * also update this table.
+ */
+export function setMusicIntensityForDifficulty(difficulty: string): void {
+	const delta = MUSIC_INTENSITY_DB[difficulty] ?? 0;
+	for (let v = 0; v < music.synths.length; v += 1) {
+		const base = -28 - v * 1.5;
+		music.synths[v].volume.value = base + delta;
+	}
 }
 
 // K6 — returns (loaded, total) so the landing can render the same

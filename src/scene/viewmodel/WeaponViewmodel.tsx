@@ -4,8 +4,18 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 import { ROLE } from "../../design-tokens";
+import { addObjexoomListener } from "../../events";
+import { MELEE_SKIN_URLS, pickMeleeSkin } from "../../meleeSkins";
 import { WEAPON_MODELS } from "../../models";
 import { WEAPONS, type WeaponId } from "../../weapons";
+
+/**
+ * PA-MOD7 / D11 — callback the viewmodel invokes once the muzzle-anchor
+ * `<group>` is mounted. Consumers (ObjexoomScene's muzzle-light loop)
+ * keep this ref and read `getWorldPosition` each frame so the flash
+ * originates from the barrel tip rather than the camera position.
+ */
+export type MuzzleAnchorCallback = (group: THREE.Group | null) => void;
 
 /**
  * I9 — per-weapon recoil distance (m along camera-forward). Pistol
@@ -18,6 +28,9 @@ const RECOIL_DISTANCE: Record<WeaponId, number> = {
 	pistol: 0.04,
 	chaingun: 0.025,
 	shotgun: 0.08,
+	// E8 — flamethrower is continuous-fire so the recoil bob is small
+	// (matches chaingun's rapid-fire scale).
+	flamethrower: 0.025,
 };
 const RECOIL_DURATION_MS = 120;
 
@@ -50,24 +63,78 @@ const VIEWMODEL_TARGET_LENGTH = 0.32;
  * `MeshBasicMaterial`/`MeshStandardMaterial`-with-no-map with a dark
  * metal tinted by the weapon's muzzle color.
  */
-export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
+export function WeaponViewmodel({
+	weapon,
+	mapSeed,
+	onMuzzleAnchor,
+	swapDipOffsetRef,
+}: {
+	weapon: WeaponId;
+	/**
+	 * POL20 — optional Y-offset ref driven by `<WeaponSwapDip>`. When
+	 * the slot is mounted, it writes a per-frame value here that this
+	 * viewmodel reads + adds to its Y translation, so the swap-dip
+	 * animation lives entirely in the slot. Omitting the prop disables
+	 * the feature without changing render behavior.
+	 */
+	swapDipOffsetRef?: { current: number };
+	/**
+	 * COV9 step-2 — seed used to pick the BLADE skin variant per run.
+	 * `pickMeleeSkin(mapSeed)` returns one of the 7 melee GLBs so each
+	 * refLevel / procedural map renders a different blade silhouette.
+	 * Has no effect for non-melee weapons (single canonical URL each).
+	 */
+	mapSeed: number;
+	/**
+	 * PA-MOD7 / D11 — invoked with the muzzle-anchor group once it mounts
+	 * (and with `null` on unmount). The world-position of this group is
+	 * the actual barrel tip of the wired GLB; ObjexoomScene reads it
+	 * each frame for the muzzle-flash point light.
+	 *
+	 * STABILITY CONTRACT (PR #16 fold, CodeRabbit nit): the callback's
+	 * identity is captured both inside the muzzleRef ref-callback (line
+	 * 204) and inside the unmount-cleanup effect's dep array (line 171).
+	 * Callers MUST memoize this with `useCallback` (or pass a stable
+	 * top-level function) — otherwise every parent re-render will
+	 * notify-with-null + notify-with-new-anchor, flashing the scene's
+	 * stored anchor and re-running the cleanup effect on each render.
+	 */
+	onMuzzleAnchor?: MuzzleAnchorCallback;
+}) {
 	const groupRef = useRef<THREE.Group | null>(null);
+	const muzzleRef = useRef<THREE.Group | null>(null);
 	const camera = useThree((s) => s.camera);
 	const recoilUntil = useRef(0);
 	const model = WEAPON_MODELS[weapon];
-	const gltf = useGLTF(model.url);
+	// COV9 — for the melee slot, override the static WEAPON_MODELS.url
+	// with the per-seed picked skin so each run cycles through machete /
+	// axe / chainsaw / knife / meathook / cleaver / sword. Other weapons
+	// resolve to their single canonical URL.
+	const url = weapon === "melee" ? pickMeleeSkin(mapSeed) : model.url;
+	const gltf = useGLTF(url);
 	// Clone the cached GLTF scene per-mount: `useGLTF` shares the source
 	// tree across instances, so mutating `.material` on the original would
 	// leak to every other consumer and would not be disposed on unmount.
 	const scene = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
 
-	const { autoScale, center, replacedMaterials } = useMemo(() => {
+	const { autoScale, center, muzzleNative, replacedMaterials } = useMemo(() => {
 		const bbox = new THREE.Box3().setFromObject(scene);
 		const size = new THREE.Vector3();
 		bbox.getSize(size);
 		const c = new THREE.Vector3();
 		bbox.getCenter(c);
 		const longest = Math.max(size.x, size.y, size.z, 1e-3);
+		// PA-MOD7 — resolve `muzzleBboxFrac` against the real bbox.
+		// Native muzzle position lives in the same coordinate frame as
+		// the GLB's root; the inner re-center group offsets by -center
+		// so the anchor lands at `muzzleNative - center` inside the
+		// re-center group.
+		const [fx, fy, fz] = model.muzzleBboxFrac;
+		const muzzleN = new THREE.Vector3(
+			bbox.min.x + (bbox.max.x - bbox.min.x) * fx,
+			bbox.min.y + (bbox.max.y - bbox.min.y) * fy,
+			bbox.min.z + (bbox.max.z - bbox.min.z) * fz,
+		);
 		const replaced: THREE.MeshStandardMaterial[] = [];
 		scene.traverse((node) => {
 			if (!(node instanceof THREE.Mesh)) return;
@@ -89,9 +156,10 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 		return {
 			autoScale: VIEWMODEL_TARGET_LENGTH / longest,
 			center: c,
+			muzzleNative: muzzleN,
 			replacedMaterials: replaced,
 		};
-	}, [scene, weapon]);
+	}, [scene, weapon, model.muzzleBboxFrac]);
 
 	useEffect(
 		() => () => {
@@ -101,13 +169,27 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 	);
 
 	useEffect(() => {
-		const onFire = () => {
+		return addObjexoomListener("fire", () => {
 			recoilUntil.current = performance.now() + RECOIL_DURATION_MS;
-		};
-		window.addEventListener("objexoom:fire", onFire);
-		return () => window.removeEventListener("objexoom:fire", onFire);
+		});
 	}, []);
 
+	// PA-MOD7 / D11 — release the muzzle anchor on unmount so a stale
+	// weapon ref doesn't keep a swapped-out weapon's group alive.
+	useEffect(() => () => onMuzzleAnchor?.(null), [onMuzzleAnchor]);
+
+	// PR #16 fold (Gemini medium): priority=-1 makes this useFrame run
+	// BEFORE the scene's default-priority (0) useFrame that reads the
+	// muzzle anchor's world position. Verified against r3f 9.6 source
+	// (events-*.cjs.prod.js): subscribers are sorted ascending by
+	// priority (`a.priority - b.priority`), and ONLY `priority > 0`
+	// flips the internal manual-render flag — so negative priorities
+	// simply run earlier within the auto-rendered set without disabling
+	// the auto-render. Without this the scene reads last-frame's
+	// matrix and the muzzle-flash light trails the rendered barrel by
+	// 16ms (one frame at 60fps) — functionally invisible against the
+	// 250ms muzzle-flash decay window, but correctness costs nothing
+	// here so close the gap.
 	useFrame(() => {
 		const group = groupRef.current;
 		if (!group) return;
@@ -134,13 +216,18 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 			}
 		}
 
+		// POL20 — swap dip slot. WeaponSwapDip writes a Y delta here;
+		// we just read it. When the slot isn't mounted (prop omitted),
+		// dipY stays 0 and behavior matches pre-POL20.
+		const dipY = swapDipOffsetRef?.current ?? 0;
+
 		// In camera-local space:
 		//   +X = right, +Y = up, -Z = forward.
 		// model.offset = [right, up, forward (negative)] in world-units.
 		group.translateX(model.offset[0]);
-		group.translateY(model.offset[1]);
+		group.translateY(model.offset[1] + dipY);
 		group.translateZ(model.offset[2] + recoilOffset);
-	});
+	}, -1);
 
 	return (
 		<group
@@ -155,6 +242,20 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 				    pose. */}
 				<group position={[-center.x, -center.y, -center.z]}>
 					<primitive object={scene} />
+					{/* PA-MOD7 / D11 — muzzle anchor at the barrel tip
+					    (per-weapon `muzzleBboxFrac` lerped over the GLB
+					    bbox). Sits in the same re-center frame as the
+					    primitive, so it inherits autoScale + rotation
+					    naturally. ObjexoomScene reads the world-position
+					    of this group each frame to position the muzzle-
+					    flash point light. */}
+					<group
+						ref={(node) => {
+							muzzleRef.current = node;
+							onMuzzleAnchor?.(node);
+						}}
+						position={[muzzleNative.x, muzzleNative.y, muzzleNative.z]}
+					/>
 				</group>
 			</group>
 		</group>
@@ -163,3 +264,6 @@ export function WeaponViewmodel({ weapon }: { weapon: WeaponId }) {
 
 // Preload weapon GLBs so the very first swap doesn't stutter.
 for (const m of Object.values(WEAPON_MODELS)) useGLTF.preload(m.url);
+// COV9 — preload every melee skin variant too so per-seed swaps
+// don't stall the BLADE viewmodel on level-change.
+for (const url of MELEE_SKIN_URLS) useGLTF.preload(url);

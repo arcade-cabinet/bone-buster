@@ -47,11 +47,11 @@ The rest is opportunity — features for the elevation track.
 | `pistol.glb` | pistol viewmodel | Props/Weapons/USP |
 | `chaingun.glb` | chaingun viewmodel | Props/Weapons/Uzi |
 | `shotgun.glb` | shotgun viewmodel | local Shotgun.glb |
-| `melee_axe.glb` | melee (unwired) | Slasher pack/Axe |
-| `melee_knife.glb` | melee (unwired) | Slasher pack/Kitchen Knife |
-| `melee_machete.glb` | melee (unwired) | Slasher pack/Machete |
-| `melee_chainsaw.glb` | melee (unwired) | Slasher pack/Chainsaw |
-| `melee_meathook.glb` | melee (unwired) | Slasher pack/Meat Hook |
+| `slasher/melee_machete.glb` | melee viewmodel (E1) | Slasher pack/Machete |
+| `slasher/melee_axe.glb` | melee variant (COV9-pending) | Slasher pack/Axe |
+| `slasher/melee_knife.glb` | melee variant (COV9-pending) | Slasher pack/Kitchen Knife |
+| `slasher/melee_chainsaw.glb` | melee variant (COV9-pending) | Slasher pack/Chainsaw |
+| `slasher/melee_meathook.glb` | melee variant (COV9-pending) | Slasher pack/Meat Hook |
 
 ### Props (`public/assets/models/props/`)
 
@@ -59,8 +59,10 @@ The rest is opportunity — features for the elevation track.
 | --- | --- |
 | `door.glb` | grid-map door (unwired — current door is procedural box) |
 | `door_locked.glb` | locked-state variant (unwired) |
-| `lamp_on.glb` | lit lamp (unwired) |
-| `lamp_off.glb` | dark lamp (unwired) |
+| `lamp_on.glb` | lit lamp (legacy single-variant — superseded by `lamps/` pool) |
+| `lamp_off.glb` | dark lamp (legacy single-variant — superseded by `lamps/` pool) |
+| `lamps/lamp_mx_*.glb` (×10) | COV1+E4 — 5 shapes × off/on PSX Mega Pack II scatter pool |
+| `scatter/<30 GLBs>` | COV4 — props scatter pool curated for E3 (per-archetype buckets) |
 
 ## Untapped — local references (`references/`)
 

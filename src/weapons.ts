@@ -1,6 +1,6 @@
 import { LINEAGE, ROLE, SCALE } from "./design-tokens";
 
-export type WeaponId = "melee" | "pistol" | "chaingun" | "shotgun";
+export type WeaponId = "melee" | "pistol" | "chaingun" | "shotgun" | "flamethrower";
 
 export type WeaponSpec = Readonly<{
 	id: WeaponId;
@@ -14,6 +14,13 @@ export type WeaponSpec = Readonly<{
 	startingAmmo: number;
 	pickupAmmo: number;
 	muzzleColor: string;
+	/**
+	 * POL13 — muzzle-flash bloom tier multiplier. Light weapons (pistol)
+	 * read 0.6× the baseline flash intensity; heavy weapons (shotgun)
+	 * read 1.4×. Melee is 0× (no muzzle, just the swing visual).
+	 * Default if omitted = 1.0×.
+	 */
+	muzzleIntensity?: number;
 	hudHotkey: string;
 }>;
 
@@ -35,6 +42,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		// scale-step: muzzle-flash hue wants a slightly lighter red than
 		// ROLE.actionFire (blood[500]) so the BLADE swing reads warm-but-not-arterial.
 		muzzleColor: SCALE.blood[400],
+		muzzleIntensity: 0, // melee — no muzzle flash, just the swing.
 		hudHotkey: "1",
 	},
 	pistol: {
@@ -49,6 +57,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		startingAmmo: Number.POSITIVE_INFINITY,
 		pickupAmmo: 0,
 		muzzleColor: LINEAGE.objexivIndigo,
+		muzzleIntensity: 0.6, // pistol — soft pop.
 		hudHotkey: "2",
 	},
 	chaingun: {
@@ -65,6 +74,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		startingAmmo: Number.POSITIVE_INFINITY,
 		pickupAmmo: 0,
 		muzzleColor: ROLE.accentPrimary,
+		muzzleIntensity: 0.9, // chaingun — steady mid bloom.
 		hudHotkey: "3",
 	},
 	shotgun: {
@@ -79,8 +89,35 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
 		startingAmmo: 0,
 		pickupAmmo: 8,
 		muzzleColor: ROLE.actionKey,
+		muzzleIntensity: 1.4, // shotgun — heavy bloom.
 		hudHotkey: "4",
+	},
+	flamethrower: {
+		// E8 — continuous-fire cone AoE via the existing pellet+spread+
+		// cooldown primitives. 100 ms cooldown ≈ PRD §E8's "every 100ms";
+		// 5 pellets × 0.42 rad spread paints a visible cone; short range
+		// (8 tiles) keeps it firmly in close-quarters territory. Fuel
+		// pickups come in increments of 30 ticks of fire.
+		id: "flamethrower",
+		label: "FLAMETHROWER",
+		cooldownMs: 100,
+		damage: 10,
+		pellets: 5,
+		spreadRad: 0.42,
+		rangeTiles: 8,
+		ammoCostPerShot: 1,
+		startingAmmo: 0,
+		pickupAmmo: 30,
+		muzzleColor: ROLE.actionLava, // ember[400] = "#ff7518" — fire orange
+		muzzleIntensity: 1.1, // flamethrower — continuous warm glow.
+		hudHotkey: "5",
 	},
 };
 
-export const WEAPON_ORDER: readonly WeaponId[] = ["melee", "pistol", "chaingun", "shotgun"];
+export const WEAPON_ORDER: readonly WeaponId[] = [
+	"melee",
+	"pistol",
+	"chaingun",
+	"shotgun",
+	"flamethrower",
+];

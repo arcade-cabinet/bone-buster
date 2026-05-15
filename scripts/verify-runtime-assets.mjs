@@ -19,11 +19,36 @@ import { readFile, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const MODELS_TS = resolve(root, "src/models.ts");
+// Source files that contribute A("/assets/models/...") references.
+// Lives as an explicit allowlist rather than a glob so additions are
+// deliberate.
+const SOURCE_FILES = [
+	resolve(root, "src/models.ts"),
+	resolve(root, "src/lampScatter.ts"),
+	resolve(root, "src/scatter/propPool.ts"),
+	resolve(root, "src/scatter/floorTiles.ts"),
+	resolve(root, "src/doors.ts"),
+	resolve(root, "src/decals.ts"),
+	resolve(root, "src/debris.ts"),
+	resolve(root, "src/largeProps.ts"),
+	resolve(root, "src/meleeSkins.ts"),
+	resolve(root, "src/vehicles.ts"),
+	resolve(root, "src/kitchen.ts"),
+	resolve(root, "src/loot.ts"),
+	resolve(root, "src/nature.ts"),
+	resolve(root, "src/npcs.ts"),
+	resolve(root, "src/traps.ts"),
+	resolve(root, "src/structures.ts"),
+	resolve(root, "src/floorTextures.ts"),
+];
 
 function categoryOf(publicPath) {
-	const m = publicPath.match(/\/assets\/models\/([^/]+)\//);
-	return m?.[1] ?? "other";
+	// Try models subfolder first (e.g. /assets/models/enemies/foo.glb → "enemies").
+	const modelMatch = publicPath.match(/\/assets\/models\/([^/]+)\//);
+	if (modelMatch) return modelMatch[1];
+	// Textures collapse into a single "textures" category.
+	if (publicPath.startsWith("/assets/textures/")) return "textures";
+	return "other";
 }
 
 function formatBytes(n) {
@@ -32,12 +57,13 @@ function formatBytes(n) {
 	return `${(n / 1024 / 1024).toFixed(2)} MB`;
 }
 
-const source = await readFile(MODELS_TS, "utf8");
-
-// Extract every A("/assets/models/...") literal.
-const matches = [...source.matchAll(/A\("(\/assets\/models\/[^"]+)"\)/g)];
+// Concat all source files and extract every A("/assets/models/...") literal.
+const sources = await Promise.all(SOURCE_FILES.map((p) => readFile(p, "utf8")));
+const combined = sources.join("\n");
+// Match both /assets/models/ (GLBs) and /assets/textures/ (PBR maps).
+const matches = [...combined.matchAll(/A\("(\/assets\/(?:models|textures)\/[^"]+)"\)/g)];
 if (matches.length === 0) {
-	console.error("verify-runtime-assets: no A() URLs found in models.ts");
+	console.error("verify-runtime-assets: no A() URLs found across", SOURCE_FILES.join(", "));
 	process.exit(1);
 }
 

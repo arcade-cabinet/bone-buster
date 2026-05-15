@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "./design-tokens";
+import { formatRunDuration, openRunHistory, type RunRecord } from "./runHistory";
 import {
 	DIFFICULTY_BLURB,
 	DIFFICULTY_LABEL,
@@ -27,6 +28,11 @@ const TIPS = [
 	"The portal opens at the key.",
 	"Imps explode. Take cover.",
 	"Skeletons are slow. Wraiths phase walls.",
+	"Each run picks one of five archetypes from its seed.",
+	"Arena enemies hit harder; library books reward exploration.",
+	"Shoot the wall switch — secrets stack across the whole run.",
+	"Bottles +HP, books +ammo, treasure +score.",
+	"Lava floors damage you over time. So does water if you wade too long.",
 ] as const;
 
 type Pane = "main" | "difficulty" | "level" | "options" | "help";
@@ -184,9 +190,97 @@ function MainMenu({
 			<MenuItem label="OPTIONS" onClick={onOptions} />
 			<MenuItem label="HOW TO PLAY" onClick={onHelp} />
 			<MenuItem label="QUIT" onClick={onQuit} />
+			<BestRunChip />
 		</motion.nav>
 	);
 }
+
+/**
+ * POL6 / POL32 — Reads runHistory asynchronously on landing-mount.
+ * When at least one run has been persisted, shows a stencil chip with
+ * the best run's level / time / kills breakdown plus a secondary
+ * run-count footer. Hidden during initial async load and when no runs
+ * exist (fresh install) — no landing space is reserved for it.
+ *
+ * Format (POL32 spec): `BEST RUN · M{level} · {mm:ss} · {kills} KILLS`
+ * Footer: `{N} RUN{S} · {SECRETS}` (secrets line only when > 0).
+ */
+function BestRunChip() {
+	const [best, setBest] = useState<RunRecord | null>(null);
+	const [count, setCount] = useState(0);
+	const [ready, setReady] = useState(false);
+	useEffect(() => {
+		let cancelled = false;
+		void (async () => {
+			try {
+				const db = await openRunHistory();
+				const [b, c] = await Promise.all([db.bestRun(), db.runCount()]);
+				if (cancelled) return;
+				setBest(b);
+				setCount(c);
+			} finally {
+				if (!cancelled) setReady(true);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+	if (!ready || count === 0 || !best) return null;
+	const durationMs = Math.max(0, best.endedAt - best.startedAt);
+	const durationLabel = formatRunDuration(durationMs);
+	const levelLabel = best.levelSet === "procedural" ? "RANDOM" : `M${best.levelSet}`;
+	const outcomeLabel = best.outcome === "won" ? "WON" : "DIED";
+	const secretSuffix =
+		best.totalSecrets > 0
+			? ` · ${best.totalSecrets} SECRET${best.totalSecrets === 1 ? "" : "S"}`
+			: "";
+	return (
+		<div data-testid="objexoom-best-run-chip" style={bestRunChipStyle}>
+			<div style={bestRunPrimaryRowStyle}>
+				<span style={{ opacity: 0.7 }}>BEST RUN</span>
+				<span style={{ opacity: 0.4, margin: "0 8px" }}>·</span>
+				<span>{levelLabel}</span>
+				<span style={{ opacity: 0.4, margin: "0 8px" }}>·</span>
+				<span>{durationLabel}</span>
+				<span style={{ opacity: 0.4, margin: "0 8px" }}>·</span>
+				<span>{best.totalKills} KILLS</span>
+			</div>
+			<div style={bestRunSecondaryRowStyle}>
+				<span style={{ opacity: 0.6 }}>{outcomeLabel}</span>
+				<span style={{ opacity: 0.3, margin: "0 6px" }}>·</span>
+				<span style={{ opacity: 0.6 }}>
+					{count} RUN{count === 1 ? "" : "S"}
+				</span>
+				{secretSuffix && <span style={{ opacity: 0.6 }}>{secretSuffix}</span>}
+			</div>
+		</div>
+	);
+}
+
+const bestRunChipStyle: CSSProperties = {
+	marginTop: 16,
+	fontFamily: FONT_FAMILY.display,
+	fontSize: 11,
+	fontWeight: FONT_WEIGHT.regular,
+	letterSpacing: LETTER_SPACING.hudLabel,
+	color: ROLE.accentPrimary,
+	textAlign: "center",
+	display: "flex",
+	flexDirection: "column",
+	gap: 4,
+};
+
+const bestRunPrimaryRowStyle: CSSProperties = {
+	fontSize: 13,
+	color: ROLE.accentPrimary,
+	textShadow: `0 0 10px ${ROLE.accentPrimary}33`,
+};
+
+const bestRunSecondaryRowStyle: CSSProperties = {
+	fontSize: 10,
+	color: ROLE.textSecondary,
+};
 
 function DifficultyPane({
 	current,
@@ -356,6 +450,21 @@ function HelpPane({ onBack }: { onBack: () => void }) {
 			<p style={objectiveStyle}>
 				Clear the level. Find the floating amber key. Step into the violet portal. The corridors are
 				not pleased to see you.
+			</p>
+
+			<div style={{ ...paneHeadingStyle, marginTop: 20 }}>ARCHETYPES</div>
+			<p style={objectiveStyle}>
+				Every run picks one of five flavors deterministically from the seed:
+				<br />
+				<strong>CORRIDOR</strong> tight cool ink-violet halls · the baseline.
+				<br />
+				<strong>ARENA</strong> ember-red combat space · denser enemies, sparser cover.
+				<br />
+				<strong>COURTYARD</strong> cool dusk-indigo outdoor · mid density, foliage scatter.
+				<br />
+				<strong>SEWER</strong> damp parchment underground · oppressive, traps.
+				<br />
+				<strong>LIBRARY</strong> warm amber study halls · sparse enemies, dense props, NPCs.
 			</p>
 
 			<MenuItem label="BACK" onClick={onBack} />

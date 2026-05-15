@@ -54,12 +54,22 @@ export function loadRefLevel(
 	const difficultyIdx = DIFFICULTY_INDEX[difficulty];
 	let manyEnemiesCount = 0;
 
-	const sectors: MapSector[] = decoded.polygons.map((poly, i) => ({
+	const baseSectors = decoded.polygons.map((poly, i) => ({
 		id: i,
 		vertices: poly.vertices.map(scalePoint),
 		floorHeight: poly.floorHeight * REF_TO_RUNTIME_SCALE,
 		ceilingHeight: poly.ceilingHeight * REF_TO_RUNTIME_SCALE,
 	}));
+
+	// E7 step-1: flag one sector per level as water — pick the sector
+	// whose centroid is farthest from index 0 (the player-spawn-anchor
+	// sector typically) but isn't the largest/exit-bearing sector.
+	// Deterministic per refLevel index. Provides at least one water
+	// tile on every map so the wading slowdown is exercised.
+	const waterSectorId = pickWaterSectorId(baseSectors);
+	const sectors: MapSector[] = baseSectors.map((s) =>
+		s.id === waterSectorId ? { ...s, isWater: true } : s,
+	);
 
 	const enemySpawns: EnemySpawn[] = [];
 	const pickupSpawns: PickupSpawn[] = [];
@@ -182,6 +192,33 @@ export function loadRefLevel(
 		}
 	}
 
+	// E6 — synthesize one secret per ref level. Step-1 slice: place the
+	// switch+wall pair offset from the level center along an axis that
+	// keeps both inside the map bounds. Per-level seed prevents collision
+	// with player/key/exit anchors. Generalization to multi-secret +
+	// designer-authored placements follows when a second level needs it.
+	const scaledBounds = {
+		minX: bb.minX * REF_TO_RUNTIME_SCALE,
+		minY: bb.minY * REF_TO_RUNTIME_SCALE,
+		maxX: bb.maxX * REF_TO_RUNTIME_SCALE,
+		maxY: bb.maxY * REF_TO_RUNTIME_SCALE,
+	};
+	const cx = (scaledBounds.minX + scaledBounds.maxX) * 0.5;
+	const cy = (scaledBounds.minY + scaledBounds.maxY) * 0.5;
+	const width = scaledBounds.maxX - scaledBounds.minX;
+	const switchOffset = Math.min(2.5, width * 0.18);
+	const secrets: import("./secrets").SecretSpec[] = [
+		{
+			id: index * 100 + 1,
+			switchPosition: { x: cx + switchOffset, y: cy },
+			switchRadius: 0.6,
+			wallPosition: { x: cx + switchOffset + 1.2, y: cy },
+			wallSize: { x: 1.4, z: 0.4 },
+			wallRestY: 1.2,
+			wallLiftY: 2.6,
+		},
+	];
+
 	return {
 		kind: "sectors",
 		seed: index,
@@ -192,13 +229,41 @@ export function loadRefLevel(
 		pickupSpawns,
 		keyPosition,
 		exitPosition,
-		bounds: {
-			minX: bb.minX * REF_TO_RUNTIME_SCALE,
-			minY: bb.minY * REF_TO_RUNTIME_SCALE,
-			maxX: bb.maxX * REF_TO_RUNTIME_SCALE,
-			maxY: bb.maxY * REF_TO_RUNTIME_SCALE,
-		},
+		bounds: scaledBounds,
+		secrets,
+		// COV3 step-1: only refLevel 0 opts into modular asphalt floors.
+		// Other levels keep the procedural floor until step-2+ ships.
+		useModularFloor: index === 0,
+		// COV3 step-2 + step-4: ALL ref levels now use modular walls.
+		// The variant pool is archetype-keyed (see `WALLS_BY_ARCHETYPE`),
+		// so refLevel 0 (corridor) keeps its canonical look while
+		// refLevels 1+2 (arena, courtyard by canonical seed%5 invariant)
+		// pick from their archetype-specific pools — closes the PRD §E13
+		// "visual identity test" gap for ref-level play.
+		useModularWalls: true,
 	};
 }
 
 export { REF_TO_RUNTIME_SCALE };
+
+/**
+ * E7 step-1 — pick which sector becomes water in a ref level.
+ * Strategy: choose the sector whose centroid is farthest from sector
+ * 0's centroid, but not sector 0 itself. Deterministic given the
+ * sector geometry. Returns -1 if there are fewer than 2 sectors.
+ */
+function pickWaterSectorId(sectors: readonly MapSector[]): number {
+	if (sectors.length < 2) return -1;
+	const anchor = polygonCentroid(sectors[0].vertices);
+	let bestId = -1;
+	let bestDistSq = Number.NEGATIVE_INFINITY;
+	for (let i = 1; i < sectors.length; i += 1) {
+		const c = polygonCentroid(sectors[i].vertices);
+		const d2 = (c.x - anchor.x) ** 2 + (c.y - anchor.y) ** 2;
+		if (d2 > bestDistSq) {
+			bestDistSq = d2;
+			bestId = sectors[i].id;
+		}
+	}
+	return bestId;
+}

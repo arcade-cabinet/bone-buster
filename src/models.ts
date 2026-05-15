@@ -247,6 +247,23 @@ export type WeaponModel = {
 	rotation: [number, number, number];
 	/** Offset in screen-relative camera space (right, up, -forward). */
 	offset: [number, number, number];
+	/**
+	 * Muzzle anchor in bbox-fraction space (PA-MOD7 / D11). Each
+	 * component ∈ [0, 1]: 0 = bbox.min on that axis, 1 = bbox.max,
+	 * 0.5 = bbox center. The viewmodel anchors an empty `<group>` at
+	 * `lerp(bboxMin, bboxMax, muzzleBboxFrac)` in the GLB's native
+	 * coordinate frame (before autoScale + rotation), then propagates
+	 * its world transform up so the muzzle-flash point light originates
+	 * at the visible barrel tip instead of the camera position.
+	 *
+	 * Authoring: open the GLB in any viewer, identify which axis is
+	 * "barrel forward" (the long axis of the bbox in most cases), set
+	 * that axis's fraction to ~0.95–1.0, leave the other two at ~0.5.
+	 *
+	 * Melee weapons use the same anchor convention — the "muzzle" is
+	 * conceptually the blade tip for any future glow effect.
+	 */
+	muzzleBboxFrac: [number, number, number];
 };
 
 /**
@@ -265,24 +282,59 @@ export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
 		// E1 — machete silhouette reads cleanly at FPS scale + camera tilt.
 		// The 3DPSX kitchen knife / cleaver are too short to read on-screen
 		// without an unnatural offset.
-		url: A("/assets/models/weapons/melee_machete.glb"),
+		url: A("/assets/models/weapons/slasher/melee_machete.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.22, -0.16, -0.3],
+		// Machete: bbox long axis varies by skinned-mesh pose; runtime
+		// Box3 resolves the true span. Tip is at the far +Z of the
+		// blade in the native rig.
+		muzzleBboxFrac: [0.5, 0.5, 0.97],
 	},
 	pistol: {
 		url: A("/assets/models/weapons/pistol.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.18, -0.16, -0.38],
+		// Pistol: bbox size 0.33 × 0.65 × 1.47, barrel forward = +Z;
+		// muzzle is slightly above the bbox Y center (the barrel sits
+		// above the grip) and just shy of the +Z max.
+		muzzleBboxFrac: [0.5, 0.6, 0.97],
 	},
 	chaingun: {
 		url: A("/assets/models/weapons/chaingun.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.18, -0.16, -0.38],
+		// Chaingun (Uzi/Flamethrower body): bbox size 1.19 × 0.37 × 0.13.
+		// Long axis is +X in the native (un-rotated) GLB frame, so the
+		// barrel tip in native coords is at fx=0.97. muzzleBboxFrac is
+		// resolved against the NATIVE bbox (before any rotation), then
+		// the local anchor point is carried into world space by the
+		// runtime transform chain: camera → camera-anchored group
+		// (offset [0.18, -0.16, -0.38], Z- = in front of camera) →
+		// `<group rotation={[0.15, π, 0]}>` inside WeaponViewmodel. The
+		// rotation_Y=π reorients the +X-forward native frame so the
+		// barrel ends up pointing at camera-forward (-Z) in world space.
+		// WeaponViewmodel.useFrame re-samples the anchor each frame so
+		// any pose change (recoil, sway, look) keeps the muzzle flash
+		// co-located with the rendered barrel. Empirically validated
+		// against the muzzle-flash light.
+		muzzleBboxFrac: [0.97, 0.55, 0.5],
 	},
 	shotgun: {
 		url: A("/assets/models/weapons/shotgun.glb"),
 		rotation: [0.15, Math.PI, 0],
 		offset: [0.18, -0.16, -0.38],
+		// Shotgun: bbox size 0.1 × 0.23 × 1.39, barrel forward = +Z.
+		// Muzzle at the +Z tip, mid-X, mid-Y.
+		muzzleBboxFrac: [0.5, 0.55, 0.97],
+	},
+	flamethrower: {
+		// E8 — Flamethrower.glb shipped from the references/ pack. Uses
+		// the same hip-tilt rotation as the other weapons; muzzle bbox
+		// frac aimed at the nozzle tip (mid-X, mid-Y, +Z extreme).
+		url: A("/assets/models/weapons/flamethrower.glb"),
+		rotation: [0.15, Math.PI, 0],
+		offset: [0.2, -0.16, -0.36],
+		muzzleBboxFrac: [0.5, 0.55, 0.97],
 	},
 };
 

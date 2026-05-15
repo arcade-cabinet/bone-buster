@@ -1,0 +1,10 @@
+# Hook-maintained caches — re-derivable from directive + git history.
+# Per ~/.claude/CLAUDE.md: cursor/digest/fingerprint are caches; directive
+# and decisions.ndjson are durable.
+digest.md
+cursor.md
+.indexed-sha
+.last-stop-sha
+.last-compaction
+.last-stop-fingerprint
+batch.json

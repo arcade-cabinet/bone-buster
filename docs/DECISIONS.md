@@ -162,7 +162,7 @@ default by one step) imports `SCALE` directly with a `// scale-step:
 
 ## D8 — `feat/objexoom-game-buildout` is one long-running branch
 
-**Status:** Active
+**Status:** Superseded by D12 on 2026-05-14
 **Date:** 2026-05-13
 
 The branch that lands every design-system + GLB-wiring + reference-
@@ -206,6 +206,101 @@ prefixes `import.meta.env.BASE_URL`.
 which respects the document base, NOT Vite's `base` env. In gh-pages
 mode where `base: "/objexoom/"`, raw `/assets/...` URLs 404. The
 helper applies the prefix once, every site stays readable.
+
+---
+
+## D11 — Muzzle tip via per-weapon offset table, not gltfjsx-generated bone refs
+
+**Status:** Locked
+**Date:** 2026-05-14
+
+PA-MOD7's original framing was "wire gltfjsx so muzzle bones become addressable as named refs." Investigation showed the wired GLBs (`pistol.glb`, `chaingun.glb`, `shotgun.glb`, `melee_machete.glb`) ship with only generic node names like `Gun` / `Bullet` — no muzzle/barrel/tip bones to address. gltfjsx would have generated typed components over those generic names, but the muzzle position would still need to be specified out-of-band.
+
+**Call:** add a `muzzleBboxFrac: [x, y, z]` to `WeaponModel` in `src/models.ts` specifying the muzzle's position as a fraction of the GLB's bounding box on each axis (0 = bbox min, 1 = bbox max). The viewmodel computes the bbox at mount, multiplies by the frac, and parents an empty `<group ref={muzzleRef}>` at that local position — so the marker rides through the same `autoScale` + `rotation` the rest of the weapon does. `ObjexoomScene` reads the world-position of the muzzle ref each frame instead of `camera.position` for `muzzleLightRef`. (Earlier draft called this `muzzleOffset` measured in absolute weapon-local units; the bbox-frac form was the actual implementation chosen because GLB authoring scales vary.)
+
+**Why:**
+- Solves the user-visible outcome (muzzle light at the barrel tip rather than camera center) without a codegen step, new devDep, or per-asset re-export.
+- Per-weapon offsets live in the same `models.ts` table where rotation and offset already do — single source of truth.
+- gltfjsx-generated components add a tracked codegen surface (re-run on every GLB swap, diff churn) for no marginal benefit when the bones don't exist.
+- Future-proof: if a future GLB DOES ship with a muzzle bone, the viewmodel can detect that node by name in the loaded scene graph and `<group>`-attach the muzzleRef to it inside the cloned scene — no codegen required.
+
+**Rejected:**
+- *Adopting gltfjsx as authored* — generates typed components, but the GLBs lack muzzle bones, so the typed access doesn't deliver the outcome.
+- *Adding muzzle bones in Blender to each GLB and re-exporting* — pulls 4+ external authoring passes per weapon swap; tracks externally-authored binaries; couples gameplay to manual asset surgery.
+- *Hardcoding the world offset at the ObjexoomScene call site* — couples scene to the per-weapon barrel geometry; explodes if we ever swap weapons.
+
+---
+
+## D12 — Per-item feature branches off latest main, not one long-running branch
+
+**Status:** Locked. **Supersedes D8.**
+**Date:** 2026-05-14
+
+`feat/objexoom-game-buildout`, the single-long-running branch policy from D8, was squash-merged as PR #12 on 2026-05-14 and deleted on the remote. New work ships as **one feature branch per directive item (or tight cluster of related items)**, opened off the latest pulled `origin/main`, PR'd and squash-merged.
+
+**Why:**
+- The long-running branch grew to ~50 commits and ~12k LOC of churn before review. Review feedback at that scale loops indefinitely.
+- Per-item branches keep CI feedback tight and let reviews focus on one acceptance criterion.
+- Squash-merging per-item keeps `main` log readable (one commit per item or cluster) without sacrificing per-branch atomic history.
+
+**Branch naming:** `feat/<item-id>-<slug>` (e.g. `feat/pa-mod7-muzzle-offset`, `feat/e6-switches-secrets`).
+
+**Rejected:**
+- *Keeping the long-running branch and rebasing on main periodically* — review fatigue + merge-conflict surface only grows.
+- *PR per commit* — too granular when one acceptance criterion legitimately spans 3-4 commits.
+
+---
+
+## D13 — Keep `objexoom:*` channels as window-event broadcasts, just type them
+
+**Status:** Locked. **Amends ARCH1 directive item.**
+**Date:** 2026-05-14
+
+ARCH1's original framing called for converting five "Shell↔Scene channels" (`fpsUpdate`, `shake`, `playerHit`, `fellToDeath`, `teleport`) from window-event broadcasts to direct ref callbacks on `GameRef` / `SceneRef`. Use-case enumeration before opening the migration revealed the actual cross-component traffic is NOT Shell↔Scene:
+
+| Channel | Producer | Consumer | Actual topology |
+|---|---|---|---|
+| `fpsUpdate` | `ObjexoomScene` (inside Canvas) | `ObjexoomHUD` (DOM sibling) | Scene → HUD, not Shell↔Scene |
+| `shake` | `ObjexoomShell` (onHit handler) | `PlayerController` (inside Scene) | Shell → grandchild |
+| `teleport` | `ObjexoomShell` (level-change effect) | `PlayerController` | Shell → grandchild |
+| `playerHit` | both Shell (onHit) AND Scene (explosion path) | Scene (burst emitter) | multi-source |
+| `fellToDeath` | `PlayerController` (fall detection) | `ObjexoomShell` (game-over) | grandchild → Shell |
+
+**Call:** keep all 14 `objexoom:*` channels as window-event broadcasts; just route every call site through the typed `dispatch` + `addObjexoomListener` helpers landed in ARCH1a. Topology stays; type-safety lands.
+
+**Why:**
+- Direct ref callbacks would force `ObjexoomShell` to receive imperative handles from grandchildren (`PlayerController` via `ObjexoomScene`), inverting the React data-flow direction it already establishes via `GameRef`.
+- Broadcast IS the right shape when producer and consumer are siblings or aunt/nephew — there's no shared parent that can plumb a callback without leaking implementation details.
+- The original ARCH1 framing was a categorization error (treating these as "Shell↔Scene" because the originating directive was written before the actual call-site map was inspected). Use-case enumeration before code is the standing rule per CLAUDE.md.
+- The full **win** of ARCH1 — type-checked event payloads, autocomplete on `e.detail.kind`, compile-time failure when a producer and consumer disagree on shape — lands fully from typed-dispatch alone.
+
+**Rejected:**
+- *Forcing five channels through ref callbacks* — would invert data flow, leak grandchild handles into Shell, and add coupling worse than the broadcast it replaced.
+- *Splitting the channel set into "ref-callback" + "broadcast"* — discoverability hit; future devs have to remember which channels live where. One uniform pattern is better.
+
+---
+
+## D14 — PWA verification via Lighthouse best-practices + manifest validity, not the retired `pwa` category
+
+**Status:** Locked. **Amends AO.5 directive item.**
+**Date:** 2026-05-14
+
+AO.5's original acceptance referenced "Lighthouse PWA score ≥ 90." Lighthouse 12 retired the dedicated `pwa` category; Lighthouse 13 (current at the time of this commit, `npx lighthouse@13.3.0`) reports exactly five categories: `performance`, `accessibility`, `best-practices`, `seo`, `agentic-browsing`. There is no PWA score to target.
+
+**Call:** PWA-readiness is verified by three concrete signals instead:
+
+1. `public/manifest.webmanifest` exists and is served with `Content-Type: application/manifest+json`. The manifest declares: `name`, `short_name`, `description`, `start_url`, `scope`, `display`, `background_color`, `theme_color` (from token `#03050b` = `--obx-bg-void`), and a `icons` array including a 192×192 and a 512×512 PNG plus a maskable 512×512.
+2. `index.html` head links the manifest, favicon (32×32 PNG + `.ico` alias), apple-touch-icon (180×180), and sets `theme-color` to match the manifest value.
+3. Lighthouse 13 `best-practices` and `accessibility` categories both score ≥ 90 against a `vite preview` build.
+
+**Why:**
+- Tooling drift: targeting a retired Lighthouse category creates an acceptance criterion that can never be marked done.
+- The underlying signals (installable manifest, viewport/theme-color/icons in HEAD) ARE still audited by Lighthouse 13 — they just live under the `best-practices` and `seo` umbrellas rather than the dedicated `pwa` category.
+- Manifest validity + icon presence + theme-color consistency is enough for Android `Add to Home Screen` and iOS "Add to Home Screen" to install the game correctly — which is the underlying user-facing goal.
+
+**Rejected:**
+- *Pinning Lighthouse to a pre-12 version that still has `pwa`* — masks the truth and ships against deprecated tooling.
+- *Switching to PWABuilder's report.* — third-party dependency for a thing Lighthouse already covers via separate categories.
 
 ---
 

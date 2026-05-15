@@ -1,6 +1,6 @@
 ---
 title: Changelog
-updated: 2026-05-14
+updated: 2026-05-15
 status: current
 domain: history
 ---
@@ -13,6 +13,124 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- **STO1a — Capacitor Preferences settings persistence.** Direct
+  `localStorage` calls in app code are now forbidden (user policy:
+  "no direct localStorage — both work on web and mobile"). Added
+  `@capacitor/preferences` (^8.0.1) as the KV abstraction. New
+  `src/persistence/preferences.ts` is the thin facade
+  (`readPref`/`writePref` + JSON variants). New
+  `src/persistence/settingsStore.ts` defines `validateSettings`
+  (type-narrowing per-field with DEFAULT_SETTINGS fallback) +
+  `loadSettings` + `saveSettings`. `ObjexoomShell` async-hydrates on
+  mount + auto-saves on change. Settings (difficulty, level, sound,
+  sensitivity) now persist across sessions on BOTH web AND mobile.
+  10 unit tests pin the validator contract.
+- **POL31 — Difficulty acknowledgment HUD chip.** When a player picks
+  NIGHTMARE in landing Settings and clicks NEW GAME, a 2-second
+  transient chip surfaces top-center naming the chosen difficulty in
+  its palette (cool indigo at the easy end, hot blood-red at
+  NIGHTMARE). Race-free prop-driven mount (not event-driven — the HUD
+  subtree mounts AFTER the landing→game transition's AnimatePresence
+  exit animation, so an event would fire before the listener
+  registered). New `__objexoom.setDifficulty(Difficulty)` debug hook
+  lets playtest scripts drive the chip in each of the 5 palettes.
+- **POL32 — Main-menu best-run readout.** Landing-page BestRunChip
+  enriched with the **time dimension**. New two-row format: primary
+  `BEST RUN · M{N} · {m:ss} · {kills} KILLS` (or `· RANDOM ·` for
+  procedural), secondary `{WON|DIED} · {N} RUN{S} · {SECRETS}`. New
+  exported `formatRunDuration(ms)` in `src/runHistory.ts` handles
+  m:ss / h:mm:ss split + clamps non-finite/negative. 6 unit tests
+  pin the formatter contract.
+- **AUD1 — SFX mix coherence audit.** `src/sfx.ts` exports
+  `SFX_VOLUMES` (15 synth dB values, shipped), `SFX_BANDS` (5
+  category dB ranges), `SFX_CATEGORIES` (synth → category map). 17
+  new tests pin every synth into its category band so future drift
+  fails before it ships.
+- **PT7 — Mobile touch playtest captures.** `scripts/pt7-mobile.mjs`
+  captures 3 beats at Pixel 5 viewport (412×915, touch + isMobile):
+  landing / in-game-with-touch-controls / mission-complete.
+- **POL29 — Boss emissive rim pre-kill.** Boss-tier enemies carry a
+  blood-red emissive rim (intensity 0.22) via per-instance material
+  clone — visually distinguishes the boss silhouette from regular
+  skeletons before the first hit lands.
+- **POL30 — Pickup ceremony chip.** New PickupChip HUD slot listens
+  for `pickupCollected` events, renders a 700ms transient chip
+  top-center per-kind: health=ember, flashlight=amber,
+  chaingunAmmo=indigo, shotgunAmmo=violet, loot=amber-treasure.
+- **OBS1 — Perf readout overlay.** AdaptiveResolutionReadout shows
+  CALLS + TRIS peak per 60-frame window (gated on `?objexoomDebug`).
+- **OBS2 — Perf-budget warning.** OBS1 readout border turns red +
+  one-shot `console.warn` fires when draw-calls > 400 OR triangles
+  > 50k for 3 consecutive 60-frame windows.
+
+### Changed
+
+- **PR #16 second-pass reviewer fold.** WeaponViewmodel useFrame
+  pinned to `priority=-1` so it runs BEFORE the scene's default-
+  priority useFrame that reads the muzzle anchor's world position —
+  closes the 16ms muzzle-flash lag flagged by Gemini. Verified
+  against r3f 9.6 source. Sharpened the chaingun muzzleBboxFrac
+  comment to address Gemini's misreading (states three.js camera-
+  forward is -Z, explains the full transform chain). Fixed directive
+  branch-policy contradiction.
+- **ObjexoomShell settings boot path.** Mount now async-loads
+  persisted settings via STO1a's `loadSettings()`; URL flag
+  `?objexoomArchetype` still wins as override. Save-on-change effect
+  guards on `settingsHydratedRef` so the boot DEFAULT_SETTINGS
+  doesn't clobber a persisted blob during the async window.
+
+- **AUDIO3 — HUD overlay extraction.** SecretFoundFlash + KeyPickupCeremony + GoingBackOverlay extracted from ObjexoomHUD.tsx (was ~819 lines, now ~606) into `src/hud/overlays/` (one file per overlay) + `HUDOverlays.tsx` aggregator. Adding a new overlay is a new-file operation + one-line addition. Closes all four slot types from docs/SLOT-ARCHITECTURE.md.
+- **AUDIO2 — sfx.ts migrated to audioBus.** All 19 play functions now `fire(channelId, t => synth.triggerAttackRelease(...))` through the typed bus. **Channel re-architecture mid-implementation:** AUDIO1's by-cue ChannelId list was incorrect — Tone.js's collision check is per-synth, so channels must be enumerated by SYNTH INSTANCE (`pickup` channel serves both `playPickup` and `playSecretFound` because both target `pickupSynth`). Final 15 channels: pistol/chaingun/shotgun/melee/hurt/death/pickup/door/doorTick/portal/boom/boomNoise/ambientDrone/aggro/hitSting. All `last*FireTime` globals deleted; the manual `jitter()` helper deleted. sfx.ts dropped from ~600 to ~470 lines.
+
+### Added
+
+- **POL27 Atmospheric darkness pass.** `ArchetypeLightPalette` gains `ambientMul`, `directionalMul`, `fogFarTiles` fields. Corridor preserves 1.0/1.0/12 defaults. Tuning per archetype: arena 1.1/1.0/14, courtyard 0.85/1.1/16, **sewer 0.5/0.3/8 (DARK — flashlight is the practical sight distance)**, library 0.8/0.7/11. Applied to `<ambientLight>`, `<directionalLight>`, `<fog>` + the going-back strobe block respects them. Delivers the "you absolutely need the flashlight" feel for sewer maps without changing combat balance.
+- **POL28 Flashlight click polish.** New `flashlightAcquired` event dispatched on pickup. New `playFlashlightClick()` plays a sharp metallic transient on doorTickSynth (MetalSynth) — reads as the flashlight literally being switched on. Existing `triggerFadeRef('flash')` already provides the visual brighten.
+- **POL26 Going-back klaxon overlay (slot).** New `GoingBackOverlay` HUD slot: animated diagonal red caution-stripes (top + bottom 14% bands, scrolling opposite directions over 1.3s loop, mixBlendMode screen) + edge vignette breathing pulse (radial blood[800] gradient, 1.4s loop). New `playKlaxon()` audio sting (A4 → E4 → A4 → E4 on hurtSynth, 660ms) fires once on out → going_back transition via lastPhaseRef guard.
+- **POL25 Body-part settle lifecycle.** Pre-POL25 used a single 3000ms TTL with linear fade across the whole window — gibs faded out while still bouncing. Rebuilt as 3 phases: 0-800ms motion (physics + spin + bounce), 800-4000ms settle (opacity 1, frozen at rest pose, no spin — gibs visibly landed), 4000-5000ms fade (linear opacity 1→0 only during this 1s window). Total lifetime 5s vs 3s.
+- **POL23 Exit-portal pull (slot).** New `<ExitPortalApproach>` scene slot mounts alongside `<ExitPortal>`. Reads player position vs portal position each frame; when within 4 tiles AND portal is unlocked, widens camera FOV from base 75° up to +20° on `t²` ease-in (most widen happens near the portal). Smooth 12%-per-frame lerp so back-out is also smooth. No input override.
+- **POL22 Key pickup ceremony (slot).** New `keyPickedUp` event dispatched from Shell's onPickupKey. New `KeyPickupCeremony` HUD overlay slot: radial gold-amber vignette (mixBlendMode screen, 800ms in-out) + centered "KEY ACQUIRED" spring-eased card (fontSize 24, scale 0.55 → 1.12 overshoot → 1.0). Self-contained, returns null until first event so canonical bytes stay stable.
+- **POL20 Weapon-swap dip + slot-architecture pivot.** User-corrected mid-session that bolting refs/effects into existing components was the root cause of repeated lint resistance + runtime regressions. New `docs/SLOT-ARCHITECTURE.md` codifies the slot pattern. POL20 ships as `<WeaponSwapDip>` slot (sibling to `<WeaponViewmodel>`, writes per-frame Y offset to a shared ref). POL19 retrofitted from in-EnemyMesh useFrame to `<EnemyHitFlash>` sibling slot.
+- **POL18 Door open polish.** RealDoor lift now overlays a bell-weighted overshoot curve (`p + 4p(1-p) * sin(p*π) * 0.06`) on top of the linear progress — overshoots target by ~6% at p≈0.85 then settles. Audio layered: playDoor (sub-bass groan) + playDoorTick (mechanical click) + playPortal (resolve) all fire together. Particle puff (pickup-kind 8-mote burst) dispatched at door base on open-fire.
+- **POL17 Pickup glow upgrade.** New `PickupHalo` component renders two transparent inner-facing spheres (radius 0.42 + 0.62) behind each pickup body with a slow breathing pulse on opacity + scale. Per-pickup-kind tint (chaingun-ammo indigo, loot amber, others ROLE.actionPickup). Buoyancy bob upgraded from single 2Hz sin to layered (2Hz primary + 0.9Hz secondary at 40% amplitude) + small Z-axis roll so the pickup reads as weightless rather than mechanically reciprocating.
+- **POL21 Secret-found ceremony.** New `SecretFoundFlash` HUD component mounts a brief screen flash (white at 0.12 opacity, mixBlendMode screen) + centered "✦ SECRET FOUND" pulse card (spring-eased entry, amber on translucent ink with amber glow). New `playSecretFound()` audio sting: 4-note ascending chime (E5 → A5 → C#6 → E6) + reverb wet push (0.4 for 600ms then ramp back) so the discovery resolves cathedral-wide.
+- **POL19 Enemy hit reactions.** New optional `Enemy.staggerUntil` field set by fireResolution on every non-killing hit (70ms regular, 100ms boss; kill-blows leave POL12 hitstop to handle the beat instead). enemyTickLoop lerps the AI move target toward the enemy's current position by 0.2× inside the window so the enemy visibly absorbs the hit before resuming advance. EnemyMesh per-instance clones the cached GLB materials and modulates color + emissive + emissiveIntensity on an ease-out-quad curve over the first 140ms — the hit reads as a white-flash tint with blood-red emissive bloom, distinct from the standard combat state.
+
+### Fixed
+
+- **Tone.js audio-time collisions on pickup / boom / ambient drone.** POL8 originally jittered chaingun / flamethrower / aggro / hurt / death voices. POL21 surfaced that `pickupSynth`, `boomSynth`, `boomNoise`, and `ambientDrone` could still collide when secret-found stings layered with pickups, or when boss-death (POL10-v2) layered boom + drone + death on the same audio frame. Per-voice `last*FireTime` jitter applied to all four; `playBoom` now also reads / writes the shared boom/noise timers.
+- **POL14 runtime regression.** First-cut implementation tried to mutate `effectRef.current.offset` via `.set(x, y)`, but drei's `wrapEffect` attaches the ref to a dynamically-extended JSX intrinsic, not to the underlying `ChromaticAberrationEffect`. Replaced with an owned `Vector2` instance passed by reference into the effect's `offset` prop and mutated each frame — both simpler and version-stable.
+
+### Added
+
+- **POL3-v2 Per-archetype PBR floor textures.** New `floorTextures.ts` declares per-archetype Color + Normal map URLs (1K JPGs sourced from the 2DPhotorealistic asset library): arena → MetalPlates006 (cracked metal grating), sewer → Concrete032 (wet stone), library → Wood035 (wood plank), courtyard → PavingStones070 (cobble pavers). Corridor preserved as flat-color (canonical bytes). MapGeometry's floor mesh wraps the textured branch in `<Suspense>` with the flat-color mesh as fallback; `TexturedFloorInner` configures `RepeatWrapping` + per-archetype repeat factor + sRGB color space. `verify-runtime-assets` extended to also crawl `/assets/textures/` URLs. 11.5 MB texture payload.
+- **POL12 Hitstop on enemy kills.** `enemyTickLoop` reads an optional `hitstopUntilRef`; when within the window, scales its `dt` to 5% so enemy AI/movement/bullet-spawn appears to freeze. `fireResolution` sets `until = now + 80ms` on any enemy kill (150ms for bosses). Player camera, particle ticks, weapon cooldowns unaffected (independent loops). Reads as a "weighty kill" punch.
+- **POL16 Layered impact particles.** Pre-POL16 damage bursts were 15 violet monocolor motes (visually a single puff). Replaced with 3-layer system: 8 hot impact sparks (3.5-5.5 u/s, 220ms TTL, emissive 3.2×) + 6 gray smoke puffs (slow upward via negative gravity, 700ms TTL, larger radius) + 8 orange ember trails (mid-velocity, 500ms TTL, emissive 2.4×). `Mote` type extended with per-mote TTL/radius/gravity/emissiveIntensity. Other burst kinds (pickup/playerHit/explode) keep pre-POL16 shape; canonical bytes preserved.
+- **POL14 Chromatic-aberration pulse on player hits.** New `HitChromaticAberration` postprocessing wrapper replaces the static `<ChromaticAberration>` pass. Holds baseline (0.0015) in steady state — perceptually identical to pre-POL14 — but spikes to ~3.7× (0.0055) on every `playerHit` event and ease-out-cubics back over 180ms. Reads as the screen briefly fracturing under impact. No second pass added; the existing pass's offset is driven per-frame.
+- **POL13 Muzzle-flash bloom tier.** New optional `muzzleIntensity` on `WeaponSpec`. Multipliers — melee=0× (swing only), pistol=0.6×, chaingun=0.9×, shotgun=1.4×, flamethrower=1.1×. ObjexoomScene's muzzle-decay block multiplies the baseline by the per-weapon scale, so heavy weapons read as a genuine room-light flash and pistol pops stay punchy not blinding.
+- **POL15 Damage-curved screen shake.** Pre-POL15 shake scaled linearly (amount × 0.15). New non-linear curve `0.08·a + 0.018·a^1.7` so light taps stay quiet (1hp → 0.10) and heavy hits punch above the linear baseline (9hp → clamps to SHAKE_MAX faster). Chaingun spray reads as ambient rumble, shotgun pellet barrage snaps the camera.
+- **POL10-v2 + POL9-v2 Layered death stings.** Boss-down and player-death stings rebuilt as 3-layer cues. Boss: sub-bass thud (boomSynth at C1) + 4-note ascending tonal resolve (G1 → D2 → G2 → D3) + ambient swell (ambientDrone retriggered at C2). Player: sub-bass thud (A0, deeper than boss) + 4-note descending tonal (E3 → B2 → E2 → A1, wider interval) + reverb tail (masterReverb wet briefly pushed to 0.5 then ramped back). Replaces pre-v2 isolated 2-note / 3-note PluckSynth sequences with the layered weight + resolution + room-tone cue that reads as modernized-DOOM caliber.
+- **POL11-v2 Modernized-DOOM damage numbers.** New `DamageNumberField` rendered alongside other in-world effects. Tier-colored by damage magnitude (cool parchment → warm amber → hot ember → incandescent kill-amber), punch-in scale animation 1.25× → 1.0× ease-out quad over 140ms, kill-confirms boost upward velocity from 1.4u/s → 2.4u/s and prepend a "✦" bullet glyph. Crit-stack consolidation: `damageNumber` event carries `enemyId`, same-enemy hits within 350ms merge into the existing pool slot — 8 shotgun pellets read as one growing label, not 8 stacked numbers. Drop-shadow + outline for legibility on any backdrop. 24-number pool cap.
+- **POL10 Boss-down sting.** Ascending G1 → C2 'triumph chord' on the deathSynth, distinct from both skeleton-death (descending) and player-death (descending three-note). Layered on top of the standard skeleton-death sting when ≥1 boss died in the shot.
+- **POL9 Player-death sting.** Slow descending E2 → B1 → E1 sequence on the existing deathSynth, distinct from the skeleton-death two-note cascade. Fires on both HP-zero transition and fellToDeath path.
+- **POL8 Tone.js audio-time collision protection.** Shared jitter() helper bumps Tone.now() by 1ms on collision; protects chaingun/flamethrower/aggro/hurt/death voices.
+- **POL7 HUD archetype label.** Top-left readout extends from `M1` to `M1 · CORRIDOR` so the player learns the 5 archetype names through play.
+- **E13 step-16 Per-archetype large-prop density.** DENSITY_BY_ARCHETYPE for COV2 vehicle/wreck anchor pieces. Library narrows to [0,1]; others preserve [1,2].
+- **Help pane describes the 5 archetypes.** HOW TO PLAY landing screen gains a per-archetype blurb so players know what to expect before encountering each flavor.
+- **Tip carousel expanded** from 4 to 9 tips, covering archetype awareness, secrets, loot mechanics, and environment hazards.
+- **YOU DIED + LEVEL COMPLETE cards show run stats.** Three of four overlay-card states now surface formatRunStats (was just PAUSED + MISSION COMPLETE).
+
+### Fixed
+
+- **README, CLAUDE.md test counts unstaled** to 498+ unit / 51+ suites / 6 browser.
+- **docs/PRD.md `Status at a glance` rewritten** — the Not-yet-shipped list named items shipped 100+ commits ago.
+
+- **POL6 Best-run chip on landing.** Async-opens runHistory on landing mount; renders `BEST {N}L · {N}K · {WON/DIED} · {N} SECRETS · {N} RUNS` below the menu. Hidden when no runs persisted (canonical byte-stability preserved).
+- **POL5 Secrets in run history.** RunRecord/RunInsert extended with `totalSecrets`. Additive ALTER TABLE migration in ensureSchema with try/catch (sql.js IF-NOT-EXISTS-on-ALTER fallback).
+- **POL4 Secrets HUD + RunStats integration.** New `runTotalSecrets` field + `secretFound` action. ObjexoomShell listens for `secretTriggered` event. HUD shows `SECRETS N` below KILLS/SCORE (hidden at 0). Win-screen summary gains `N SECRET[S]` segment.
+- **E13 steps 6-15 Per-archetype identity tightening.** 10 distinct axes routed through `ArchetypeLightPalette` and per-archetype tables: prop density, debris density, decal density, decal pool, enemy count multiplier, pickup count multiplier, lamp-light color, hemisphere sky/ground, water tint, canvas background. Corridor preserves canonical literals on every axis so refLevel 0 byte-stability is intact.
+- **COV3 steps 2-8 Modular structures end-to-end.** Wall GLBs on every map (ref + procedural), per-archetype wall pools, per-archetype floor + ceiling tints on both sector and grid paths. 14 wall GLBs from PSX Mega Pack II Modular Structures (`hr_*`, `hs_*`, `rg_*`, `rtx_*`, `rx_*` families).
+- **`ScheduleWakeup`-at-end-of-turn forbidden in /loop dynamic mode.** Directive preamble + global memory rule. Stops the agent from politeness-disguised stops via the wakeup tool.
 - **DS.7 Design tokens in scene materials.** Zero literal hex codes remain in `src/scene/**/*.tsx`. Added 14 semantic anchors to `OBJEXOOM_PALETTE` covering wall variants, door colors, flashlight warmth, weapon untextured-fallback metals, ammo brass, treasure-chest woods, and ExitPortal hue variants. Brand-color tweaks now ripple to the 3D scene with a single edit to the design-tokens module.
 - **PA9b Chaingun shell ejection.** Extended `ShellEjectField` to dispatch shells on chaingun fires (was shotgun-only). Chaingun shell renders at 0.6× scale with slightly reduced lateral/upward velocity; ~11/sec at the chaingun's 90ms cooldown. `MAX_SHELLS` raised 40 → 80 to handle the burst rate. Reference clone's behavior is now fully matched.
 - **E5 Destructible barrels with AoE damage.** Pure-sim core in `src/barrels.ts` (spawn, ray-test, AoE resolve). Fire-path prioritizes barrels over enemies when both are on the ray. Chain reactions via queue. 5-variant skin pool (4 metal weathering + 1 wooden) cycled by id. 14 new unit tests. ([688104d](https://github.com/objexiv/objexoom/commit/688104d))

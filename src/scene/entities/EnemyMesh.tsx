@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
-import type { Enemy } from "../../engine";
+import { BOSS_VISUAL_SCALE, type Enemy } from "../../engine";
 import { ENEMY_MODELS, pickEnemySkin } from "../../models";
 
 /**
@@ -36,6 +36,33 @@ export function EnemyMesh({
 	// across multiple instances — a plain .clone() shares skeletons and
 	// every instance animates in lockstep.
 	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
+
+	// POL29 — boss-tier enemies get a permanent emissive blood-red rim
+	// so the bigger silhouette ALSO reads as visually distinct at low
+	// light, not just "skeleton scaled up". Mutate the cloned material
+	// once (per instance, not per frame) — POL19 hit-flash already
+	// owns per-frame material mutation via the EnemyHitFlash slot, so
+	// the static rim doesn't interfere.
+	useMemo(() => {
+		if (enemy.tier !== "boss") return;
+		cloned.traverse((obj) => {
+			const mesh = obj as THREE.Mesh;
+			if (!mesh.isMesh) return;
+			const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+			for (const mat of mats) {
+				const std = mat as THREE.MeshStandardMaterial;
+				if (!std.emissive) continue;
+				// Clone the material so the rim only applies to this
+				// instance, not every enemy sharing the cached GLB
+				// material. POL19 EnemyHitFlash relies on per-instance
+				// clones for the same reason.
+				const own = std.clone();
+				own.emissive = new THREE.Color(0xdc2626); // blood[600]
+				own.emissiveIntensity = 0.22;
+				mesh.material = own;
+			}
+		});
+	}, [cloned, enemy.tier]);
 	// Normalize size against measured bbox. Use the LONGEST axis (not
 	// just Y) because some horror meshes ship lying on the wrong axis
 	// — picking the biggest dim and matching it to heightTiles gives
@@ -45,8 +72,11 @@ export function EnemyMesh({
 		const size = new THREE.Vector3();
 		bbox.getSize(size);
 		const longest = Math.max(size.x, size.y, size.z, 1e-3);
-		return skin.heightTiles / longest;
-	}, [cloned, skin.heightTiles]);
+		// E2 — bosses render at BOSS_VISUAL_SCALE × the kind's normal size
+		// so they read as bigger/scarier at a glance.
+		const tierMultiplier = enemy.tier === "boss" ? BOSS_VISUAL_SCALE : 1;
+		return (skin.heightTiles / longest) * tierMultiplier;
+	}, [cloned, skin.heightTiles, enemy.tier]);
 	const { actions, mixer } = useAnimations(gltf.animations, cloned);
 	const hasNamedAnims = useMemo(
 		() => Boolean(skin.anims.idle && actions[skin.anims.idle]),
@@ -69,6 +99,7 @@ export function EnemyMesh({
 		mixer.update(dt);
 		const group = groupRef.current;
 		if (!group) return;
+		// POL19 hit-flash moved to <EnemyHitFlash> slot (see docs/SLOT-ARCHITECTURE.md).
 
 		const t = performance.now() / 1000;
 		const bobY = hasNamedAnims ? 0 : Math.sin(t * 2.2 + bobPhase) * 0.06;

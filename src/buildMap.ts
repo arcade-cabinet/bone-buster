@@ -1,3 +1,5 @@
+import { ARCHETYPE_NAMES } from "./archetype";
+import { getArchetypeMapShape } from "./archetypeMapShape";
 import { generateMap, type ObjexoomMap } from "./engine";
 import { loadRefLevel } from "./refLevel";
 import type { Difficulty, LevelChoice } from "./settings";
@@ -10,13 +12,20 @@ import type { Difficulty, LevelChoice } from "./settings";
  * I4 — difficulty is passed through so reference-level `ManyEnemies`
  * (class 9) markers can expand into `DIFFICULTY*5 + 5 + count*π|0`
  * enemies per the ref formula instead of a fixed 2.
+ *
+ * E13 step-5 — procedural maps get a per-archetype shape override so
+ * sector-density / size range varies per archetype. RefLevels stay
+ * unchanged (their geometry is decoded from the reference clone).
  */
 export function buildMap(
 	seed: number,
 	level: LevelChoice,
 	difficulty: Difficulty = "hurtMePlenty",
 ): ObjexoomMap {
-	if (level === "procedural") return generateMap(seed);
+	if (level === "procedural") {
+		const archetype = ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length];
+		return generateMap(seed, getArchetypeMapShape(archetype));
+	}
 	const refIdx = (level - 1) as 0 | 1 | 2 | 3 | 4;
 	return loadRefLevel(refIdx, difficulty);
 }
