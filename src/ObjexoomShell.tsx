@@ -7,7 +7,6 @@ import { PLAYER_MAX_HP } from "./constants";
 import { ROLE, SCALE } from "./design-tokens";
 import type { ObjexoomMap, PickupKind } from "./engine";
 import { addObjexoomListener, dispatch } from "./events";
-import { pickLootKind } from "./loot";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
@@ -20,6 +19,7 @@ import {
 	type RunStats,
 	runStatsReducer,
 } from "./runStats";
+import { useGameRef } from "./scene/hooks/useGameRef";
 import {
 	DEFAULT_SETTINGS,
 	DIFFICULTY_TUNING,
@@ -28,8 +28,6 @@ import {
 } from "./settings";
 import {
 	ensureSfx,
-	playFlashlightClick,
-	playHitSting,
 	playKlaxon,
 	playPickup,
 	playPlayerDeath,
@@ -149,21 +147,6 @@ const baseOwnedWeapons = (): Record<WeaponId, boolean> => ({
 	shotgun: false,
 	flamethrower: false,
 });
-
-const ammoIncrement: Record<
-	PickupKind,
-	{ weapon: WeaponId; amount: number } | "health" | "flashlight" | "loot"
-> = {
-	health: "health",
-	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
-	shotgunAmmo: { weapon: "shotgun", amount: WEAPONS.shotgun.pickupAmmo },
-	// J1 — flashlight is a binary owned/not-owned switch on GameState.
-	flashlight: "flashlight",
-	// COV12 step-2 — sentinel; per-lootKind bonus resolution happens at
-	// collect time using `pickLootKind(seed)` because the discriminator
-	// lives on the map seed, not on the PickupKind itself.
-	loot: "loot",
-};
 
 function readSeedFromUrl(): number {
 	const base = readBaseSeedFromUrl();
@@ -370,199 +353,16 @@ export function ObjexoomShell() {
 		return () => window.removeEventListener("resize", onResize);
 	}, []);
 
-	// I5 — i-frame gate. Enemies cannot multi-hit per frame; cooldown
-	// scales by difficulty (tuning.playerIframeMs). Held outside React
-	// state so the gate is decision-time rather than render-time.
-	const lastPlayerHitAt = useRef(0);
-
-	const gameRef = useRef<GameRef>({
-		onHit: (damage) => {
-			const now = performance.now();
-			if (now - lastPlayerHitAt.current < tuning.playerIframeMs) return;
-			lastPlayerHitAt.current = now;
-			// I6 — camera shake amount scales with raw incoming damage; the
-			// controller decays at SHAKE_DECAY/sec and applies XZ jitter.
-			dispatch({ type: "shake", amount: damage });
-			// I2 — 30 red motes at the player on every successful enemy hit
-			// (post-iframe gate so the visual matches actual damage taken).
-			// Scene resolves the player position from the camera and emits the
-			// burst there; this is the wakeup, not the placement.
-			dispatch({ type: "playerHit" });
-			// J3 — red fade overlay scaled by damage. On the 0-9 HP scale,
-			// 3 hp = max-flash; 1 hp = 1/3.
-			triggerFadeRef.current("damage", Math.min(1, damage / 3));
-			// K2 — sharp hit sting (distinct from the ambient playHurt the
-			// Scene already fires).
-			if (settings.soundEnabled) playHitSting();
-			setState((prev) => {
-				if (prev.status !== "playing") return prev;
-				const finalDamage = Math.round(damage * tuning.enemyDamageMultiplier);
-				const hp = Math.max(0, prev.hp - finalDamage);
-				// POL9 — player-death sting fires exactly once on the HP→0
-				// transition. Inside the setState updater so React 19 strict-
-				// mode's double-invoke doesn't double-play; we read prev.hp
-				// (was > 0) and current hp (now 0) as the gate.
-				if (prev.hp > 0 && hp === 0 && settings.soundEnabled) {
-					playPlayerDeath();
-				}
-				return {
-					...prev,
-					hp,
-					status: hp <= 0 ? "dead" : prev.status,
-					damageFlashAt: now,
-					// Pre-aggregate per-level damage on the live counter; the reducer
-					// rolls these into the run totals on level-clear.
-					run: {
-						...prev.run,
-						runTotalDamageTaken: prev.run.runTotalDamageTaken + finalDamage,
-					},
-				};
-			});
-		},
-		onKill: () => {
-			// Clamp per-level kill counter at totalEnemies. The Scene
-			// fires onKill once per HP-zero transition, but debug paths
-			// (`killAllEnemies` looped in tests, or rapid double-fire)
-			// can re-trigger on already-dead enemies; the HUD reads
-			// `kills / totalEnemies` so an unclamped counter renders
-			// nonsense like "9 / 3".
-			setState((prev) => ({
-				...prev,
-				kills: Math.min(prev.kills + 1, prev.totalEnemies),
-				run: {
-					...prev.run,
-					runTotalKills: prev.run.runTotalKills + 1,
-				},
-			}));
-		},
-		onPickupKey: () => {
-			// H6 — `playDoor` now fires from the LockedDoor mesh on the open
-			// animation transition; key pickup is the pickup chime only.
-			playPickup();
-			triggerFadeRef.current("key");
-			setState((prev) => ({ ...prev, hasKey: true }));
-			// POL22 — fire the typed event consumed by the
-			// KeyPickupCeremony HUD overlay slot.
-			dispatch({ type: "keyPickedUp" });
-		},
-		onWin: () => {
-			// H8 — first "win" trigger (player crossed the RealDoor) flips
-			// phase from "out" → "going_back". Every enemy re-aggros, lights
-			// strobe, music dies, and the player must fight back to the
-			// original spawn. The actual level-clear fires on `onReachSpawn`.
-			// L2 — goal-collect also drops the chaingun + shotgun so the
-			// going-back fight has firepower (ref's "RealDoor drop" pattern).
-			setState((prev) => {
-				if (prev.status !== "playing") return prev;
-				if (prev.phase === "going_back") return prev;
-				return {
-					...prev,
-					phase: "going_back",
-					// POL37 — set the going-back deadline at transition time.
-					// The countdown overlay reads this; engine fires
-					// playerDeath if the deadline elapses without reachSpawn.
-					goingBackDeadlineMs: performance.now() + GOING_BACK_BUDGET_MS,
-					ownedWeapons: {
-						...prev.ownedWeapons,
-						chaingun: true,
-						shotgun: true,
-						flamethrower: true,
-					},
-					ammo: {
-						...prev.ammo,
-						shotgun: Math.max(prev.ammo.shotgun, WEAPONS.shotgun.pickupAmmo + 4),
-						flamethrower: Math.max(prev.ammo.flamethrower, WEAPONS.flamethrower.pickupAmmo + 10),
-					},
-				};
-			});
-		},
-		onReachSpawn: () => {
-			triggerFadeRef.current("win");
-			setState((prev) => {
-				if (prev.status !== "playing") return prev;
-				if (prev.phase !== "going_back") return prev;
-				const advanced = advanceLevel(settings.level, prev.run.runLevelsCleared);
-				const clearedRun = runStatsReducer(prev.run, {
-					type: "clearLevel",
-					killsThisLevel: 0,
-					damageThisLevel: 0,
-					scoreThisLevel: prev.score,
-				});
-				return {
-					...prev,
-					run: clearedRun,
-					status: advanced === null ? "won" : "transitioning",
-					// POL37 — clear the deadline. The player made it back
-					// in time; the countdown overlay reads null and hides.
-					goingBackDeadlineMs: null,
-				};
-			});
-		},
-		onSpendAmmo: (weapon, amount) => {
-			if (amount <= 0) return;
-			setState((prev) => ({
-				...prev,
-				ammo: {
-					...prev.ammo,
-					[weapon]: Math.max(0, prev.ammo[weapon] - amount),
-				},
-			}));
-		},
-		onCollectPickup: (kind) => {
-			// POL30 — fire the pickup-collected event so the PickupChip
-			// HUD overlay can render its kind-specific teach moment.
-			// Key pickups don't route through onCollectPickup — they
-			// have their own onPickupKey + POL22 ceremony.
-			dispatch({ type: "pickupCollected", kind });
-			const action = ammoIncrement[kind];
-			setState((prev) => {
-				if (action === "health") {
-					// L1 — +1 HP per pickup on the 0-9 scale (ref's update_health(+1)).
-					return { ...prev, hp: Math.min(prev.maxHp, prev.hp + 1) };
-				}
-				if (action === "flashlight") {
-					triggerFadeRef.current("flash");
-					// POL28 — flashlight click-on sting + typed event.
-					// Distinct from the pickup chime; reads as the
-					// flashlight literally being turned on.
-					playFlashlightClick();
-					dispatch({ type: "flashlightAcquired" });
-					return { ...prev, hasFlashlight: true };
-				}
-				if (action === "loot") {
-					// COV12 step-2 — kind-specific bonus driven by the map seed
-					// (pickLootKind(seed) resolved the variant at spawn time).
-					// We don't have seed access here; resolve via the current
-					// map's seed which is stable for the duration of this call.
-					const lootKind = pickLootKind(seed);
-					if (lootKind === "bottles") {
-						// +5 HP (potion stash) — clamp to maxHp.
-						return { ...prev, hp: Math.min(prev.maxHp, prev.hp + 5) };
-					}
-					if (lootKind === "books") {
-						// Knowledge → bonus ammo across both ranged weapons.
-						return {
-							...prev,
-							ammo: {
-								...prev.ammo,
-								chaingun: prev.ammo.chaingun + WEAPONS.chaingun.pickupAmmo,
-								shotgun: prev.ammo.shotgun + WEAPONS.shotgun.pickupAmmo,
-							},
-						};
-					}
-					return { ...prev, score: prev.score + 50 };
-				}
-				return {
-					...prev,
-					ammo: {
-						...prev.ammo,
-						[action.weapon]: prev.ammo[action.weapon] + action.amount,
-					},
-					ownedWeapons: { ...prev.ownedWeapons, [action.weapon]: true },
-					weapon: prev.weapon === "pistol" ? action.weapon : prev.weapon,
-				};
-			});
-		},
+	// CONV2 — GameRef callback construction extracted to useGameRef hook.
+	// The hook owns the lastPlayerHitAt iframe gate, the ammoIncrement
+	// table, and all 7 callback bodies. Shell only declares the deps.
+	const gameRef = useGameRef({
+		setState,
+		triggerFadeRef,
+		settings,
+		tuning,
+		seed,
+		level: settings.level,
 	});
 
 	const updateSettings = useCallback((patch: Partial<ObjexoomSettings>) => {
@@ -843,6 +643,7 @@ export function ObjexoomShell() {
 	const onStartGameRef = useRef(onStartGame);
 	onStartGameRef.current = onStartGame;
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: gameRef is a stable useRef from useGameRef; .current is intentionally read at debug-call time, never as a dependency
 	useEffect(() => {
 		if (!debugHooksEnabled()) return;
 		window.__objexoom = {
