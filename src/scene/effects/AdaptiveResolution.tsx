@@ -26,7 +26,12 @@ import { useEffect, useRef } from "react";
 export function AdaptiveResolution({
 	onUpdate,
 }: {
-	onUpdate?: (info: { fps: number; pixelRatio: number }) => void;
+	onUpdate?: (info: {
+		fps: number;
+		pixelRatio: number;
+		drawCalls?: number;
+		triangles?: number;
+	}) => void;
 }) {
 	const gl = useThree((s) => s.gl);
 
@@ -35,12 +40,33 @@ export function AdaptiveResolution({
 	const consecutiveHigh = useRef(0);
 	const lastUpdateAt = useRef(performance.now());
 	const ratioRef = useRef<number>(Math.min(window.devicePixelRatio || 1, 1.5));
+	// OBS1 — sample peak draw-call + triangle counts across the 60-frame
+	// window. `gl.info.render` resets per-render by default, so we
+	// accumulate the max we see between windows instead of the last
+	// value alone.
+	const peakCalls = useRef(0);
+	const peakTris = useRef(0);
 
 	useEffect(() => {
 		gl.setPixelRatio(ratioRef.current);
+		// OBS1 — disable auto-reset so we can read render info inside
+		// useFrame (which runs BEFORE r3f's render call by default).
+		// We manually call `gl.info.reset()` after sampling instead.
+		gl.info.autoReset = false;
 	}, [gl]);
 
 	useFrame((_, dt) => {
+		// OBS1 — sample render info from the LAST frame's render (we
+		// set autoReset=false above so the counters accumulate
+		// across the current frame's render). useFrame can run
+		// before OR after render depending on priority; either way
+		// reading + then resetting captures one frame's totals.
+		const info = gl.info.render as { calls?: number; triangles?: number };
+		if (info.calls != null && info.calls > peakCalls.current) peakCalls.current = info.calls;
+		if (info.triangles != null && info.triangles > peakTris.current)
+			peakTris.current = info.triangles;
+		gl.info.reset();
+
 		deltaBuf.current.push(dt);
 		if (deltaBuf.current.length < 60) return;
 
@@ -82,7 +108,19 @@ export function AdaptiveResolution({
 			gl.setPixelRatio(next);
 		}
 
-		onUpdate?.({ fps: avgFps, pixelRatio: next });
+		// OBS1 — emit the PEAK calls + triangles observed during the
+		// 60-frame window (sampled every useFrame above). Reset the
+		// peaks for the next window.
+		const drawCalls = peakCalls.current > 0 ? peakCalls.current : undefined;
+		const triangles = peakTris.current > 0 ? peakTris.current : undefined;
+		peakCalls.current = 0;
+		peakTris.current = 0;
+		onUpdate?.({
+			fps: avgFps,
+			pixelRatio: next,
+			drawCalls,
+			triangles,
+		});
 	});
 
 	return null;

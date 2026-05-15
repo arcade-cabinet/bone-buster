@@ -114,6 +114,10 @@ export interface FpsUpdateEvent {
 	type: "fpsUpdate";
 	fps: number;
 	pixelRatio: number;
+	/** OBS1 — gl.info.render.calls (draw calls per frame, latest sample). */
+	drawCalls?: number;
+	/** OBS1 — gl.info.render.triangles (triangle count per frame, latest sample). */
+	triangles?: number;
 }
 
 export interface ShakeEvent {

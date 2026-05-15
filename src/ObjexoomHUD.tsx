@@ -306,7 +306,12 @@ export function ObjexoomHUD({
 // the `objexoom:fpsUpdate` event dispatched from inside the Canvas and
 // renders a tiny FPS + DPR readout in the bottom-left corner.
 function AdaptiveResolutionReadout() {
-	const [info, setInfo] = useState<{ fps: number; pixelRatio: number } | null>(null);
+	const [info, setInfo] = useState<{
+		fps: number;
+		pixelRatio: number;
+		drawCalls?: number;
+		triangles?: number;
+	} | null>(null);
 	const [enabled] = useState(
 		() =>
 			typeof window !== "undefined" &&
@@ -315,12 +320,19 @@ function AdaptiveResolutionReadout() {
 
 	useEffect(() => {
 		if (!enabled) return;
-		return addObjexoomListener("fpsUpdate", ({ fps, pixelRatio }) => {
-			setInfo({ fps, pixelRatio });
+		return addObjexoomListener("fpsUpdate", ({ fps, pixelRatio, drawCalls, triangles }) => {
+			setInfo({ fps, pixelRatio, drawCalls, triangles });
 		});
 	}, [enabled]);
 
 	if (!enabled || !info) return null;
+	// OBS1 — format triangle count compactly (k for ≥1000, M for ≥1M).
+	const triFmt = (n: number | undefined) => {
+		if (n == null) return "";
+		if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+		if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+		return String(n);
+	};
 	return (
 		<div
 			data-testid="objexoom-fps-readout"
@@ -337,9 +349,22 @@ function AdaptiveResolutionReadout() {
 				borderRadius: 4,
 				border: `1px solid ${ROLE.accentPrimary}55`,
 				pointerEvents: "none",
+				display: "flex",
+				flexDirection: "column",
+				gap: 2,
+				lineHeight: 1.2,
 			}}
 		>
-			FPS {info.fps.toFixed(0)} • DPR {info.pixelRatio.toFixed(2)}
+			<div>
+				FPS {info.fps.toFixed(0)} • DPR {info.pixelRatio.toFixed(2)}
+			</div>
+			{(info.drawCalls != null || info.triangles != null) && (
+				<div style={{ opacity: 0.85 }}>
+					{info.drawCalls != null && <>CALLS {info.drawCalls}</>}
+					{info.drawCalls != null && info.triangles != null && <> • </>}
+					{info.triangles != null && <>TRIS {triFmt(info.triangles)}</>}
+				</div>
+			)}
 		</div>
 	);
 }
