@@ -1,6 +1,70 @@
 import * as Tone from "tone";
 import { fire } from "./audioBus";
 
+/**
+ * AUD1 — SFX mix coherence table.
+ *
+ * Each synth's volume (dB) is categorized so a vitest snapshot
+ * can pin the mix balance. Categories represent the listener's
+ * attention budget — the ambient bed must duck under any sting
+ * fire, kill stings must carry over the going-back klaxon, UI
+ * feedback must not bury the kill audio, etc.
+ *
+ *   ambient    : -34 to -26 — background drone, never foreground
+ *   uiFeedback : -16 to  -8 — pickup / door / portal / hit / tick
+ *   weaponFire : -16 to  -4 — pistol / chaingun / shotgun / melee
+ *   killSting  : -14 to  -4 — death / boom / aggro / hitSting
+ *   musicVoice : -36 to -28 — 6-voice procedural music (cascading)
+ *
+ * The actual shipped values (each commented inline below) sit
+ * inside these bands and were tuned by ear over POL8/POL10/POL21.
+ * Don't widen the bands — fix the synth volume to land back in
+ * its category.
+ */
+export const SFX_VOLUMES = {
+	pistol: -8,
+	chaingun: -16,
+	shotgun: -6,
+	melee: -14,
+	hurt: -10,
+	death: -8,
+	pickup: -8,
+	door: -12,
+	portal: -16,
+	ambientDrone: -32,
+	aggro: -14,
+	boom: -4,
+	boomNoise: -10,
+	hitSting: -8,
+	doorTick: -14,
+} as const;
+
+export const SFX_BANDS = {
+	ambient: { min: -34, max: -26 },
+	uiFeedback: { min: -16, max: -8 },
+	weaponFire: { min: -16, max: -4 },
+	killSting: { min: -14, max: -4 },
+	musicVoice: { min: -36, max: -28 },
+} as const;
+
+export const SFX_CATEGORIES = {
+	pistol: "weaponFire",
+	chaingun: "weaponFire",
+	shotgun: "weaponFire",
+	melee: "weaponFire",
+	hurt: "uiFeedback",
+	death: "killSting",
+	pickup: "uiFeedback",
+	door: "uiFeedback",
+	portal: "uiFeedback",
+	ambientDrone: "ambient",
+	aggro: "killSting",
+	boom: "killSting",
+	boomNoise: "killSting",
+	hitSting: "killSting",
+	doorTick: "uiFeedback",
+} as const satisfies Record<keyof typeof SFX_VOLUMES, keyof typeof SFX_BANDS>;
+
 let initialized = false;
 let pistolSynth: Tone.MembraneSynth | null = null;
 let chaingunSynth: Tone.MetalSynth | null = null;
