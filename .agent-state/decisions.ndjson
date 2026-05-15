@@ -95,3 +95,4 @@
 {"ts":"2026-05-15T10:37:06-05:00","sha":"090e1bd1b7119a992d15931efc124d2dc48bce4b","subject":"chore(main): release 0.2.1 (#19)","decision":null,"why":null,"resolves":[],"overrides":[]}
 {"ts":"2026-05-15T10:41:01-05:00","sha":"d82311cfc7c880ddc91df4d50269c6585e6dd342","subject":"fix(ci): collapse cd.yml into release.yml + add deploy-pages job (#20)","decision":null,"why":null,"resolves":[],"overrides":[]}
 {"ts":"2026-05-15T10:41:49-05:00","sha":"e113ec76d268663c8ca68ac7887d8902f2bd240a","subject":"chore(main): release 0.2.2 (#21)","decision":null,"why":null,"resolves":[],"overrides":[]}
+{"ts":"2026-05-15T20:02:05.200Z","sha":"30c35a70f571","subject":"chore(agent-state): backfill decisions.ndjson for squash-merge SHAs (#22)","decision":null,"why":null,"resolves":[],"overrides":[],"source":"gh-pr-merge"}
