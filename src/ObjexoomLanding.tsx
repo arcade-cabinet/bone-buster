@@ -214,9 +214,10 @@ function BestRunChip() {
 		void (async () => {
 			try {
 				const db = await openRunHistory();
+				const [b, c] = await Promise.all([db.bestRun(), db.runCount()]);
 				if (cancelled) return;
-				setBest(db.bestRun());
-				setCount(db.runCount());
+				setBest(b);
+				setCount(c);
 			} finally {
 				if (!cancelled) setReady(true);
 			}

@@ -1,17 +1,25 @@
 /**
- * E9 — persistent run history backed by sql.js, serialized into a single
- * base64 blob under `localStorage["objexoom.runHistory"]`. Rows are ~50
- * bytes each so the 5MB localStorage budget covers ~100k runs.
+ * E9 / STO1b — persistent run history backed by
+ * @capacitor-community/sqlite (native + jeep-sqlite on web).
  *
- * WASM loaded from `<base>/assets/wasm/sql-wasm.wasm`, copied at
- * postinstall + prebuild by `scripts/prepare-web-wasm.mjs`.
+ * Pre-STO1b this module used sql.js + a base64-encoded `Database`
+ * blob in `localStorage["objexoom.runHistory"]`. That worked on web
+ * but didn't survive Capacitor's native runtime (no shared
+ * Window.localStorage write path), and forced two parallel storage
+ * APIs in the codebase. STO1b unifies on the Capacitor abstraction:
+ * jeep-sqlite/IndexedDB on web, native SQLite on iOS/Android. App
+ * code never touches `localStorage` directly.
+ *
+ * The legacy blob (if present at first open) is one-time migrated:
+ * decoded via sql.js, rows copied into the new Capacitor table,
+ * legacy key deleted. Subsequent opens skip the migration entirely.
  */
 
-import initSqlJs, { type Database } from "sql.js";
-import { A } from "./assetUrl";
+import { createDatabase } from "./persistence/createDatabase";
+import type { DatabaseAdapter } from "./persistence/database";
 import type { LevelChoice } from "./settings";
 
-const STORAGE_KEY = "objexoom.runHistory";
+const LEGACY_STORAGE_KEY = "objexoom.runHistory";
 
 /** Outcome of a single run. */
 export type RunOutcome = "won" | "died";
@@ -43,35 +51,8 @@ export type RunInsert = Readonly<{
 	outcome: RunOutcome;
 }>;
 
-function decodeStoredBlob(): Uint8Array | null {
-	if (typeof localStorage === "undefined") return null;
-	const raw = localStorage.getItem(STORAGE_KEY);
-	if (!raw) return null;
-	try {
-		const binary = atob(raw);
-		const bytes = new Uint8Array(binary.length);
-		for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-		return bytes;
-	} catch {
-		return null;
-	}
-}
-
-function encodeAndStore(db: Database) {
-	if (typeof localStorage === "undefined") return;
-	const bytes = db.export();
-	let binary = "";
-	for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
-	try {
-		localStorage.setItem(STORAGE_KEY, btoa(binary));
-	} catch {
-		// Quota or private-mode failure — drop silently. The run-history
-		// chip is a nice-to-have; not worth aborting gameplay over.
-	}
-}
-
-function ensureSchema(db: Database) {
-	db.run(`
+async function ensureSchema(db: DatabaseAdapter): Promise<void> {
+	await db.execute(`
 		CREATE TABLE IF NOT EXISTS runs (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			started_at INTEGER NOT NULL,
@@ -79,49 +60,96 @@ function ensureSchema(db: Database) {
 			levels_cleared INTEGER NOT NULL,
 			total_kills INTEGER NOT NULL,
 			total_damage_taken INTEGER NOT NULL,
+			total_secrets INTEGER NOT NULL DEFAULT 0,
 			level_set TEXT NOT NULL,
 			outcome TEXT NOT NULL
 		);
 	`);
-	db.run(`CREATE INDEX IF NOT EXISTS runs_ended_at_desc ON runs (ended_at DESC);`);
-	// POL5 — additive migration for the secrets count. Older blobs lack
-	// this column; ALTER TABLE ADD COLUMN with a NOT NULL DEFAULT 0 fills
-	// in zeros for legacy rows. Wrap in try/catch because sql.js doesn't
-	// support IF NOT EXISTS on ALTER TABLE — second run throws "duplicate
-	// column name".
+	await db.execute(`CREATE INDEX IF NOT EXISTS runs_ended_at_desc ON runs (ended_at DESC);`);
+}
+
+/**
+ * STO1b — one-time migration from the legacy sql.js + localStorage
+ * blob into the new Capacitor table. Only runs when a legacy blob is
+ * present AND the new table is empty (so re-running on a database
+ * that already received the migration is a safe no-op). On success
+ * the legacy key is removed; on any failure the legacy key is left
+ * in place so a future agent can debug without permanent data loss.
+ */
+async function migrateLegacyBlobIfPresent(db: DatabaseAdapter): Promise<number> {
+	if (typeof localStorage === "undefined") return 0;
+	const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+	if (!raw) return 0;
+	const existing = await db.query<{ n: number }>(`SELECT COUNT(*) AS n FROM runs`);
+	if ((existing[0]?.n ?? 0) > 0) {
+		// New table already has rows — don't double-import. Drop the
+		// legacy key now so future opens skip the work.
+		localStorage.removeItem(LEGACY_STORAGE_KEY);
+		return 0;
+	}
 	try {
-		db.run(`ALTER TABLE runs ADD COLUMN total_secrets INTEGER NOT NULL DEFAULT 0`);
-	} catch {
-		// Column already exists from a prior run — fine.
+		const binary = atob(raw);
+		const bytes = new Uint8Array(binary.length);
+		for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+		// Late-load sql.js ONLY for the migration path. Production
+		// runtime never touches sql.js again after this; the dep can
+		// be dropped once every shipped install has run the migration.
+		const initSqlJs = (await import("sql.js")).default;
+		const { A } = await import("./assetUrl");
+		const SQL = await initSqlJs({ locateFile: () => A("/assets/wasm/sql-wasm.wasm") });
+		const legacy = new SQL.Database(bytes);
+		const rows = legacy.exec(`
+			SELECT started_at, ended_at, levels_cleared, total_kills,
+			       total_damage_taken,
+			       COALESCE(total_secrets, 0) AS total_secrets,
+			       level_set, outcome
+			FROM runs
+			ORDER BY ended_at ASC
+		`);
+		legacy.close();
+		if (rows.length === 0) {
+			localStorage.removeItem(LEGACY_STORAGE_KEY);
+			return 0;
+		}
+		const values = rows[0].values;
+		for (const row of values) {
+			await db.execute(
+				`INSERT INTO runs (started_at, ended_at, levels_cleared, total_kills,
+				                   total_damage_taken, total_secrets, level_set, outcome)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				row as unknown[],
+			);
+		}
+		await db.saveToStore?.();
+		localStorage.removeItem(LEGACY_STORAGE_KEY);
+		return values.length;
+	} catch (err) {
+		console.warn("[STO1b] legacy run-history migration failed; leaving legacy key in place:", err);
+		return 0;
 	}
 }
 
 /**
  * A handle to the open history db. Construct once per app lifetime via
- * `openRunHistory()`. All writes immediately re-persist to localStorage,
- * so there is no `flush()` / `close()` step required for correctness.
+ * `openRunHistory()`. All writes immediately persist; there is no
+ * `flush()` / `close()` step required for correctness.
  */
 export type RunHistory = Readonly<{
-	insert(record: RunInsert, now: number): RunRecord;
-	listRecent(limit: number): RunRecord[];
-	bestRun(): RunRecord | null;
-	runCount(): number;
+	insert(record: RunInsert, now: number): Promise<RunRecord>;
+	listRecent(limit: number): Promise<RunRecord[]>;
+	bestRun(): Promise<RunRecord | null>;
+	runCount(): Promise<number>;
 	/** Drop everything. Used by tests and the debug HUD reset button. */
-	clear(): void;
+	clear(): Promise<void>;
 }>;
 
 export async function openRunHistory(): Promise<RunHistory> {
-	const SQL = await initSqlJs({
-		// Resolve via the asset-url helper so GitHub-Pages base prefix
-		// + Capacitor file:// origins both work.
-		locateFile: () => A("/assets/wasm/sql-wasm.wasm"),
-	});
-	const existing = decodeStoredBlob();
-	const db = existing ? new SQL.Database(existing) : new SQL.Database();
-	ensureSchema(db);
+	const db = await createDatabase();
+	await ensureSchema(db);
+	await migrateLegacyBlobIfPresent(db);
 
-	const insert: RunHistory["insert"] = (record, now) => {
-		db.run(
+	const insert: RunHistory["insert"] = async (record, now) => {
+		await db.execute(
 			`INSERT INTO runs (started_at, ended_at, levels_cleared, total_kills,
 			                   total_damage_taken, total_secrets, level_set, outcome)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -136,51 +164,44 @@ export async function openRunHistory(): Promise<RunHistory> {
 				record.outcome,
 			],
 		);
-		const stmt = db.prepare(`SELECT * FROM runs WHERE id = last_insert_rowid()`);
-		stmt.step();
-		const row = stmt.getAsObject() as Record<string, unknown>;
-		stmt.free();
-		encodeAndStore(db);
-		return rowToRecord(row);
-	};
-
-	const listRecent: RunHistory["listRecent"] = (limit) => {
-		const stmt = db.prepare(`SELECT * FROM runs ORDER BY ended_at DESC LIMIT ?`);
-		stmt.bind([limit]);
-		const out: RunRecord[] = [];
-		while (stmt.step()) out.push(rowToRecord(stmt.getAsObject() as Record<string, unknown>));
-		stmt.free();
-		return out;
-	};
-
-	const bestRun: RunHistory["bestRun"] = () => {
-		// "Best" = furthest progress, then highest kills, then earliest run
-		// among ties (so the first time you hit a milestone wins).
-		const stmt = db.prepare(`
-			SELECT * FROM runs
-			ORDER BY levels_cleared DESC, total_kills DESC, ended_at ASC
-			LIMIT 1
-		`);
-		if (!stmt.step()) {
-			stmt.free();
-			return null;
+		await db.saveToStore?.();
+		// sqlite's last_insert_rowid() requires plugin-specific syntax;
+		// instead we re-query by ended_at + outcome which is unique
+		// enough within a single-process write (millisecond timestamps
+		// + ordered descending). Simpler than threading rowid through
+		// the adapter contract.
+		const rows = await db.query<RunRow>(`SELECT * FROM runs ORDER BY id DESC LIMIT ?`, [1]);
+		if (rows.length === 0) {
+			throw new Error("runHistory.insert: row not found after INSERT");
 		}
-		const row = stmt.getAsObject() as Record<string, unknown>;
-		stmt.free();
-		return rowToRecord(row);
+		return rowToRecord(rows[0]);
 	};
 
-	const runCount: RunHistory["runCount"] = () => {
-		const stmt = db.prepare(`SELECT COUNT(*) AS n FROM runs`);
-		stmt.step();
-		const row = stmt.getAsObject() as { n: number };
-		stmt.free();
-		return Number(row.n) || 0;
+	const listRecent: RunHistory["listRecent"] = async (limit) => {
+		const rows = await db.query<RunRow>(`SELECT * FROM runs ORDER BY ended_at DESC LIMIT ?`, [
+			limit,
+		]);
+		return rows.map(rowToRecord);
 	};
 
-	const clear: RunHistory["clear"] = () => {
-		db.run(`DELETE FROM runs`);
-		encodeAndStore(db);
+	const bestRun: RunHistory["bestRun"] = async () => {
+		// "Best" = furthest progress, then highest kills, then earliest
+		// run among ties (so the first time you hit a milestone wins).
+		const rows = await db.query<RunRow>(
+			`SELECT * FROM runs ORDER BY levels_cleared DESC, total_kills DESC, ended_at ASC LIMIT ?`,
+			[1],
+		);
+		return rows.length === 0 ? null : rowToRecord(rows[0]);
+	};
+
+	const runCount: RunHistory["runCount"] = async () => {
+		const rows = await db.query<{ n: number }>(`SELECT COUNT(*) AS n FROM runs`);
+		return Number(rows[0]?.n ?? 0);
+	};
+
+	const clear: RunHistory["clear"] = async () => {
+		await db.execute(`DELETE FROM runs`);
+		await db.saveToStore?.();
 	};
 
 	return { insert, listRecent, bestRun, runCount, clear };
@@ -210,7 +231,19 @@ export function formatRunDuration(ms: number): string {
 	return `${minutes}:${ss}`;
 }
 
-function rowToRecord(row: Record<string, unknown>): RunRecord {
+interface RunRow {
+	id: number;
+	started_at: number;
+	ended_at: number;
+	levels_cleared: number;
+	total_kills: number;
+	total_damage_taken: number;
+	total_secrets: number | null;
+	level_set: string;
+	outcome: string;
+}
+
+function rowToRecord(row: RunRow): RunRecord {
 	return {
 		id: Number(row.id),
 		startedAt: Number(row.started_at),

@@ -711,7 +711,7 @@ export function ObjexoomShell() {
 		void (async () => {
 			try {
 				if (!runHistoryRef.current) runHistoryRef.current = await openRunHistory();
-				runHistoryRef.current.insert(
+				await runHistoryRef.current.insert(
 					{
 						startedAt: state.run.runStartAt,
 						levelsCleared: state.run.runLevelsCleared,

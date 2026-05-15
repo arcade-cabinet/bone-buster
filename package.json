@@ -50,11 +50,13 @@
 		"verify": "pnpm check && pnpm lint && pnpm test && pnpm test:browser && pnpm assets:verify-runtime"
 	},
 	"dependencies": {
+		"@capacitor-community/sqlite": "^8.1.0",
 		"@capacitor/preferences": "^8.0.1",
 		"@react-three/drei": "^10.7.7",
 		"@react-three/fiber": "^9.6.1",
 		"@react-three/postprocessing": "^3.0.4",
 		"framer-motion": "^12.38.0",
+		"jeep-sqlite": "^2.8.0",
 		"postprocessing": "^6.39.1",
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5",
