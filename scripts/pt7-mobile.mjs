@@ -6,8 +6,8 @@
  * tappable on small screen.
  */
 
-import { chromium, devices } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import { chromium, devices } from "@playwright/test";
 
 const OUT = "test-results/pt7-mobile";
 await mkdir(OUT, { recursive: true });
@@ -59,7 +59,13 @@ console.log("PT7.3 — mission complete ceremony on mobile (fresh ctx)");
 await browser.close();
 const browser2 = await chromium.launch({
 	headless: true,
-	args: ["--no-sandbox", "--mute-audio", "--use-angle=gl", "--enable-webgl", "--ignore-gpu-blocklist"],
+	args: [
+		"--no-sandbox",
+		"--mute-audio",
+		"--use-angle=gl",
+		"--enable-webgl",
+		"--ignore-gpu-blocklist",
+	],
 });
 const ctx2 = await browser2.newContext({
 	...devices["Pixel 5"],
