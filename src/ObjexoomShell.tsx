@@ -19,7 +19,12 @@ import {
 	type RunStats,
 	runStatsReducer,
 } from "./runStats";
-import { DEFAULT_SETTINGS, DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
+import {
+	DEFAULT_SETTINGS,
+	DIFFICULTY_TUNING,
+	type Difficulty,
+	type ObjexoomSettings,
+} from "./settings";
 import {
 	ensureSfx,
 	playFlashlightClick,
@@ -210,6 +215,12 @@ declare global {
 			collectAllPickups: () => void;
 			triggerWin: () => void;
 			forceMissionComplete: () => void;
+			// POL31 — debug-only difficulty setter so playtest scripts can
+			// capture the DifficultyChip in each of the 5 palettes without
+			// driving the landing-page Settings panel (touch-hostile in
+			// Playwright). Settings is the source of truth; this hook
+			// mutates it the same way the landing settings UI would.
+			setDifficulty: (difficulty: Difficulty) => void;
 		};
 	}
 }
@@ -543,6 +554,24 @@ export function ObjexoomShell() {
 			prev.status === "landing" && prev.hp > 0 ? { ...prev, status: "playing" } : prev,
 		);
 	}, []);
+
+	// POL31 — monotonic run id, bumped on every landing→playing
+	// transition. Threaded into ObjexoomHUD → HUDOverlays → DifficultyChip
+	// where a useEffect on `runId` triggers the 2-second acknowledgment
+	// chip. Prop-driven (not event-driven) because the HUD subtree only
+	// mounts AFTER the landing→playing transition (AnimatePresence
+	// mode="wait" adds a ~350ms exit animation), so an event would fire
+	// before the listener exists; the chip's first effect after mount
+	// runs *after* runId is non-zero, which is the natural trigger.
+	const [runId, setRunId] = useState(0);
+	const prevStatusRef = useRef<GameStatus>(state.status);
+	useEffect(() => {
+		const prev = prevStatusRef.current;
+		prevStatusRef.current = state.status;
+		if (prev === "landing" && state.status === "playing") {
+			setRunId((id) => id + 1);
+		}
+	}, [state.status]);
 	const hasPausedRun =
 		state.status === "landing" &&
 		state.run.runStartAt > 0 &&
@@ -783,6 +812,9 @@ export function ObjexoomShell() {
 			forceMissionComplete: () => {
 				setState((prev) => ({ ...prev, status: "won" }));
 			},
+			setDifficulty: (difficulty: Difficulty) => {
+				setSettings((prev) => ({ ...prev, difficulty }));
+			},
 		};
 		return () => {
 			delete window.__objexoom;
@@ -951,6 +983,8 @@ export function ObjexoomShell() {
 								onSelectWeapon={onSelectWeapon}
 								level={settings.level}
 								archetype={pickArchetype(map)}
+								difficulty={settings.difficulty}
+								runId={runId}
 							/>
 							<AnimatePresence>
 								{fadeTrigger && <FadeOverlay key={fadeTrigger.id} trigger={fadeTrigger} />}

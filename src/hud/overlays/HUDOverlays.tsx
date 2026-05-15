@@ -1,4 +1,6 @@
 import type { GameState, LevelPhase } from "../../ObjexoomShell";
+import type { Difficulty } from "../../settings";
+import { DifficultyChip } from "./DifficultyChip";
 import { GoingBackOverlay } from "./GoingBackOverlay";
 import { KeyPickupCeremony } from "./KeyPickupCeremony";
 import { MissionCompleteCeremony } from "./MissionCompleteCeremony";
@@ -18,14 +20,19 @@ import { SecretFoundFlash } from "./SecretFoundFlash";
  *   - KeyPickupCeremony        (event: keyPickedUp)              POL22
  *   - GoingBackOverlay         (state: phase === "going_back")   POL26
  *   - MissionCompleteCeremony  (state: status === "won")         PT1B
+ *   - DifficultyChip           (prop:  runId advances)           POL31
  */
 export function HUDOverlays({
 	phase,
 	state,
+	difficulty,
+	runId,
 	onReturnToMenu,
 }: {
 	phase: LevelPhase;
 	state: GameState;
+	difficulty: Difficulty;
+	runId: number;
 	onReturnToMenu: () => void;
 }) {
 	return (
@@ -33,6 +40,7 @@ export function HUDOverlays({
 			<SecretFoundFlash />
 			<KeyPickupCeremony />
 			<PickupChip />
+			<DifficultyChip difficulty={difficulty} runId={runId} />
 			<GoingBackOverlay phase={phase} />
 			<MissionCompleteCeremony state={state} onReturnToMenu={onReturnToMenu} />
 		</>

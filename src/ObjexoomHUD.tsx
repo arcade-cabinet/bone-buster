@@ -14,7 +14,7 @@ import { HUDOverlays } from "./hud/overlays/HUDOverlays";
 import type { GameState } from "./ObjexoomShell";
 import type { PropArchetype } from "./scatter/propPool";
 import { HudKey3D } from "./scene/hud/HudKey3D";
-import { LEVEL_LABEL, type LevelChoice } from "./settings";
+import { type Difficulty, LEVEL_LABEL, type LevelChoice } from "./settings";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "./weapons";
 
 type ObjexoomHUDProps = Readonly<{
@@ -32,6 +32,11 @@ type ObjexoomHUDProps = Readonly<{
 	 * `M1 · CORRIDOR`).
 	 */
 	archetype: PropArchetype;
+	// POL31 — chosen difficulty + monotonic run id; threaded through to
+	// the DifficultyChip overlay slot which fires its 2s acknowledgment
+	// every time runId advances.
+	difficulty: Difficulty;
+	runId: number;
 }>;
 
 export function ObjexoomHUD({
@@ -43,6 +48,8 @@ export function ObjexoomHUD({
 	onSelectWeapon,
 	level,
 	archetype,
+	difficulty,
+	runId,
 }: ObjexoomHUDProps) {
 	const currentSpec = WEAPONS[state.weapon];
 	const currentAmmo = state.ammo[state.weapon];
@@ -73,7 +80,13 @@ export function ObjexoomHUD({
 			    key-acquired, POL26 going-back klaxon) live in
 			    src/hud/overlays/ per docs/SLOT-ARCHITECTURE.md §1.
 			    HUDOverlays mounts all four and forwards phase + state. */}
-			<HUDOverlays phase={state.phase} state={state} onReturnToMenu={onReturnToLanding} />
+			<HUDOverlays
+				phase={state.phase}
+				state={state}
+				difficulty={difficulty}
+				runId={runId}
+				onReturnToMenu={onReturnToLanding}
+			/>
 			{/* E10 — 3D spinning key model. Mounts only when hasKey is
 			    true (no Canvas → no WebGL cost otherwise). Flashes red on
 			    player-hit via the keyFlashUntil deadline. */}
