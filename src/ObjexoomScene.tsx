@@ -317,6 +317,10 @@ export function ObjexoomScene({
 	// don't re-play it on every re-entry to chase state. Reset implicitly
 	// when the Scene remounts on level change (key=settings.level-…).
 	const aggroFiredRef = useRef<Set<number>>(new Set());
+	// POL36 — track which boss-tier enemies have already dispatched the
+	// "BOSS APPROACHES" banner. Per-Scene-instance (resets on level
+	// remount), so a 2nd visit to the same map fires the banner fresh.
+	const bossSpottedFiredRef = useRef<Set<number>>(new Set());
 
 	// Y3 — player velocity for imp Pursuit lead-target. Computed from the
 	// previous frame's XZ position. Stored as a ref so it survives across
@@ -621,6 +625,7 @@ export function ObjexoomScene({
 			enemyMeshesRef: enemyMeshes,
 			lastSeenRef,
 			aggroFiredRef,
+			bossSpottedFiredRef,
 			collisionCtxRef,
 			gameRef,
 			map,
@@ -675,7 +680,12 @@ export function ObjexoomScene({
 				debugKilledSpawnsRef.current.add(tag);
 				enemy.dead = true;
 				killsThisTick += 1;
-				if (enemy.tier === "boss") bossKillsThisTick += 1;
+				if (enemy.tier === "boss") {
+					bossKillsThisTick += 1;
+					// POL36 — debug kill should also surface the boss-defeated
+					// banner so playtest captures see the modernized beat.
+					dispatch({ type: "bossDefeated", enemyId: enemy.id });
+				}
 				const mesh = enemyMeshes.current.get(enemy.id);
 				if (mesh) mesh.visible = false;
 				// Y1 — debug-kill also drops the enemy's yuka GameEntity so the

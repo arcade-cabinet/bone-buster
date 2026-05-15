@@ -263,7 +263,14 @@ export function resolveFire(ctx: FireResolutionContext): void {
 				killsThisShot += 1;
 				// POL10 — track boss kills in this shot so we can layer the
 				// boss-down sting on top of the standard skeleton-death cue.
-				if (bestEnemy.tier === "boss") bossKillsThisShot += 1;
+				if (bestEnemy.tier === "boss") {
+					bossKillsThisShot += 1;
+					// POL36 — boss-defeated banner. Per-enemy dispatch (not
+					// shot-level) so multi-boss maps fire one banner per
+					// boss-down. The audio is carried by POL10-v2's
+					// playBossDeath() which fires once per shot at line ~310.
+					dispatch({ type: "bossDefeated", enemyId: bestEnemy.id });
+				}
 				const mesh = enemyMeshesRef.current.get(bestEnemy.id);
 				if (mesh) mesh.visible = false;
 				if (bestEnemy.kind === "imp") {

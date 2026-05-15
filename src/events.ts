@@ -203,6 +203,29 @@ export interface PickupCollectedEvent {
 	kind: string;
 }
 
+/**
+ * POL36 — fires the first time the player camera has line-of-sight
+ * to any tier="boss" enemy on the current map. The BossBanner HUD
+ * slot listens for this and renders a one-shot "⚠ BOSS APPROACHES"
+ * stencil card. One dispatch per map (the player tick loop guards
+ * via a Set<enemyId>).
+ */
+export interface BossSpottedEvent {
+	type: "bossSpotted";
+	enemyId: number;
+}
+
+/**
+ * POL36 — fires when a tier="boss" enemy dies. The BossBanner HUD
+ * slot renders a "✦ BOSS DEFEATED" celebratory card. POL10-v2's
+ * existing boss-death audio sting carries the audio half; this
+ * event just gates the HUD card.
+ */
+export interface BossDefeatedEvent {
+	type: "bossDefeated";
+	enemyId: number;
+}
+
 export type ObjexoomEvent =
 	| BurstEvent
 	| BodyPartsEvent
@@ -223,7 +246,9 @@ export type ObjexoomEvent =
 	| DamageNumberEvent
 	| KeyPickedUpEvent
 	| FlashlightAcquiredEvent
-	| PickupCollectedEvent;
+	| PickupCollectedEvent
+	| BossSpottedEvent
+	| BossDefeatedEvent;
 
 export type ObjexoomEventType = ObjexoomEvent["type"];
 
