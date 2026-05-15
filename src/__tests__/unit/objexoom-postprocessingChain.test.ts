@@ -141,9 +141,12 @@ describe("A3 — stepLowQuality state machine", () => {
 		expect(r.consecutiveHigh).toBe(0);
 	});
 
-	it("idempotent: low fps when already lowQuality does not re-flip", () => {
-		// Once lowQuality is true, additional low windows should not
-		// keep clobbering the counter or re-triggering the transition.
+	it("idempotent: low fps when already lowQuality does not increment counter", () => {
+		// Once lowQuality is true, additional low windows are a no-op —
+		// the early-return prevents consecutiveLow from growing
+		// unboundedly across a sustained slow session.
+		// (Patched after comprehensive-review:code-reviewer flagged the
+		// pre-patch unbounded-counter path.)
 		const f1 = stepLowQuality({
 			avgFps: 25,
 			lowQuality: true,
@@ -151,7 +154,7 @@ describe("A3 — stepLowQuality state machine", () => {
 			consecutiveHigh: 0,
 		});
 		expect(f1.lowQuality).toBe(true);
-		expect(f1.consecutiveLow).toBe(1);
+		expect(f1.consecutiveLow).toBe(0);
 
 		const f2 = stepLowQuality({
 			avgFps: 25,
@@ -159,7 +162,43 @@ describe("A3 — stepLowQuality state machine", () => {
 			consecutiveLow: f1.consecutiveLow,
 			consecutiveHigh: f1.consecutiveHigh,
 		});
-		// counter resets to 0 on the "trigger" path but lowQuality stays true.
 		expect(f2.lowQuality).toBe(true);
+		expect(f2.consecutiveLow).toBe(0);
+	});
+
+	it("idempotent: high fps when already full quality does not increment counter", () => {
+		// Symmetric counterpart — sustained high fps while already
+		// at full quality is a no-op, no counter growth.
+		const f1 = stepLowQuality({
+			avgFps: 58,
+			lowQuality: false,
+			consecutiveLow: 0,
+			consecutiveHigh: 0,
+		});
+		expect(f1.lowQuality).toBe(false);
+		expect(f1.consecutiveHigh).toBe(0);
+	});
+
+	it("oscillation: alternating low/high never flips (debounce contract)", () => {
+		// 6 alternating windows: [low, high, low, high, low, high].
+		// Each window resets the opposite counter, so neither side
+		// ever reaches the 2-consecutive threshold. lowQuality stays
+		// false throughout. Pins the debounce contract against
+		// future drift (e.g. someone changing `>= 2` to `> 2`).
+		const seq = [25, 58, 25, 58, 25, 58];
+		let state = {
+			lowQuality: false,
+			consecutiveLow: 0,
+			consecutiveHigh: 0,
+		};
+		for (const fps of seq) {
+			state = stepLowQuality({
+				avgFps: fps,
+				lowQuality: state.lowQuality,
+				consecutiveLow: state.consecutiveLow,
+				consecutiveHigh: state.consecutiveHigh,
+			});
+			expect(state.lowQuality).toBe(false);
+		}
 	});
 });

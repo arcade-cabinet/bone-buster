@@ -1,23 +1,35 @@
 import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
+import type { JSX } from "react";
 import { useEffect, useState } from "react";
 import { addObjexoomListener } from "../../events";
 import { HitChromaticAberration } from "./HitChromaticAberration";
 
 /**
  * A3 — selective postprocess chain. The EffectComposer owns Bloom +
- * HitChromaticAberration + Vignette. When the AdaptiveResolution
- * downgrade ladder is already at floor and FPS is still <30 for two
- * consecutive windows we drop Bloom from the chain — full-screen
- * Bloom is the heaviest pass and unmounting it is the next-cheapest
- * lever once pixel-ratio can no longer shrink. Restored at >55fps
- * for two consecutive windows.
+ * HitChromaticAberration + Vignette. When sustained avgFps drops
+ * below 30 for two consecutive 60-frame windows, Bloom is removed
+ * from the pass list — full-screen Bloom is the heaviest pass and
+ * unmounting it is a cheap lever that parallels AdaptiveResolution's
+ * pixel-ratio drop. Restored at >55fps for two consecutive windows.
  *
  * The state machine is pure (`stepLowQuality`) so the band math is
  * unit-testable without mounting r3f or the EventTarget bus.
  *
- * Counters live in module-local React state because mount/unmount of
- * a postprocessing pass is a React tree operation — refs alone won't
- * re-render the EffectComposer children.
+ * Implementation note — the EffectComposer is mounted ONCE; its
+ * children are diffed via the library's useLayoutEffect, which
+ * calls `removePass` for removed effects and `addPass` for added
+ * effects on every children-prop change. We rely on that behavior
+ * to swap Bloom in/out without rebuilding the composer itself
+ * (composer rebuild would leak HalfFloat MRTs on every flip).
+ *
+ * Pre-review this file used a React `key` flip on `<EffectComposer>`
+ * to force a clean rebuild; that approach was rejected after
+ * `comprehensive-review:code-reviewer` inspected
+ * `@react-three/postprocessing` v3 internals and confirmed the
+ * composer is built in `useMemo` (not re-keyed by children) and
+ * its cleanup `removePass`es without `.dispose()`ing — the `key`
+ * flip leaked the previous composer's framebuffers, which is the
+ * exact failure A3 is meant to mitigate.
  *
  * Source: PERF audit Architectural C.
  */
@@ -53,18 +65,30 @@ export function stepLowQuality(input: StepLowQualityInput): StepLowQualityResult
 	let { lowQuality, consecutiveLow, consecutiveHigh } = input;
 
 	if (avgFps < 30) {
-		consecutiveLow += 1;
+		// Reset the opposite-direction counter unconditionally so
+		// an alternating low/high sequence never accumulates either
+		// streak past 1 (the debounce contract).
 		consecutiveHigh = 0;
-		if (consecutiveLow >= 2 && !lowQuality) {
-			lowQuality = true;
-			consecutiveLow = 0;
+		// If we're already in lowQuality, no transition can fire
+		// from another low window — skip the counter bump so it
+		// stays bounded across a sustained slow session.
+		// (Patched after comprehensive-review:code-reviewer flagged
+		// the pre-patch unbounded-counter path.)
+		if (!lowQuality) {
+			consecutiveLow += 1;
+			if (consecutiveLow >= 2) {
+				lowQuality = true;
+				consecutiveLow = 0;
+			}
 		}
 	} else if (avgFps > 55) {
-		consecutiveHigh += 1;
 		consecutiveLow = 0;
-		if (consecutiveHigh >= 2 && lowQuality) {
-			lowQuality = false;
-			consecutiveHigh = 0;
+		if (lowQuality) {
+			consecutiveHigh += 1;
+			if (consecutiveHigh >= 2) {
+				lowQuality = false;
+				consecutiveHigh = 0;
+			}
 		}
 	} else {
 		consecutiveLow = 0;
@@ -97,27 +121,19 @@ export function PostprocessingChain() {
 		});
 	}, []);
 
-	// A3 — re-mount the EffectComposer when `lowQuality` flips. The
-	// composer internally builds an EffectPass over its children at
-	// mount and does not reconcile pass swaps on child-array diffs;
-	// keying on `lowQuality` forces a clean rebuild so Bloom is gone
-	// from the pass chain entirely (not just hidden). Branching at
-	// JSX level (not via `children?` array) keeps the EffectComposer
-	// children-prop type happy across @react-three/postprocessing
-	// versions.
-	if (lowQuality) {
-		return (
-			<EffectComposer key="low">
-				<HitChromaticAberration />
-				<Vignette eskil={false} offset={0.25} darkness={0.7} />
-			</EffectComposer>
-		);
-	}
-	return (
-		<EffectComposer key="full">
-			<Bloom intensity={0.45} luminanceThreshold={0.55} luminanceSmoothing={0.2} />
-			<HitChromaticAberration />
-			<Vignette eskil={false} offset={0.25} darkness={0.7} />
-		</EffectComposer>
-	);
+	// A3 — single EffectComposer mount, children swapped in/out by
+	// the library's useLayoutEffect (addPass/removePass on child
+	// diff). Filtering nulls into the array satisfies
+	// EffectComposerProps.children type. The `as JSX.Element[]`
+	// cast is safe because the filter strips every null and the
+	// remaining values are concrete component elements.
+	const passes: Array<JSX.Element | null> = [
+		lowQuality ? null : (
+			<Bloom key="bloom" intensity={0.45} luminanceThreshold={0.55} luminanceSmoothing={0.2} />
+		),
+		<HitChromaticAberration key="chromatic" />,
+		<Vignette key="vignette" eskil={false} offset={0.25} darkness={0.7} />,
+	];
+	const children = passes.filter((p): p is JSX.Element => p !== null);
+	return <EffectComposer>{children}</EffectComposer>;
 }
