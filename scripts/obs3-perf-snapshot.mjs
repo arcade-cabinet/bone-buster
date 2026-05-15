@@ -58,6 +58,12 @@ const ARCHETYPES = ["corridor", "arena", "courtyard", "sewer", "library"];
 const OBS3_CALL_BUDGET = 1000;
 const OBS3_TRI_BUDGET = 100_000;
 const REGRESSION_RATIO = 1.1; // 10% above baseline = fail
+// T4 — avgFps floor for desktop CI. The 3-second probe runs in
+// headless ANGLE-GL Chromium on a GitHub Actions ubuntu runner (no
+// GPU acceleration); the realistic floor is conservative. Mid-tier
+// mobile (Pixel 5a class) is enforced separately by T5's emulator job
+// when that lands.
+const OBS3_FPS_FLOOR = 50;
 
 const LAUNCH_ARGS = [
 	"--no-sandbox",
@@ -118,13 +124,18 @@ async function snapshotArchetype(archetype) {
 		}
 	});
 
-	// Sample the OBS1 fpsUpdate stream for 3 seconds, tracking peak.
+	// Sample the OBS1 fpsUpdate stream for 3 seconds, tracking peak +
+	// the LOWEST avgFps reading (T4 — avgFps gate). Min-fps is more
+	// conservative than mean-of-mean since it surfaces the worst
+	// 60-frame window in the sample, which is what would cause an
+	// adaptive-resolution downgrade in real gameplay.
 	const sample = await page.evaluate(
 		() =>
 			new Promise((resolve) => {
 				let peakCalls = 0;
 				let peakTris = 0;
 				let frames = 0;
+				let minFps = Infinity;
 				const handler = (e) => {
 					const detail = e.detail ?? {};
 					if (typeof detail.drawCalls === "number" && detail.drawCalls > peakCalls) {
@@ -133,12 +144,20 @@ async function snapshotArchetype(archetype) {
 					if (typeof detail.triangles === "number" && detail.triangles > peakTris) {
 						peakTris = detail.triangles;
 					}
+					if (typeof detail.fps === "number" && detail.fps < minFps) {
+						minFps = detail.fps;
+					}
 					frames += 1;
 				};
 				window.addEventListener("objexoom:fpsUpdate", handler);
 				setTimeout(() => {
 					window.removeEventListener("objexoom:fpsUpdate", handler);
-					resolve({ peakCalls, peakTris, frames });
+					resolve({
+						peakCalls,
+						peakTris,
+						frames,
+						minFps: Number.isFinite(minFps) ? minFps : null,
+					});
 				}, 3000);
 			}),
 	);
@@ -162,8 +181,10 @@ for (const archetype of ARCHETYPES) {
 	const baselinePath = `${BASELINE_DIR}/${archetype}.json`;
 	const baseline = await readJsonIfExists(baselinePath);
 
+	const minFpsDisplay =
+		sample.minFps != null ? `${sample.minFps.toFixed(1)} (floor ${OBS3_FPS_FLOOR})` : "n/a";
 	console.log(
-		`  → calls peak ${sample.peakCalls} (budget ${OBS3_CALL_BUDGET}) · tris peak ${sample.peakTris} (budget ${OBS3_TRI_BUDGET}) · frames sampled ${sample.frames}`,
+		`  → calls peak ${sample.peakCalls} (budget ${OBS3_CALL_BUDGET}) · tris peak ${sample.peakTris} (budget ${OBS3_TRI_BUDGET}) · minFps ${minFpsDisplay} · frames sampled ${sample.frames}`,
 	);
 
 	// OBS3 budget check.
@@ -173,6 +194,15 @@ for (const archetype of ARCHETYPES) {
 	if (sample.peakTris > OBS3_TRI_BUDGET) {
 		failures.push(
 			`${archetype}: triangles peak ${sample.peakTris} > OBS3 budget ${OBS3_TRI_BUDGET}`,
+		);
+	}
+	// T4 — avgFps floor check. Only fire if we got at least one sample;
+	// a 3-second window that produced zero fpsUpdate events means the
+	// 60-frame AdaptiveResolution buffer never filled (very slow load
+	// or sub-20fps for the whole probe), which is itself a regression.
+	if (sample.minFps != null && sample.minFps < OBS3_FPS_FLOOR) {
+		failures.push(
+			`${archetype}: minFps ${sample.minFps.toFixed(1)} < OBS3 floor ${OBS3_FPS_FLOOR}`,
 		);
 	}
 

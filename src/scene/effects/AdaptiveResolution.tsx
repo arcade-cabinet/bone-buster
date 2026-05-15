@@ -2,6 +2,64 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 
 /**
+ * T2 — pure step function for the AdaptiveResolution downgrade/upgrade
+ * ladder. Extracted so the state-machine logic can be unit-tested
+ * without mounting r3f. The component below is a thin wrapper that
+ * pumps useFrame deltas through this function and writes the result
+ * back to `gl.setPixelRatio()`.
+ *
+ * Contract:
+ *  - avgFps < 30 increments `consecutiveLow`, resets `consecutiveHigh`.
+ *    On the 2nd consecutive low, drop ratio by 0.1 (floor 0.5).
+ *  - avgFps > 55 increments `consecutiveHigh`, resets `consecutiveLow`.
+ *    On the 2nd consecutive high, raise ratio by 0.1 (cap `cap`).
+ *  - In-band (30..55) resets both counters.
+ *
+ * Returns `next` ratio plus the updated counters. Caller swaps in
+ * `next` for `current` on the next call.
+ */
+export type StepPixelRatioInput = Readonly<{
+	avgFps: number;
+	current: number;
+	cap: number;
+	consecutiveLow: number;
+	consecutiveHigh: number;
+}>;
+
+export type StepPixelRatioResult = Readonly<{
+	next: number;
+	consecutiveLow: number;
+	consecutiveHigh: number;
+}>;
+
+export function stepPixelRatio(input: StepPixelRatioInput): StepPixelRatioResult {
+	const { avgFps, current, cap } = input;
+	let { consecutiveLow, consecutiveHigh } = input;
+	let next = current;
+
+	if (avgFps < 30) {
+		consecutiveLow += 1;
+		consecutiveHigh = 0;
+		if (consecutiveLow >= 2 && current > 0.5) {
+			next = Math.max(0.5, (current * 10 - 1) / 10);
+			consecutiveLow = 0;
+		}
+	} else if (avgFps > 55) {
+		consecutiveHigh += 1;
+		consecutiveLow = 0;
+		if (consecutiveHigh >= 2 && current < cap) {
+			next = Math.min(cap, (current * 10 + 1) / 10);
+			consecutiveHigh = 0;
+		}
+	} else {
+		consecutiveLow = 0;
+		consecutiveHigh = 0;
+	}
+
+	return { next, consecutiveLow, consecutiveHigh };
+}
+
+/**
  * E12 / PA16 — adaptive resolution. Lives inside `<Canvas>`, samples
  * frame deltas through `useFrame`, and adjusts `gl.setPixelRatio()`
  * dynamically when the rolling FPS drifts out of the target band.
@@ -87,26 +145,16 @@ export function AdaptiveResolution({
 
 		const cap = window.devicePixelRatio || 1;
 		const current = ratioRef.current;
-		let next = current;
-
-		if (avgFps < 30) {
-			consecutiveLow.current += 1;
-			consecutiveHigh.current = 0;
-			if (consecutiveLow.current >= 2 && current > 0.5) {
-				next = Math.max(0.5, (current * 10 - 1) / 10);
-				consecutiveLow.current = 0;
-			}
-		} else if (avgFps > 55) {
-			consecutiveHigh.current += 1;
-			consecutiveLow.current = 0;
-			if (consecutiveHigh.current >= 2 && current < cap) {
-				next = Math.min(cap, (current * 10 + 1) / 10);
-				consecutiveHigh.current = 0;
-			}
-		} else {
-			consecutiveLow.current = 0;
-			consecutiveHigh.current = 0;
-		}
+		const stepped = stepPixelRatio({
+			avgFps,
+			current,
+			cap,
+			consecutiveLow: consecutiveLow.current,
+			consecutiveHigh: consecutiveHigh.current,
+		});
+		consecutiveLow.current = stepped.consecutiveLow;
+		consecutiveHigh.current = stepped.consecutiveHigh;
+		const next = stepped.next;
 
 		if (next !== current) {
 			ratioRef.current = next;
