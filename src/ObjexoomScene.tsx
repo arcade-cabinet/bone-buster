@@ -1,5 +1,4 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
@@ -64,7 +63,6 @@ import {
 	ExitPortalApproach,
 	Flashlight,
 	FloorTileField,
-	HitChromaticAberration,
 	KeyMarker,
 	KitchenField,
 	LampField,
@@ -74,6 +72,7 @@ import {
 	NpcField,
 	ParticleBurstField,
 	PickupMesh,
+	PostprocessingChain,
 	PropField,
 	RealDoor,
 	ReturnToSpawnBearingWriter,
@@ -1036,11 +1035,10 @@ export function ObjexoomScene({
 			    can call useFrame + useThree.gl.setPixelRatio directly. */}
 			<AdaptiveResolution onUpdate={(info) => dispatch({ type: "fpsUpdate", ...info })} />
 
-			<EffectComposer>
-				<Bloom intensity={0.45} luminanceThreshold={0.55} luminanceSmoothing={0.2} />
-				<HitChromaticAberration />
-				<Vignette eskil={false} offset={0.25} darkness={0.7} />
-			</EffectComposer>
+			{/* A3 — selective postprocess chain. PostprocessingChain owns
+			    the EffectComposer block and conditionally drops Bloom
+			    when avgFps <30 for 2 consecutive windows. */}
+			<PostprocessingChain />
 		</>
 	);
 }
