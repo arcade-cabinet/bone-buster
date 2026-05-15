@@ -4,10 +4,13 @@
  * screenshots at each beat to test-results/pt1-playtest/.
  */
 
+import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "@playwright/test";
 
 const BASE = "http://localhost:5191";
 const OUT = "test-results/pt1-playtest";
+
+await mkdir(OUT, { recursive: true });
 
 async function captureCDP(page, path) {
 	const session = await page.context().newCDPSession(page);
@@ -15,7 +18,6 @@ async function captureCDP(page, path) {
 		format: "png",
 		clip: { x: 0, y: 0, width: 1440, height: 900, scale: 1 },
 	});
-	const { writeFile } = await import("node:fs/promises");
 	await writeFile(path, Buffer.from(data, "base64"));
 }
 
