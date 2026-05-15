@@ -10,10 +10,13 @@ import type { ObjexoomMap } from "../../engine";
 import { applyArchetypeOverride } from "../../ObjexoomShell";
 
 function fakeMap(seed: number): ObjexoomMap {
-	// Only `kind`, `seed` are read by pickArchetype — give it the minimum.
+	// CONV3 — archetype is now denormalized onto the map type. The fake
+	// here mirrors what `generateMap`/`loadRefLevel` would have set so
+	// `pickArchetype(map)` round-trips correctly.
 	return {
 		kind: "grid",
 		seed,
+		archetype: ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length],
 		width: 1,
 		height: 1,
 		cells: [[]],

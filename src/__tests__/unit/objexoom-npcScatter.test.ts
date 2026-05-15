@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { ARCHETYPE_NAMES } from "../../archetype";
 import type { ObjexoomSectorMap, Vec2 } from "../../engine";
 import { spawnNpcs } from "../../scatter/npcScatter";
 
@@ -29,6 +30,7 @@ function libraryMap(seed: number): ObjexoomSectorMap {
 	return {
 		kind: "sectors",
 		seed,
+		archetype: ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length],
 		sectors,
 		playerSpawn: { x: -100, y: -100 },
 		playerYaw: 0,

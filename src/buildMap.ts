@@ -23,6 +23,12 @@ export function buildMap(
 	difficulty: Difficulty = "hurtMePlenty",
 ): ObjexoomMap {
 	if (level === "procedural") {
+		// CONV3 — this is the ONE place we recompute the archetype
+		// modulus, because `getArchetypeMapShape` needs it BEFORE
+		// `generateMap` runs to pick the per-archetype sector density.
+		// `generateMap` re-derives the same archetype internally and
+		// writes it onto the returned map's `archetype` field, so this
+		// pre-computation is a temporary the caller doesn't see.
 		const archetype = ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length];
 		return generateMap(seed, getArchetypeMapShape(archetype));
 	}

@@ -26,11 +26,12 @@ export const ARCHETYPE_NAMES: readonly PropArchetype[] = [
 ];
 
 /**
- * Deterministic per-map archetype pick. Uses `map.seed % 5` so the
- * same seed always yields the same archetype, and the 5 archetypes
- * appear in equal proportion across all possible seeds.
+ * Per-map archetype accessor. CONV3 (2026-05-15) denormalized
+ * `archetype` onto the map type — this function is now a trivial
+ * read kept for call-site readability. The single computation
+ * lives in `buildMap`/`generateMap`/`loadRefLevel`; downstream
+ * consumers MUST NOT recompute the modulus.
  */
 export function pickArchetype(map: ObjexoomMap): PropArchetype {
-	const idx = (map.seed >>> 0) % ARCHETYPE_NAMES.length;
-	return ARCHETYPE_NAMES[idx];
+	return map.archetype;
 }
