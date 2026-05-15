@@ -9,6 +9,13 @@ domain: history
 
 All notable changes to this project will be documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Conventional Commits](https://www.conventionalcommits.org).
 
+## [0.2.2](https://github.com/objexiv/objexoom/compare/v0.2.1...v0.2.2) (2026-05-15)
+
+
+### Bug Fixes
+
+* **ci:** collapse cd.yml into release.yml + add deploy-pages job ([#20](https://github.com/objexiv/objexoom/issues/20)) ([d82311c](https://github.com/objexiv/objexoom/commit/d82311cfc7c880ddc91df4d50269c6585e6dd342))
+
 ## [0.2.1](https://github.com/objexiv/objexoom/compare/v0.2.0...v0.2.1) (2026-05-15)
 
 
