@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { getReturnBearing } from "../../scene/hooks/returnBearing";
 
 /**
  * POL26 — going-back klaxon overlay (HUD overlay slot per
@@ -39,6 +40,11 @@ export function GoingBackOverlay({
 }) {
 	const [showDirective, setShowDirective] = useState(false);
 	const [remainingMs, setRemainingMs] = useState<number | null>(null);
+	// PT4B-fold — screen-space angle from camera to spawn. Polled from
+	// the scene-side ReturnToSpawnBearingWriter via a module-scope ref
+	// (much cheaper than per-frame event dispatch). Updates 4×/sec
+	// while the directive card is visible.
+	const [bearingRad, setBearingRad] = useState<number | null>(null);
 	useEffect(() => {
 		if (phase !== "going_back") {
 			setShowDirective(false);
@@ -56,6 +62,20 @@ export function GoingBackOverlay({
 			window.clearTimeout(t2);
 		};
 	}, [phase]);
+
+	// PT4B-fold — bearing tick. Same 250ms cadence as the countdown;
+	// only mounts while the directive card is visible. Reads the
+	// module-scope ref written by ReturnToSpawnBearingWriter.
+	useEffect(() => {
+		if (phase !== "going_back" || !showDirective) {
+			setBearingRad(null);
+			return;
+		}
+		const tick = () => setBearingRad(getReturnBearing());
+		tick();
+		const interval = window.setInterval(tick, 250);
+		return () => window.clearInterval(interval);
+	}, [phase, showDirective]);
 
 	// POL37 — countdown tick. Recomputes remaining ms 4x per second
 	// (every 250ms) while in going-back with a live deadline. Mounting
@@ -145,6 +165,28 @@ export function GoingBackOverlay({
 					transition={{ type: "spring", stiffness: 260, damping: 22 }}
 				>
 					RETURN TO SPAWN
+				</motion.div>
+			)}
+			{showDirective && bearingRad !== null && (
+				<motion.div
+					style={{
+						position: "absolute",
+						left: "50%",
+						top: "39%",
+						transform: `translate(-50%, -50%) rotate(${bearingRad}rad)`,
+						fontSize: 28,
+						color: "rgba(254, 226, 226, 0.95)",
+						textShadow: "0 0 12px rgba(220, 38, 38, 0.85)",
+						pointerEvents: "none",
+						fontFamily: "system-ui, monospace",
+						lineHeight: 1,
+					}}
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					exit={{ opacity: 0 }}
+					transition={{ duration: 0.4 }}
+				>
+					▲
 				</motion.div>
 			)}
 			{remainingMs !== null && (

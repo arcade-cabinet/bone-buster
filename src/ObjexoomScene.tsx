@@ -73,6 +73,7 @@ import {
 	NatureField,
 	NpcField,
 	ParticleBurstField,
+	ReturnToSpawnBearingWriter,
 	PickupMesh,
 	PropField,
 	RealDoor,
@@ -1001,6 +1002,7 @@ export function ObjexoomScene({
 			<BulletField bulletsRef={bulletsRef} register={bulletMeshes} />
 			<ParticleBurstField />
 			<BodyPartField archetype={archetype} />
+			<ReturnToSpawnBearingWriter spawnX={map.playerSpawn.x} spawnY={map.playerSpawn.y} />
 			<ShellEjectField />
 			<DamageNumberField />
 			<WeaponViewmodel

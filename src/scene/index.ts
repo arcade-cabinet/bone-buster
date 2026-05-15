@@ -10,6 +10,7 @@ export { DamageNumberField } from "./effects/DamageNumberField";
 export { Flashlight } from "./effects/Flashlight";
 export { HitChromaticAberration } from "./effects/HitChromaticAberration";
 export { ParticleBurstField } from "./effects/ParticleBurstField";
+export { ReturnToSpawnBearingWriter } from "./effects/ReturnToSpawnBearingWriter";
 export { ShellEjectField } from "./effects/ShellEjectField";
 export { BarrelMesh } from "./entities/BarrelMesh";
 export { DebrisField } from "./entities/DebrisField";
