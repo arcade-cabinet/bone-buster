@@ -15,6 +15,7 @@
 
 import { A } from "./assetUrl";
 import type { ObjexoomMap, Vec2 } from "./engine";
+import { mulberry32 } from "./prng";
 
 /**
  * The 10 PSX Mega Pack II lamp GLBs, split by on/off state.
@@ -54,17 +55,6 @@ export interface LampInstance {
 	variantIndex: number;
 	/** When true, render with LAMP_VARIANTS_ON[variantIndex] + E4's pointLight. */
 	on: boolean;
-}
-
-function mulberry32(seed: number) {
-	let s = seed >>> 0;
-	return () => {
-		s = (s + 0x6d2b79f5) >>> 0;
-		let t = s;
-		t = Math.imul(t ^ (t >>> 15), t | 1);
-		t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-	};
 }
 
 /**

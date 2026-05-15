@@ -1,4 +1,5 @@
 import { PISTOL_MAX_RANGE, PLAYER_RADIUS, SKELETON_HP, TILE } from "./constants";
+import { mulberry32 } from "./prng";
 
 export type Cell = "empty" | "wall" | "door" | "spawn" | "exit" | "key" | "lava";
 
@@ -148,17 +149,6 @@ export type GenerateMapShape = Readonly<{
 	maxRoom: number;
 	roomTries: number;
 }>;
-
-function mulberry32(seed: number) {
-	let s = seed >>> 0;
-	return () => {
-		s = (s + 0x6d2b79f5) >>> 0;
-		let t = s;
-		t = Math.imul(t ^ (t >>> 15), t | 1);
-		t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-	};
-}
 
 const cellCenter = (gx: number, gy: number): Vec2 => ({
 	x: (gx + 0.5) * TILE,
