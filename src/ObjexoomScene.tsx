@@ -73,10 +73,10 @@ import {
 	NatureField,
 	NpcField,
 	ParticleBurstField,
-	ReturnToSpawnBearingWriter,
 	PickupMesh,
 	PropField,
 	RealDoor,
+	ReturnToSpawnBearingWriter,
 	SecretField,
 	SectorMapGeometry,
 	ShellEjectField,
@@ -669,6 +669,7 @@ export function ObjexoomScene({
 	// rest of this Scene's lifetime — even if React schedules an extra
 	// effect tick, the dead-spawn-position set blocks double-credit.
 	const debugKilledSpawnsRef = useRef<Set<string>>(new Set());
+	// biome-ignore lint/correctness/useExhaustiveDependencies: camera.position is a mutable three.js Vector3 read at event-fire time (debug kill / collect pickups). Treating .x/.z as dep would force re-subscribe per frame, which is wrong — the listener registration only needs `camera` identity stability.
 	useEffect(() => {
 		const runDebugKill = (predicate: (e: Enemy) => boolean) => {
 			let killsThisTick = 0;
@@ -724,6 +725,21 @@ export function ObjexoomScene({
 				playSkeletonDeath();
 				if (bossKillsThisTick > 0) playBossDeath();
 				if (settings.soundEnabled) playBoom();
+				// PT1C-fold — synthetic burst at camera-forward so playtest
+				// captures reliably show POL16's layered burst (impact
+				// sparks + smoke + ember trails) even when the killed
+				// enemies are off-frame. Production fire-resolution path
+				// is unchanged — the per-enemy bursts at real hit
+				// positions are still emitted (lines ~683 above). This
+				// is purely a debug-camera-framing additive event.
+				const forwardX = -Math.sin(camera.rotation.y);
+				const forwardZ = -Math.cos(camera.rotation.y);
+				dispatch({
+					type: "burst",
+					x: camera.position.x + forwardX * 2.5,
+					y: camera.position.z + forwardZ * 2.5,
+					kind: "damage",
+				});
 			}
 		};
 		const onDebugKillAll = () => runDebugKill(() => true);
