@@ -1,8 +1,10 @@
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import { addObjexoomListener } from "../../events";
+import { getArchetypeLightPalette } from "../../lighting/archetypePalette";
+import type { PropArchetype } from "../../scatter/propPool";
 
 const COLOR_WRAITH = new THREE.Color(OBJEXOOM_PALETTE.enemyWraithSoul).getHex();
 const COLOR_IMP = new THREE.Color(OBJEXOOM_PALETTE.enemyImpMagma).getHex();
@@ -38,9 +40,23 @@ type BodyShard = {
  * pose before it disappears.
  */
 const MOTION_MS = 800; // active physics window
-const SETTLE_END_MS = 4000; // settled rest window ends
-const BODYPART_TTL_MS = 5000; // full lifetime (fade ends here)
+const FADE_MS = 1000; // the trailing fade always lasts 1s
+const DEFAULT_BODYPART_TTL_MS = 5000; // canonical (corridor) — used when no archetype prop
 const MAX_BODY_SHARDS = 120;
+
+/**
+ * POL41 — given a TTL, derive the SETTLE_END timestamp so the trailing
+ * fade window is always FADE_MS. The MOTION window is always
+ * MOTION_MS, and the settle (steady-opacity) window absorbs all the
+ * remaining time. With TTL=5000ms (corridor): settle ends at 4000ms
+ * — preserves pre-POL41 canonical timing. With TTL=3500ms (arena):
+ * settle ends at 2500ms. With TTL=8000ms (sewer): settle ends at
+ * 7000ms — longer atmospheric persistence.
+ */
+function timingsFor(ttlMs: number): { motion: number; settleEnd: number; ttl: number } {
+	const ttl = Math.max(ttlMs, MOTION_MS + FADE_MS); // safety floor
+	return { motion: MOTION_MS, settleEnd: ttl - FADE_MS, ttl };
+}
 
 /**
  * I1 — body-part physics. Listens for `objexoom:bodyParts`
@@ -61,7 +77,12 @@ const MAX_BODY_SHARDS = 120;
  *
  * Mesh pool is capped at `MAX_BODY_SHARDS`.
  */
-export function BodyPartField() {
+export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {}) {
+	const ttl = useMemo(() => {
+		if (!archetype) return DEFAULT_BODYPART_TTL_MS;
+		return getArchetypeLightPalette(archetype).gibFadeMs;
+	}, [archetype]);
+	const timings = useMemo(() => timingsFor(ttl), [ttl]);
 	const shardsRef = useRef<BodyShard[]>([]);
 	const groupRef = useRef<THREE.Group | null>(null);
 	const meshes = useRef<Map<number, THREE.Mesh>>(new Map());
@@ -112,16 +133,16 @@ export function BodyPartField() {
 		const seen = new Set<number>();
 		for (const shard of shardsRef.current) {
 			const age = now - shard.createdAt;
-			if (age > BODYPART_TTL_MS) continue;
+			if (age > timings.ttl) continue;
 			// POL40 — capture the rest XZ position on the motion→settle
 			// transition. One-shot per shard; rendered as a flat dark
 			// circle on the floor for the rest of the shard's lifetime.
-			if (age >= MOTION_MS && shard.settledAt === null) {
+			if (age >= timings.motion && shard.settledAt === null) {
 				shard.settledAt = { x: shard.pos.x, z: shard.pos.z };
 			}
 			// POL25 — phased lifecycle. Only run physics + spin in the
 			// MOTION phase; after MOTION_MS the shard rests in place.
-			if (age < MOTION_MS) {
+			if (age < timings.motion) {
 				shard.pos.x += shard.vel.x * dt;
 				shard.pos.y += shard.vel.y * dt;
 				shard.pos.z += shard.vel.z * dt;
@@ -158,16 +179,17 @@ export function BodyPartField() {
 			}
 			mesh.position.set(shard.pos.x, shard.pos.y, shard.pos.z);
 			// POL25 — spin only during motion phase; rest pose is static.
-			if (age < MOTION_MS) {
+			if (age < timings.motion) {
 				mesh.rotation.x += shard.spin.x * dt;
 				mesh.rotation.y += shard.spin.y * dt;
 				mesh.rotation.z += shard.spin.z * dt;
 			}
-			// POL25 — phased opacity: full during motion + rest, fade
-			// only during the final SETTLE_END_MS → TTL_MS window.
+			// POL25 + POL41 — phased opacity: full during motion + rest,
+			// fade only during the final settleEnd → ttl window. POL41
+			// scales the window per archetype.
 			let opacity = 1;
-			if (age > SETTLE_END_MS) {
-				const fadeT = (age - SETTLE_END_MS) / (BODYPART_TTL_MS - SETTLE_END_MS);
+			if (age > timings.settleEnd) {
+				const fadeT = (age - timings.settleEnd) / (timings.ttl - timings.settleEnd);
 				opacity = Math.max(0, 1 - fadeT);
 			}
 			(mesh.material as THREE.MeshStandardMaterial).opacity = opacity;
