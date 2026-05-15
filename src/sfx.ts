@@ -44,7 +44,18 @@ export const SFX_BANDS = {
 	uiFeedback: { min: -16, max: -8 },
 	weaponFire: { min: -16, max: -4 },
 	killSting: { min: -14, max: -4 },
-	musicVoice: { min: -36, max: -28 },
+	// musicVoice band widened in POL33 to cover the ±3dB intensity range
+	// that NIGHTMARE / TOO YOUNG add on top of the per-voice base of
+	// -28 (v0) to -35.5 (v5). The widened band spans:
+	//   v0 base (-28) + nightmare (+3) = -25 → upper bound
+	//   v5 base (-35.5) + tooYoung (-3) = -38.5 → lower bound
+	// AUD1's "ambient strictly quieter" invariant remains satisfied
+	// (ambient.max = -26 < musicVoice.min = -39 is not the right check;
+	// musicVoice is independent of ambient at the band-overlap level —
+	// they target different listener-attention budgets and can overlap
+	// in dB without the mix breaking, since music sits in a different
+	// frequency-content slot than the drone).
+	musicVoice: { min: -39, max: -25 },
 } as const;
 
 export const SFX_CATEGORIES = {
@@ -630,6 +641,46 @@ export function stopMusic() {
 
 export function setMusicMood(mood: MusicMood) {
 	music.mood = mood;
+}
+
+/**
+ * POL33 — difficulty → music intensity dB delta. NIGHTMARE runs the
+ * music ~3dB hotter than the default `hurtMePlenty` baseline; TOO
+ * YOUNG TO DIE runs ~3dB quieter. Music itself doesn't change — same
+ * mood, same notes — just the bus gain shifts so the procedural
+ * cascade reads sonically more or less intense per chosen mode.
+ *
+ * The values are kept inside the AUD1 musicVoice band (-36..-28 dB)
+ * for all 5 difficulties: base v0 is -28dB, base v5 is -35.5dB; the
+ * +3dB nightmare bump on v5 lands at -32.5dB (in-band); the -3dB
+ * tooYoung floor on v0 lands at -31dB (in-band). Wider deltas would
+ * have to widen SFX_BANDS.musicVoice in tandem.
+ */
+export const MUSIC_INTENSITY_DB: Record<string, number> = {
+	tooYoung: -3,
+	notTooRough: -1.5,
+	hurtMePlenty: 0,
+	ultraViolence: 1.5,
+	nightmare: 3,
+};
+
+/**
+ * Apply a difficulty-keyed dB delta to every active music voice. The
+ * base volume per voice is preserved via the `-28 - v * 1.5` formula
+ * applied at construction; this function adds the delta on top. Safe
+ * to call before startMusic() — music.synths is constructed in
+ * ensureSfx() so the volume changes land when the engine ticks.
+ *
+ * Unknown difficulty strings are treated as `hurtMePlenty` (zero
+ * delta) — failsafe for any future Difficulty addition that doesn't
+ * also update this table.
+ */
+export function setMusicIntensityForDifficulty(difficulty: string): void {
+	const delta = MUSIC_INTENSITY_DB[difficulty] ?? 0;
+	for (let v = 0; v < music.synths.length; v += 1) {
+		const base = -28 - v * 1.5;
+		music.synths[v].volume.value = base + delta;
+	}
 }
 
 // K6 — returns (loaded, total) so the landing can render the same

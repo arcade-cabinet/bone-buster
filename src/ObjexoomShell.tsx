@@ -34,6 +34,7 @@ import {
 	playPickup,
 	playPlayerDeath,
 	playSecretFound,
+	setMusicIntensityForDifficulty,
 	setMusicMood,
 	startAmbient,
 	startMusic,
@@ -542,6 +543,10 @@ export function ObjexoomShell() {
 			startAmbient();
 			// K5 — boot the procedural music loop in exploration mood.
 			setMusicMood("exploration");
+			// POL33 — bus-gain shift per chosen difficulty. NIGHTMARE reads
+			// sonically hotter than TOO YOUNG TO DIE without changing the
+			// note material itself.
+			setMusicIntensityForDifficulty(settings.difficulty);
 			startMusic();
 		}
 		// Reset run state — preserves chosen settings + map seed.
@@ -561,7 +566,7 @@ export function ObjexoomShell() {
 			run: makeInitialRunStats(Date.now()),
 			phase: "out",
 		});
-	}, [settings.soundEnabled, maxHp, map.enemySpawns.length]);
+	}, [settings.soundEnabled, settings.difficulty, maxHp, map.enemySpawns.length]);
 
 	const onReturnToLanding = useCallback(() => {
 		stopAmbient();
