@@ -18,8 +18,7 @@ import { SFX_BANDS, SFX_CATEGORIES, SFX_VOLUMES } from "@/sfx";
 
 describe("AUD1 — SFX mix volume bands", () => {
 	for (const [name, volume] of Object.entries(SFX_VOLUMES)) {
-		const category =
-			SFX_CATEGORIES[name as keyof typeof SFX_CATEGORIES] as keyof typeof SFX_BANDS;
+		const category = SFX_CATEGORIES[name as keyof typeof SFX_CATEGORIES] as keyof typeof SFX_BANDS;
 		const band = SFX_BANDS[category];
 		it(`${name} (${volume}dB) sits in '${category}' band [${band.min}, ${band.max}]`, () => {
 			expect(volume).toBeGreaterThanOrEqual(band.min);
