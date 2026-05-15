@@ -59,6 +59,16 @@ If none of the three answer cleanly, sit with the design before writing code.
 
 Spec: `docs/SLOT-ARCHITECTURE.md`. Reference shapes: `HitChromaticAberration` (POL14), `SecretFoundFlash` (POL21), `EnemyHitFlash` (POL19 retrofit), `WeaponSwapDip` (POL20).
 
+## Phase 17 — forward-sweep boss + pickup identity
+
+Phase 16 drained (E8 step-2 / COV8 step-3 audit / COV14 step-3 /
+OBS1). Next forward sweep on systems where the live-game feel
+still needs a polish pass per the modernized-DOOM bar.
+
+- [ ] **POL29 — boss silhouette weight pre-kill.** PT3 captured the boss MOMENT (POL14 chromatic flash + POL25 oversized debris + POL12 150ms hitstop) but the pre-kill silhouette is just "skeleton with 4x HP". A modernized-DOOM boss has visual identity BEFORE the player kills it — bigger scale, distinct rim light or aura, sometimes an off-color tint. Acceptance: `src/scene/entities/EnemyMesh.tsx` for boss-tier enemies scales the model by 1.4x (already partially in via tier=boss in engine? — verify and adjust), adds a thin emissive rim using `MeshStandardMaterial.emissive` set to `SCALE.blood[600]` at 0.4 intensity (only on boss-kind meshes), and the existing POL19 stagger highlight stays for the hit-flash. Capture PT3 pre-kill again: the boss should READ as different from a regular skeleton even at low light.
+- [ ] **POL30 — pickup ceremony differentiation.** POL21 secret + POL22 key both pulse + color-flash. But flashlight pickup + ammo pickup + health pickup don't trigger any HUD ceremony — they're silent (just the existing pickupSynth chime + the pickup despawn). For onboarding clarity each PICKUP CATEGORY should have its own micro-ceremony: flashlight = blue/teal flash card "FLASHLIGHT", health = green flash "HEALTH", ammo = amber flash "CHAINGUN AMMO" / "SHOTGUN AMMO" etc. Acceptance: new `<PickupChip>` HUD overlay slot under `src/hud/overlays/` listens for an extended `pickup` event (already includes kind), renders a 600ms transient chip in the top-center with kind-specific palette + label. KEY routes through the existing POL22 ceremony (no double-render). Re-run PT1 and verify each pickup beat shows a distinct chip.
+- [ ] **OBS2 — perf budget warning at threshold.** OBS1 surfaces draw-calls + triangles. The natural next step is BUDGETS: if draw-calls > 400 OR triangles > 50k for 3 consecutive 60-frame windows, the readout border turns red and a one-shot console warning fires (`console.warn("[OBS2] perf-budget exceeded: ...")`). This lets the agent catch regressions automatically when running playtests rather than eyeballing numbers. Acceptance: the readout border ROLE.borderSoft → SCALE.blood[400] when budget exceeded; warning logged once per session. Verified in PT1 captures where corridor reports CALLS 256 (well under 400) — no false-positive.
+
 ## Phase 16 — forward-sweep polish (next mechanical-loop steps)
 
 Phase 15 PT1-4 + folds drained the playtest-driven gaps. Forward
