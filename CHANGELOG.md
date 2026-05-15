@@ -9,6 +9,25 @@ domain: history
 
 All notable changes to this project will be documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Conventional Commits](https://www.conventionalcommits.org).
 
+## [0.3.0](https://github.com/objexiv/objexoom/compare/v0.2.2...v0.3.0) (2026-05-15)
+
+
+### Features
+
+* **audio:** POL38 exit-portal audio swell ([#28](https://github.com/objexiv/objexoom/issues/28)) ([42e85b5](https://github.com/objexiv/objexoom/commit/42e85b5608c7fd03dcf30d73b39e911bfade12cc))
+* **ci:** OBS4 — perf-baseline regression gate ([#37](https://github.com/objexiv/objexoom/issues/37)) ([73890f5](https://github.com/objexiv/objexoom/commit/73890f5e20176098a5bdd32dd08820d9dfa2e31a))
+* **enemies:** POL42 wraith density per archetype ([#32](https://github.com/objexiv/objexoom/issues/32)) ([eca2a1a](https://github.com/objexiv/objexoom/commit/eca2a1a384f0a6ffab050d0888cf187d861fe7d7))
+* **hud:** POL36 boss HUD banner + aggro alert ([#26](https://github.com/objexiv/objexoom/issues/26)) ([f1c6a13](https://github.com/objexiv/objexoom/commit/f1c6a139c6bcdb5c4994d8d6c54e301ba59732b9))
+* **hud:** POL37 going-back countdown + flip POL36 [x] ([#27](https://github.com/objexiv/objexoom/issues/27)) ([f335fdd](https://github.com/objexiv/objexoom/commit/f335fdd495b1102f71fe06feaa735bedb145b386))
+* **hud:** PT4B-fold — screen-space arrow on RETURN TO SPAWN card ([#33](https://github.com/objexiv/objexoom/issues/33)) ([26f1c2f](https://github.com/objexiv/objexoom/commit/26f1c2fac575f153d497746dd1cc30907011372a))
+* **playtest:** CHAR1 — boss silhouette pre-kill framing ([#35](https://github.com/objexiv/objexoom/issues/35)) ([f777650](https://github.com/objexiv/objexoom/commit/f777650e0f870715a1e703108abcaf1ec8e9701a))
+* **scene:** POL39 flashlight pickup intensity boost ([#29](https://github.com/objexiv/objexoom/issues/29)) ([53647c0](https://github.com/objexiv/objexoom/commit/53647c0b83d567626548c52cde82d3c9dcc90868))
+* **scene:** POL40 body-part rest decals ([#30](https://github.com/objexiv/objexoom/issues/30)) ([8b89563](https://github.com/objexiv/objexoom/commit/8b89563ad3b4a3f4769f7f7c4e6d7bc30ccac4c5))
+* **scene:** POL41 per-archetype gib fade speed ([#31](https://github.com/objexiv/objexoom/issues/31)) ([208dbd9](https://github.com/objexiv/objexoom/commit/208dbd919d8670bee9642c6a7faf4ed72c65cd68))
+* **scene:** POL44 — muzzle-light decay at priority=1 useFrame ([#36](https://github.com/objexiv/objexoom/issues/36)) ([218f89d](https://github.com/objexiv/objexoom/commit/218f89da51348e4adbc94dcd012b46da4d0c2ab0))
+* **scene:** PT1C-fold — synthetic camera-forward burst on debug kill ([#34](https://github.com/objexiv/objexoom/issues/34)) ([4ea9df4](https://github.com/objexiv/objexoom/commit/4ea9df4c342dc9b0b7afd2e30419292075701328))
+* **timing-bus:** POL35 slow-mo timing bus ([#24](https://github.com/objexiv/objexoom/issues/24)) ([d3180c8](https://github.com/objexiv/objexoom/commit/d3180c844ce798a943888dc3dd486118b2fd00fc))
+
 ## [0.2.2](https://github.com/objexiv/objexoom/compare/v0.2.1...v0.2.2) (2026-05-15)
 
 
