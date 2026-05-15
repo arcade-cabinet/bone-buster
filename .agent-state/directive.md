@@ -1,6 +1,6 @@
 # Continuous Work Directive — objexoom
 
-**Status:** RELEASED (Phase 20 drained 2026-05-15 — 15/15 items shipped, queue empty)
+**Status:** ACTIVE (Phase 21 seeded 2026-05-15 from 5-agent audit synthesis)
 
 ## CONTINUE doesn't have an end-of-turn
 
@@ -58,6 +58,88 @@ User feedback (verbatim, 2026-05-14): **"if that's happening it means you need t
 If none of the three answer cleanly, sit with the design before writing code.
 
 Spec: `docs/SLOT-ARCHITECTURE.md`. Reference shapes: `HitChromaticAberration` (POL14), `SecretFoundFlash` (POL21), `EnemyHitFlash` (POL19 retrofit), `WeaponSwapDip` (POL20).
+
+## Phase 21 — perf + complexity + arch sweep from 5-agent audit (2026-05-15)
+
+User feedback (verbatim, 2026-05-15): **"need to work on pwrformance. send specialist agentw tyrough the vodebase to look at code complexity, security, performance, and whatever other specialisr agwnts mak3 swnse, all in parallel, all gen3rating reports, and then you re iew all th3 reports"**
+
+5 specialists (performance, security, complexity, architecture, test) audited the post-Phase 20 codebase in parallel. Reports landed in `docs/audits/`: PERF-AUDIT.md, SECURITY-AUDIT.md, COMPLEXITY-AUDIT.md, ARCHITECTURE-AUDIT.md, TEST-AUDIT.md. Synthesis at `docs/audits/SYNTHESIS.md` consolidates findings — 3 convergent items (called out by ≥2 audits independently) plus quick wins, architectural work, test hardening, and security DiD.
+
+**Headline:** draw-call dominated (corridor 834 / courtyard 887 burn 80-90% of OBS3 budget at only 18-32k tris). Security posture STRONG (zero CVEs, debug-gate verified at bytecode). Sim purity held. Convergent perf+complexity+arch fix is the prng.ts extraction (3h, -80 LOC, unblocks scatter perf refactors).
+
+Picking order: top-down. CONV1+CONV2+CONV3 first — they're prereqs or unblock downstream items. Then quick wins (parallel-ready). Then InstancedMesh refactors (the big perf win). Then mobile perf gate (the actual shipping-readiness check).
+
+### CONV — convergent items (called out by ≥2 audits — highest leverage)
+
+- [ ] **CONV1 — `src/prng.ts` PRNG consolidation.** Acceptance: new `src/prng.ts` exports `mulberry32(seed: number): () => number` and `RNG_TAGS` readonly record (`LMP`, `PROP`, `FLRT`, `DEBR`, `LARP`, `TRAP`, `KTCH`, `NATU`, `NPCS`, `ENMX`, `BARRELS`). All 12 inline copies deleted (engine.ts:152, barrels.ts:189, lampScatter.ts:59, enemyMix.ts:101, scatter/{debrisScatter,floorTiles,kitchenScatter,largePropScatter,natureScatter,npcScatter,propScatter,trapScatter}.ts). `barrels.ts:189` `|0` variant is resolved by replacement (becomes `>>> 0` like the rest). Unit test pins byte-stability: same seed × tag produces same first-10 outputs as the current production code (snapshot the existing output before refactor). 625+ unit tests stay green; 5 canonical poses byte-stable. Source: COMPLEXITY F1/F5, ARCHITECTURE §2.3, PERF (prereq for scatter perf refactors).
+
+- [ ] **CONV3 — `map.archetype` denormalization.** Acceptance: `ObjexoomMap` type gets `archetype: PropArchetype` field (next to `seed`). `buildMap.ts` populates once via `pickArchetype(seed)`. Every `(seed >>> 0) % 5`, every `pickArchetype(map)` call site reads `map.archetype` instead — search list: engine.ts:378, buildMap.ts:26, all 11 scatter modules' archetype dispatch. The single computation lives in buildMap; canonical-byte-stability proof stays intact (corridor still maps to seed 0). Unit test: `generateMap(0).archetype === "corridor"`, `generateMap(1).archetype === "arena"`, ..., `generateMap(5).archetype === "corridor"`. 5 canonical poses byte-stable. Source: ARCHITECTURE §2.2, unblocks 6th archetype + curated levels.
+
+- [ ] **CONV2 — `useGameRef` extraction from ObjexoomShell.** Acceptance: new `src/scene/hooks/useGameRef.ts` (will be `src/scene/tick/useGameRef.ts` post-QW8) exports `useGameRef({state, dispatch, runHistoryRef, ...}): GameRef` factory hook. The 7 callbacks (onHit/onKill/onPickupKey/onWin/onReachSpawn/onSpendAmmo/onCollectPickup) move from ObjexoomShell.tsx:378-525 to the hook. Shell still owns reducer + refs; hook composes the callbacks. ObjexoomShell.tsx drops ~150 LOC. All existing behavior preserved (no event flow changes). 625+ unit + 6 browser + 5 canonical green. Source: COMPLEXITY F2, ARCHITECTURE §2.1.
+
+### QW — quick wins (<2hr each, mostly perf, parallel-ready)
+
+- [ ] **QW1 — hoist scratch Vector3s in fireResolution.ts:129,145,173-174.** Module-scope `_right`, `_forward`, `_dir`, `_yAxis`, `_xAxis`. Use `.set(...)` per pellet. File-only. Source: PERF #2 quick win 1.
+
+- [ ] **QW2 — drop lamp pointLight castShadow.** `src/scene/entities/LampField.tsx:51-57`: remove `castShadow` and `shadow-mapSize-*` props. Re-snapshot OBS3 baselines (calls/tris will move). Re-snapshot library archetype screenshot if visual differs. Source: PERF #3.
+
+- [ ] **QW3 — hoist BodyShard/Shell/Mote geometries + base materials to module scope.** `BodyPartField.tsx:167`, `ShellEjectField.tsx:92`, `ParticleBurstField.tsx:262`. Per-mesh material clones for per-instance opacity OR accept lockstep fade (visually fine for small pool sizes). Source: PERF #2 quick win 3.
+
+- [ ] **QW4 — gate ChromaticAberration on pulseActive.** `src/scene/effects/HitChromaticAberration.tsx:60`: `return pulseActive ? <ChromaticAberration .../> : null`. Pulse window is 180ms so 99% of frames skip the pass. Source: PERF #6 quick win 4.
+
+- [ ] **QW5 — delete redundant `mesh.lookAt(player)` in enemyTickLoop.ts:200-213.** Remove the `mesh.position.{x,y,z} =` block + `mesh.lookAt(...)` — leave only `enemy.position` mutation. Visual layer (`EnemyMesh.tsx:98-110`) already owns position+yaw. Run `pnpm test:e2e:archetype-screenshots` to confirm visual parity; yaw may shift, re-bless if so. Source: PERF #5+#10.
+
+- [ ] **QW6 — flashlight shadow 1024² → 512².** `src/scene/effects/Flashlight.tsx:72`: `shadow-mapSize={[512, 512]}`. Re-snapshot OBS3 baselines + visual gate. PCF soft + 512² on a tight 14m cone is still convincing. Source: PERF #4 quick win 7.
+
+- [ ] **QW7 — strip sourcemaps from gh-pages artifact.** Either `vite.config.ts:13`: `sourcemap: mode === "github-pages" ? false : "hidden"` OR `release.yml` `build-pages` job adds `- run: find dist -name '*.map' -delete` before `upload-pages-artifact`. Removes the 9.4MB pnpm dependency-version fingerprint from the public GH Pages site. Native (Capacitor) builds keep sourcemaps. Source: SECURITY #1.
+
+- [ ] **QW8 — rename `src/scene/hooks/` → `src/scene/tick/`.** Pure cosmetic. The 4 files there (enemyTickLoop, fireResolution, returnBearing, timeScaleBus, useGameRef post-CONV2) have zero React hooks. Update import sites in ObjexoomScene.tsx:89-91. Source: COMPLEXITY F6.
+
+- [ ] **QW9 — fix objexoom-fade.test.ts tautology.** `src/__tests__/unit/objexoom-fade.test.ts:13-23` asserts against a local copy of COLOR_BY_KIND/PEAK_BY_KIND. Either import the real table from ObjexoomShell (extract to a shared module first if needed) or delete the test. Source: TEST S1, COMPLEXITY F12.
+
+- [ ] **QW10 — pin AdaptiveResolution useFrame to priority={2}.** `src/scene/effects/AdaptiveResolution.tsx:58`. Documents the gl.info sampling contract — sample reads THIS frame's render info instead of LAST frame's. Add a comment naming the contract. Source: PERF #8.
+
+### A — architectural perf changes (multi-day each)
+
+- [ ] **A1 — InstancedMesh for static scatter (walls + props + lamps + debris + decals + large-props + nature + kitchen + npcs).** New `src/scene/render/InstancedField.tsx` taking `{url, instances: {position, rotation, scale}[]}` rendering one `<instancedMesh>` per unique GLB primitive. Migrate 9 field renderers one at a time. Skinned enemies + NPCs stay on clone-per-instance. Walls in MapGeometry.tsx + SectorMapGeometry.tsx share a wall helper. Re-snapshot OBS3 baselines (200-400 calls reclaimed). Re-snapshot canonical screenshots if visual differs (positioning is preserved, but lighting/shadow casting may differ slightly). 2-3 days. Source: PERF Architectural A.
+
+- [ ] **A2 — InstancedMesh for ephemeral pools (body parts, shells, motes, bullets).** One InstancedMesh per pool, `setMatrixAt(i, m)`, expired slots collapsed to matrix scale 0. Per-instance opacity via `onBeforeCompile` shader patch OR lockstep fade (acceptable for small pools). BulletField already has shared geom/material — extend to true instancing. 1-2 days. Source: PERF Architectural B.
+
+- [ ] **A3 — selective postprocess chain.** Introduce `PostprocessingChain` component subscribing to AdaptiveResolution `lowQuality` flag (drop Bloom when avgFps <30 for 2 windows, restore at >55fps). ChromaticAberration mount/unmount on pulseActive (folded with QW4 if QW4 ships first). 1 day. Source: PERF Architectural C.
+
+- [ ] **A4 — tiered asset preload.** Three tiers: critical (landing — pistol + 2 ambient enemy types + corridor walls), map-mount (post-loading — archetype walls + enemy roster), deferred (post-first-frame — decals/debris/kitchen/nature scatter pools). Convert module-scope `useGLTF.preload(url)` calls to explicit `preloadTierN()` functions. 1 day. Source: PERF Architectural D.
+
+- [ ] **A5 — music synth defer.** Split `ensureSfx()` into `ensureSfxCritical()` (SFX synths only) and `ensureMusic()` (PolySynths + Reverb IR-bake). Landing's Start Game calls SFX-critical; music inits after first frame of `playing` status. 0.5 day. Source: PERF Architectural E.
+
+- [ ] **A6 — `src/archetype/registry.ts`.** Aggregate import + re-export of every archetype-keyed table (lighting palette, structures, decals, floor textures, enemy mix, sfx ambient, scatter density tuples, propPool, archetypeMapShape). `ArchetypeAxis` interface listing each axis name + module owner. DESIGN.md updated to link to the registry. When the 6th archetype lands, this file is the checklist. 0.5 day. Source: ARCHITECTURE §2.4.
+
+- [ ] **A7 — DECISIONS.md backfill D15-D18.** D15 = AUDIO1 (channel-per-synth audio bus), D16 = ARCH2 (scene-hook extraction — enemyTickLoop, fireResolution), D17 = ARCH3 (sql.js removal Phase 20), D18 = persistence stack (@capacitor-community/sqlite + jeep-sqlite + @capacitor/preferences). Each one paragraph, cite PRs. 2 hours. Source: ARCHITECTURE §7.5.
+
+### T — test gate hardening
+
+- [ ] **T1 — POL1 score HUD end-to-end browser test.** New `src/__tests__/browser/objexoom-scoreHud.browser.test.tsx`. Renders `<ObjexoomShell />` with `?objexoomDebug`, calls `start()`, dispatches treasure pickup via debug hook, asserts `screen.getByText(/SCORE 50/)` visible. ~25 lines. Source: TEST G1.
+
+- [ ] **T2 — AdaptiveResolution `stepPixelRatio` unit tests.** Extract pure step function from `src/scene/effects/AdaptiveResolution.tsx:60-127`: `stepPixelRatio({avgFps, current, cap, consecutiveLow, consecutiveHigh}): {next, consecutiveLow, consecutiveHigh}`. 7 cases: starts-at-cap, low-once-no-cut, low-twice-drops-0.1, low-at-floor-stays, high-twice-rises, mid-band-clears-counters, dpr-cap-clamp. Source: TEST G2.
+
+- [ ] **T3 — per-archetype visual gate depth.** Add 5 archetype × surface poses to `tests/e2e/archetypeScreenshots.spec.ts`: courtyard wreck closeup (COV10), library kitchen scatter (COV13), library NPCs (COV14), sewer water surface, corridor enemy-hit-flash mid-burst (POL16). Brings gate from 10 to 15 PNGs. Source: TEST §6.
+
+- [ ] **T4 — OBS3 avgFps gate.** `scripts/obs3-perf-snapshot.mjs`: capture `avgFps` from `fpsUpdate` events. Budget at 55 (desktop). Fail if any archetype below. Source: TEST §7 recommendation 1.
+
+- [ ] **T5 — OBS3 Pixel 5a emulator perf gate.** New CI job in `.github/workflows/ci.yml`: `actions/setup-android@v3`, Pixel 5a system image, headless emulator + Capacitor build, run `obs3-perf-snapshot.mjs` against `cap://localhost`, assert `avgFps >= 30`. If total CI time pushes past 10min, gate behind `[mobile-perf]` label or run on release tags only. 1 day. Source: TEST §7 recommendation 2 — the actual "is OBJEXOOM playable on mid-tier mobile" gate.
+
+- [ ] **T6 — stop swallowing screenshot failures.** `tests/e2e/objexoom.spec.ts` has 4 `page.screenshot(...).catch(err => console.warn(...))` sites. Either drop the screenshot calls (not the visual gate) or remove `.catch` and let failures surface. Source: TEST S2.
+
+- [ ] **T7 — replace waitForTimeout in screenshots.spec.ts.** The 900ms/750ms/1100ms timeouts at strobe + archetype + mission-complete are flake bait on slow agents. Replace with `page.waitForFunction(() => __objexoom.getState().status === 'won')` for win flow + RAF-counting hook for strobe mid-cycle. Source: TEST S3/F1.
+
+- [ ] **T8 — unit test for `src/assetUrl.ts` `A()` helper.** Critical regression vector for gh-pages/Capacitor blank screenshots. 3 cases: dev `BASE_URL='/'`, pages `'/objexoom/'`, capacitor `'file://'`. ~15 lines. Source: TEST G5.
+
+### S — security defense-in-depth (post-distribution-ready)
+
+- [ ] **S1 — Android release-build hardening.** When the release-signed APK is wired (post-distribution-decision): `android:allowBackup="false"`, `android:fullBackupContent="false"`, `minifyEnabled true`, `shrinkResources true` in `android/app/build.gradle`. Add `data_extraction_rules.xml`. Source: SECURITY #2.
+
+- [ ] **S2 — CSP meta tag in index.html.** `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';`. Verify Tone.js + postprocessing + R3F + jeep-sqlite still load. Capacitor builds need `capacitor:` and `ionic:` scheme allowances. Source: SECURITY #3.
+
+- [ ] **S3 — Android `network_security_config.xml`.** `cleartextTrafficPermitted="false"` + system trust anchors. Reference in manifest: `android:networkSecurityConfig="@xml/network_security_config"`. Zero-impact since the game is offline but makes intent explicit. Source: SECURITY #4.
 
 ## Phase 20 — drain-and-repopulate forward sweep (2026-05-15)
 
