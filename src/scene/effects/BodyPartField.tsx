@@ -16,6 +16,12 @@ type BodyShard = {
 	color: number;
 	createdAt: number;
 	bounced: boolean;
+	/**
+	 * POL40 — once the shard transitions to settle, record its resting
+	 * XZ position so the rest-decal renderer can place a thin dark
+	 * circle on the floor below. Null until the shard has landed.
+	 */
+	settledAt: { x: number; z: number } | null;
 };
 
 /**
@@ -59,6 +65,10 @@ export function BodyPartField() {
 	const shardsRef = useRef<BodyShard[]>([]);
 	const groupRef = useRef<THREE.Group | null>(null);
 	const meshes = useRef<Map<number, THREE.Mesh>>(new Map());
+	// POL40 — per-shard ground-decal mesh, mounted on settle and torn
+	// down with the shard. Keyed by shard id so the decal lives exactly
+	// as long as the gib it belongs to.
+	const decalMeshes = useRef<Map<number, THREE.Mesh>>(new Map());
 	const nextId = useRef(1);
 
 	useEffect(() => {
@@ -86,6 +96,7 @@ export function BodyPartField() {
 					color: baseColor,
 					createdAt: now,
 					bounced: false,
+					settledAt: null,
 				});
 			}
 			while (shardsRef.current.length > MAX_BODY_SHARDS) {
@@ -102,6 +113,12 @@ export function BodyPartField() {
 		for (const shard of shardsRef.current) {
 			const age = now - shard.createdAt;
 			if (age > BODYPART_TTL_MS) continue;
+			// POL40 — capture the rest XZ position on the motion→settle
+			// transition. One-shot per shard; rendered as a flat dark
+			// circle on the floor for the rest of the shard's lifetime.
+			if (age >= MOTION_MS && shard.settledAt === null) {
+				shard.settledAt = { x: shard.pos.x, z: shard.pos.z };
+			}
 			// POL25 — phased lifecycle. Only run physics + spin in the
 			// MOTION phase; after MOTION_MS the shard rests in place.
 			if (age < MOTION_MS) {
@@ -155,6 +172,31 @@ export function BodyPartField() {
 			}
 			(mesh.material as THREE.MeshStandardMaterial).opacity = opacity;
 			mesh.visible = true;
+			// POL40 — render the rest-decal once settled. Flat dark
+			// circle just above the floor (y=0.02 to avoid z-fighting
+			// with the floor plane). Shares the shard's color but
+			// pushed toward dark/red emissive so blood/imp gibs read
+			// as splatter while bone shards leave a faint mark.
+			if (shard.settledAt !== null && groupRef.current) {
+				let decal = decalMeshes.current.get(shard.id);
+				if (!decal) {
+					decal = new THREE.Mesh(
+						new THREE.CircleGeometry(0.28, 12),
+						new THREE.MeshBasicMaterial({
+							color: shard.color === COLOR_BONE ? 0x2a2a2a : 0x4a0808,
+							transparent: true,
+							opacity: 0.55,
+							side: THREE.DoubleSide,
+							depthWrite: false,
+						}),
+					);
+					decal.rotation.x = -Math.PI / 2;
+					groupRef.current.add(decal);
+					decalMeshes.current.set(shard.id, decal);
+				}
+				decal.position.set(shard.settledAt.x, 0.02, shard.settledAt.z);
+				(decal.material as THREE.MeshBasicMaterial).opacity = 0.55 * opacity;
+			}
 			seen.add(shard.id);
 			live.push(shard);
 		}
@@ -164,6 +206,15 @@ export function BodyPartField() {
 				mesh.visible = false;
 				groupRef.current.remove(mesh);
 				meshes.current.delete(id);
+			}
+		}
+		// POL40 — tear down decals when their shard despawns.
+		for (const [id, decal] of decalMeshes.current) {
+			if (!seen.has(id)) {
+				groupRef.current.remove(decal);
+				decal.geometry.dispose();
+				(decal.material as THREE.Material).dispose();
+				decalMeshes.current.delete(id);
 			}
 		}
 	});
