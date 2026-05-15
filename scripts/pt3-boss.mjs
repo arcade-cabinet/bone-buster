@@ -79,6 +79,32 @@ if (!bossInfo) {
 }
 
 const { target, player } = bossInfo;
+
+// CHAR1 — boss silhouette framing pass. POL29's emissive rim is best
+// read when the boss is alone in frame at ~6 tiles distance — 5 tiles
+// (the original PT3.2 framing) puts the boss too close to the camera
+// so the rim wraps the visible mesh edges. 6 tiles gives the full
+// silhouette against the archetype's dark background.
+console.log(
+	`PT3.05 — boss silhouette framing at 6 tiles from (${target.x.toFixed(1)}, ${target.y.toFixed(1)})`,
+);
+await page.evaluate(
+	({ target, player }) => {
+		const hooks = window.__objexoom;
+		const dx = target.x - player.x;
+		const dy = target.y - player.y;
+		const len = Math.hypot(dx, dy) || 1;
+		const ux = dx / len;
+		const uy = dy / len;
+		// 6 tiles back, facing the boss. Same yaw computation as the
+		// PT3.2 close-up — only the distance differs.
+		hooks.teleport(target.x - ux * 6, target.y - uy * 6, Math.atan2(ux, -uy));
+	},
+	{ target, player },
+);
+await page.waitForTimeout(600); // longer settle so the rim's emissive material is fully resolved
+await captureCDP(page, `${OUT}/05-boss-silhouette.png`);
+
 console.log(
 	`PT3.2 — teleport near nearest enemy at (${target.x.toFixed(1)}, ${target.y.toFixed(1)})`,
 );
@@ -118,4 +144,4 @@ const after = await page.evaluate(() => {
 console.log(`PT3 — after killBoss: ${JSON.stringify(after)}`);
 
 await browser.close();
-console.log("\nCaptured 3 boss screenshots in", OUT);
+console.log("\nCaptured 4 boss screenshots in", OUT);
