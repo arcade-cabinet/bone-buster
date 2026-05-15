@@ -32,3 +32,24 @@ export function pickLootKind(hash: number): LootKind {
 	const idx = (hash >>> 0) % kinds.length;
 	return kinds[idx];
 }
+
+/**
+ * POL1 — per-loot-kind game-state bonus. The score / HP / ammo deltas
+ * granted when the player picks up a COV12 loot pickup, keyed by the
+ * variant `pickLootKind(map.seed)` selected at spawn time.
+ *
+ * Centralized here so the HUD's score chip rendering rule
+ * (`score > 0` → display SCORE N) and the GameRef.onCollectPickup
+ * branch in useGameRef.ts share one source of truth.
+ *
+ * - **treasure** — +50 score. The only loot kind that contributes
+ *   to the visible HUD SCORE chip.
+ * - **bottles** — +5 HP (potion stash). Clamped to maxHp by the
+ *   caller.
+ * - **books** — +pickupAmmo for chaingun AND shotgun (knowledge →
+ *   ammo metaphor).
+ */
+export const LOOT_BONUSES = {
+	treasureScore: 50,
+	bottlesHp: 5,
+} as const;

@@ -25,7 +25,7 @@
 import { useRef } from "react";
 import type { PickupKind } from "../../engine";
 import { dispatch } from "../../events";
-import { pickLootKind } from "../../loot";
+import { LOOT_BONUSES, pickLootKind } from "../../loot";
 import type { FadeKind, GameRef, GameState } from "../../ObjexoomShell";
 import { GOING_BACK_BUDGET_MS } from "../../ObjexoomShell";
 import { advanceLevel, runStatsReducer } from "../../runStats";
@@ -205,8 +205,11 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 					// COV12 step-2 — kind-specific bonus from pickLootKind(seed).
 					const lootKind = pickLootKind(seed);
 					if (lootKind === "bottles") {
-						// +5 HP (potion stash) — clamp to maxHp.
-						return { ...prev, hp: Math.min(prev.maxHp, prev.hp + 5) };
+						// +LOOT_BONUSES.bottlesHp (potion stash) — clamp to maxHp.
+						return {
+							...prev,
+							hp: Math.min(prev.maxHp, prev.hp + LOOT_BONUSES.bottlesHp),
+						};
 					}
 					if (lootKind === "books") {
 						// Knowledge → bonus ammo across both ranged weapons.
@@ -219,7 +222,7 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 							},
 						};
 					}
-					return { ...prev, score: prev.score + 50 };
+					return { ...prev, score: prev.score + LOOT_BONUSES.treasureScore };
 				}
 				return {
 					...prev,
