@@ -1,6 +1,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { PerspectiveCamera } from "three";
+import { resetPortalSwell, setPortalSwellVolume } from "../../sfx";
 
 /**
  * POL23 — exit-portal approach slot (see docs/SLOT-ARCHITECTURE.md).
@@ -44,9 +45,10 @@ export function ExitPortalApproach({
 	useFrame(() => {
 		if (!camera.isPerspectiveCamera) return;
 		// Cheap fast-out when the portal isn't approachable.
-		const target = unlocked
-			? computeTargetFov(camera.position.x, camera.position.z, portalPosition, baseFov)
-			: baseFov;
+		const dx = camera.position.x - portalPosition.x;
+		const dz = camera.position.z - portalPosition.y;
+		const dist = Math.hypot(dx, dz);
+		const target = unlocked ? computeTargetFovFromDistance(dist, baseFov) : baseFov;
 		// Smooth toward target so the camera doesn't snap when the
 		// player crosses the radius boundary. 8 Hz cutoff feels right
 		// for "portal pulls you in" without nausea.
@@ -56,25 +58,30 @@ export function ExitPortalApproach({
 			camera.fov = lastFovRef.current;
 			camera.updateProjectionMatrix();
 		}
+		// POL38 — audio swell paired with the FOV widen. Same approach
+		// radius drives both, so the gain ramp and the visual pull stay
+		// in lockstep. Only ramp while unlocked; otherwise the silent
+		// baseline holds.
+		if (unlocked) {
+			setPortalSwellVolume(dist, APPROACH_RADIUS);
+		}
 	});
+
+	// POL38 — on unmount (level remount / scene teardown) restore the
+	// portal synth volume to baseline so the next playPortal() pop
+	// doesn't fire at the swell-tuned level.
+	useEffect(() => {
+		return () => {
+			resetPortalSwell();
+		};
+	}, []);
 
 	return null;
 }
 
-function computeTargetFov(
-	px: number,
-	pz: number,
-	portal: { x: number; y: number },
-	baseFov: number,
-): number {
-	const dx = px - portal.x;
-	const dz = pz - portal.y;
-	const dist = Math.hypot(dx, dz);
+function computeTargetFovFromDistance(dist: number, baseFov: number): number {
 	if (dist >= APPROACH_RADIUS) return baseFov;
-	// Linear ramp from 0 (at the radius edge) to 1 (at the portal).
 	const t = 1 - dist / APPROACH_RADIUS;
-	// Ease-in curve so most of the widen happens near the portal,
-	// not at the radius boundary — feels less abrupt.
 	const ease = t * t;
 	return baseFov + FOV_DELTA_MAX * ease;
 }
