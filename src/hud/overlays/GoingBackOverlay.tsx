@@ -23,8 +23,22 @@ import { useEffect, useState } from "react";
  * in going-back the elements are completely absent (canonical
  * bytes stay stable).
  */
-export function GoingBackOverlay({ phase }: { phase: "out" | "going_back" }) {
+export function GoingBackOverlay({
+	phase,
+	deadlineMs,
+}: {
+	phase: "out" | "going_back";
+	/**
+	 * POL37 — going-back deadline timestamp. When set, the overlay
+	 * renders a monospace red countdown under the RETURN TO SPAWN
+	 * card showing seconds remaining. null = no countdown (e.g. pre-
+	 * POL37 callers passing only `phase` still work — countdown is
+	 * additive).
+	 */
+	deadlineMs?: number | null;
+}) {
 	const [showDirective, setShowDirective] = useState(false);
+	const [remainingMs, setRemainingMs] = useState<number | null>(null);
 	useEffect(() => {
 		if (phase !== "going_back") {
 			setShowDirective(false);
@@ -42,6 +56,20 @@ export function GoingBackOverlay({ phase }: { phase: "out" | "going_back" }) {
 			window.clearTimeout(t2);
 		};
 	}, [phase]);
+
+	// POL37 — countdown tick. Recomputes remaining ms 4x per second
+	// (every 250ms) while in going-back with a live deadline. Mounting
+	// this interval here keeps the countdown localized to the overlay.
+	useEffect(() => {
+		if (phase !== "going_back" || deadlineMs === null || deadlineMs === undefined) {
+			setRemainingMs(null);
+			return;
+		}
+		const tick = () => setRemainingMs(Math.max(0, deadlineMs - performance.now()));
+		tick();
+		const interval = window.setInterval(tick, 250);
+		return () => window.clearInterval(interval);
+	}, [phase, deadlineMs]);
 
 	if (phase !== "going_back") return null;
 
@@ -119,6 +147,36 @@ export function GoingBackOverlay({ phase }: { phase: "out" | "going_back" }) {
 					RETURN TO SPAWN
 				</motion.div>
 			)}
+			{remainingMs !== null && (
+				<motion.div
+					style={{
+						position: "absolute",
+						left: "50%",
+						top: "44%",
+						transform: "translate(-50%, -50%)",
+						padding: "6px 18px",
+						fontFamily: "'Courier New', ui-monospace, monospace",
+						fontWeight: 700,
+						fontSize: 28,
+						letterSpacing: "0.12em",
+						color: "rgba(254, 202, 202, 0.95)",
+						textShadow: "0 0 12px rgba(220, 38, 38, 0.9)",
+						pointerEvents: "none",
+					}}
+					animate={{ opacity: remainingMs < 5000 ? [0.65, 1, 0.65] : 1 }}
+					transition={{ duration: 0.6, repeat: remainingMs < 5000 ? Infinity : 0 }}
+				>
+					{formatCountdown(remainingMs)}
+				</motion.div>
+			)}
 		</>
 	);
+}
+
+/** Format ms remaining as `m:ss`, clamped to zero. */
+export function formatCountdown(ms: number): string {
+	const total = Math.max(0, Math.ceil(ms / 1000));
+	const m = Math.floor(total / 60);
+	const s = total % 60;
+	return `${m}:${s.toString().padStart(2, "0")}`;
 }

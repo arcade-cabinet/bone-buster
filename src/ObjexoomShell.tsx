@@ -88,10 +88,28 @@ export type GameState = {
 	damageFlashAt: number;
 	run: RunStats;
 	phase: LevelPhase;
+	/**
+	 * POL37 — going-back countdown deadline. Set on `out → going_back`
+	 * transition to `performance.now() + GOING_BACK_BUDGET_MS`; cleared
+	 * (null) on `reachSpawn` and on every fresh level/run.
+	 *
+	 * When the deadline elapses without reaching spawn, the level dies
+	 * via the existing hp→0 path so engine.ts's death handling carries
+	 * the rest (no new state branch). HUD surfaces a monospace red
+	 * countdown under GoingBackOverlay's "RETURN TO SPAWN" card.
+	 */
+	goingBackDeadlineMs: number | null;
 };
 
 export const TRANSITION_HOLD_MS = 800;
 export const RUN_LENGTH = 5;
+/**
+ * POL37 — total budget the player has to retrace from the goal back
+ * to spawn after the boss + key are taken. 30s is long enough to
+ * traverse any procedural map at a brisk walk; too short feels like
+ * a punish, too long defeats the "urgent retreat" reading.
+ */
+export const GOING_BACK_BUDGET_MS = 30_000;
 
 export type WeaponState = {
 	weapon: WeaponId;
@@ -304,6 +322,7 @@ export function ObjexoomShell() {
 		damageFlashAt: 0,
 		run: makeInitialRunStats(0),
 		phase: "out",
+		goingBackDeadlineMs: null,
 	}));
 	const [touchMode, setTouchMode] = useState<boolean>(() => isCoarsePointer());
 
@@ -439,6 +458,10 @@ export function ObjexoomShell() {
 				return {
 					...prev,
 					phase: "going_back",
+					// POL37 — set the going-back deadline at transition time.
+					// The countdown overlay reads this; engine fires
+					// playerDeath if the deadline elapses without reachSpawn.
+					goingBackDeadlineMs: performance.now() + GOING_BACK_BUDGET_MS,
 					ownedWeapons: {
 						...prev.ownedWeapons,
 						chaingun: true,
@@ -469,6 +492,9 @@ export function ObjexoomShell() {
 					...prev,
 					run: clearedRun,
 					status: advanced === null ? "won" : "transitioning",
+					// POL37 — clear the deadline. The player made it back
+					// in time; the countdown overlay reads null and hides.
+					goingBackDeadlineMs: null,
 				};
 			});
 		},
@@ -571,6 +597,7 @@ export function ObjexoomShell() {
 			damageFlashAt: 0,
 			run: makeInitialRunStats(Date.now()),
 			phase: "out",
+			goingBackDeadlineMs: null,
 		});
 	}, [settings.soundEnabled, settings.difficulty, maxHp, map.enemySpawns.length]);
 
@@ -667,6 +694,26 @@ export function ObjexoomShell() {
 			playKlaxon();
 		}
 	}, [settings.soundEnabled, state.status, state.phase]);
+
+	// POL37 — going-back countdown enforcement. Once per second check the
+	// deadline; if elapsed without reachSpawn, drop hp to 0 (engine's
+	// existing death handling carries the rest — no new state branch).
+	useEffect(() => {
+		if (state.status !== "playing") return;
+		if (state.phase !== "going_back") return;
+		if (state.goingBackDeadlineMs === null) return;
+		const interval = window.setInterval(() => {
+			setState((prev) => {
+				if (prev.status !== "playing") return prev;
+				if (prev.phase !== "going_back") return prev;
+				if (prev.goingBackDeadlineMs === null) return prev;
+				if (performance.now() < prev.goingBackDeadlineMs) return prev;
+				// Deadline elapsed — kill the player.
+				return { ...prev, hp: 0 };
+			});
+		}, 250);
+		return () => window.clearInterval(interval);
+	}, [state.status, state.phase, state.goingBackDeadlineMs]);
 
 	useEffect(() => {
 		if (!settings.soundEnabled) return;
