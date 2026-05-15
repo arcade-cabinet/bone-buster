@@ -21,6 +21,16 @@
  * written from the current snapshot + the run still passes). After
  * the first run, the baselines should be reviewed by a human +
  * committed.
+ *
+ * OBS4 — CI runs this as a separate `perf` job in .github/workflows/ci.yml.
+ * To update a baseline intentionally (e.g. a new effect lifted the
+ * triangle count by 12% in arena):
+ *   1. Run locally: `pnpm test:perf` — it'll fail with the new value.
+ *   2. Copy the new value from `test-results/perf-snapshots/{archetype}.json`
+ *      into `tests/perf-baselines/{archetype}.json`.
+ *   3. Commit both the source change AND the baseline bump in the same PR
+ *      so the reviewer can see the cost.
+ *   4. CI re-runs perf on the PR; passes with the new baseline.
  */
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
