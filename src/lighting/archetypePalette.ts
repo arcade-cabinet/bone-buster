@@ -88,6 +88,21 @@ export interface ArchetypeLightPalette {
 	readonly ambientMul: number;
 	readonly directionalMul: number;
 	readonly fogFarTiles: number;
+	/**
+	 * POL41 — per-archetype gib lifetime. Replaces the hardcoded
+	 * BodyPartField TTL (5000ms). Higher = gibs persist longer, reads
+	 * as a more visceral aftermath; lower = clean-up faster, reads as
+	 * an active combat space that "resets" quickly. Tuned per
+	 * archetype mood: arena=3500 (busy combat, fast cleanup),
+	 * corridor=5000 (canonical preserved), courtyard=6000 (calm
+	 * outdoor), sewer=8000 (dim, gibs persist atmospherically),
+	 * library=4000 (modest).
+	 *
+	 * The fade still happens only in the final FADE_WINDOW_MS of the
+	 * lifetime (per POL25 phased lifecycle); only the total TTL +
+	 * settle-end timing scale with this value.
+	 */
+	readonly gibFadeMs: number;
 }
 
 /**
@@ -111,6 +126,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		ambientMul: 1.0,
 		directionalMul: 1.0,
 		fogFarTiles: 12,
+		gibFadeMs: 5000,
 	},
 	arena: {
 		ambientColor: SCALE.blood[300],
@@ -127,6 +143,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		ambientMul: 1.1,
 		directionalMul: 1.0,
 		fogFarTiles: 14,
+		gibFadeMs: 3500,
 	},
 	courtyard: {
 		ambientColor: SCALE.indigo[300],
@@ -143,6 +160,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		ambientMul: 0.85,
 		directionalMul: 1.1,
 		fogFarTiles: 16,
+		gibFadeMs: 6000,
 	},
 	sewer: {
 		ambientColor: SCALE.parchment[600],
@@ -167,6 +185,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		ambientMul: 0.65,
 		directionalMul: 0.3,
 		fogFarTiles: 8,
+		gibFadeMs: 8000,
 	},
 	library: {
 		ambientColor: SCALE.parchment[300],
@@ -183,6 +202,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 		ambientMul: 0.8,
 		directionalMul: 0.7,
 		fogFarTiles: 11,
+		gibFadeMs: 4000,
 	},
 };
 

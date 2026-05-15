@@ -1000,7 +1000,7 @@ export function ObjexoomScene({
 
 			<BulletField bulletsRef={bulletsRef} register={bulletMeshes} />
 			<ParticleBurstField />
-			<BodyPartField />
+			<BodyPartField archetype={archetype} />
 			<ShellEjectField />
 			<DamageNumberField />
 			<WeaponViewmodel
