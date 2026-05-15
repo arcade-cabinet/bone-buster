@@ -45,6 +45,7 @@ import {
 	type ObjexoomMap,
 	resolveCollisionAny,
 } from "../../engine";
+import { dispatch } from "../../events";
 import type { GameRef } from "../../ObjexoomShell";
 import type { ObjexoomSettings } from "../../settings";
 import { panForPosition, playAggroAlert, playHurt } from "../../sfx";
@@ -63,6 +64,13 @@ export interface EnemyTickContext {
 	enemyMeshesRef: { current: Map<number, THREE.Group> };
 	lastSeenRef: { current: Map<number, number> };
 	aggroFiredRef: { current: Set<number> };
+	/**
+	 * POL36 — set of enemy ids that have triggered the boss-spotted
+	 * banner already. Per-Scene-instance (resets on level remount via
+	 * the same lifecycle as aggroFiredRef). Optional so legacy test
+	 * contexts that don't care about the banner can omit it.
+	 */
+	bossSpottedFiredRef?: { current: Set<number> };
 	collisionCtxRef: CollisionCtxRef;
 	gameRef: { current: GameRef };
 	map: ObjexoomMap;
@@ -92,6 +100,7 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 		enemyMeshesRef,
 		lastSeenRef,
 		aggroFiredRef,
+		bossSpottedFiredRef,
 		collisionCtxRef,
 		gameRef,
 		map,
@@ -165,6 +174,17 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 					yaw: camera.rotation.y,
 				});
 				playAggroAlert(pan);
+			}
+			// POL36 — boss-tier first-time aggro fires a "BOSS APPROACHES"
+			// banner via the bossSpotted event. Gated on bossSpottedFiredRef
+			// so the banner shows AT MOST once per boss enemy per map.
+			if (
+				enemy.tier === "boss" &&
+				bossSpottedFiredRef !== undefined &&
+				!bossSpottedFiredRef.current.has(enemy.id)
+			) {
+				bossSpottedFiredRef.current.add(enemy.id);
+				dispatch({ type: "bossSpotted", enemyId: enemy.id });
 			}
 		}
 		lastSeenRef.current.set(enemy.id, out.lastSeenAt);

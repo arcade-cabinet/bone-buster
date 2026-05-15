@@ -1,5 +1,6 @@
 import type { GameState, LevelPhase } from "../../ObjexoomShell";
 import type { Difficulty } from "../../settings";
+import { BossBanner } from "./BossBanner";
 import { DifficultyChip } from "./DifficultyChip";
 import { GoingBackOverlay } from "./GoingBackOverlay";
 import { KeyPickupCeremony } from "./KeyPickupCeremony";
@@ -23,6 +24,7 @@ import { SecretFoundFlash } from "./SecretFoundFlash";
  *   - MissionCompleteCeremony  (state: status === "won")         PT1B
  *   - DifficultyChip           (prop:  runId advances)           POL31
  *   - PauseOverlay             (state: status === "paused")      POL34
+ *   - BossBanner               (event: bossSpotted/bossDefeated) POL36
  */
 export function HUDOverlays({
 	phase,
@@ -55,6 +57,7 @@ export function HUDOverlays({
 				onQuit={onQuit}
 			/>
 			<MissionCompleteCeremony state={state} onReturnToMenu={onReturnToMenu} />
+			<BossBanner />
 		</>
 	);
 }
