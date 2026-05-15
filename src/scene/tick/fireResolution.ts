@@ -41,6 +41,17 @@ import {
 } from "../../sfx";
 import { WEAPONS, type WeaponId } from "../../weapons";
 
+// QW1 — module-scope scratch vectors. Reused across every shot to
+// skip per-pellet allocations (shotgun = 7 allocs/shot pre-QW1). The
+// _xAxis / _yAxis bases are pre-set to canonical unit vectors and
+// never mutated; _right / _forwardBase / _forwardPellet are reused
+// per-call with `.set(...)` + in-place transforms.
+const _xAxis = /*@__PURE__*/ new THREE.Vector3(1, 0, 0);
+const _yAxis = /*@__PURE__*/ new THREE.Vector3(0, 1, 0);
+const _right = /*@__PURE__*/ new THREE.Vector3();
+const _forwardBase = /*@__PURE__*/ new THREE.Vector3();
+const _forwardPellet = /*@__PURE__*/ new THREE.Vector3();
+
 export interface FireResolutionContext {
 	active: boolean;
 	weapon: WeaponId;
@@ -126,23 +137,25 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	// I10 / PA9b — shell ejection.
 	if (weapon === "shotgun" || weapon === "chaingun") {
 		const isChaingun = weapon === "chaingun";
-		const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+		// QW1 — reuse module-scope _right; set to canonical X then rotate.
+		_right.set(1, 0, 0).applyQuaternion(camera.quaternion);
 		const lateral = isChaingun ? 1.0 : 1.6;
 		const upward = isChaingun ? 0.9 : 1.2;
 		const scale = isChaingun ? 0.6 : 1.0;
 		dispatch({
 			type: "shellEject",
-			x: camera.position.x + right.x * 0.3,
+			x: camera.position.x + _right.x * 0.3,
 			y: camera.position.y - 0.3,
-			z: camera.position.z + right.z * 0.3,
-			vx: right.x * lateral + (Math.random() - 0.5) * 0.4,
+			z: camera.position.z + _right.z * 0.3,
+			vx: _right.x * lateral + (Math.random() - 0.5) * 0.4,
 			vy: upward,
-			vz: right.z * lateral + (Math.random() - 0.5) * 0.4,
+			vz: _right.z * lateral + (Math.random() - 0.5) * 0.4,
 			scale,
 		});
 	}
 
-	const forwardBase = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+	// QW1 — reuse module-scope _forwardBase; set to camera-forward then normalize.
+	const forwardBase = _forwardBase.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
 	const origin = { x: camera.position.x, y: camera.position.z };
 
 	// E8 step-2 — flamethrower emits a distinct directional cone stream
@@ -168,10 +181,13 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	for (let pelletIdx = 0; pelletIdx < spec.pellets; pelletIdx += 1) {
 		const spreadX = (Math.random() - 0.5) * spec.spreadRad;
 		const spreadY = (Math.random() - 0.5) * spec.spreadRad;
-		const forward = forwardBase
-			.clone()
-			.applyAxisAngle(new THREE.Vector3(0, 1, 0), spreadX)
-			.applyAxisAngle(new THREE.Vector3(1, 0, 0), spreadY);
+		// QW1 — reuse module-scope _forwardPellet; copy forwardBase then
+		// apply spread in place. Avoids 1 Vector3 clone + 2 unit-vector
+		// allocs per pellet (shotgun = 7 pellets/shot pre-QW1).
+		const forward = _forwardPellet
+			.copy(forwardBase)
+			.applyAxisAngle(_yAxis, spreadX)
+			.applyAxisAngle(_xAxis, spreadY);
 		const dir2 = { x: forward.x, y: forward.z };
 		const len2 = Math.hypot(dir2.x, dir2.y) || 1;
 		dir2.x /= len2;

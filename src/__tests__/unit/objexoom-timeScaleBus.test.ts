@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createTimeScaleBus } from "../../scene/hooks/timeScaleBus";
+import { createTimeScaleBus } from "../../scene/tick/timeScaleBus";
 
 describe("timeScaleBus (POL35)", () => {
 	it("combines reservations via min — strictest scale wins", () => {

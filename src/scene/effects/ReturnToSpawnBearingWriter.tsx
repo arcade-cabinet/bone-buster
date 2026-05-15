@@ -1,6 +1,6 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect } from "react";
-import { computeBearingRad, setReturnBearing } from "../hooks/returnBearing";
+import { computeBearingRad, setReturnBearing } from "../tick/returnBearing";
 
 /**
  * PT4B-fold — return-to-spawn bearing writer.
