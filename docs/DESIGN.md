@@ -95,10 +95,13 @@ It should NOT feel:
 ## Archetype identity
 
 Every run picks one of five archetypes deterministically from
-`(seed >>> 0) % 5`. Each archetype is keyed across 16+ axes
-(see `src/lighting/archetypePalette.ts` for the lighting axis;
-`src/scatter/*` for density tables; `src/structures.ts` for wall
-GLB pools; `src/floors.ts`-equivalent palette-tint for floors).
+`(seed >>> 0) % 5`. CONV3 (2026-05-15) denormalized `archetype`
+onto `ObjexoomMap` itself — every consumer reads `map.archetype`
+rather than recomputing the modulus. Each archetype is keyed across
+~17 independent axes; the canonical registry of axes is at
+`src/archetypeRegistry.ts` (A6, Phase 21). When adding a 6th
+archetype, walk that registry top-to-bottom: TypeScript will catch
+the misses (every axis is `Record<PropArchetype, T>`).
 
 | Archetype | Mood | Color stack | Density | Mechanics |
 |-----------|------|-------------|---------|-----------|

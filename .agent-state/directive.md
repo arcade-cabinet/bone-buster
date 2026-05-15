@@ -111,7 +111,7 @@ Picking order: top-down. CONV1+CONV2+CONV3 first — they're prereqs or unblock 
 
 - [ ] **A5 — music synth defer.** Split `ensureSfx()` into `ensureSfxCritical()` (SFX synths only) and `ensureMusic()` (PolySynths + Reverb IR-bake). Landing's Start Game calls SFX-critical; music inits after first frame of `playing` status. 0.5 day. Source: PERF Architectural E.
 
-- [ ] **A6 — `src/archetype/registry.ts`.** Aggregate import + re-export of every archetype-keyed table (lighting palette, structures, decals, floor textures, enemy mix, sfx ambient, scatter density tuples, propPool, archetypeMapShape). `ArchetypeAxis` interface listing each axis name + module owner. DESIGN.md updated to link to the registry. When the 6th archetype lands, this file is the checklist. 0.5 day. Source: ARCHITECTURE §2.4.
+- [x] **A6 — `src/archetypeRegistry.ts`.** Shipped. 17-entry `ARCHETYPE_AXES` array enumerating every per-archetype axis (map shape, lighting palette, structures, enemy mix, prop pool/density, decal density/variants, floor textures, debris/large-prop/trap density, kitchen/nature/npc gates, ambient audio, enemy-count multiplier). Each entry: `axisName` + `module` + `axisDescription`. `getAxisModules()` helper for tooling that wants to audit undocumented per-archetype records. `ArchetypeKeyedRecord<T>` shared type. 4-test pin: ≥10 axes, every entry has all 3 fields, every `module` path exists on disk (so a rename without a registry update fails the gate). DESIGN.md §"Archetype identity" updated to link the registry. Source: ARCHITECTURE §2.4.
 
 - [x] **A7 — DECISIONS.md backfill D15-D18.** Shipped. D15 (AUDIO1 — channel-per-synth audio bus), D16 (ARCH2a/2b + QW8 — scene/tick/* extraction), D17 (ARCH3 — sql.js removal), D18 (persistence stack — @capacitor-community/sqlite + jeep-sqlite). Each documents the call + why + rejected alternatives + cites the relevant source files. Frontmatter `updated:` bumped to 2026-05-15. Source: ARCHITECTURE §7.5.
 
@@ -131,7 +131,7 @@ Picking order: top-down. CONV1+CONV2+CONV3 first — they're prereqs or unblock 
 
 - [ ] **T7 — replace waitForTimeout in screenshots.spec.ts.** The 900ms/750ms/1100ms timeouts at strobe + archetype + mission-complete are flake bait on slow agents. Replace with `page.waitForFunction(() => __objexoom.getState().status === 'won')` for win flow + RAF-counting hook for strobe mid-cycle. Source: TEST S3/F1.
 
-- [ ] **T8 — unit test for `src/assetUrl.ts` `A()` helper.** Critical regression vector for gh-pages/Capacitor blank screenshots. 3 cases: dev `BASE_URL='/'`, pages `'/objexoom/'`, capacitor `'file://'`. ~15 lines. Source: TEST G5.
+- [x] **T8 — unit test for `src/assetUrl.ts` `A()` helper.** Shipped. 5-test pin: (1) every output contains the path tail; (2) leading-slash stripping (single + multiple); (3) matches pure implementation for dev BASE_URL='/'; (4) matches pure implementation for gh-pages '/objexoom/'; (5) never emits double-slash between base and path. Test runs against the live `A()` in whatever BASE_URL the test runner provides AND against a pure-fn reimplementation for dev + gh-pages, so any drift in `A()` OR a future change to vite's BASE_URL substitution semantics surfaces here. Source: TEST G5.
 
 ### S — security defense-in-depth (post-distribution-ready)
 
