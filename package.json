@@ -1,7 +1,7 @@
 {
 	"name": "objexoom",
 	"private": true,
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"type": "module",
 	"packageManager": "pnpm@10.2.0",
 	"description": "OBJEXOOM — a polished DOOM-flavored arcade FPS. Procedural sectors, real PSX monsters, and a flashlight you absolutely need.",
