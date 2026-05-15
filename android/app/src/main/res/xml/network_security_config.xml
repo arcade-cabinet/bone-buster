@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  S3 — Android network security config. SECURITY audit #4: the game
+  has zero outbound network calls (verified by grep — no fetch / XHR /
+  WebSocket / EventSource in src/). Android's default since targetSdk
+  28 is cleartextTraffic=false but this config makes the intent
+  explicit and rejects any future regression that would add an
+  unintentional http:// endpoint.
+
+  Trust anchors are system-only — we don't ship custom CA certs.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

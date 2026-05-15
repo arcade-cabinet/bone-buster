@@ -4,6 +4,36 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="theme-color" content="#03050b" />
+		<!--
+		  S2 — Content Security Policy. Defense-in-depth — there are no
+		  current XSS sinks in the codebase (zero innerHTML / eval /
+		  Function / dangerouslySetInnerHTML; confirmed by SECURITY audit
+		  2026-05-15), but a CSP locks the absence in against future
+		  regressions.
+
+		  Allowlist rationale:
+		    - script-src 'self' 'wasm-unsafe-eval'
+		        Tone.js AudioWorklets + jeep-sqlite custom element load
+		        WASM at runtime (needs wasm-unsafe-eval, NOT unsafe-eval).
+		    - style-src 'self' 'unsafe-inline'
+		        framer-motion injects style attributes at runtime.
+		    - img-src 'self' data: blob:
+		        canvas → blob URLs for screenshot captures; data: URIs
+		        from postprocessing's lookup textures.
+		    - worker-src 'self' blob:
+		        AudioWorklet workers from Tone.js + potential Vite-issued
+		        blob: workers.
+		    - connect-src 'self'
+		        The game has ZERO outbound fetches (offline single-player).
+		        Lock it.
+		    - object-src 'none' / base-uri 'none' / frame-ancestors 'none'
+		        Removes the legacy <object> / <embed> attack surface and
+		        prevents clickjacking via iframe embedding.
+		-->
+		<meta
+			http-equiv="Content-Security-Policy"
+			content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';"
+		/>
 		<title>OBJEXOOM — Rip and Tear</title>
 		<meta name="description" content="OBJEXOOM — a polished DOOM-flavored arcade FPS. Procedural sectors, real PSX monsters, and a flashlight you absolutely need." />
 		<link rel="manifest" href="./manifest.webmanifest" />
