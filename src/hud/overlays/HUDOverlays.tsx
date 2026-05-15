@@ -49,7 +49,7 @@ export function HUDOverlays({
 			<KeyPickupCeremony />
 			<PickupChip />
 			<DifficultyChip difficulty={difficulty} runId={runId} />
-			<GoingBackOverlay phase={phase} />
+			<GoingBackOverlay phase={phase} deadlineMs={state.goingBackDeadlineMs} />
 			<PauseOverlay
 				state={state}
 				onResume={onResume}
