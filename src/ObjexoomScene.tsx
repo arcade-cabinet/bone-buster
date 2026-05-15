@@ -87,6 +87,7 @@ import {
 } from "./scene";
 import { tickEnemyLoop } from "./scene/hooks/enemyTickLoop";
 import { resolveFire } from "./scene/hooks/fireResolution";
+import { createTimeScaleBus } from "./scene/hooks/timeScaleBus";
 import { type Secret, spawnSecrets } from "./secrets";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 import {
@@ -287,11 +288,12 @@ export function ObjexoomScene({
 	// POL13 — per-weapon bloom tier multiplier set on every shot by
 	// fireResolution; muzzle decay block applies it to base intensity.
 	const muzzleIntensityScaleRef = useRef(1.0);
-	// POL12 — hitstop window. fireResolution sets this to `now + 80ms`
-	// (or 150ms for boss kills) on any enemy kill; enemyTickLoop reads
-	// it and scales its dt down to 5% inside the window so enemies
-	// appear to "freeze" — reads as a weighty kill-confirm punch.
-	const hitstopUntilRef = useRef(0);
+	// POL35 — time-scale bus. POL12 hitstop and POL22 key-acquire both
+	// reserve on this bus; enemyTickLoop reads only the combined scale.
+	// fireResolution + onDebugKill reserve "hitstop" on enemy kills;
+	// FlashlightAcquired/KeyAcquired listeners reserve "key-acquire" via
+	// the slot pattern.
+	const timeScaleBusRef = useRef(createTimeScaleBus());
 	// POL20 — shared Y-offset ref between WeaponSwapDip (writer) and
 	// WeaponViewmodel (reader). Slot architecture: the dip animation
 	// lives in its own component, the viewmodel just reads the value.
@@ -355,6 +357,17 @@ export function ObjexoomScene({
 			});
 		});
 	}, [camera]);
+
+	// POL35 — key-acquire reservation on the time-scale bus. POL22 punted
+	// the slow-mo on key pickup because timeScale needed a single owner;
+	// the bus IS that owner. 0.55× for 220ms — distinct from kill hitstop
+	// (0.05× for 80ms) so a player can feel the difference between "you
+	// killed something heavy" and "you got the key".
+	useEffect(() => {
+		return addObjexoomListener("keyPickedUp", () => {
+			timeScaleBusRef.current.reserve("key-acquire", 0.55, performance.now() + 220);
+		});
+	}, []);
 
 	// E11 — push the per-map archetype to the ambient bed on mount.
 	// Each archetype shifts the drone's pitch + base volume so different
@@ -618,7 +631,7 @@ export function ObjexoomScene({
 			playerY: py,
 			now,
 			dt,
-			hitstopUntilRef,
+			timeScaleBus: timeScaleBusRef.current,
 		});
 
 		// Bullet integration — advance, check wall/player, retire dead bullets.
@@ -691,10 +704,11 @@ export function ObjexoomScene({
 				gameRef.current.onKill();
 			}
 			if (killsThisTick > 0) {
-				// POL12 hitstop window — debug-kills should feel the same
-				// punch as real kills.
+				// POL35 hitstop reservation — debug-kills should feel the same
+				// punch as real kills. POL12 timings preserved (boss 150ms,
+				// standard 80ms, scale 0.05 — the most-pinched scale wins).
 				const hitstopMs = bossKillsThisTick > 0 ? 150 : 80;
-				hitstopUntilRef.current = performance.now() + hitstopMs;
+				timeScaleBusRef.current.reserve("hitstop", 0.05, performance.now() + hitstopMs);
 				// POL10-v2 boss death + skeleton death audio.
 				playSkeletonDeath();
 				if (bossKillsThisTick > 0) playBossDeath();
@@ -797,7 +811,7 @@ export function ObjexoomScene({
 				muzzleFlashUntilRef: muzzleFlashUntil,
 				muzzleColorRef,
 				muzzleIntensityScaleRef,
-				hitstopUntilRef,
+				timeScaleBus: timeScaleBusRef.current,
 				explodeBarrel: (b) => explodeBarrelRef.current(b),
 			});
 		};

@@ -74,15 +74,13 @@ export interface EnemyTickContext {
 	now: number;
 	dt: number;
 	/**
-	 * POL12 — hitstop on enemy kills. When `now < hitstopUntil`, the
-	 * effective dt for enemy AI/movement is scaled by HITSTOP_FACTOR
-	 * (near-zero) so enemies appear to "freeze" for the duration —
-	 * reads as a "weighty kill" punch from modernized DOOM. The player
-	 * camera + bullet ticks + particle ticks are NOT affected; only
-	 * this loop reads the ref. Optional so test contexts that don't
-	 * care about hitstop can pass `undefined` (treated as never-active).
+	 * POL35 — time-scale bus. The loop applies the combined scale (min
+	 * over live reservations) to `dt`. POL12 hitstop and POL22 key
+	 * acquire both reserve on this bus; the loop sees only the combined
+	 * result. Optional so test contexts that don't care about time
+	 * scaling can pass `undefined` (treated as scale = 1).
 	 */
-	hitstopUntilRef?: { current: number };
+	timeScaleBus?: { getCombinedScale(nowMs: number): number };
 }
 
 export function tickEnemyLoop(ctx: EnemyTickContext): void {
@@ -104,16 +102,16 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 		playerY: py,
 		now,
 		dt: rawDt,
-		hitstopUntilRef,
+		timeScaleBus,
 	} = ctx;
 
-	// POL12 — hitstop. While the kill-punch window is open, scale enemy
-	// AI dt to 0.05 (5%) so enemies appear nearly frozen. 0 would cause
-	// divide-by-zero in places that normalize velocity by dt; 5% gives
-	// near-instant frame-coherence + a perceptual "frozen" read.
-	const HITSTOP_FACTOR = 0.05;
-	const hitstopActive = hitstopUntilRef !== undefined && now < hitstopUntilRef.current;
-	const dt = hitstopActive ? rawDt * HITSTOP_FACTOR : rawDt;
+	// POL35 — combined time scale. The bus combines POL12 hitstop (0.05
+	// during a kill window) and POL22 key-acquire (0.55 during the brief
+	// world-pause on key pickup) via min, so the most-pinched reservation
+	// always wins. Floor at 0.05 to avoid divide-by-zero in math that
+	// normalizes by dt — matches the pre-POL35 HITSTOP_FACTOR.
+	const combinedScale = timeScaleBus ? timeScaleBus.getCombinedScale(now) : 1;
+	const dt = rawDt * Math.max(combinedScale, 0.05);
 
 	// Enemy AI — FSM driven (state 0=patrol, 1=chase, 3=shoot). Skeletons
 	// also melee on contact via the legacy attack-range/cooldown path.
