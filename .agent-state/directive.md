@@ -1,6 +1,6 @@
 # Continuous Work Directive — objexoom
 
-**Status:** ACTIVE
+**Status:** RELEASED (Phase 20 drained 2026-05-15 — 15/15 items shipped, queue empty)
 
 ## CONTINUE doesn't have an end-of-turn
 
