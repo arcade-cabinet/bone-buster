@@ -8,11 +8,15 @@
  * `.wasm` as base64 by default, which OOMs the build worker pool for
  * anything over a few hundred KB. Copying to public/ keeps the WASM
  * as a separate static asset — the same pattern every other
- * three.js / r3f / sql.js reference project ships.
+ * three.js / r3f reference project ships.
  *
  * Add an entry to ARTIFACTS below when a new WASM-shipping dep gets
  * added. The artifact gets copied at `pnpm install` (postinstall) and
  * at `pnpm run build` (prebuild) via the package.json hooks.
+ *
+ * ARCH3 (Phase 20, 2026-05-15) removed the sql.js entry along with
+ * the dep itself — the STO1b Capacitor SQLite migration shipped its
+ * grace window and any lingering legacy-blob users are unrecoverable.
  */
 
 import { access, copyFile, mkdir } from "node:fs/promises";
@@ -30,14 +34,7 @@ const root = resolve(__dirname, "..");
  * `optional: true` skips silently if the source isn't installed
  * (e.g. dep adopted later, or only used in a subset of builds).
  */
-const ARTIFACTS = [
-	{
-		label: "sql.js",
-		source: "node_modules/sql.js/dist/sql-wasm.wasm",
-		destination: "public/assets/wasm/sql-wasm.wasm",
-		optional: true,
-	},
-];
+const ARTIFACTS = [];
 
 async function exists(path) {
 	try {
