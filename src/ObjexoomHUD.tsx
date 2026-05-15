@@ -305,6 +305,13 @@ export function ObjexoomHUD({
 // E12/PA16 — only mounts when ?objexoomDebug is in the URL. Listens to
 // the `objexoom:fpsUpdate` event dispatched from inside the Canvas and
 // renders a tiny FPS + DPR readout in the bottom-left corner.
+// OBS2 — perf budget thresholds. If draw-calls or triangles
+// exceed these for 3 consecutive report windows, the readout
+// border flashes red + a one-shot console warning fires.
+const OBS2_CALL_BUDGET = 400;
+const OBS2_TRI_BUDGET = 50_000;
+const OBS2_CONSECUTIVE_WINDOWS = 3;
+
 function AdaptiveResolutionReadout() {
 	const [info, setInfo] = useState<{
 		fps: number;
@@ -312,6 +319,9 @@ function AdaptiveResolutionReadout() {
 		drawCalls?: number;
 		triangles?: number;
 	} | null>(null);
+	const [overBudget, setOverBudget] = useState(false);
+	const consecutiveOverRef = useRef(0);
+	const warnedRef = useRef(false);
 	const [enabled] = useState(
 		() =>
 			typeof window !== "undefined" &&
@@ -322,17 +332,38 @@ function AdaptiveResolutionReadout() {
 		if (!enabled) return;
 		return addObjexoomListener("fpsUpdate", ({ fps, pixelRatio, drawCalls, triangles }) => {
 			setInfo({ fps, pixelRatio, drawCalls, triangles });
+			// OBS2 — accumulate consecutive over-budget windows.
+			const overCalls = drawCalls != null && drawCalls > OBS2_CALL_BUDGET;
+			const overTris = triangles != null && triangles > OBS2_TRI_BUDGET;
+			if (overCalls || overTris) {
+				consecutiveOverRef.current += 1;
+				if (consecutiveOverRef.current >= OBS2_CONSECUTIVE_WINDOWS) {
+					setOverBudget(true);
+					if (!warnedRef.current) {
+						warnedRef.current = true;
+						console.warn(
+							`[OBS2] perf-budget exceeded for ${OBS2_CONSECUTIVE_WINDOWS} consecutive windows: ` +
+								`calls=${drawCalls ?? "?"} (budget ${OBS2_CALL_BUDGET}), ` +
+								`triangles=${triangles ?? "?"} (budget ${OBS2_TRI_BUDGET})`,
+						);
+					}
+				}
+			} else {
+				consecutiveOverRef.current = 0;
+				setOverBudget(false);
+			}
 		});
 	}, [enabled]);
 
 	if (!enabled || !info) return null;
-	// OBS1 — format triangle count compactly (k for ≥1000, M for ≥1M).
 	const triFmt = (n: number | undefined) => {
 		if (n == null) return "";
 		if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
 		if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
 		return String(n);
 	};
+	const borderColor = overBudget ? "#ef4444" : `${ROLE.accentPrimary}55`;
+	const textColor = overBudget ? "#fca5a5" : ROLE.accentPrimary;
 	return (
 		<div
 			data-testid="objexoom-fps-readout"
@@ -343,11 +374,11 @@ function AdaptiveResolutionReadout() {
 				fontFamily: FONT_FAMILY.body,
 				fontSize: 11,
 				letterSpacing: LETTER_SPACING.hudLabel,
-				color: ROLE.accentPrimary,
+				color: textColor,
 				background: `${OBJEXOOM_PALETTE.ink}cc`,
 				padding: "4px 8px",
 				borderRadius: 4,
-				border: `1px solid ${ROLE.accentPrimary}55`,
+				border: `1px solid ${borderColor}`,
 				pointerEvents: "none",
 				display: "flex",
 				flexDirection: "column",
