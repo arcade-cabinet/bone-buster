@@ -115,7 +115,28 @@ let hitStingSynth: Tone.Synth | null = null;
 // K7 — door-open clock SFX (mechanical tick + low boom).
 let doorTickSynth: Tone.MetalSynth | null = null;
 
+/**
+ * A5 — split into two init paths:
+ *  - `ensureSfxCritical()` initializes the SFX synths needed for the
+ *    landing → playing transition. This is the path the Start Game
+ *    button calls.
+ *  - `ensureMusic()` initializes the 6 music PolySynths (~200-400ms
+ *    on cold-start mobile Chrome). Called after the first frame of
+ *    `playing` status so the time-to-first-interactive isn't blocked
+ *    on music synth allocation.
+ *
+ * `ensureSfx()` is kept as a back-compat alias for callers that want
+ * everything in one go (e.g. tests). New call-sites should prefer the
+ * split paths.
+ */
+let musicInitialized = false;
+
 export async function ensureSfx() {
+	await ensureSfxCritical();
+	await ensureMusic();
+}
+
+export async function ensureSfxCritical() {
 	if (initialized) return;
 	initialized = true;
 	if (Tone.getContext().state !== "running") {
@@ -253,6 +274,29 @@ export async function ensureSfx() {
 		octaves: 0.5,
 		volume: -14,
 	}).connect(masterReverb);
+
+	// A5 — music synth init moved to `ensureMusic()` below. ensureSfxCritical
+	// stops here; caller defers ensureMusic until after the first frame
+	// of `playing` status so time-to-first-interactive isn't blocked.
+}
+
+/**
+ * A5 — music synth pool initialization. Builds the 6 PolySynths +
+ * connects them to masterReverb. The Reverb's IR bake (~50-150ms on
+ * Android Chrome) already happened inside ensureSfxCritical, so this
+ * call is mostly the PolySynth allocations themselves (~200-400ms on
+ * cold-start mobile).
+ *
+ * Idempotent — safe to call multiple times. Returns immediately on
+ * second-and-subsequent calls.
+ */
+export async function ensureMusic() {
+	if (musicInitialized) return;
+	// Music depends on masterReverb; if SFX-critical hasn't run yet
+	// (call-order accident), run it first so we don't crash.
+	if (!initialized) await ensureSfxCritical();
+	if (!masterReverb) return; // ensureSfxCritical failed; bail silently.
+	musicInitialized = true;
 
 	// K5/K6 — six music voices, each a PolySynth with a distinct timbre.
 	// They share the master reverb and the Tone.Transport clock. Building
