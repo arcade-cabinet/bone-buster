@@ -33,6 +33,31 @@ const DEBUG_URL = "/?objexoomDebug&objexoomSeed=12345";
 const OUT_DIR = "test-results/objexoom-screenshots";
 const VIEWPORT = { width: 1440, height: 900 } as const;
 
+/**
+ * T7 — wait N animation frames before screenshotting. More robust than
+ * `page.waitForTimeout(ms)` because it scales with the actual frame
+ * cadence (slow CI agents still get N real frames, fast agents don't
+ * idle). Used to settle shadow-map composites + post-process passes
+ * before a CDP screenshot capture. Replaces the prior
+ * `page.waitForTimeout(900)` etc which were flake bait on contested
+ * GH Actions runners.
+ */
+async function waitForFrames(page: Page, frameCount: number): Promise<void> {
+	await page.evaluate(
+		(n) =>
+			new Promise<void>((resolve) => {
+				let remaining = n;
+				const tick = () => {
+					remaining -= 1;
+					if (remaining <= 0) resolve();
+					else requestAnimationFrame(tick);
+				};
+				requestAnimationFrame(tick);
+			}),
+		frameCount,
+	);
+}
+
 // Flags lifted from tests/e2e/route-screenshots.spec.ts — these enable
 // the real GL backend (not SwiftShader) and place the window offscreen
 // so the developer's actual display stays free. Headless still applies,
@@ -118,7 +143,8 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 		await withGame(baseURL, async (page) => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await page.getByRole("heading", { name: /OBJEXOOM/ }).waitFor();
-			await page.waitForTimeout(250);
+			// T7 — 15 frames is enough to settle the landing fade animation.
+			await waitForFrames(page, 15);
 			await captureViaCDP(page, `${OUT_DIR}/landing.png`);
 		});
 	});
@@ -139,8 +165,8 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.evaluate(() => {
 				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.collectAllPickups();
 			});
-			// Settle frames for SpotLight + shadow map.
-			await page.waitForTimeout(750);
+			// T7 — 45 frames (≈750ms @60fps) settles SpotLight + shadow map composite.
+			await waitForFrames(page, 45);
 			await captureViaCDP(page, `${OUT_DIR}/ingame-flashlight-on.png`);
 		});
 	});
@@ -158,7 +184,8 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
-			await page.waitForTimeout(500);
+			// T7 — 30 frames (≈500ms @60fps) for the dark-mode pose.
+			await waitForFrames(page, 30);
 			await captureViaCDP(page, `${OUT_DIR}/ingame-flashlight-off.png`);
 		});
 	});
@@ -203,9 +230,10 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 				hooks.collectKey();
 				hooks.triggerWin();
 			});
-			// Long settle so the 200-frame strobe lands mid-bright AND
-			// shadows fully composite.
-			await page.waitForTimeout(900);
+			// T7 — 54 frames (≈900ms @60fps). The 200-frame strobe cycles
+			// every ~3.3s; waiting 54 frames lands mid-bright AND gives
+			// shadows time to fully composite.
+			await waitForFrames(page, 54);
 			await captureViaCDP(page, `${OUT_DIR}/going-back-strobe.png`);
 		});
 	});
@@ -239,7 +267,11 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 						hooks.teleport(state.playerSpawn.x, state.playerSpawn.y, 0);
 					}
 				});
-				await page.waitForTimeout(900);
+				// T7 — 54 frames per level-clear cycle (matches the pre-T7
+				// 900ms cadence). Inside the for-loop because each
+				// iteration triggers a full kill→key→win→teleport state
+				// machine pass.
+				await waitForFrames(page, 54);
 			}
 			await captureViaCDP(page, `${OUT_DIR}/mission-complete.png`);
 		});
