@@ -38,7 +38,9 @@ describe("POL39 flashlight boost envelope", () => {
 	});
 
 	it("is monotonically decreasing across the window (ease-out from peak to baseline)", () => {
-		const samples = [0, 50, 100, 150, 200, 220].map((dt) => computeBoostedIntensity(1000 + dt, 1000));
+		const samples = [0, 50, 100, 150, 200, 220].map((dt) =>
+			computeBoostedIntensity(1000 + dt, 1000),
+		);
 		for (let i = 1; i < samples.length; i++) {
 			expect(samples[i]).toBeLessThanOrEqual(samples[i - 1] + 1e-6);
 		}
