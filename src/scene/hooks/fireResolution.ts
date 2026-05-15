@@ -62,12 +62,14 @@ export interface FireResolutionContext {
 	/** POL13 — muzzle-flash bloom tier per weapon (0=melee, 0.6=pistol, 0.9=chaingun, 1.4=shotgun, 1.1=flamethrower). */
 	muzzleIntensityScaleRef: { current: number };
 	/**
-	 * POL12 — hitstop trigger. On any enemy kill this shot, set the
-	 * `until` timestamp to `now + HITSTOP_MS`. Enemy AI tick reads this
-	 * ref and scales its dt down for the window so the kill reads as
-	 * a "weighty" punch.
+	 * POL35 — time-scale bus. resolveFire reserves "hitstop" on any
+	 * enemy kill this shot; the enemy tick loop reads the combined
+	 * scale (POL12 hitstop + POL22 key-acquire min'd together) and
+	 * applies it to its dt.
 	 */
-	hitstopUntilRef: { current: number };
+	timeScaleBus: {
+		reserve(id: "hitstop" | "key-acquire", scale: number, untilMs: number): void;
+	};
 	explodeBarrel: (barrel: Barrel) => void;
 }
 
@@ -90,7 +92,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		muzzleFlashUntilRef,
 		muzzleColorRef,
 		muzzleIntensityScaleRef,
-		hitstopUntilRef,
+		timeScaleBus,
 		explodeBarrel,
 	} = ctx;
 
@@ -285,13 +287,12 @@ export function resolveFire(ctx: FireResolutionContext): void {
 
 	if (killsThisShot > 0) {
 		for (let i = 0; i < killsThisShot; i += 1) gameRef.current.onKill();
-		// POL12 — hitstop punch on any enemy kill this shot. 80ms reads
-		// as a "weighty kill" beat in modernized DOOM without disrupting
-		// the player's input pacing (cooldowns are ≥90ms so the hitstop
-		// is always inside the next-shot gap). Boss kills get a longer
-		// 150ms freeze — the "boss down" beat deserves a bigger pause.
+		// POL35 hitstop reservation — same POL12 timings (80ms standard,
+		// 150ms boss), scale 0.05. Enemy tick reads min(this, POL22 key
+		// acquire 0.55), so a key-acquire-during-kill cycle still freezes
+		// to 0.05 — the player feels the heaviest moment.
 		const hitstopMs = bossKillsThisShot > 0 ? 150 : 80;
-		hitstopUntilRef.current = now + hitstopMs;
+		timeScaleBus.reserve("hitstop", 0.05, now + hitstopMs);
 		playSkeletonDeath();
 		// POL10 — layer the boss-down sting on top when at least one boss
 		// died in this shot. Players hear both the "kill confirmed" cascade
