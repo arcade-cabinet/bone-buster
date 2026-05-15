@@ -8,6 +8,12 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   release-please:
@@ -37,6 +43,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build for GitHub Pages
         run: pnpm build:pages
-      - uses: actions/upload-pages-artifact@v5
+      - name: Verify runtime asset bundle
+        run: pnpm assets:verify-runtime
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+
+  deploy-pages:
+    needs: build-pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
