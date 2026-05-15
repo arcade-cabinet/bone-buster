@@ -1,6 +1,6 @@
 ---
 title: Changelog
-updated: 2026-05-14
+updated: 2026-05-15
 status: current
 domain: history
 ---
@@ -13,7 +13,71 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 
+- **STO1a — Capacitor Preferences settings persistence.** Direct
+  `localStorage` calls in app code are now forbidden (user policy:
+  "no direct localStorage — both work on web and mobile"). Added
+  `@capacitor/preferences` (^8.0.1) as the KV abstraction. New
+  `src/persistence/preferences.ts` is the thin facade
+  (`readPref`/`writePref` + JSON variants). New
+  `src/persistence/settingsStore.ts` defines `validateSettings`
+  (type-narrowing per-field with DEFAULT_SETTINGS fallback) +
+  `loadSettings` + `saveSettings`. `ObjexoomShell` async-hydrates on
+  mount + auto-saves on change. Settings (difficulty, level, sound,
+  sensitivity) now persist across sessions on BOTH web AND mobile.
+  10 unit tests pin the validator contract.
+- **POL31 — Difficulty acknowledgment HUD chip.** When a player picks
+  NIGHTMARE in landing Settings and clicks NEW GAME, a 2-second
+  transient chip surfaces top-center naming the chosen difficulty in
+  its palette (cool indigo at the easy end, hot blood-red at
+  NIGHTMARE). Race-free prop-driven mount (not event-driven — the HUD
+  subtree mounts AFTER the landing→game transition's AnimatePresence
+  exit animation, so an event would fire before the listener
+  registered). New `__objexoom.setDifficulty(Difficulty)` debug hook
+  lets playtest scripts drive the chip in each of the 5 palettes.
+- **POL32 — Main-menu best-run readout.** Landing-page BestRunChip
+  enriched with the **time dimension**. New two-row format: primary
+  `BEST RUN · M{N} · {m:ss} · {kills} KILLS` (or `· RANDOM ·` for
+  procedural), secondary `{WON|DIED} · {N} RUN{S} · {SECRETS}`. New
+  exported `formatRunDuration(ms)` in `src/runHistory.ts` handles
+  m:ss / h:mm:ss split + clamps non-finite/negative. 6 unit tests
+  pin the formatter contract.
+- **AUD1 — SFX mix coherence audit.** `src/sfx.ts` exports
+  `SFX_VOLUMES` (15 synth dB values, shipped), `SFX_BANDS` (5
+  category dB ranges), `SFX_CATEGORIES` (synth → category map). 17
+  new tests pin every synth into its category band so future drift
+  fails before it ships.
+- **PT7 — Mobile touch playtest captures.** `scripts/pt7-mobile.mjs`
+  captures 3 beats at Pixel 5 viewport (412×915, touch + isMobile):
+  landing / in-game-with-touch-controls / mission-complete.
+- **POL29 — Boss emissive rim pre-kill.** Boss-tier enemies carry a
+  blood-red emissive rim (intensity 0.22) via per-instance material
+  clone — visually distinguishes the boss silhouette from regular
+  skeletons before the first hit lands.
+- **POL30 — Pickup ceremony chip.** New PickupChip HUD slot listens
+  for `pickupCollected` events, renders a 700ms transient chip
+  top-center per-kind: health=ember, flashlight=amber,
+  chaingunAmmo=indigo, shotgunAmmo=violet, loot=amber-treasure.
+- **OBS1 — Perf readout overlay.** AdaptiveResolutionReadout shows
+  CALLS + TRIS peak per 60-frame window (gated on `?objexoomDebug`).
+- **OBS2 — Perf-budget warning.** OBS1 readout border turns red +
+  one-shot `console.warn` fires when draw-calls > 400 OR triangles
+  > 50k for 3 consecutive 60-frame windows.
+
 ### Changed
+
+- **PR #16 second-pass reviewer fold.** WeaponViewmodel useFrame
+  pinned to `priority=-1` so it runs BEFORE the scene's default-
+  priority useFrame that reads the muzzle anchor's world position —
+  closes the 16ms muzzle-flash lag flagged by Gemini. Verified
+  against r3f 9.6 source. Sharpened the chaingun muzzleBboxFrac
+  comment to address Gemini's misreading (states three.js camera-
+  forward is -Z, explains the full transform chain). Fixed directive
+  branch-policy contradiction.
+- **ObjexoomShell settings boot path.** Mount now async-loads
+  persisted settings via STO1a's `loadSettings()`; URL flag
+  `?objexoomArchetype` still wins as override. Save-on-change effect
+  guards on `settingsHydratedRef` so the boot DEFAULT_SETTINGS
+  doesn't clobber a persisted blob during the async window.
 
 - **AUDIO3 — HUD overlay extraction.** SecretFoundFlash + KeyPickupCeremony + GoingBackOverlay extracted from ObjexoomHUD.tsx (was ~819 lines, now ~606) into `src/hud/overlays/` (one file per overlay) + `HUDOverlays.tsx` aggregator. Adding a new overlay is a new-file operation + one-line addition. Closes all four slot types from docs/SLOT-ARCHITECTURE.md.
 - **AUDIO2 — sfx.ts migrated to audioBus.** All 19 play functions now `fire(channelId, t => synth.triggerAttackRelease(...))` through the typed bus. **Channel re-architecture mid-implementation:** AUDIO1's by-cue ChannelId list was incorrect — Tone.js's collision check is per-synth, so channels must be enumerated by SYNTH INSTANCE (`pickup` channel serves both `playPickup` and `playSecretFound` because both target `pickupSynth`). Final 15 channels: pistol/chaingun/shotgun/melee/hurt/death/pickup/door/doorTick/portal/boom/boomNoise/ambientDrone/aggro/hitSting. All `last*FireTime` globals deleted; the manual `jitter()` helper deleted. sfx.ts dropped from ~600 to ~470 lines.

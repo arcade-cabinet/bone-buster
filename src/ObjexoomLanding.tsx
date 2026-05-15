@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "./design-tokens";
-import { openRunHistory, type RunRecord } from "./runHistory";
+import { formatRunDuration, openRunHistory, type RunRecord } from "./runHistory";
 import {
 	DIFFICULTY_BLURB,
 	DIFFICULTY_LABEL,
@@ -196,10 +196,14 @@ function MainMenu({
 }
 
 /**
- * POL6 — Reads runHistory asynchronously on landing-mount. When at
- * least one run has been persisted, shows a single-line chip with
- * the count + best-run breakdown. Hidden during initial async load
- * and when no runs exist (fresh install).
+ * POL6 / POL32 — Reads runHistory asynchronously on landing-mount.
+ * When at least one run has been persisted, shows a stencil chip with
+ * the best run's level / time / kills breakdown plus a secondary
+ * run-count footer. Hidden during initial async load and when no runs
+ * exist (fresh install) — no landing space is reserved for it.
+ *
+ * Format (POL32 spec): `BEST RUN · M{level} · {mm:ss} · {kills} KILLS`
+ * Footer: `{N} RUN{S} · {SECRETS}` (secrets line only when > 0).
  */
 function BestRunChip() {
 	const [best, setBest] = useState<RunRecord | null>(null);
@@ -222,6 +226,9 @@ function BestRunChip() {
 		};
 	}, []);
 	if (!ready || count === 0 || !best) return null;
+	const durationMs = Math.max(0, best.endedAt - best.startedAt);
+	const durationLabel = formatRunDuration(durationMs);
+	const levelLabel = best.levelSet === "procedural" ? "RANDOM" : `M${best.levelSet}`;
 	const outcomeLabel = best.outcome === "won" ? "WON" : "DIED";
 	const secretSuffix =
 		best.totalSecrets > 0
@@ -229,13 +236,23 @@ function BestRunChip() {
 			: "";
 	return (
 		<div data-testid="objexoom-best-run-chip" style={bestRunChipStyle}>
-			<span style={{ opacity: 0.7 }}>BEST</span> {best.levelsCleared}L · {best.totalKills}K ·{" "}
-			{outcomeLabel}
-			{secretSuffix}
-			<span style={{ opacity: 0.5, marginLeft: 8 }}>·</span>
-			<span style={{ opacity: 0.7, marginLeft: 8 }}>
-				{count} RUN{count === 1 ? "" : "S"}
-			</span>
+			<div style={bestRunPrimaryRowStyle}>
+				<span style={{ opacity: 0.7 }}>BEST RUN</span>
+				<span style={{ opacity: 0.4, margin: "0 8px" }}>·</span>
+				<span>{levelLabel}</span>
+				<span style={{ opacity: 0.4, margin: "0 8px" }}>·</span>
+				<span>{durationLabel}</span>
+				<span style={{ opacity: 0.4, margin: "0 8px" }}>·</span>
+				<span>{best.totalKills} KILLS</span>
+			</div>
+			<div style={bestRunSecondaryRowStyle}>
+				<span style={{ opacity: 0.6 }}>{outcomeLabel}</span>
+				<span style={{ opacity: 0.3, margin: "0 6px" }}>·</span>
+				<span style={{ opacity: 0.6 }}>
+					{count} RUN{count === 1 ? "" : "S"}
+				</span>
+				{secretSuffix && <span style={{ opacity: 0.6 }}>{secretSuffix}</span>}
+			</div>
 		</div>
 	);
 }
@@ -248,6 +265,20 @@ const bestRunChipStyle: CSSProperties = {
 	letterSpacing: LETTER_SPACING.hudLabel,
 	color: ROLE.accentPrimary,
 	textAlign: "center",
+	display: "flex",
+	flexDirection: "column",
+	gap: 4,
+};
+
+const bestRunPrimaryRowStyle: CSSProperties = {
+	fontSize: 13,
+	color: ROLE.accentPrimary,
+	textShadow: `0 0 10px ${ROLE.accentPrimary}33`,
+};
+
+const bestRunSecondaryRowStyle: CSSProperties = {
+	fontSize: 10,
+	color: ROLE.textSecondary,
 };
 
 function DifficultyPane({

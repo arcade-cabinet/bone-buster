@@ -50,6 +50,7 @@
 		"verify": "pnpm check && pnpm lint && pnpm test && pnpm test:browser && pnpm assets:verify-runtime"
 	},
 	"dependencies": {
+		"@capacitor/preferences": "^8.0.1",
 		"@react-three/drei": "^10.7.7",
 		"@react-three/fiber": "^9.6.1",
 		"@react-three/postprocessing": "^3.0.4",

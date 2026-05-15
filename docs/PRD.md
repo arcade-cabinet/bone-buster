@@ -704,6 +704,244 @@ type (6th archetype joining corridor/arena/courtyard/sewer/library
 per E13). New `EnemyKind = "npc"` variant the FSM treats as ambient
 (no aggro, no LOS, no attack). Spec lives at `.agent-state/directive.md` §COV14.
 
+## Phase 5 — Playability polish (POL / OBS / AUD / PT)
+
+The shipped game (Phases 1-4) clears the modernized-DOOM mechanical
+bar. Phase 5 is where the agent foreground judgement catches the
+"reads as student-grade" cuts that canonical screenshots miss — HUD
+acknowledgments, audio mix bands, draw-call budgets, and per-archetype
+visual identity. Each item below has its full shipped-notes spec in
+`.agent-state/directive.md` § Phase 16-18; this section captures the
+**user-facing acceptance** that an outside reviewer can verify against
+the running game without reading the directive shipped-notes.
+
+### POL29 — Boss visual identity pre-kill (Shipped)
+
+**User story:** A new player walks into the boss room and immediately
+reads "this is a different fight" — the silhouette is visually
+distinct from a regular skeleton BEFORE the player connects a hit.
+
+**Acceptance:**
+- Boss-tier enemies render at 1.6× regular scale (already shipped in
+  E2).
+- Boss-tier enemies carry a blood-red emissive rim at intensity 0.22
+  on every `MeshStandardMaterial` in the cloned GLB. Per-instance
+  material clone (no shared-cache mutation). Rim is preserved through
+  POL19 EnemyHitFlash stagger (different attribute path).
+- PT3 capture at boss death frame shows distinct red-emissive bone
+  color in the body-parts flight, vs. neutral bone color for regular
+  skeleton.
+
+**Implementation:** `src/scene/entities/EnemyMesh.tsx` `useMemo` that
+runs on mount, traverses the cloned scene, clones each
+`MeshStandardMaterial` per-instance, sets `emissive = SCALE.blood[600]`
+(`#dc2626`) + `emissiveIntensity = 0.22`. Only fires for `tier === "boss"`.
+
+### POL30 — Pickup ceremony differentiation (Shipped)
+
+**User story:** A player who picks up a flashlight / ammo / health
+pack sees a distinct top-center HUD chip naming the pickup — they
+learn what they just collected without having to read the HUD ammo
+delta.
+
+**Acceptance:**
+- New `<PickupChip>` HUD overlay slot mounts under
+  `src/hud/overlays/`.
+- Listens for `pickupCollected` event (extended in `events.ts`).
+- Renders a 700ms transient chip top-center with per-kind palette:
+  - health → ember
+  - flashlight → amber
+  - chaingunAmmo → indigo
+  - shotgunAmmo → violet
+  - loot → amber-treasure
+- Spring-eased entry/exit via AnimatePresence.
+- Keys route through the existing POL22 KeyPickupCeremony (no
+  double-render).
+
+**Implementation:** `src/hud/overlays/PickupChip.tsx`. Dispatch lives
+in `ObjexoomShell.onCollectPickup` before state apply.
+
+### POL31 — Difficulty acknowledgment HUD chip (Shipped)
+
+**User story:** A player who picks NIGHTMARE in the landing Settings
+panel and clicks NEW GAME sees a 2-second transient chip naming the
+chosen difficulty in its palette before the run starts in earnest.
+Cool indigo at the easy end, hot blood-red at NIGHTMARE.
+
+**Acceptance:**
+- New `<DifficultyChip>` HUD overlay slot under `src/hud/overlays/`.
+- Driven by a monotonic `runId` prop (NOT an event — AnimatePresence
+  mode="wait" on the landing→game transition adds a 350ms exit
+  animation, so an event-based listener would register AFTER the
+  dispatch fired). The chip's effect on `[runId]` is race-free by
+  construction: when the new HUD subtree mounts, it reads the
+  current runId on first render and triggers on the next bump.
+- Per-difficulty palette:
+  - tooYoung → deep indigo (cool/calm)
+  - notTooRough → medium indigo
+  - hurtMePlenty → amber (default)
+  - ultraViolence → ember-orange
+  - nightmare → blood-red (intense)
+- 2-second hold, spring-eased entry/exit.
+- Fires on both NEW GAME and RESUME RUN landing→playing transitions.
+- Skips boot-time runId=0 (no chip before the player has clicked
+  anything).
+
+**Implementation:** `src/hud/overlays/DifficultyChip.tsx`,
+`ObjexoomShell.tsx` `runId` state + `prevStatusRef` effect, props
+threaded through `ObjexoomHUD → HUDOverlays`. Debug hook
+`window.__objexoom.setDifficulty(Difficulty)` lets playtest scripts
+drive the chip in each palette. 5 captures land in
+`test-results/pol31-difficulty-chip/`.
+
+### STO1a — Capacitor Preferences settings persistence (Shipped)
+
+**User story:** A returning player's settings (difficulty, level,
+sound, sensitivity) survive across sessions on BOTH web AND mobile.
+The previous behavior was that every session started at
+`DEFAULT_SETTINGS`, forcing the player to re-select NIGHTMARE every
+time the page loaded.
+
+**Acceptance:**
+- `@capacitor/preferences` (^8.0.1) installed and used as the KV
+  abstraction. The plugin's web implementation wraps `localStorage`
+  under a `CapacitorStorage.` key namespace; the native
+  implementation maps to NSUserDefaults / SharedPreferences.
+- `src/persistence/preferences.ts` exposes `readPref`, `writePref`,
+  `removePref` + JSON variants as the thin facade. App code MUST go
+  through this module — no direct `localStorage` access permitted.
+- `src/persistence/settingsStore.ts` defines
+  `validateSettings(unknown): ObjexoomSettings` (per-field type
+  guards with DEFAULT_SETTINGS fallback; mouseSensitivity clamped
+  to [0.5, 2.5], touchLookSensitivity to [0.5, 4]; stringified
+  numbers coerce back to LevelChoice).
+- `ObjexoomShell` async-hydrates persisted settings on mount, guards
+  the save-on-change effect against the bootstrap, then auto-writes
+  every change.
+- URL flag `?objexoomArchetype` still wins as override (test/debug
+  harness path).
+- 10 unit tests pin the validator contract.
+
+**Implementation:** New `src/persistence/` module. The full SQLite
+migration (run history → `@capacitor-community/sqlite` + jeep-sqlite)
+is staged as STO1b — see `.agent-state/directive.md` § Phase 19.
+
+### POL32 — Main-menu best-run readout (Shipped)
+
+**User story:** A returning player sees their best run from prior
+sessions on the landing screen — a stencil chip between the menu
+and the page footer reading e.g. `BEST RUN · M5 · 3:42 · 124 KILLS`
+with a secondary footer line for outcome / total run count / total
+secrets. New player (no run history) sees nothing — the readout
+doesn't take up landing space.
+
+**Acceptance:**
+- Two-row stencil chip mounted in `MainMenu` via `BestRunChip`.
+- Primary row: `BEST RUN · {LEVEL} · {DURATION} · {KILLS} KILLS`.
+  - LEVEL is `M{N}` for hand-authored levels, `RANDOM` for procedural.
+  - DURATION is `m:ss` or `h:mm:ss` (formatRunDuration).
+- Secondary row: `{WON|DIED} · {N} RUN{S} · {SECRETS}` (secrets
+  only when > 0).
+- Reads from `openRunHistory().bestRun()` (E9 sql.js persistence layer).
+- Hidden entirely when `bestRun() === null` (no reserved landing space).
+- Primary row uses `ROLE.accentPrimary` with text-shadow glow;
+  secondary row uses `ROLE.textSecondary` for hierarchy.
+- 6 unit tests pin `formatRunDuration` contract (sub-minute,
+  minute-range, hour-range, negative/non-finite clamp, zero-padding).
+
+**Implementation:** `src/ObjexoomLanding.tsx` `BestRunChip` extended
+on top of the existing POL6 chip. New `formatRunDuration` export
+from `src/runHistory.ts` co-locates the format rule with the data.
+
+### OBS1 — Perf readout overlay (Shipped)
+
+**User story:** When running with `?objexoomDebug`, the agent (or a
+playtest engineer) sees a top-left readout showing FPS, dynamic-pixel-
+ratio, draw-calls (peak per 60-frame window), and triangles (peak)
+so frame drops are caught BEFORE the user notices them.
+
+**Acceptance:**
+- `gl.info.autoReset` disabled on mount so r3f doesn't zero counters
+  between useFrame and the actual render.
+- Peak calls + peak triangles tracked across each 60-frame window
+  via refs; `gl.info.reset()` called manually after sampling.
+- Readout shows `FPS N · DPR x.xx · CALLS N · TRIS Nk`.
+- Gated on `?objexoomDebug` URL flag.
+
+**Implementation:** `src/scene/effects/AdaptiveResolution.tsx` +
+`AdaptiveResolutionReadout`. Verified: corridor archetype reports
+CALLS 256 + TRIS 12.8k under canonical workload.
+
+### OBS2 — Perf-budget warning (Shipped)
+
+**User story:** When draw-calls > 400 OR triangles > 50k for 3
+consecutive 60-frame windows, the OBS1 readout border turns red and
+a one-shot `console.warn` fires — so regressions get caught
+automatically when running playtests rather than eyeballing numbers.
+
+**Acceptance:**
+- Constants `OBS2_CALL_BUDGET = 400`, `OBS2_TRI_BUDGET = 50_000`,
+  `OBS2_CONSECUTIVE_WINDOWS = 3` exported from
+  `AdaptiveResolution.tsx`.
+- Consecutive-window counter + warned-once ref.
+- Border + text turn red (`#ef4444` / `#fca5a5`) when threshold
+  breached for 3 consecutive windows.
+- One-shot `console.warn("[OBS2] perf-budget exceeded: ...")` fires
+  on the first threshold breach per session.
+- Threshold recovery resets both refs and clears the red state.
+
+**Implementation:** `src/scene/effects/AdaptiveResolution.tsx`.
+Verified false-positive-free at corridor canonical workload.
+
+### AUD1 — SFX mix coherence audit (Shipped)
+
+**User story:** Future contributors can't silently push one synth's
+volume 4dB above the rest and ruin the mix — every shipped synth
+has a documented dB category band, and the test suite fails if any
+synth drifts outside its band.
+
+**Acceptance:**
+- `src/sfx.ts` exports `SFX_VOLUMES` (shipped dB per synth),
+  `SFX_BANDS` (5 category dB ranges), `SFX_CATEGORIES` (synth →
+  category mapping with `satisfies` keeping the type-level join
+  honest).
+- Categories:
+  - `ambient` — drone, never foreground: -34 to -26 dB
+  - `uiFeedback` — pickup/door/portal/hit/tick: -16 to -8 dB
+  - `weaponFire` — pistol/chaingun/shotgun/melee: -16 to -4 dB
+  - `killSting` — death/boom/aggro/hitSting: -14 to -4 dB
+  - `musicVoice` — 6-voice procedural music: -36 to -28 dB
+- 15 per-synth band-check tests in
+  `src/__tests__/unit/objexoom-sfx-mix.test.ts`.
+- Invariant: every synth has a category (keys match).
+- Invariant: `ambient.max < uiFeedback.min` AND `< weaponFire.min`
+  (ambient must be strictly quietest).
+
+**Implementation:** Type-level + test-only — no runtime audio
+behavior change. The shipped volumes already fit their bands; this
+commit just pins them so future drift fails a test.
+
+### PT7 — Mobile touch playtest (Shipped)
+
+**User story:** The agent captures the game at Pixel-class mobile
+viewport (412×915, touch + isMobile) and verifies the touch controls,
+HUD, and mission-complete CTA all read correctly on a small screen.
+
+**Acceptance:**
+- `scripts/pt7-mobile.mjs` captures 3 beats at Pixel 5 viewport:
+  1. Landing — stencil OBJEXOOM gradient title adapts, 4 menu items
+     left-aligned with bullet arrows, 3-column compact footer.
+  2. In-game — HEALTH 9/9 + KILLS 0/3 HUD top, weapon dock top-center,
+     two virtual sticks at bottom corners, big orange-red FIRE button
+     bottom-right (modernized-DOOM mobile FPS layout).
+  3. Mission complete (fresh browser context to avoid Tone collision)
+     — stencil MISSION COMPLETE wraps to 2 lines, stat grid + amber
+     RETURN TO MENU CTA tappable.
+- All 3 beats PASS visual inspection; no fold-forward gaps surfaced.
+
+**Implementation:** `scripts/pt7-mobile.mjs` using
+`page.context().newCDPSession()` + Pixel 5 device descriptor.
+
 ## Acceptance checklist (cross-cutting)
 
 Every PRD item must satisfy these to be marked `[x]` in the

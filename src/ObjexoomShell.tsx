@@ -11,6 +11,7 @@ import { pickLootKind } from "./loot";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
+import { loadSettings, saveSettings } from "./persistence/settingsStore";
 import { openRunHistory, type RunHistory } from "./runHistory";
 import {
 	advanceLevel,
@@ -235,6 +236,39 @@ export function ObjexoomShell() {
 	const [settings, setSettings] = useState<ObjexoomSettings>(() =>
 		readArchetypeFromUrl() ? { ...DEFAULT_SETTINGS, level: "procedural" } : DEFAULT_SETTINGS,
 	);
+	// STO1a — track whether the async load-from-Preferences pass has
+	// resolved. Used to gate the save-on-change effect so the bootstrap
+	// load doesn't trigger a redundant write of DEFAULT_SETTINGS back
+	// over the same blob.
+	const settingsHydratedRef = useRef(false);
+	// STO1a — async-hydrate persisted settings on mount. The override
+	// for `?objexoomArchetype` still wins (URL flag → procedural) so
+	// the test/debug harness can short-circuit the persisted value
+	// without first clearing storage. If no blob exists, the loaded
+	// value equals DEFAULT_SETTINGS and the setSettings call is a
+	// no-op against initial state — no extra render.
+	useEffect(() => {
+		let cancelled = false;
+		void (async () => {
+			const persisted = await loadSettings();
+			if (cancelled) return;
+			const archetypeOverride = readArchetypeFromUrl();
+			setSettings(archetypeOverride ? { ...persisted, level: "procedural" } : persisted);
+			settingsHydratedRef.current = true;
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+	// STO1a — save settings back on every change AFTER hydration. The
+	// guard prevents the first paint from clobbering a persisted blob
+	// with DEFAULT_SETTINGS during the brief window before the load
+	// resolves. Write is best-effort (preferences.ts swallows quota /
+	// lock failures); the app never blocks on a failed save.
+	useEffect(() => {
+		if (!settingsHydratedRef.current) return;
+		void saveSettings(settings);
+	}, [settings]);
 	const map: ObjexoomMap = useMemo(
 		// I4 — difficulty plumbed through so ManyEnemies (class 9) expands
 		// per the ref formula. Procedural maps don't read it.

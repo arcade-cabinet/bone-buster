@@ -186,6 +186,30 @@ export async function openRunHistory(): Promise<RunHistory> {
 	return { insert, listRecent, bestRun, runCount, clear };
 }
 
+/**
+ * POL32 — format a run duration in milliseconds as a human-readable
+ * `m:ss` string (or `h:mm:ss` for runs that broke the hour mark).
+ * Exported so both the landing-page BestRunChip and any future HUD
+ * surface share one canonical formatting rule.
+ *
+ * Negative or NaN inputs clamp to "0:00" — the landing chip uses
+ * `endedAt - startedAt` which can theoretically go negative if a row
+ * was hand-edited; we don't want a `-1:-23` artifact in the UI.
+ */
+export function formatRunDuration(ms: number): string {
+	if (!Number.isFinite(ms) || ms < 0) return "0:00";
+	const totalSeconds = Math.floor(ms / 1000);
+	const hours = Math.floor(totalSeconds / 3600);
+	const minutes = Math.floor((totalSeconds % 3600) / 60);
+	const seconds = totalSeconds % 60;
+	const ss = seconds.toString().padStart(2, "0");
+	if (hours > 0) {
+		const mm = minutes.toString().padStart(2, "0");
+		return `${hours}:${mm}:${ss}`;
+	}
+	return `${minutes}:${ss}`;
+}
+
 function rowToRecord(row: Record<string, unknown>): RunRecord {
 	return {
 		id: Number(row.id),
