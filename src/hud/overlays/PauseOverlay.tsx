@@ -14,9 +14,6 @@ import type { GameState } from "../../ObjexoomShell";
  *
  * Three buttons match the pre-existing generic-card affordances:
  *   - RESUME (primary)         — onResume
- *   - OPTIONS (placeholder)    — currently routes to MAIN MENU since
- *                                in-pause options panel doesn't yet
- *                                exist; future POL can extend.
  *   - MAIN MENU (secondary)    — onReturnToLanding
  *   - QUIT (tertiary)          — onQuit
  *

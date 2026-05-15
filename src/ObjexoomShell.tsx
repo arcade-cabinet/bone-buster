@@ -524,9 +524,6 @@ export function ObjexoomShell() {
 							},
 						};
 					}
-					// POL1 — treasure → +50 score (real score field).
-					// Pre-POL1 used kills+5 as a proxy because GameState
-					// lacked score; that stub is now resolved.
 					return { ...prev, score: prev.score + 50 };
 				}
 				return {
