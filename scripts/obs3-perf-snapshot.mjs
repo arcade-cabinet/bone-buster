@@ -76,13 +76,19 @@ async function readJsonIfExists(path) {
 	}
 }
 
+// OBS4 fix — host configurable via env so CI can hit `vite preview`
+// (port 8191) instead of `vite dev` (port 5191). The previous hardcoded
+// dev-port URL silently failed in CI because no dev server is started
+// there; locally the assumption was that `pnpm dev` is already running.
+const PREVIEW_HOST = process.env.OBS3_HOST || "http://localhost:5191";
+
 async function snapshotArchetype(archetype) {
 	const browser = await chromium.launch({ headless: true, args: LAUNCH_ARGS });
 	const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
 	const page = await ctx.newPage();
 
 	// Pin to the archetype via the INF3 URL override + a deterministic seed.
-	const url = `http://localhost:5191/?objexoomDebug&objexoomSeed=12345&objexoomArchetype=${archetype}`;
+	const url = `${PREVIEW_HOST}/?objexoomDebug&objexoomSeed=12345&objexoomArchetype=${archetype}`;
 	await page.goto(url, { waitUntil: "domcontentloaded" });
 	await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
 

@@ -40,7 +40,7 @@ jobs:
   perf:
     runs-on: ubuntu-latest
     needs: verify
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -52,6 +52,22 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
+      - name: Start vite dev server
+        # OBS4 fix — perf script reads `window.__objexoom` which is
+        # dead-code-eliminated in production builds (debugHooksEnabled()
+        # returns false). Vite's dev server keeps the debug bundle, so
+        # `pnpm dev` is the right backing server even though preview
+        # would be smaller. Pinned to port 5191 to match the local
+        # workflow; perf script defaults to that URL.
+        run: |
+          pnpm dev --host 0.0.0.0 &
+          for i in {1..60}; do
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:5191 | grep -q 200; then
+              echo "dev server up on :5191"
+              break
+            fi
+            sleep 1
+          done
       - name: Perf snapshot vs tracked baselines
         run: pnpm test:perf
 
