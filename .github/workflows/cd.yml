@@ -9,7 +9,7 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,9 +25,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with: { lfs: true }
+        with:
+          lfs: true
       - uses: pnpm/action-setup@v4
-        with: { version: 10.2.0 }
+        with:
+          version: 10.2.0
       - uses: actions/setup-node@v5
         with:
           node-version: 22

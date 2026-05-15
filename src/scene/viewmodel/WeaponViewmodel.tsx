@@ -90,6 +90,14 @@ export function WeaponViewmodel({
 	 * (and with `null` on unmount). The world-position of this group is
 	 * the actual barrel tip of the wired GLB; ObjexoomScene reads it
 	 * each frame for the muzzle-flash point light.
+	 *
+	 * STABILITY CONTRACT (PR #16 fold, CodeRabbit nit): the callback's
+	 * identity is captured both inside the muzzleRef ref-callback (line
+	 * 204) and inside the unmount-cleanup effect's dep array (line 171).
+	 * Callers MUST memoize this with `useCallback` (or pass a stable
+	 * top-level function) — otherwise every parent re-render will
+	 * notify-with-null + notify-with-new-anchor, flashing the scene's
+	 * stored anchor and re-running the cleanup effect on each render.
 	 */
 	onMuzzleAnchor?: MuzzleAnchorCallback;
 }) {
