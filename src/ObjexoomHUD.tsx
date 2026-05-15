@@ -86,6 +86,8 @@ export function ObjexoomHUD({
 				difficulty={difficulty}
 				runId={runId}
 				onReturnToMenu={onReturnToLanding}
+				onResume={onResume}
+				onQuit={onQuit}
 			/>
 			{/* E10 — 3D spinning key model. Mounts only when hasKey is
 			    true (no Canvas → no WebGL cost otherwise). Flashes red on
@@ -278,17 +280,12 @@ export function ObjexoomHUD({
 			    cursor free). Hidden on touch (no pointer-lock concept). */}
 			{state.status === "playing" && !touchMode && <ClickToEngagePrompt />}
 
-			{state.status !== "playing" && (
+			{/* POL34 — `paused` state moved to the PauseOverlay HUD slot
+			    (src/hud/overlays/PauseOverlay.tsx). The slot owns its
+			    own AnimatePresence wrapper so we don't gate on
+			    status !== "playing" here for paused. */}
+			{(state.status === "dead" || state.status === "transitioning") && (
 				<div style={overlayStyle}>
-					{state.status === "paused" && (
-						<OverlayCard
-							title="PAUSED"
-							body={`The corridors will wait.\n\n${formatRunStats(state)}`}
-							primary={{ label: "RESUME", onClick: onResume }}
-							secondary={{ label: "MAIN MENU", onClick: onReturnToLanding }}
-							tertiary={{ label: "QUIT", onClick: onQuit }}
-						/>
-					)}
 					{state.status === "dead" && (
 						<OverlayCard
 							title="YOU DIED"
