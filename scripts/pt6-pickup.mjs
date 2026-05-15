@@ -5,15 +5,21 @@
  * animation window.
  */
 
-import { chromium } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import { chromium } from "@playwright/test";
 
 const OUT = "test-results/pt6-pickup";
 await mkdir(OUT, { recursive: true });
 
 const browser = await chromium.launch({
 	headless: true,
-	args: ["--no-sandbox", "--mute-audio", "--use-angle=gl", "--enable-webgl", "--ignore-gpu-blocklist"],
+	args: [
+		"--no-sandbox",
+		"--mute-audio",
+		"--use-angle=gl",
+		"--enable-webgl",
+		"--ignore-gpu-blocklist",
+	],
 });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();
