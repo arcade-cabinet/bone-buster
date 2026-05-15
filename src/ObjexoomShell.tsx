@@ -428,6 +428,11 @@ export function ObjexoomShell() {
 			}));
 		},
 		onCollectPickup: (kind) => {
+			// POL30 — fire the pickup-collected event so the PickupChip
+			// HUD overlay can render its kind-specific teach moment.
+			// Key pickups don't route through onCollectPickup — they
+			// have their own onPickupKey + POL22 ceremony.
+			dispatch({ type: "pickupCollected", kind });
 			const action = ammoIncrement[kind];
 			setState((prev) => {
 				if (action === "health") {

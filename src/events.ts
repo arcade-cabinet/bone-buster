@@ -188,6 +188,21 @@ export interface FlashlightAcquiredEvent {
 	type: "flashlightAcquired";
 }
 
+/**
+ * POL30 — fires when any pickup is collected (except keys, which
+ * have their own POL22 ceremony). The HUD's PickupChip slot listens
+ * for this and renders a 600ms transient chip with per-kind label
+ * and palette so the moment reads as a discrete teach beat instead
+ * of "the pickup mesh just disappeared."
+ *
+ * Kind is the PickupKind discriminant (re-exported here as a string
+ * to avoid a circular import from engine.ts; the receiver narrows).
+ */
+export interface PickupCollectedEvent {
+	type: "pickupCollected";
+	kind: string;
+}
+
 export type ObjexoomEvent =
 	| BurstEvent
 	| BodyPartsEvent
@@ -207,7 +222,8 @@ export type ObjexoomEvent =
 	| SecretTriggeredEvent
 	| DamageNumberEvent
 	| KeyPickedUpEvent
-	| FlashlightAcquiredEvent;
+	| FlashlightAcquiredEvent
+	| PickupCollectedEvent;
 
 export type ObjexoomEventType = ObjexoomEvent["type"];
 

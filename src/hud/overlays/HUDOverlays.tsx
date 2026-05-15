@@ -2,6 +2,7 @@ import type { GameState, LevelPhase } from "../../ObjexoomShell";
 import { GoingBackOverlay } from "./GoingBackOverlay";
 import { KeyPickupCeremony } from "./KeyPickupCeremony";
 import { MissionCompleteCeremony } from "./MissionCompleteCeremony";
+import { PickupChip } from "./PickupChip";
 import { SecretFoundFlash } from "./SecretFoundFlash";
 
 /**
@@ -31,6 +32,7 @@ export function HUDOverlays({
 		<>
 			<SecretFoundFlash />
 			<KeyPickupCeremony />
+			<PickupChip />
 			<GoingBackOverlay phase={phase} />
 			<MissionCompleteCeremony state={state} onReturnToMenu={onReturnToMenu} />
 		</>
