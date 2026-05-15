@@ -31,6 +31,13 @@ const DEFAULT_MOTE_TTL_MS = 350;
 // 15). Steady-state still well under cap.
 const MAX_MOTES = 280;
 
+// QW3 — module-scope shared unit-sphere geometry. Per-mote radius is
+// applied via `mesh.scale.setScalar(radius)` at mesh creation. Pre-QW3
+// every new mote allocated a fresh SphereGeometry — up to MAX_MOTES=280
+// GPU-resident geometries churning during a multi-burst combat window.
+// PERF audit quick-win #3.
+const MOTE_GEOMETRY = /*@__PURE__*/ new THREE.SphereGeometry(1, 6, 6);
+
 /**
  * D4/D5 + POL16 — particle bursts. Listens for `objexoom:burst` events:
  *
@@ -258,8 +265,12 @@ export function ParticleBurstField() {
 			mote.vel.y -= mote.gravity * dt; // per-mote gravity (smoke floats, sparks fall)
 			let mesh = meshes.current.get(mote.id);
 			if (!mesh) {
+				// QW3 — share MOTE_GEOMETRY (unit sphere); scale per-mote
+				// so per-radius size renders correctly. Material stays
+				// per-mesh because per-mote color + opacity decay
+				// independently.
 				const m = new THREE.Mesh(
-					new THREE.SphereGeometry(mote.radius, 6, 6),
+					MOTE_GEOMETRY,
 					new THREE.MeshStandardMaterial({
 						color: mote.color,
 						emissive: mote.color,
@@ -267,6 +278,7 @@ export function ParticleBurstField() {
 						transparent: true,
 					}),
 				);
+				m.scale.setScalar(mote.radius);
 				groupRef.current.add(m);
 				meshes.current.set(mote.id, m);
 				mesh = m;

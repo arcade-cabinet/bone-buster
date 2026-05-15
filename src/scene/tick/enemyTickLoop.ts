@@ -97,7 +97,6 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 		yukaEntitiesRef,
 		bulletsRef,
 		nextBulletIdRef,
-		enemyMeshesRef,
 		lastSeenRef,
 		aggroFiredRef,
 		bossSpottedFiredRef,
@@ -238,15 +237,15 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 			}
 		}
 
-		const mesh = enemyMeshesRef.current.get(enemy.id);
-		if (mesh) {
-			mesh.position.x = enemy.position.x;
-			mesh.position.z = enemy.position.y;
-			mesh.position.y = wraith
-				? 1.4 + Math.sin(now * 0.003 + enemy.id) * 0.25
-				: 0.8 + Math.sin(now * 0.003 + enemy.id) * 0.06;
-			mesh.lookAt(px, mesh.position.y, py);
-		}
+		// QW5 — mesh.position/lookAt writes deleted here. EnemyMesh.tsx
+		// owns visual position+yaw (see scene/entities/EnemyMesh.tsx:98-116
+		// — sets group.position from enemy.position and computes
+		// rotation.y from delta-direction-of-motion). The pre-QW5 path
+		// here additionally wrote position + a horizontal billboard
+		// `lookAt(player)` which fought EnemyMesh's character-facing yaw
+		// at the same useFrame priority and doubled the per-enemy matrix
+		// recompute cost. The sim now only mutates `enemy.position`; the
+		// visual layer is the sole position consumer.
 
 		// Y1 — mirror the FSM-computed enemy position into its yuka
 		// GameEntity so EntityManager.update sees real coordinates each

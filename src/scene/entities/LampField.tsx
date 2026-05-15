@@ -47,10 +47,14 @@ function LampMesh({ lamp, lightColor }: { lamp: LampInstance; lightColor: string
 					intensity={1.6}
 					distance={6}
 					decay={1.8}
-					castShadow
-					shadow-mapSize-width={512}
-					shadow-mapSize-height={512}
-					shadow-bias={-0.0005}
+					// QW2 — castShadow dropped. Each lit lamp was a 6-face
+					// cubemap shadow pass at 512² per frame; for the
+					// MAX_LIT_LAMPS=8 budget that's up to 48 shadow passes/
+					// frame. The directional sun + flashlight cover the
+					// gameplay-relevant shadow signal; static lamp positions
+					// can't cast meaningful dynamic shadow anyway (no
+					// moving casters within their distance=6 radius in
+					// the typical sector). PERF audit #3.
 				/>
 			) : null}
 		</group>
