@@ -44,6 +44,15 @@ const FADE_MS = 1000; // the trailing fade always lasts 1s
 const DEFAULT_BODYPART_TTL_MS = 5000; // canonical (corridor) — used when no archetype prop
 const MAX_BODY_SHARDS = 120;
 
+// QW3 — module-scope shared geometries. All shards/decals reference
+// these; material stays per-mesh because per-shard color + per-shard
+// opacity decay independently. Pre-QW3 every body-shard allocated a
+// fresh BoxGeometry and every settled-shard decal allocated a fresh
+// CircleGeometry — up to 240 GPU-resident geometries churning per
+// gib-heavy combat window. PERF audit quick-win #3.
+const SHARD_GEOMETRY = /*@__PURE__*/ new THREE.BoxGeometry(0.18, 0.18, 0.18);
+const DECAL_GEOMETRY = /*@__PURE__*/ new THREE.CircleGeometry(0.28, 12);
+
 /**
  * POL41 — given a TTL, derive the SETTLE_END timestamp so the trailing
  * fade window is always FADE_MS. The MOTION window is always
@@ -163,8 +172,10 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 			}
 			let mesh = meshes.current.get(shard.id);
 			if (!mesh) {
+				// QW3 — share SHARD_GEOMETRY; material per-mesh because
+				// per-shard color + per-shard opacity decay independently.
 				const m = new THREE.Mesh(
-					new THREE.BoxGeometry(0.18, 0.18, 0.18),
+					SHARD_GEOMETRY,
 					new THREE.MeshStandardMaterial({
 						color: shard.color,
 						emissive: shard.color,
@@ -202,8 +213,10 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 			if (shard.settledAt !== null && groupRef.current) {
 				let decal = decalMeshes.current.get(shard.id);
 				if (!decal) {
+					// QW3 — share DECAL_GEOMETRY; material per-mesh
+					// because color varies per-shard-kind (bone vs gib).
 					decal = new THREE.Mesh(
-						new THREE.CircleGeometry(0.28, 12),
+						DECAL_GEOMETRY,
 						new THREE.MeshBasicMaterial({
 							color: shard.color === COLOR_BONE ? 0x2a2a2a : 0x4a0808,
 							transparent: true,

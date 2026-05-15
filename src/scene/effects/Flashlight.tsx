@@ -71,7 +71,11 @@ export function Flashlight() {
 				decay={1.5}
 				color={OBJEXOOM_PALETTE.flashlightWarm}
 				castShadow
-				shadow-mapSize={[1024, 1024]}
+				// QW6 — shadow map 1024² → 512². PCF soft + 512² on a
+				// tight 14m cone is still convincing visually and roughly
+				// halves the per-frame shadow-pass cost on Adreno-class
+				// mobile GPUs. PERF audit #4.
+				shadow-mapSize={[512, 512]}
 				shadow-camera-near={0.2}
 				shadow-camera-far={14}
 				shadow-bias={-0.0005}

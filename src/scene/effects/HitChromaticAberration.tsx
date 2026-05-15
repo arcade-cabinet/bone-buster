@@ -1,7 +1,7 @@
 import { useFrame } from "@react-three/fiber";
 import { ChromaticAberration } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Vector2 } from "three";
 import { addObjexoomListener } from "../../events";
 
@@ -37,19 +37,27 @@ export function HitChromaticAberration() {
 	const offset = useMemo(() => new Vector2(BASE_X, BASE_Y), []);
 	const pulseUntil = useRef(0);
 	const pulseStarted = useRef(0);
+	// QW4 — pulseActive gates whether the ChromaticAberration pass is
+	// mounted at all. Pulse window is 180ms so 99% of frames don't pay
+	// the fullscreen-pass cost. The component still owns the Vector2 +
+	// listener so the timing math is unchanged. PERF audit quick-win #4.
+	const [pulseActive, setPulseActive] = useState(false);
 
 	useEffect(() => {
 		return addObjexoomListener("playerHit", () => {
 			const now = performance.now();
 			pulseStarted.current = now;
 			pulseUntil.current = now + PULSE_MS;
+			setPulseActive(true);
 		});
 	}, []);
 
 	useFrame(() => {
+		if (!pulseActive) return;
 		const now = performance.now();
 		if (now >= pulseUntil.current) {
 			offset.set(BASE_X, BASE_Y);
+			setPulseActive(false);
 			return;
 		}
 		const t = (now - pulseStarted.current) / PULSE_MS;
@@ -57,5 +65,6 @@ export function HitChromaticAberration() {
 		offset.set(PEAK_X + (BASE_X - PEAK_X) * ease, PEAK_Y + (BASE_Y - PEAK_Y) * ease);
 	});
 
+	if (!pulseActive) return null;
 	return <ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={offset} />;
 }

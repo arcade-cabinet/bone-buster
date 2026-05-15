@@ -7,6 +7,13 @@ import { addObjexoomListener } from "../../events";
 const COLOR_BRASS = new THREE.Color(OBJEXOOM_PALETTE.shellBrass).getHex();
 const COLOR_BRASS_DEEP = new THREE.Color(OBJEXOOM_PALETTE.shellBrassDeep).getHex();
 
+// QW3 — module-scope shared geometry. All shells reference this one
+// CylinderGeometry; the Mesh per-shell still gives us scale +
+// position + rotation independence. Pre-QW3 every new shell allocated
+// a fresh CylinderGeometry — up to 80 GPU-resident geometries churning
+// over the SHELL_TTL_MS lifetime. PERF audit quick-win #3.
+const SHELL_GEOMETRY = /*@__PURE__*/ new THREE.CylinderGeometry(0.025, 0.025, 0.07, 8);
+
 type Shell = {
 	id: number;
 	pos: { x: number; y: number; z: number };
@@ -88,8 +95,11 @@ export function ShellEjectField() {
 			}
 			let mesh = meshes.current.get(shell.id);
 			if (!mesh) {
+				// QW3 — share SHELL_GEOMETRY at module scope; material
+				// stays per-mesh because per-shell opacity fades
+				// independently as TTL elapses (see opacity write below).
 				const m = new THREE.Mesh(
-					new THREE.CylinderGeometry(0.025, 0.025, 0.07, 8),
+					SHELL_GEOMETRY,
 					new THREE.MeshStandardMaterial({
 						color: COLOR_BRASS,
 						emissive: COLOR_BRASS_DEEP,
