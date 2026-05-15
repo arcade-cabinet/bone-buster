@@ -55,12 +55,17 @@ export function AdaptiveResolution({
 		gl.info.autoReset = false;
 	}, [gl]);
 
+	// QW10 — priority={2} pins this useFrame AFTER r3f's render in the
+	// frame loop. Default-priority useFrames run BEFORE render, so a
+	// `gl.info.render.{calls,triangles}` read there reads LAST frame's
+	// totals; pinning to priority=2 (any positive value runs post-render)
+	// makes the sample read THIS frame's totals, which is the OBS1
+	// contract the rest of the pipeline assumes.
 	useFrame((_, dt) => {
-		// OBS1 — sample render info from the LAST frame's render (we
-		// set autoReset=false above so the counters accumulate
-		// across the current frame's render). useFrame can run
-		// before OR after render depending on priority; either way
-		// reading + then resetting captures one frame's totals.
+		// OBS1 — sample render info from THIS frame's render (post-render
+		// because priority=2 puts this useFrame after r3f's manual render
+		// call). `autoReset=false` set above means the counters survived
+		// until now; we read and then reset for the next frame.
 		const info = gl.info.render as { calls?: number; triangles?: number };
 		if (info.calls != null && info.calls > peakCalls.current) peakCalls.current = info.calls;
 		if (info.triangles != null && info.triangles > peakTris.current)
@@ -121,7 +126,7 @@ export function AdaptiveResolution({
 			drawCalls,
 			triangles,
 		});
-	});
+	}, 2);
 
 	return null;
 }

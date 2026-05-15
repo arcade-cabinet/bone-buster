@@ -2,7 +2,7 @@
  * E6 — secret switch hit-test + state machine.
  *
  * Pure-math layer (no three.js, no DOM). The fire-resolution branch in
- * src/scene/hooks/fireResolution.ts depends on `pickRaySwitch` to
+ * src/scene/tick/fireResolution.ts depends on `pickRaySwitch` to
  * prefer switches over barrels and enemies; these tests pin that
  * contract plus the triggered-becomes-inert invariant.
  */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeBearingRad } from "../../scene/hooks/returnBearing";
+import { computeBearingRad } from "../../scene/tick/returnBearing";
 
 /**
  * PT4B-fold — screen-space bearing from camera to spawn.

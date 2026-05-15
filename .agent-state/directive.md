@@ -79,7 +79,7 @@ Picking order: top-down. CONV1+CONV2+CONV3 first — they're prereqs or unblock 
 
 ### QW — quick wins (<2hr each, mostly perf, parallel-ready)
 
-- [ ] **QW1 — hoist scratch Vector3s in fireResolution.ts:129,145,173-174.** Module-scope `_right`, `_forward`, `_dir`, `_yAxis`, `_xAxis`. Use `.set(...)` per pellet. File-only. Source: PERF #2 quick win 1.
+- [x] **QW1 — hoist scratch Vector3s in fireResolution.ts.** Shipped. Module-scope `_xAxis` (immutable canonical X), `_yAxis` (immutable canonical Y), `_right` (mutated per-shell-eject), `_forwardBase` (mutated per-shot), `_forwardPellet` (mutated per-pellet via `.copy(forwardBase)`). Shotgun: was allocating 3 Vector3 + 2 unit-vectors per pellet × 7 pellets = ~35 Vector3 allocs/shot; now 0. 631 unit green. Source: PERF #2 quick win 1.
 
 - [ ] **QW2 — drop lamp pointLight castShadow.** `src/scene/entities/LampField.tsx:51-57`: remove `castShadow` and `shadow-mapSize-*` props. Re-snapshot OBS3 baselines (calls/tris will move). Re-snapshot library archetype screenshot if visual differs. Source: PERF #3.
 
@@ -91,13 +91,13 @@ Picking order: top-down. CONV1+CONV2+CONV3 first — they're prereqs or unblock 
 
 - [ ] **QW6 — flashlight shadow 1024² → 512².** `src/scene/effects/Flashlight.tsx:72`: `shadow-mapSize={[512, 512]}`. Re-snapshot OBS3 baselines + visual gate. PCF soft + 512² on a tight 14m cone is still convincing. Source: PERF #4 quick win 7.
 
-- [ ] **QW7 — strip sourcemaps from gh-pages artifact.** Either `vite.config.ts:13`: `sourcemap: mode === "github-pages" ? false : "hidden"` OR `release.yml` `build-pages` job adds `- run: find dist -name '*.map' -delete` before `upload-pages-artifact`. Removes the 9.4MB pnpm dependency-version fingerprint from the public GH Pages site. Native (Capacitor) builds keep sourcemaps. Source: SECURITY #1.
+- [x] **QW7 — strip sourcemaps from gh-pages artifact.** Shipped. `vite.config.ts:13` now sets `sourcemap: mode === "github-pages" ? false : true`. Native (Capacitor) builds and dev keep sourcemaps — they're packaged inside the APK / served only from localhost. Removes the 9.4MB pnpm dependency-version fingerprint from the public GH Pages site (closed MEDIUM finding #1 from SECURITY audit).
 
-- [ ] **QW8 — rename `src/scene/hooks/` → `src/scene/tick/`.** Pure cosmetic. The 4 files there (enemyTickLoop, fireResolution, returnBearing, timeScaleBus, useGameRef post-CONV2) have zero React hooks. Update import sites in ObjexoomScene.tsx:89-91. Source: COMPLEXITY F6.
+- [x] **QW8 — move non-hook files from `src/scene/hooks/` → `src/scene/tick/`.** Shipped. 4 files moved (`enemyTickLoop`, `fireResolution`, `returnBearing`, `timeScaleBus`) — all zero-React-hooks tick-loop modules. `useGameRef.ts` STAYS in `scene/hooks/` because it's a real React hook (uses `useRef`); the COMPLEXITY F6 finding pre-dated CONV2. Updated 7 import sites (ObjexoomScene.tsx, GoingBackOverlay.tsx, ReturnToSpawnBearingWriter.tsx, 2 unit tests, 2 stale comments). 631 unit + 6 browser green.
 
 - [ ] **QW9 — fix objexoom-fade.test.ts tautology.** `src/__tests__/unit/objexoom-fade.test.ts:13-23` asserts against a local copy of COLOR_BY_KIND/PEAK_BY_KIND. Either import the real table from ObjexoomShell (extract to a shared module first if needed) or delete the test. Source: TEST S1, COMPLEXITY F12.
 
-- [ ] **QW10 — pin AdaptiveResolution useFrame to priority={2}.** `src/scene/effects/AdaptiveResolution.tsx:58`. Documents the gl.info sampling contract — sample reads THIS frame's render info instead of LAST frame's. Add a comment naming the contract. Source: PERF #8.
+- [x] **QW10 — pin AdaptiveResolution useFrame to priority={2}.** Shipped. `useFrame(..., 2)` runs post-render so `gl.info.render.{calls,triangles}` samples THIS frame's totals instead of LAST frame's (the prior default-priority placement was a latent OBS1 bug per PERF #8). Comment updated to name the contract.
 
 ### A — architectural perf changes (multi-day each)
 

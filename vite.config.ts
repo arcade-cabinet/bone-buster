@@ -9,7 +9,14 @@ export default defineConfig(({ mode }) => ({
 	cacheDir: ".vite",
 	build: {
 		target: "es2022",
-		sourcemap: true,
+		// QW7 / SECURITY #1 — gh-pages builds drop sourcemaps entirely so
+		// the public artifact doesn't leak the pnpm
+		// `node_modules/.pnpm/<pkg>@<ver>_<deps>/...` dependency-version
+		// fingerprint (a 10MB SBOM otherwise served to anyone with
+		// DevTools open). Native (Capacitor) builds and dev keep
+		// sourcemaps — they're packaged inside the APK / served only
+		// from localhost.
+		sourcemap: mode === "github-pages" ? false : true,
 	},
 	plugins: [react()],
 	resolve: {

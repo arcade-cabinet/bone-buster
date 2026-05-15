@@ -86,9 +86,9 @@ import {
 	WeaponSwapDip,
 	WeaponViewmodel,
 } from "./scene";
-import { tickEnemyLoop } from "./scene/hooks/enemyTickLoop";
-import { resolveFire } from "./scene/hooks/fireResolution";
-import { createTimeScaleBus } from "./scene/hooks/timeScaleBus";
+import { tickEnemyLoop } from "./scene/tick/enemyTickLoop";
+import { resolveFire } from "./scene/tick/fireResolution";
+import { createTimeScaleBus } from "./scene/tick/timeScaleBus";
 import { type Secret, spawnSecrets } from "./secrets";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 import {
@@ -581,7 +581,7 @@ export function ObjexoomScene({
 			}
 		}
 
-		// ARCH2a — per-frame enemy AI loop lives in src/scene/hooks/enemyTickLoop.ts.
+		// ARCH2a — per-frame enemy AI loop lives in src/scene/tick/enemyTickLoop.ts.
 		// Behavior is byte-identical; this call site is a pure relocation.
 		tickEnemyLoop({
 			enemiesRef,
@@ -779,7 +779,7 @@ export function ObjexoomScene({
 		}
 	};
 
-	// ARCH2b — single-shot resolution moved to src/scene/hooks/fireResolution.ts.
+	// ARCH2b — single-shot resolution moved to src/scene/tick/fireResolution.ts.
 	// The useEffect that wires `objexoom:fire` stays here (it owns the
 	// listener lifecycle); the body is one call into the pure helper.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: refs are mutable and shouldn't trigger re-subscribe; matches the imperative ref pattern.
