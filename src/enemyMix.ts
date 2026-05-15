@@ -32,23 +32,70 @@ export type EnemyMixWeights = readonly [number, number, number];
 const PASS_THROUGH: EnemyMixWeights = [0, 0, 0];
 
 /**
+ * E13 step-3 base weights. Per-archetype skeleton/wraith/imp mix
+ * before POL42's wraith-density bias is applied. Corridor stays as
+ * the PASS_THROUGH sentinel; the bias never touches it.
+ */
+const BASE_MIX_WEIGHTS: Readonly<Record<PropArchetype, EnemyMixWeights>> = {
+	corridor: PASS_THROUGH,
+	arena: [3, 1, 5],
+	courtyard: [4, 3, 2],
+	sewer: [2, 5, 2],
+	library: [4, 4, 1],
+};
+
+/**
+ * POL42 — per-archetype wraith-density bias. Scales the wraith weight
+ * (index 1 of the [skeleton, wraith, imp] tuple) by a multiplier per
+ * archetype. The total of the resulting tuple is what's bucket-picked
+ * against, so a higher wraith weight pulls more wraiths in
+ * proportionally without bumping the total enemy count (count is set
+ * elsewhere by generateMap and stays untouched).
+ *
+ * Corridor PASS_THROUGH is exempt — POL42 deliberately doesn't touch
+ * the corridor distribution so refLevel 0 (corridor by seed%5) stays
+ * byte-stable. The bias is a tilt INSIDE archetypes that already
+ * have a tilted weight table.
+ *
+ * Bias tuning (mood-aligned, NOT a balance change):
+ *   sewer    1.5× — dark, wraiths fit thematically
+ *   library  1.4× — paper enemies in a paper place; lift the bias
+ *                   already there (base wraith = imp at 4)
+ *   courtyard 1.0× — balanced; no bias
+ *   arena    0.7× — open combat; flyers feel cheap
+ *
+ * Effective wraith weights after bias (rounded to int via Math.round
+ * since the picker requires integer cumulative buckets):
+ *   arena:    1×0.7 → 1   (1 → 1, unchanged at this scale)
+ *   courtyard 3×1.0 → 3   (unchanged)
+ *   sewer:    5×1.5 → 8
+ *   library:  4×1.4 → 6
+ */
+const WRAITH_BIAS: Readonly<Record<PropArchetype, number>> = {
+	corridor: 1.0, // unused (PASS_THROUGH skips the bias)
+	arena: 0.7,
+	courtyard: 1.0,
+	sewer: 1.5,
+	library: 1.4,
+};
+
+function applyWraithBias(base: EnemyMixWeights, bias: number): EnemyMixWeights {
+	if (base === PASS_THROUGH) return PASS_THROUGH;
+	const biased = Math.max(1, Math.round(base[1] * bias));
+	return [base[0], biased, base[2]];
+}
+
+/**
  * Per-archetype weight tables. Corridor passes through (preserves the
  * existing kind distribution from `generateMap` / `loadRefLevel`).
+ * POL42 applies the wraith-density bias to every non-corridor entry.
  */
 export const ENEMY_MIX_WEIGHTS: Readonly<Record<PropArchetype, EnemyMixWeights>> = {
-	// Default mix — preserves the pre-step-3 distribution byte-for-byte.
-	corridor: PASS_THROUGH,
-	// Heavy combat pit — leans imp (high HP melee). Sparse wraiths
-	// because no-clip flyers in a tight arena read as cheap.
-	arena: [3, 1, 5],
-	// Outdoor courtyard — balanced; the open sightlines reward ranged
-	// skeletons + the occasional wraith dive.
-	courtyard: [4, 3, 2],
-	// Sewer — heavy wraith (no-clip fits "things from the walls").
-	sewer: [2, 5, 2],
-	// Library — leans wraith + skirmish skeleton (paper enemies in a
-	// paper place). Sparse imp because imps are floor-bound.
-	library: [4, 4, 1],
+	corridor: BASE_MIX_WEIGHTS.corridor,
+	arena: applyWraithBias(BASE_MIX_WEIGHTS.arena, WRAITH_BIAS.arena),
+	courtyard: applyWraithBias(BASE_MIX_WEIGHTS.courtyard, WRAITH_BIAS.courtyard),
+	sewer: applyWraithBias(BASE_MIX_WEIGHTS.sewer, WRAITH_BIAS.sewer),
+	library: applyWraithBias(BASE_MIX_WEIGHTS.library, WRAITH_BIAS.library),
 };
 
 function mulberry32(seed: number) {
