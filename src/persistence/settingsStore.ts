@@ -85,13 +85,20 @@ export function validateSettings(raw: unknown): ObjexoomSettings {
 }
 
 /**
- * Read the persisted settings, validating against the live schema. If
- * no blob exists OR validation rejects everything, returns
- * DEFAULT_SETTINGS — never throws.
+ * Read the persisted settings, validating against the live schema.
+ * Returns `null` when NO persisted blob exists (i.e. fresh install)
+ * so the caller can avoid an unnecessary setState that would race
+ * with any code-side `setSettings` happening during the async window
+ * between mount and load resolution. When a blob exists, validates
+ * it against the schema (per-field fallback to DEFAULT_SETTINGS for
+ * unknown values) and returns the narrowed result.
+ *
+ * Never throws — corrupted JSON / partial blobs / missing fields all
+ * fall back to DEFAULT_SETTINGS via the validator.
  */
-export async function loadSettings(): Promise<ObjexoomSettings> {
+export async function loadSettings(): Promise<ObjexoomSettings | null> {
 	const raw = await readJsonPref<unknown>(SETTINGS_KEY);
-	if (raw === null) return DEFAULT_SETTINGS;
+	if (raw === null) return null;
 	return validateSettings(raw);
 }
 

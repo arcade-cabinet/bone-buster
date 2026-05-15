@@ -223,6 +223,7 @@ declare global {
 			// Playwright). Settings is the source of truth; this hook
 			// mutates it the same way the landing settings UI would.
 			setDifficulty: (difficulty: Difficulty) => void;
+			getSettings: () => ObjexoomSettings;
 		};
 	}
 }
@@ -253,8 +254,16 @@ export function ObjexoomShell() {
 		void (async () => {
 			const persisted = await loadSettings();
 			if (cancelled) return;
-			const archetypeOverride = readArchetypeFromUrl();
-			setSettings(archetypeOverride ? { ...persisted, level: "procedural" } : persisted);
+			// `loadSettings()` returns null when no blob exists (fresh
+			// install). In that case the initial DEFAULT_SETTINGS state
+			// is already correct — skip the setSettings call so we
+			// don't clobber any code-side `setSettings` that landed
+			// during the async window (e.g. `__objexoom.setDifficulty`
+			// called from a playtest script BEFORE this load resolved).
+			if (persisted !== null) {
+				const archetypeOverride = readArchetypeFromUrl();
+				setSettings(archetypeOverride ? { ...persisted, level: "procedural" } : persisted);
+			}
 			settingsHydratedRef.current = true;
 		})();
 		return () => {
@@ -785,6 +794,8 @@ export function ObjexoomShell() {
 	stateRef.current = state;
 	const mapRef = useRef(map);
 	mapRef.current = map;
+	const settingsRef = useRef(settings);
+	settingsRef.current = settings;
 	const onStartGameRef = useRef(onStartGame);
 	onStartGameRef.current = onStartGame;
 
@@ -854,6 +865,7 @@ export function ObjexoomShell() {
 			setDifficulty: (difficulty: Difficulty) => {
 				setSettings((prev) => ({ ...prev, difficulty }));
 			},
+			getSettings: () => settingsRef.current,
 		};
 		return () => {
 			delete window.__objexoom;
