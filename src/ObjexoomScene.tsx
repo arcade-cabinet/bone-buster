@@ -495,41 +495,6 @@ export function ObjexoomScene({
 			}
 		}
 
-		// I11 — muzzle flash decay. Stays bright until muzzleFlashUntil, then
-		// linearly fades to 0 over the remaining window. PA-MOD7 / D11:
-		// position tracks the WeaponViewmodel's muzzle anchor (the actual
-		// barrel tip in the GLB), falling back to camera.position when no
-		// anchor is registered yet.
-		if (muzzleLightRef.current) {
-			const muzzleNow = now;
-			const remaining = muzzleFlashUntil.current - muzzleNow;
-			// POL13 — bloom-tier scale per weapon. Baseline intensity
-			// (remaining / 20) hits 4.0 at fresh-flash; the per-weapon
-			// scale multiplies that so pistol reads 2.4 max, chaingun
-			// 3.6, shotgun 5.6, flamethrower 4.4, melee 0.
-			const baseIntensity = remaining > 0 ? Math.min(4, remaining / 20) : 0;
-			const intensity = baseIntensity * muzzleIntensityScaleRef.current;
-			muzzleLightRef.current.intensity = intensity;
-			muzzleLightRef.current.color.copy(muzzleColorRef.current);
-			const anchor = muzzleAnchorRef.current;
-			if (anchor) {
-				// PR #16 fold (Gemini medium): WeaponViewmodel's useFrame
-				// is wired at priority=-1 so it runs BEFORE this default-
-				// priority (0) useFrame each frame — the anchor's matrix
-				// is therefore THIS frame's pose, not last frame's, when
-				// we read it here. No more 16ms lag against the rendered
-				// barrel.
-				anchor.getWorldPosition(muzzleWorldPos);
-				muzzleLightRef.current.position.copy(muzzleWorldPos);
-			} else {
-				muzzleLightRef.current.position.set(
-					camera.position.x,
-					camera.position.y,
-					camera.position.z,
-				);
-			}
-		}
-
 		// H8 — light strobe during going_back. 200-frame cycle, 10 frames bright.
 		// POL27 — strobe levels respect per-archetype darkness multipliers
 		// so a dark-sewer going_back still flickers proportionally to the
@@ -855,6 +820,41 @@ export function ObjexoomScene({
 			playPickup();
 		}
 	});
+
+	// POL44 — muzzle-light decay at positive priority. The fire event
+	// handler (registered on a different useFrame's frame timing) can
+	// land EITHER before or after the main default-priority useFrame.
+	// Reading muzzleFlashUntil.current there risked a 1-frame lag when
+	// the fire event arrived after main's read. Pinning this block to
+	// priority=1 guarantees it always runs AFTER every default-priority
+	// useFrame in the same frame — including the fire handler. The
+	// intensity register the player sees on a fire frame is always
+	// THIS frame's write, never last frame's.
+	useFrame(() => {
+		if (!muzzleLightRef.current) return;
+		const now = performance.now();
+		const remaining = muzzleFlashUntil.current - now;
+		// POL13 — bloom-tier scale per weapon. Baseline intensity
+		// (remaining / 20) hits 4.0 at fresh-flash; the per-weapon
+		// scale multiplies that so pistol reads 2.4 max, chaingun
+		// 3.6, shotgun 5.6, flamethrower 4.4, melee 0.
+		const baseIntensity = remaining > 0 ? Math.min(4, remaining / 20) : 0;
+		const intensity = baseIntensity * muzzleIntensityScaleRef.current;
+		muzzleLightRef.current.intensity = intensity;
+		muzzleLightRef.current.color.copy(muzzleColorRef.current);
+		const anchor = muzzleAnchorRef.current;
+		if (anchor) {
+			// PA-MOD7 / D11: position tracks the WeaponViewmodel's muzzle
+			// anchor (the actual barrel tip in the GLB). The anchor's
+			// world matrix was updated by WeaponViewmodel's priority=-1
+			// useFrame, so it's already THIS frame's pose by the time
+			// we read it here.
+			anchor.getWorldPosition(muzzleWorldPos);
+			muzzleLightRef.current.position.copy(muzzleWorldPos);
+		} else {
+			muzzleLightRef.current.position.set(camera.position.x, camera.position.y, camera.position.z);
+		}
+	}, 1);
 
 	return (
 		<>
