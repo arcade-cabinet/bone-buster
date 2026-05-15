@@ -87,46 +87,20 @@ async function migrateLegacyBlobIfPresent(db: DatabaseAdapter): Promise<number> 
 		localStorage.removeItem(LEGACY_STORAGE_KEY);
 		return 0;
 	}
-	try {
-		const binary = atob(raw);
-		const bytes = new Uint8Array(binary.length);
-		for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-		// Late-load sql.js ONLY for the migration path. Production
-		// runtime never touches sql.js again after this; the dep can
-		// be dropped once every shipped install has run the migration.
-		const initSqlJs = (await import("sql.js")).default;
-		const { A } = await import("./assetUrl");
-		const SQL = await initSqlJs({ locateFile: () => A("/assets/wasm/sql-wasm.wasm") });
-		const legacy = new SQL.Database(bytes);
-		const rows = legacy.exec(`
-			SELECT started_at, ended_at, levels_cleared, total_kills,
-			       total_damage_taken,
-			       COALESCE(total_secrets, 0) AS total_secrets,
-			       level_set, outcome
-			FROM runs
-			ORDER BY ended_at ASC
-		`);
-		legacy.close();
-		if (rows.length === 0) {
-			localStorage.removeItem(LEGACY_STORAGE_KEY);
-			return 0;
-		}
-		const values = rows[0].values;
-		for (const row of values) {
-			await db.execute(
-				`INSERT INTO runs (started_at, ended_at, levels_cleared, total_kills,
-				                   total_damage_taken, total_secrets, level_set, outcome)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-				row as unknown[],
-			);
-		}
-		await db.saveToStore?.();
-		localStorage.removeItem(LEGACY_STORAGE_KEY);
-		return values.length;
-	} catch (err) {
-		console.warn("[STO1b] legacy run-history migration failed; leaving legacy key in place:", err);
-		return 0;
-	}
+	// ARCH3 — sql.js was removed after the STO1b migration grace window
+	// (Phase 20, 2026-05-15). Any install that still has the legacy
+	// localStorage blob never opened the game between STO1b shipping
+	// and the dep removal, which is vanishingly rare. We log a clear
+	// warning, drop the legacy key so future opens stop tripping this
+	// branch, and continue without importing the data.
+	console.warn(
+		"[ARCH3] Legacy run-history blob detected, but sql.js has been removed " +
+			"in Phase 20. Run history prior to STO1b is unrecoverable on this " +
+			"install. Dropping the legacy localStorage key. (raw size: %d chars)",
+		raw.length,
+	);
+	localStorage.removeItem(LEGACY_STORAGE_KEY);
+	return 0;
 }
 
 /**
