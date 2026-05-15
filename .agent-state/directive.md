@@ -59,7 +59,16 @@ If none of the three answer cleanly, sit with the design before writing code.
 
 Spec: `docs/SLOT-ARCHITECTURE.md`. Reference shapes: `HitChromaticAberration` (POL14), `SecretFoundFlash` (POL21), `EnemyHitFlash` (POL19 retrofit), `WeaponSwapDip` (POL20).
 
-## Phase 17 — forward-sweep boss + pickup identity
+## Phase 18 — forward-sweep playability polish
+
+Phase 17 drained (POL29 boss rim / POL30 pickup chip / OBS2 budget).
+Next forward sweep on the remaining "FULLY POLISHED PLAYABLE GAME"
+gaps. Each item targets a layer of game-feel not yet audited.
+
+- [ ] **AUD1 — SFX mix coherence audit.** 15 synth channels live (AUDIO1/AUDIO2 typed bus). Need to verify the mix balance: does pistol-fire drown the ambient drone? Do POL10-v2 boss death stings carry over the going-back klaxon? Does the shotgun shell-eject ting bury the kill sting? Acceptance: write a vitest test that for each `play*` SFX hook, asserts the synth's `volume.value` is within a documented dB range per category (ambient bed: -34 to -26 dB, weapon fire: -18 to -10 dB, kill stings: -14 to -6 dB, UI feedback: -22 to -14 dB). If any synth is outside its category band, fail the test with the value + recommended adjustment. Document the categories in `src/sfx.ts` header.
+- [ ] **PT7 — mobile touch playtest.** TouchControls + VirtualStick exist (POL21+ era). Capture mobile-class playtest screenshots via Playwright `emulate({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true })`. Verify: virtual sticks visible at safe-area-inset corners, FireButton accessible, HUD readable at 412×915, mission-complete CTA tappable. Surface gaps as PT7A+ items.
+- [ ] **POL31 — difficulty acknowledgment HUD chip.** Settings have 4 difficulty modes (`baby`, `easy`, `hurtMePlenty`, `nightmare`) and `DIFFICULTY_TUNING` scales HP/enemy-count/etc. But when a player picks "NIGHTMARE" in the landing menu and clicks NEW GAME, the game just starts — no HUD acknowledgment of the chosen mode. Acceptance: on `status==="landing" → "playing"` transition, fire a transient HUD chip (similar to PT4B's RETURN TO SPAWN card) reading the difficulty name in its associated palette (baby=teal calm, hurtMePlenty=amber default, nightmare=blood-red intense). Holds 2 seconds, then fades.
+- [ ] **POL32 — main-menu best-run readout.** E9 sql.js run history persists runs across sessions but no player-facing surface exposes it. Acceptance: landing menu sub-panel (between OBJEXOOM heading and the NEW GAME button) reads the best-run record from `openRunHistory()` and shows "BEST RUN · M5 · 3:42 · 124 KILLS" (level cleared / time / kills) in stencil typography. If no run exists yet, show nothing (don't take up landing space).
 
 Phase 16 drained (E8 step-2 / COV8 step-3 audit / COV14 step-3 /
 OBS1). Next forward sweep on systems where the live-game feel
