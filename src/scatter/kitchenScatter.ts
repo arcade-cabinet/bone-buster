@@ -19,6 +19,7 @@ import { pickArchetype } from "../archetype";
 import type { ObjexoomMap, Vec2 } from "../engine";
 import { polygonContains } from "../engine";
 import { KITCHEN_PROPS } from "../kitchen";
+import { mulberry32 } from "../prng";
 
 const KITCHEN_SECTOR_PROBABILITY = 0.2;
 const PROPS_PER_SECTOR_MIN = 1;
@@ -33,17 +34,6 @@ export interface KitchenInstance {
 	readonly position: Vec2;
 	readonly yaw: number;
 	readonly url: string;
-}
-
-function mulberry32(seed: number) {
-	let s = seed >>> 0;
-	return () => {
-		s = (s + 0x6d2b79f5) >>> 0;
-		let t = s;
-		t = Math.imul(t ^ (t >>> 15), t | 1);
-		t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-	};
 }
 
 function bboxOf(verts: readonly Vec2[]): {

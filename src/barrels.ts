@@ -21,6 +21,7 @@
  */
 
 import type { ObjexoomMap, Vec2 } from "./engine";
+import { mulberry32 } from "./prng";
 
 /** Default barrel HP. Tuned so a pistol shot doesn't pop a barrel on
  * the first hit (you need to actually aim at it), but the shotgun
@@ -182,16 +183,4 @@ function distSq(a: Vec2, b: Vec2): number {
 	const dx = a.x - b.x;
 	const dy = a.y - b.y;
 	return dx * dx + dy * dy;
-}
-
-// Tiny seeded RNG (Mulberry32). Used here instead of `Math.random()`
-// per the sim-determinism rule from STANDARDS.md.
-function mulberry32(seed: number): () => number {
-	let t = seed | 0;
-	return () => {
-		t = (t + 0x6d2b79f5) | 0;
-		let r = Math.imul(t ^ (t >>> 15), 1 | t);
-		r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
-		return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-	};
 }

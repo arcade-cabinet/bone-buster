@@ -23,6 +23,7 @@ import type { ObjexoomMap, Vec2 } from "../engine";
 import { polygonContains } from "../engine";
 import type { LargePropDef } from "../largeProps";
 import { LARGE_PROPS, pickLargePropDef } from "../largeProps";
+import { mulberry32 } from "../prng";
 import type { PropArchetype } from "./propPool";
 
 const SKIP_RADIUS = 5;
@@ -49,17 +50,6 @@ export interface LargePropInstance {
 	readonly position: Vec2;
 	readonly yaw: number;
 	readonly def: LargePropDef;
-}
-
-function mulberry32(seed: number) {
-	let s = seed >>> 0;
-	return () => {
-		s = (s + 0x6d2b79f5) >>> 0;
-		let t = s;
-		t = Math.imul(t ^ (t >>> 15), t | 1);
-		t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-	};
 }
 
 function bboxOf(verts: readonly Vec2[]): {
