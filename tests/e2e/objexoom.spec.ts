@@ -41,17 +41,13 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await expect(page.getByRole("button", { name: /HOW TO PLAY/ })).toBeVisible();
 		await expect(page.getByRole("button", { name: /QUIT/ })).toBeVisible();
 
-		await page
-			.screenshot({
-				path: "test-results/objexoom-landing.png",
-				fullPage: true,
-				animations: "disabled",
-				caret: "hide",
-				timeout: 45_000,
-			})
-			.catch((err: Error) => {
-				console.warn(`[objexoom-e2e] screenshot failed: ${err.message}`);
-			});
+		await page.screenshot({
+			path: "test-results/objexoom-landing.png",
+			fullPage: true,
+			animations: "disabled",
+			caret: "hide",
+			timeout: 45_000,
+		});
 	});
 
 	test("NEW GAME → difficulty → level → game starts via debug hook", async ({ page }) => {
@@ -76,17 +72,13 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		expect(state).toBeDefined();
 		expect((state as { status: string }).status).toBe("playing");
 
-		await page
-			.screenshot({
-				path: "test-results/objexoom-ingame.png",
-				fullPage: true,
-				animations: "disabled",
-				caret: "hide",
-				timeout: 45_000,
-			})
-			.catch((err: Error) => {
-				console.warn(`[objexoom-e2e] screenshot failed: ${err.message}`);
-			});
+		await page.screenshot({
+			path: "test-results/objexoom-ingame.png",
+			fullPage: true,
+			animations: "disabled",
+			caret: "hide",
+			timeout: 45_000,
+		});
 	});
 
 	test("enemy damage ticks player HP down when in range", async ({ page }) => {
@@ -207,16 +199,12 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			timeout: 3_000,
 		});
 
-		await page
-			.screenshot({
-				path: "test-results/objexoom-level-complete.png",
-				animations: "disabled",
-				caret: "hide",
-				timeout: 45_000,
-			})
-			.catch((err: Error) => {
-				console.warn(`[objexoom-e2e] screenshot failed: ${err.message}`);
-			});
+		await page.screenshot({
+			path: "test-results/objexoom-level-complete.png",
+			animations: "disabled",
+			caret: "hide",
+			timeout: 45_000,
+		});
 	});
 
 	test("B5 — chained run advances 5 levels via triggerWin", async ({ page }) => {

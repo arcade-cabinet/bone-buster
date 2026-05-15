@@ -127,7 +127,7 @@ Picking order: top-down. CONV1+CONV2+CONV3 first — they're prereqs or unblock 
 
 - [ ] **T5 — OBS3 Pixel 5a emulator perf gate.** New CI job in `.github/workflows/ci.yml`: `actions/setup-android@v3`, Pixel 5a system image, headless emulator + Capacitor build, run `obs3-perf-snapshot.mjs` against `cap://localhost`, assert `avgFps >= 30`. If total CI time pushes past 10min, gate behind `[mobile-perf]` label or run on release tags only. 1 day. Source: TEST §7 recommendation 2 — the actual "is OBJEXOOM playable on mid-tier mobile" gate.
 
-- [ ] **T6 — stop swallowing screenshot failures.** `tests/e2e/objexoom.spec.ts` has 4 `page.screenshot(...).catch(err => console.warn(...))` sites. Either drop the screenshot calls (not the visual gate) or remove `.catch` and let failures surface. Source: TEST S2.
+- [x] **T6 — stop swallowing screenshot failures.** Shipped. Removed `.catch((err) => console.warn(...))` from 3 `page.screenshot(...)` sites in `tests/e2e/objexoom.spec.ts` (the TEST audit counted 4 but only 3 remained at audit time). Screenshot failures now surface as test failures. These shots are debug artifacts (the visual gate is `screenshots.spec.ts`), so loud-failing if rendering is broken is correct. Source: TEST S2.
 
 - [ ] **T7 — replace waitForTimeout in screenshots.spec.ts.** The 900ms/750ms/1100ms timeouts at strobe + archetype + mission-complete are flake bait on slow agents. Replace with `page.waitForFunction(() => __objexoom.getState().status === 'won')` for win flow + RAF-counting hook for strobe mid-cycle. Source: TEST S3/F1.
 
@@ -137,9 +137,9 @@ Picking order: top-down. CONV1+CONV2+CONV3 first — they're prereqs or unblock 
 
 - [ ] **S1 — Android release-build hardening.** When the release-signed APK is wired (post-distribution-decision): `android:allowBackup="false"`, `android:fullBackupContent="false"`, `minifyEnabled true`, `shrinkResources true` in `android/app/build.gradle`. Add `data_extraction_rules.xml`. Source: SECURITY #2.
 
-- [ ] **S2 — CSP meta tag in index.html.** `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';`. Verify Tone.js + postprocessing + R3F + jeep-sqlite still load. Capacitor builds need `capacitor:` and `ionic:` scheme allowances. Source: SECURITY #3.
+- [x] **S2 — CSP meta tag in index.html.** Shipped. `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';`. Each directive documented inline with the consumer that needs it (Tone.js AudioWorklets need `wasm-unsafe-eval`; framer-motion needs `style-src 'unsafe-inline'`; etc). `connect-src 'self'` locks the existing zero-outbound-fetch posture. Capacitor builds will need `capacitor:`/`ionic:` scheme allowances when wired — flagged in the comment.
 
-- [ ] **S3 — Android `network_security_config.xml`.** `cleartextTrafficPermitted="false"` + system trust anchors. Reference in manifest: `android:networkSecurityConfig="@xml/network_security_config"`. Zero-impact since the game is offline but makes intent explicit. Source: SECURITY #4.
+- [x] **S3 — Android `network_security_config.xml`.** Shipped. `android/app/src/main/res/xml/network_security_config.xml` declares `cleartextTrafficPermitted="false"` + system trust anchors. Manifest references via `android:networkSecurityConfig="@xml/network_security_config"`. Zero-impact today (game is offline) but locks the intent against any future regression that would add an unintentional http:// endpoint. Source: SECURITY audit #4.
 
 ## Phase 20 — drain-and-repopulate forward sweep (2026-05-15)
 
