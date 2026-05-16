@@ -1,7 +1,7 @@
 import { addBoneBusterListener } from "@engine/events";
-import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, SCALE } from "@styles/tokens/index";
+import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE } from "@styles/tokens/index";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * PB2 — non-boss enemy-kill HUD banner (HUD overlay slot per
@@ -57,24 +57,40 @@ type Banner = { id: number; count: number; firstKind: string };
 
 export function KillBanner() {
 	const [banner, setBanner] = useState<Banner | null>(null);
-	const bannerRef = useRef<Banner | null>(null);
-	bannerRef.current = banner;
 
 	useEffect(() => {
+		// The "current in-flight banner" lives in this closure (not in a
+		// useRef synced from React state) because shotgun blasts can fire
+		// multiple `enemyKilled` events synchronously inside one frame —
+		// React won't render between them, so a ref synced via
+		// `ref.current = state` stays stale for every event after the
+		// first. Closure-tracked state updates synchronously per event;
+		// `setBanner` then publishes the running stack to React.
 		let counter = 0;
 		let lastTs = 0;
+		let inFlight: Banner | null = null;
 
 		const off = addBoneBusterListener("enemyKilled", (evt) => {
 			const now = performance.now();
-			const current = bannerRef.current;
-			if (current && now - lastTs < STACK_WINDOW_MS) {
+			if (inFlight && now - lastTs < STACK_WINDOW_MS) {
 				lastTs = now;
-				setBanner({ id: current.id, count: current.count + 1, firstKind: current.firstKind });
+				inFlight = {
+					id: inFlight.id,
+					count: inFlight.count + 1,
+					firstKind: inFlight.firstKind,
+				};
+				setBanner(inFlight);
 				return;
 			}
 			counter += 1;
 			lastTs = now;
-			setBanner({ id: counter, count: 1, firstKind: evt.kind });
+			inFlight = { id: counter, count: 1, firstKind: evt.kind };
+			setBanner(inFlight);
+			// Clear the in-flight reference once the hold window expires so
+			// the next kill after a quiet period opens a fresh banner.
+			window.setTimeout(() => {
+				if (inFlight && inFlight.id === counter) inFlight = null;
+			}, HOLD_MS);
 		});
 		return off;
 	}, []);
@@ -106,8 +122,8 @@ export function KillBanner() {
 						fontWeight: FONT_WEIGHT.bold,
 						fontSize: 22,
 						letterSpacing: LETTER_SPACING.display,
-						color: SCALE.amber[100],
-						textShadow: `0 0 10px ${SCALE.amber[500]}, 0 0 20px ${SCALE.amber[700]}aa`,
+						color: ROLE.text.primary,
+						textShadow: `0 0 10px ${ROLE.accent.warning}, 0 0 20px ${ROLE.accent.warning}66`,
 						pointerEvents: "none",
 					}}
 					initial={{ opacity: 0, y: 12, scale: 0.85 }}

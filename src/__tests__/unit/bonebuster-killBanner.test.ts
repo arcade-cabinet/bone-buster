@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 /**
  * PB2 — non-boss enemy-kill HUD banner. The KillBanner overlay listens
@@ -40,6 +40,12 @@ describe("PB2 enemy-kill banner dispatch", () => {
 	beforeEach(() => {
 		bus = captureBus();
 	});
+	// Cleanup belongs in afterEach so a failing assertion still tears
+	// down the listener. Otherwise a single failure leaks the listener
+	// into every subsequent test in this file and pollutes counts.
+	afterEach(() => {
+		bus.cleanup();
+	});
 
 	it("enemyKilled carries the enemyId + kind payload", async () => {
 		const { dispatch } = await import("@engine/events");
@@ -48,7 +54,6 @@ describe("PB2 enemy-kill banner dispatch", () => {
 		expect(bus.events[0].type).toBe("enemyKilled");
 		expect(bus.events[0].enemyId).toBe(42);
 		expect(bus.events[0].kind).toBe("plaguebeak");
-		bus.cleanup();
 	});
 
 	it("multi-kill bursts each dispatch their own event so the banner can stack-count", async () => {
@@ -59,7 +64,6 @@ describe("PB2 enemy-kill banner dispatch", () => {
 		const killEvents = bus.events.filter((e) => e.type === "enemyKilled");
 		expect(killEvents).toHaveLength(3);
 		expect(killEvents.map((e) => e.enemyId)).toEqual([100, 101, 102]);
-		bus.cleanup();
 	});
 
 	it("enemyKilled and bossDefeated are distinct channels — listeners filter independently", async () => {
@@ -72,6 +76,5 @@ describe("PB2 enemy-kill banner dispatch", () => {
 		expect(bosses).toHaveLength(1);
 		expect(kills[0].kind).toBe("rattler");
 		expect(bosses[0].enemyId).toBe(99);
-		bus.cleanup();
 	});
 });
