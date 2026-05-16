@@ -31,10 +31,6 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 
 ## Queue
 
-### IDENTITY — gameplay-design depth
-
-- [ ] **D9** — `references/` weapon promotions. PRD §D9.
-
 ### ARCHETYPE INTERLEAVE — per-archetype content + perf slice
 
 Order: corridor → arena → courtyard → sewer → library. First slice generalizes the `InstancedField` + `EphemeralPool` factories; subsequent slices reuse.
