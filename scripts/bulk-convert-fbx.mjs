@@ -129,7 +129,5 @@ for (const { fbx, glb, rel, cat } of candidates) {
 	}
 }
 
-console.log(
-	`\nbulk-convert-fbx: done. converted=${converted} skipped=${skipped} failed=${failed}`,
-);
+console.log(`\nbulk-convert-fbx: done. converted=${converted} skipped=${skipped} failed=${failed}`);
 if (failed > 0) process.exit(1);

@@ -26,8 +26,8 @@
 - [x] **IF3** — `docs/ITCH-INVENTORY.md`. PRD §IF3.
 - [x] **IF4** — `scripts/itch-allowlist.json`. PRD §IF4.
 - [x] **IF5** — bulk download + extract. PRD §IF5.
-- [ ] **IF6** — FBX→GLB conversion pass. PRD §IF6.
-- [ ] **IF7** — `docs/ASSET-INVENTORY.md`. PRD §IF7.
+- [x] **IF6** — FBX→GLB conversion pass. PRD §IF6.
+- [x] **IF7** — `docs/ASSET-INVENTORY.md`. PRD §IF7.
 
 ### REBRAND — typography + palette + landing redesign
 
