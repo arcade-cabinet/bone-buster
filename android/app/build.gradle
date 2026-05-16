@@ -18,7 +18,17 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            // S1 — release-build hardening.
+            // minifyEnabled: R8 minification strips dead code paths
+            //   in the Capacitor / AndroidX runtime and shrinks the
+            //   APK ~30%. Required for shrinkResources to take effect.
+            // shrinkResources: drops unused res/drawable/layout/etc.
+            //   referenced only by the dead code R8 just removed.
+            // proguard-rules.pro keeps the Capacitor bridge classes
+            //   live (they're referenced reflectively from JS, R8
+            //   can't see those edges).
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

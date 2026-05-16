@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  S1 — Android 12+ data-extraction policy.
+
+  Declares opt-out for BOTH cloud-backup (Google Drive / Auto Backup)
+  and device-to-device transfer. OBJEXOOM's only persisted state
+  is the local run-history (POL36 / E9 sqlite database under the
+  app's private data directory); this is per-device, re-derivable
+  from gameplay, and has no user-sensitive content worth syncing
+  off the device.
+
+  Empty <exclude> elements with no <include> siblings mean "exclude
+  EVERYTHING" — neither cloud nor device-transfer captures any of
+  the app's data. This is the strictest stance the schema allows
+  short of disabling D2D entirely (which we ALSO do via
+  AndroidManifest's android:dataExtractionRules="@..." +
+  android:fullBackupContent="false" combo).
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="file" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="file" />
+    </device-transfer>
+</data-extraction-rules>
