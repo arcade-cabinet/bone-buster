@@ -291,6 +291,12 @@ export function resolveFire(ctx: FireResolutionContext): void {
 					// boss-down. The audio is carried by POL10-v2's
 					// playBossDeath() which fires once per shot at line ~310.
 					dispatch({ type: "bossDefeated", enemyId: bestEnemy.id });
+				} else {
+					// PB2 — non-boss kill banner. The KillBanner overlay
+					// debounces multi-kill bursts so a 3-shot chaingun
+					// volley shows one "BUSTED 3" stack, not three
+					// individual cards.
+					dispatch({ type: "enemyKilled", enemyId: bestEnemy.id, kind: bestEnemy.kind });
 				}
 				const mesh = enemyMeshesRef.current.get(bestEnemy.id);
 				if (mesh) mesh.visible = false;
