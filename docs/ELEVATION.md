@@ -13,7 +13,7 @@ domain: product
 # Elevation roadmap
 
 The DOOM reference clone ([`PARITY.md`](./PARITY.md)) is the floor,
-not the ceiling. OBJEXOOM **reached 100% reference parity** with
+not the ceiling. BONE BUSTER **reached 100% reference parity** with
 57dd8fa (E12 adaptive resolution). The real work is now
 **elevation** — features the reference's 13 KB budget couldn't dream
 of, leveraging the 1,400+ GLB depth in
@@ -180,19 +180,19 @@ Required:
 one `runs` table keyed by autoincrement id with `started_at`,
 `ended_at`, `levels_cleared`, `total_kills`, `total_damage_taken`,
 `level_set`, `outcome`. Indexed by `ended_at DESC`. Serialized as
-base64 in `localStorage["objexoom.runHistory"]` — single key, single
+base64 in `localStorage["bone-buster.runHistory"]` — single key, single
 blob, rewritten on every insert. WASM loaded from
 `<base>/assets/wasm/sql-wasm.wasm` via the `prepare-web-wasm.mjs`
 postinstall + prebuild hook.
 
 Public API: `insert(record, now)`, `listRecent(limit)`, `bestRun()`,
-`runCount()`, `clear()`. ObjexoomShell records on every terminal
+`runCount()`, `clear()`. BoneBusterShell records on every terminal
 status transition (`dead | won`), gated by a `runStartAt` ref to
 avoid double-insert under React 19 strict-mode.
 
 Tracked-onward (each a discrete directive item, not an open thread):
 - **E9-CHIP** — landing-screen "best run" chip reading `bestRun()`.
-- **E9-RECENT** — debug-HUD recent-runs list under `?objexoomDebug`.
+- **E9-RECENT** — debug-HUD recent-runs list under `?debug`.
 - **E9-DIFFLEADER** — per-difficulty leaderboard, sliced by `levelSet`.
 
 ## E10 — 3D HUD elements
@@ -243,9 +243,9 @@ buffer. Every 60 frames it computes `avgFps`, then:
 2-second mount-warmup skip avoids tripping a downgrade on GLB load
 + Tone.js warmup. Calls `gl.setPixelRatio` directly.
 
-Dispatches `objexoom:fpsUpdate` events with `{ fps, pixelRatio }`;
-ObjexoomHUD's `AdaptiveResolutionReadout` listens and renders a
-"FPS N • DPR x.xx" chip when `?objexoomDebug` is in the URL.
+Dispatches `bone-buster:fpsUpdate` events with `{ fps, pixelRatio }`;
+BoneBusterHUD's `AdaptiveResolutionReadout` listens and renders a
+"FPS N • DPR x.xx" chip when `?debug` is in the URL.
 
 **Closed the last critical-tier parity gap.** 100% reference parity
 achieved.

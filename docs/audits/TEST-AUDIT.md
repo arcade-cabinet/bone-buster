@@ -54,14 +54,14 @@ The high-value gaps in that list:
 
 | File | Why it matters | Smallest test |
 |---|---|---|
-| `src/runHistory.ts` | E9/STO1b persistence — only the InMemory path is browser-tested. The `formatRunDuration` helper (line 194) has no unit test. | Unit test for `formatRunDuration(ms)` formatter — 6 cases. |
+| `src/store/runHistory.ts` | E9/STO1b persistence — only the InMemory path is browser-tested. The `formatRunDuration` helper (line 194) has no unit test. | Unit test for `formatRunDuration(ms)` formatter — 6 cases. |
 | `src/scene/effects/AdaptiveResolution.tsx` | See G2 | See G2 |
-| `src/yukaIntegration.ts` | Tested in `objexoom-yuka.test.ts` only for pure helpers (Y4/Y5/Y6). EntityManager interaction is "covered by the e2e gate (Y10)" per the file header, but no e2e file is named Y10. | Add a `Y10` browser test (or a comment naming the existing test that covers it). |
+| `src/ai/yukaIntegration.ts` | Tested in `objexoom-yuka.test.ts` only for pure helpers (Y4/Y5/Y6). EntityManager interaction is "covered by the e2e gate (Y10)" per the file header, but no e2e file is named Y10. | Add a `Y10` browser test (or a comment naming the existing test that covers it). |
 | `src/scene/entities/EnemyMesh.tsx`, `EnemyHitFlash.tsx` | The hit-flash → red tint → fade is a polish surface with no test — only the visual gate would catch a regression. | Already covered by the visual gate in principle. Add a corridor-archetype "enemy hit mid-flash" screenshot pose (see G7). |
-| `src/floorTextures.ts` | Per-archetype floor PBR resolution — drives part of the per-archetype palette intent. No test exists. | Unit test asserting each archetype resolves to a distinct texture URL set. |
+| `src/world/floorTextures.ts` | Per-archetype floor PBR resolution — drives part of the per-archetype palette intent. No test exists. | Unit test asserting each archetype resolves to a distinct texture URL set. |
 | `src/scene/entities/TreasureChest.tsx`, `LootField` (via `lootScatter`) | POL1 score wiring; see G1. | Covered by G1. |
-| `src/weapons.ts` | The muzzle-anchor test is for the viewmodel transform, not weapon switch / ammo / firing-rate state. | Unit test for "switching to chaingun when ammo>0" and "pickup grants +N ammo per kind." |
-| `src/assetUrl.ts` (the `A()` helper) | Critical — wrong BASE_URL prefix produces blank screenshots in gh-pages/Capacitor. | Unit test that asserts `A("/foo")` resolves to `${import.meta.env.BASE_URL}foo` under three mock BASE_URL values (dev `/`, pages `/objexoom/`, capacitor `file://`). ~15 lines. |
+| `src/shared/weapons.ts` | The muzzle-anchor test is for the viewmodel transform, not weapon switch / ammo / firing-rate state. | Unit test for "switching to chaingun when ammo>0" and "pickup grants +N ammo per kind." |
+| `src/assets/assetUrl.ts` (the `A()` helper) | Critical — wrong BASE_URL prefix produces blank screenshots in gh-pages/Capacitor. | Unit test that asserts `A("/foo")` resolves to `${import.meta.env.BASE_URL}foo` under three mock BASE_URL values (dev `/`, pages `/bone-buster/`, capacitor `file://`). ~15 lines. |
 
 ### G6. POL items present in docs/code but with zero test coverage
 Cross-referencing `grep -oh 'POL[0-9]+'` between `src/` and `src/__tests__/`:
@@ -77,7 +77,7 @@ Action: triage the 27 against the PRD; for each, classify as "visual-only — sc
 ## 2. Test smells
 
 ### S1. `objexoom-fade.test.ts` tests a tautological local copy
-`src/__tests__/unit/objexoom-fade.test.ts:13-23` defines `COLOR_BY_KIND` and `PEAK_BY_KIND` as local constants in the test file, then asserts properties of those local constants. The comment says "Mirror of the table inside triggerFade. Keep this in sync — the test is the canary that catches drift." **The test cannot catch drift** — it asserts the local copy against itself. The real table (`src/ObjexoomShell.tsx`) could change to `damage: "rgba(0,0,0,1)"` and this test still passes.
+`src/__tests__/unit/objexoom-fade.test.ts:13-23` defines `COLOR_BY_KIND` and `PEAK_BY_KIND` as local constants in the test file, then asserts properties of those local constants. The comment says "Mirror of the table inside triggerFade. Keep this in sync — the test is the canary that catches drift." **The test cannot catch drift** — it asserts the local copy against itself. The real table (`app/views/Shell.tsx`) could change to `damage: "rgba(0,0,0,1)"` and this test still passes.
 
 Fix: import the actual table from `ObjexoomShell` (or extract it to a module the Shell imports) and assert against the source of truth. The test's purpose evaporates without this.
 

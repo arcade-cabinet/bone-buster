@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
+import { LARGE_PROPS } from "@world/largeProps";
+import type { LargePropInstance } from "@world/scatter/largePropScatter";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import { LARGE_PROPS } from "../../largeProps";
-import type { LargePropInstance } from "../../scatter/largePropScatter";
 
 /**
  * COV2 step-2 — anchor-piece scatter renderer.
@@ -12,7 +12,7 @@ import type { LargePropInstance } from "../../scatter/largePropScatter";
  * shape (SkeletonUtils.clone per mount; primitive-wrapped under a group).
  *
  * Blocking entries push the player out via collision; that wiring is
- * fed from ObjexoomScene via the CollisionContext blocker list.
+ * fed from BoneBusterScene via the CollisionContext blocker list.
  */
 export function LargePropField({ props }: { props: readonly LargePropInstance[] }) {
 	return (

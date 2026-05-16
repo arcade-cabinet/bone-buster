@@ -5,7 +5,7 @@ status: current
 domain: technical
 ---
 
-# OBJEXOOM — binding technical decisions
+# BONE BUSTER — binding technical decisions
 
 Append-only. Each decision records the call, the why, and what was
 considered + rejected. Override an old decision by adding a new
@@ -18,10 +18,10 @@ record that references the old one, not by editing it.
 **Status:** Locked
 **Date:** 2026-04-23 (decision predates extraction)
 
-OBJEXOOM uses Vite + React 19 + react-three-fiber. Not Next.js, not
+BONE BUSTER uses Vite + React 19 + react-three-fiber. Not Next.js, not
 Remix, not Astro, not vinext.
 
-**Why:** OBJEXOOM is a single-page interactive 3D experience. SSR,
+**Why:** BONE BUSTER is a single-page interactive 3D experience. SSR,
 file-system routing, server components, ISR, edge runtime — all
 weight without payoff. The game doesn't render on the server (it's
 hostile to react-three-fiber), doesn't need SEO (single screen), and
@@ -29,7 +29,7 @@ ships into Capacitor (which has no concept of a server).
 
 **Rejected:**
 - *Next.js* — too much SSR machinery for a Canvas-mounted SPA. The
-  parent Objexiv app is Next.js; OBJEXOOM intentionally is not.
+  parent arcade-cabinet app is Next.js; BONE BUSTER intentionally is not.
 - *vinext* — interesting in principle but adds a Next.js compatibility
   layer the game never uses.
 - *Astro* — built for content-shaped sites; the game is interaction-
@@ -160,13 +160,13 @@ default by one step) imports `SCALE` directly with a `// scale-step:
 
 ---
 
-## D8 — `feat/objexoom-game-buildout` is one long-running branch
+## D8 — `feat/bone-buster-game-buildout` is one long-running branch
 
 **Status:** Superseded by D12 on 2026-05-14
 **Date:** 2026-05-13
 
 The branch that lands every design-system + GLB-wiring + reference-
-parity commit is one long-running `feat/objexoom-game-buildout` PR,
+parity commit is one long-running `feat/bone-buster-game-buildout` PR,
 not a churn of small PRs.
 
 **Why:** User directive 2026-05-13 — "you have zero churn / and can
@@ -199,12 +199,12 @@ totally different games. Pinning eliminates the collision.
 **Status:** Locked
 **Date:** 2026-05-13
 
-All asset URLs in `src/models.ts` flow through `A(path)` which
+All asset URLs in `src/assets/models.ts` flow through `A(path)` which
 prefixes `import.meta.env.BASE_URL`.
 
 **Why:** Three's loaders (useGLTF, GLTFLoader) fetch URLs via `fetch`
 which respects the document base, NOT Vite's `base` env. In gh-pages
-mode where `base: "/objexoom/"`, raw `/assets/...` URLs 404. The
+mode where `base: "/bone-buster/"`, raw `/assets/...` URLs 404. The
 helper applies the prefix once, every site stays readable.
 
 ---
@@ -216,7 +216,7 @@ helper applies the prefix once, every site stays readable.
 
 PA-MOD7's original framing was "wire gltfjsx so muzzle bones become addressable as named refs." Investigation showed the wired GLBs (`pistol.glb`, `chaingun.glb`, `shotgun.glb`, `melee_machete.glb`) ship with only generic node names like `Gun` / `Bullet` — no muzzle/barrel/tip bones to address. gltfjsx would have generated typed components over those generic names, but the muzzle position would still need to be specified out-of-band.
 
-**Call:** add a `muzzleBboxFrac: [x, y, z]` to `WeaponModel` in `src/models.ts` specifying the muzzle's position as a fraction of the GLB's bounding box on each axis (0 = bbox min, 1 = bbox max). The viewmodel computes the bbox at mount, multiplies by the frac, and parents an empty `<group ref={muzzleRef}>` at that local position — so the marker rides through the same `autoScale` + `rotation` the rest of the weapon does. `ObjexoomScene` reads the world-position of the muzzle ref each frame instead of `camera.position` for `muzzleLightRef`. (Earlier draft called this `muzzleOffset` measured in absolute weapon-local units; the bbox-frac form was the actual implementation chosen because GLB authoring scales vary.)
+**Call:** add a `muzzleBboxFrac: [x, y, z]` to `WeaponModel` in `src/assets/models.ts` specifying the muzzle's position as a fraction of the GLB's bounding box on each axis (0 = bbox min, 1 = bbox max). The viewmodel computes the bbox at mount, multiplies by the frac, and parents an empty `<group ref={muzzleRef}>` at that local position — so the marker rides through the same `autoScale` + `rotation` the rest of the weapon does. `BoneBusterScene` reads the world-position of the muzzle ref each frame instead of `camera.position` for `muzzleLightRef`. (Earlier draft called this `muzzleOffset` measured in absolute weapon-local units; the bbox-frac form was the actual implementation chosen because GLB authoring scales vary.)
 
 **Why:**
 - Solves the user-visible outcome (muzzle light at the barrel tip rather than camera center) without a codegen step, new devDep, or per-asset re-export.
@@ -227,7 +227,7 @@ PA-MOD7's original framing was "wire gltfjsx so muzzle bones become addressable 
 **Rejected:**
 - *Adopting gltfjsx as authored* — generates typed components, but the GLBs lack muzzle bones, so the typed access doesn't deliver the outcome.
 - *Adding muzzle bones in Blender to each GLB and re-exporting* — pulls 4+ external authoring passes per weapon swap; tracks externally-authored binaries; couples gameplay to manual asset surgery.
-- *Hardcoding the world offset at the ObjexoomScene call site* — couples scene to the per-weapon barrel geometry; explodes if we ever swap weapons.
+- *Hardcoding the world offset at the BoneBusterScene call site* — couples scene to the per-weapon barrel geometry; explodes if we ever swap weapons.
 
 ---
 
@@ -236,7 +236,7 @@ PA-MOD7's original framing was "wire gltfjsx so muzzle bones become addressable 
 **Status:** Locked. **Supersedes D8.**
 **Date:** 2026-05-14
 
-`feat/objexoom-game-buildout`, the single-long-running branch policy from D8, was squash-merged as PR #12 on 2026-05-14 and deleted on the remote. New work ships as **one feature branch per directive item (or tight cluster of related items)**, opened off the latest pulled `origin/main`, PR'd and squash-merged.
+`feat/bone-buster-game-buildout`, the single-long-running branch policy from D8, was squash-merged as PR #12 on 2026-05-14 and deleted on the remote. New work ships as **one feature branch per directive item (or tight cluster of related items)**, opened off the latest pulled `origin/main`, PR'd and squash-merged.
 
 **Why:**
 - The long-running branch grew to ~50 commits and ~12k LOC of churn before review. Review feedback at that scale loops indefinitely.
@@ -251,7 +251,7 @@ PA-MOD7's original framing was "wire gltfjsx so muzzle bones become addressable 
 
 ---
 
-## D13 — Keep `objexoom:*` channels as window-event broadcasts, just type them
+## D13 — Keep `bone-buster:*` channels as window-event broadcasts, just type them
 
 **Status:** Locked. **Amends ARCH1 directive item.**
 **Date:** 2026-05-14
@@ -260,16 +260,16 @@ ARCH1's original framing called for converting five "Shell↔Scene channels" (`f
 
 | Channel | Producer | Consumer | Actual topology |
 |---|---|---|---|
-| `fpsUpdate` | `ObjexoomScene` (inside Canvas) | `ObjexoomHUD` (DOM sibling) | Scene → HUD, not Shell↔Scene |
-| `shake` | `ObjexoomShell` (onHit handler) | `PlayerController` (inside Scene) | Shell → grandchild |
-| `teleport` | `ObjexoomShell` (level-change effect) | `PlayerController` | Shell → grandchild |
+| `fpsUpdate` | `BoneBusterScene` (inside Canvas) | `BoneBusterHUD` (DOM sibling) | Scene → HUD, not Shell↔Scene |
+| `shake` | `BoneBusterShell` (onHit handler) | `PlayerController` (inside Scene) | Shell → grandchild |
+| `teleport` | `BoneBusterShell` (level-change effect) | `PlayerController` | Shell → grandchild |
 | `playerHit` | both Shell (onHit) AND Scene (explosion path) | Scene (burst emitter) | multi-source |
-| `fellToDeath` | `PlayerController` (fall detection) | `ObjexoomShell` (game-over) | grandchild → Shell |
+| `fellToDeath` | `PlayerController` (fall detection) | `BoneBusterShell` (game-over) | grandchild → Shell |
 
-**Call:** keep all 14 `objexoom:*` channels as window-event broadcasts; just route every call site through the typed `dispatch` + `addObjexoomListener` helpers landed in ARCH1a. Topology stays; type-safety lands.
+**Call:** keep all 14 `bone-buster:*` channels as window-event broadcasts; just route every call site through the typed `dispatch` + `addBoneBusterListener` helpers landed in ARCH1a. Topology stays; type-safety lands.
 
 **Why:**
-- Direct ref callbacks would force `ObjexoomShell` to receive imperative handles from grandchildren (`PlayerController` via `ObjexoomScene`), inverting the React data-flow direction it already establishes via `GameRef`.
+- Direct ref callbacks would force `BoneBusterShell` to receive imperative handles from grandchildren (`PlayerController` via `BoneBusterScene`), inverting the React data-flow direction it already establishes via `GameRef`.
 - Broadcast IS the right shape when producer and consumer are siblings or aunt/nephew — there's no shared parent that can plumb a callback without leaking implementation details.
 - The original ARCH1 framing was a categorization error (treating these as "Shell↔Scene" because the originating directive was written before the actual call-site map was inspected). Use-case enumeration before code is the standing rule per CLAUDE.md.
 - The full **win** of ARCH1 — type-checked event payloads, autocomplete on `e.detail.kind`, compile-time failure when a producer and consumer disagree on shape — lands fully from typed-dispatch alone.
@@ -309,7 +309,7 @@ AO.5's original acceptance referenced "Lighthouse PWA score ≥ 90." Lighthouse 
 **Status:** Locked.
 **Date:** 2026-04-30 (shipped); backfilled 2026-05-15 per ARCHITECTURE audit §7.5
 
-`src/audioBus.ts` keys channels by SYNTH INSTANCE, not by cue. Multiple cues (e.g. `playPickup`, `playSecretFound`) that share the underlying `Tone.PolySynth` route through the SAME channel; channels schedule via a strictly-increasing `t` so Tone's "Start time must be strictly greater than previous start time" check never trips.
+`src/audio/audioBus.ts` keys channels by SYNTH INSTANCE, not by cue. Multiple cues (e.g. `playPickup`, `playSecretFound`) that share the underlying `Tone.PolySynth` route through the SAME channel; channels schedule via a strictly-increasing `t` so Tone's "Start time must be strictly greater than previous start time" check never trips.
 
 **Why:**
 - Pre-AUDIO1, every cue had its own scheduling state. Two cues firing into the same synth in the same JS tick (e.g. pickup chime + secret-found chime via overlapping pickups) would race on Tone's per-synth precondition and throw mid-frame.
@@ -324,7 +324,7 @@ Source: `src/audioBus.ts:30-65` documents the synth-to-cue map inline.
 
 ---
 
-## D16 — Per-frame work extracted from ObjexoomScene to `src/scene/tick/*` (ARCH2a/b + QW8)
+## D16 — Per-frame work extracted from BoneBusterScene to `src/scene/tick/*` (ARCH2a/b + QW8)
 
 **Status:** Locked.
 **Date:** 2026-05-10 (ARCH2a enemyTickLoop) / 2026-05-13 (ARCH2b fireResolution) / 2026-05-15 (QW8 directory rename)
@@ -340,7 +340,7 @@ These take an explicit "context" object (refs + game state) and return nothing �
 QW8 (Phase 21) moved the files from `src/scene/hooks/` to `src/scene/tick/` because none of them are React hooks (no `use*` calls). `src/scene/hooks/` still exists but now only holds genuine React hooks (CONV2's `useGameRef.ts`).
 
 **Why:**
-- ObjexoomScene was a 1000+ LOC braid of declarative scene-graph + imperative tick logic; extracting tick logic let each side be reasoned about independently.
+- BoneBusterScene was a 1000+ LOC braid of declarative scene-graph + imperative tick logic; extracting tick logic let each side be reasoned about independently.
 - Pure-function shape means unit tests don't need r3f's test renderer; they assert against the context state directly.
 
 **Rejected:**
@@ -355,7 +355,7 @@ Source: ARCHITECTURE.md (rendering layer table). Files in `src/scene/tick/`.
 **Status:** Locked.
 **Date:** 2026-05-15 (PR #39)
 
-Pre-STO1b, run history was an sql.js `Database` blob in `localStorage["objexoom.runHistory"]`. STO1b shipped the Capacitor SQLite + jeep-sqlite migration (D18 below) with a one-time legacy-blob read+import. ARCH3 (Phase 20) removed sql.js entirely:
+Pre-STO1b, run history was an sql.js `Database` blob in `localStorage["bone-buster.runHistory"]`. STO1b shipped the Capacitor SQLite + jeep-sqlite migration (D18 below) with a one-time legacy-blob read+import. ARCH3 (Phase 20) removed sql.js entirely:
 - `package.json`: removed `sql.js` + `@types/sql.js` deps.
 - `src/runHistory.ts:79-104`: the legacy-blob branch now logs a warning, drops the localStorage key, and continues — no import path.
 - `scripts/prepare-web-wasm.mjs`: emptied the WASM artifact list (was just `sql-wasm.wasm`).
@@ -367,7 +367,7 @@ Pre-STO1b, run history was an sql.js `Database` blob in `localStorage["objexoom.
 **Rejected:**
 - *Indefinite grace window with sql.js as a fallback.* — defers the cleanup forever; STO1b's whole point was to unify on one persistence API.
 
-Source: `src/runHistory.ts:79-104`, `src/__tests__/unit/objexoom-sqljsRemoval.test.ts` (pins the absence contract).
+Source: `src/runHistory.ts:79-104`, `src/__tests__/unit/bone-buster-sqljsRemoval.test.ts` (pins the absence contract).
 
 ---
 
@@ -376,9 +376,9 @@ Source: `src/runHistory.ts:79-104`, `src/__tests__/unit/objexoom-sqljsRemoval.te
 **Status:** Locked.
 **Date:** 2026-05-11 (shipped); backfilled 2026-05-15
 
-`src/persistence/createDatabase.ts` returns a `DatabaseAdapter` backed by:
+`src/platform/persistence/createDatabase.ts` returns a `DatabaseAdapter` backed by:
 - **Native (iOS/Android):** `@capacitor-community/sqlite` via the Capacitor bridge → a real SQLite database in the app sandbox.
-- **Web:** `jeep-sqlite` (IndexedDB-backed sql.js shim via a custom element). The element is mounted once at app boot via `src/persistence/initJeepSqlite.ts`.
+- **Web:** `jeep-sqlite` (IndexedDB-backed sql.js shim via a custom element). The element is mounted once at app boot via `src/platform/persistence/initJeepSqlite.ts`.
 
 Settings (light, hot-read) use `@capacitor/preferences` instead — also localStorage-backed on web, native KV store on native.
 
@@ -392,7 +392,7 @@ Settings (light, hot-read) use `@capacitor/preferences` instead — also localSt
 - *Pure IndexedDB.* — DIY query layer is bigger than the persistence module itself.
 - *sql.js everywhere.* — preserves the localStorage roundtrip that breaks under Capacitor.
 
-Source: `src/persistence/createDatabase.ts`, `src/persistence/database.ts`, `src/runHistory.ts`, `capacitor.config.ts:13-17` (encryption opt-out rationale).
+Source: `src/platform/persistence/createDatabase.ts`, `src/platform/persistence/database.ts`, `src/store/runHistory.ts`, `capacitor.config.ts:13-17` (encryption opt-out rationale).
 
 ---
 

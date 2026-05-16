@@ -1,15 +1,15 @@
 import { useGLTF } from "@react-three/drei";
+import type { FloorTileInstance } from "@world/scatter/floorTiles";
+import { FLOOR_TILE_VARIANTS, floorTileUrlFor } from "@world/scatter/floorTiles";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import type { FloorTileInstance } from "../../scatter/floorTiles";
-import { FLOOR_TILE_VARIANTS, floorTileUrlFor } from "../../scatter/floorTiles";
 
 /**
  * COV3 step-1 — renders the per-map modular asphalt floor tile
  * scatter. Each FloorTileInstance gets a cloned mesh at its world
  * position with a quarter-turn yaw rotation for variety.
  *
- * Mounted by ObjexoomScene next to LampField when the map's
+ * Mounted by BoneBusterScene next to LampField when the map's
  * `useModularFloor` flag is set. SectorMapGeometry omits its
  * procedural floor `shapeGeometry` when the flag is set, so these
  * tiles ARE the floor for that map.

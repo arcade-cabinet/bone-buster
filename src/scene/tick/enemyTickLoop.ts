@@ -1,5 +1,5 @@
 /**
- * ARCH2a — per-frame enemy AI tick, extracted from ObjexoomScene's
+ * ARCH2a — per-frame enemy AI tick, extracted from BoneBusterScene's
  * useFrame. Pure function over a context object so the call site in
  * the Scene remains a one-liner inside useFrame and the logic lives
  * in a focused, individually-testable module.
@@ -19,37 +19,37 @@
  *   aggroFiredRef        — Set<id> of enemies that already played alert
  *   collisionCtxRef      — collision helper context (built per Scene)
  *   gameRef              — Shell callbacks (onHit/onKill/...)
- *   map                  — current ObjexoomMap (sector or grid)
+ *   map                  — current BoneBusterMap (sector or grid)
  *   camera               — three.js camera (for yaw on aggro pan)
- *   settings             — full ObjexoomSettings (for soundEnabled)
+ *   settings             — full BoneBusterSettings (for soundEnabled)
  *   playerVelocity       — XZ-frame player velocity (Y3)
  *   playerX / playerY    — camera.position.{x,z}
  *   now                  — performance.now() at the top of the tick
  *   dt                   — clamped delta seconds for the tick
  */
 
-import type * as THREE from "three";
-import type * as Yuka from "yuka";
+import { tickEnemyFsm } from "@ai/enemyAi";
+import { removeYukaEntity } from "@ai/yukaIntegration";
+import { panForPosition, playAggroAlert, playHurt } from "@audio/sfx";
 import {
-	SKELETON_ATTACK_COOLDOWN_MS,
-	SKELETON_ATTACK_RANGE,
-	SKELETON_DAMAGE,
-} from "../../constants";
-import { tickEnemyFsm } from "../../enemyAi";
-import {
+	type BoneBusterMap,
 	type CollisionContext,
 	type Enemy,
 	type EnemyBullet,
 	hasLineOfSightAny,
 	makeEnemyBullet,
-	type ObjexoomMap,
 	resolveCollisionAny,
-} from "../../engine";
-import { dispatch } from "../../events";
-import type { GameRef } from "../../ObjexoomShell";
-import type { ObjexoomSettings } from "../../settings";
-import { panForPosition, playAggroAlert, playHurt } from "../../sfx";
-import { removeYukaEntity } from "../../yukaIntegration";
+} from "@engine/engine";
+import { dispatch } from "@engine/events";
+import {
+	RATTLER_ATTACK_COOLDOWN_MS,
+	RATTLER_ATTACK_RANGE,
+	RATTLER_DAMAGE,
+} from "@shared/constants";
+import type { BoneBusterSettings } from "@store/settings";
+import type { GameRef } from "@views/Shell";
+import type * as THREE from "three";
+import type * as Yuka from "yuka";
 
 // CollisionContext is a private export of engine.ts; if not exported, we
 // fall back to the structural type the helpers consume. The Scene
@@ -73,9 +73,9 @@ export interface EnemyTickContext {
 	bossSpottedFiredRef?: { current: Set<number> };
 	collisionCtxRef: CollisionCtxRef;
 	gameRef: { current: GameRef };
-	map: ObjexoomMap;
+	map: BoneBusterMap;
 	camera: THREE.Camera;
-	settings: ObjexoomSettings;
+	settings: BoneBusterSettings;
 	playerVelocity: { x: number; y: number };
 	playerX: number;
 	playerY: number;
@@ -146,7 +146,7 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 		const distToPlayer = Math.hypot(dxp, dyp);
 		if (distToPlayer === 0) continue;
 
-		const wraith = enemy.kind === "wraith";
+		const phaser = enemy.kind === "phaser";
 		const lastSeen = lastSeenRef.current.get(enemy.id) ?? -Infinity;
 		const prevState = enemy.fsmState;
 		const out = tickEnemyFsm({
@@ -204,7 +204,7 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 					y: enemy.position.y + (moveTarget.y - enemy.position.y) * STAGGER_SPEED_FACTOR,
 				};
 			}
-			enemy.position = wraith
+			enemy.position = phaser
 				? moveTarget
 				: resolveCollisionAny(moveTarget, map, collisionCtxRef.current, 0.5);
 		}
@@ -216,13 +216,13 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 			enemy.lastShotAt = now;
 		}
 
-		// Skeleton melee — short-range contact damage (legacy path; skeletons
+		// Rattler melee — short-range contact damage (legacy path; skeletons
 		// don't shoot, so they need a close-quarters threat). Imps and wraiths
 		// rely on ranged.
 		if (
-			enemy.kind === "skeleton" &&
-			distToPlayer < SKELETON_ATTACK_RANGE &&
-			now - enemy.lastAttackAt > SKELETON_ATTACK_COOLDOWN_MS
+			enemy.kind === "rattler" &&
+			distToPlayer < RATTLER_ATTACK_RANGE &&
+			now - enemy.lastAttackAt > RATTLER_ATTACK_COOLDOWN_MS
 		) {
 			const sees = hasLineOfSightAny(
 				enemy.position,
@@ -232,7 +232,7 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 			);
 			if (sees) {
 				enemy.lastAttackAt = now;
-				gameRef.current.onHit(SKELETON_DAMAGE);
+				gameRef.current.onHit(RATTLER_DAMAGE);
 				playHurt();
 			}
 		}

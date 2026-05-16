@@ -2,8 +2,15 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
+		<!-- BC4 — viewport tuned for foldables. `viewport-fit=cover`
+		     extends content beneath the notch / status bar so HUD
+		     bands can use `env(safe-area-inset-*)` for padding.
+		     `user-scalable=no` was removed (a11y) — players who
+		     need to pinch-zoom on landing / mission-complete / pause
+		     menus can; the in-canvas touch-controls layer captures
+		     mid-combat gestures so accidental zoom isn't a concern. -->
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-		<meta name="theme-color" content="#03050b" />
+		<meta name="theme-color" content="#0F0C12" />
 		<!--
 		  S2 — Content Security Policy. Defense-in-depth — there are no
 		  current XSS sinks in the codebase (zero innerHTML / eval /
@@ -13,37 +20,55 @@
 
 		  Allowlist rationale:
 		    - script-src 'self' 'wasm-unsafe-eval'
-		        Tone.js AudioWorklets + jeep-sqlite custom element load
-		        WASM at runtime (needs wasm-unsafe-eval, NOT unsafe-eval).
+		        jeep-sqlite custom element loads WASM at runtime (needs
+		        wasm-unsafe-eval, NOT unsafe-eval). Howler.js does NOT
+		        need this; the directive is retained for jeep-sqlite.
 		    - style-src 'self' 'unsafe-inline'
 		        framer-motion injects style attributes at runtime.
 		    - img-src 'self' data: blob:
 		        canvas → blob URLs for screenshot captures; data: URIs
 		        from postprocessing's lookup textures.
 		    - worker-src 'self' blob:
-		        AudioWorklet workers from Tone.js + potential Vite-issued
-		        blob: workers.
-		    - connect-src 'self'
-		        The game has ZERO outbound fetches (offline single-player).
-		        Lock it.
+		        Potential Vite-issued blob: workers. Howler does not
+		        use AudioWorklets; the directive is retained as
+		        defense-in-depth for future blob-worker introductions.
+		    - connect-src 'self' blob: data:
+		        The game has ZERO outbound network fetches (offline
+		        single-player). `blob:` + `data:` are REQUIRED —
+		        three.js's GLTFLoader extracts GLB-embedded textures
+		        into blob: URLs (when texture has a buffer view) or
+		        data: URLs (when texture has an inline mime + base64
+		        payload) and then fetches them back to decode
+		        (see three/src/loaders/GLTFLoader.js#loadImage).
+		        Without these schemes in connect-src, every textured
+		        asset silently fails to upload its texture to the
+		        GPU and the scene renders untextured.
 		    - object-src 'none' / base-uri 'none' / frame-ancestors 'none'
 		        Removes the legacy <object> / <embed> attack surface and
 		        prevents clickjacking via iframe embedding.
 		-->
 		<meta
 			http-equiv="Content-Security-Policy"
-			content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';"
+			content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' blob: data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none';"
 		/>
-		<title>OBJEXOOM — Rip and Tear</title>
-		<meta name="description" content="OBJEXOOM — a polished DOOM-flavored arcade FPS. Procedural sectors, real PSX monsters, and a flashlight you absolutely need." />
+		<title>Bone Buster — They Had It Coming</title>
+		<meta name="description" content="Bone Buster — a procedural arcade FPS in the PSX-jank tradition. They had it coming." />
 		<link rel="manifest" href="./manifest.webmanifest" />
 		<link rel="icon" href="./favicon.ico" sizes="32x32" />
 		<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
 		<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
 		<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+		<!-- BC4 — PWA standalone hints. `mobile-web-app-capable` is the
+		     modern standard (Chrome 108+); `apple-mobile-web-app-capable`
+		     stays for iOS Safari, which never adopted the unprefixed
+		     name. The status-bar style only applies on iOS. The app
+		     title is the home-screen label — R8 source-string sweep
+		     re-points this at "Bone Buster" alongside the document
+		     title. -->
+		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-		<meta name="apple-mobile-web-app-title" content="OBJEXOOM" />
+		<meta name="apple-mobile-web-app-title" content="Bone Buster" />
 	</head>
 	<body>
 		<div id="root"></div>

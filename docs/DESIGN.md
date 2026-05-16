@@ -5,7 +5,7 @@ status: current
 domain: product
 ---
 
-# OBJEXOOM — design truth
+# BONE BUSTER — design truth
 
 ## Pitch
 
@@ -13,12 +13,12 @@ A polished DOOM-flavored arcade FPS that ports the structure of
 [js13k2019-yet-another-doom-clone](https://github.com/xem/yetanotherdoomclone)
 into modern web tech (Vite + react-three-fiber + Capacitor) and lifts
 the visual presentation toward horror-tactical instead of 16-bit
-arcade. OBJEXOOM was incubated inside Objexiv as an easter egg, then
+arcade. BONE BUSTER was incubated inside arcade-cabinet as an easter egg, then
 extracted to its own repo once it deserved its own cadence.
 
 ## What it IS
 
-- A standalone web game. Plays in any modern browser. No Objexiv
+- A standalone web game. Plays in any modern browser. No arcade-cabinet
   backend, no auth, no network.
 - A Capacitor app shell — same source compiles to Android + iOS native
   packages.
@@ -34,7 +34,7 @@ extracted to its own repo once it deserved its own cadence.
   structure (sector-portal rendering, key-and-door progression, lava
   damage, ammo + weapon swap), not literal id Software content.
 - Not a multiplayer game. Single-player only.
-- Not an Objexiv feature. The brand connection is deliberate
+- Not an arcade-cabinet feature. The brand connection is deliberate
   (gradient lineage in the design tokens), but functionally and
   legally independent.
 - Not a Next.js app. Vite-only. SSR was rejected; see
@@ -42,20 +42,20 @@ extracted to its own repo once it deserved its own cadence.
 
 ## Identity
 
-OBJEXOOM honors Objexiv visually — the indigo + violet gradient axis
+BONE BUSTER honors arcade-cabinet visually — the indigo + violet gradient axis
 is preserved — and stands on its own with new horror-tactical axes:
 
 | Anchor | Source | Role |
 | --- | --- | --- |
-| `indigo[400]` `#6172f3` | inherited from Objexiv | HUD chrome, secondary accent |
-| `violet[400]` `#a855f7` | inherited from Objexiv | hero accent, menu highlights |
-| `amber[400]` `#f59e0b` | inherited from Objexiv | pickups, KEY ACQUIRED, fire |
-| `ink[900]` `#060912` | inherited from Objexiv | world background, ambient |
-| `blood[500]` `#b91c1c` | **new for OBJEXOOM** | damage flash, low-HP, enemy emissive |
-| `ember[400]` `#ff7518` | **new for OBJEXOOM** | lava, going-back-strobe |
+| `indigo[400]` `#6172f3` | inherited from arcade-cabinet | HUD chrome, secondary accent |
+| `violet[400]` `#a855f7` | inherited from arcade-cabinet | hero accent, menu highlights |
+| `amber[400]` `#f59e0b` | inherited from arcade-cabinet | pickups, KEY ACQUIRED, fire |
+| `ink[900]` `#060912` | inherited from arcade-cabinet | world background, ambient |
+| `blood[500]` `#b91c1c` | **new for BONE BUSTER** | damage flash, low-HP, enemy emissive |
+| `ember[400]` `#ff7518` | **new for BONE BUSTER** | lava, going-back-strobe |
 
 Full scales (50–950) and semantic role layer live in
-[`src/design-tokens/colors.ts`](../src/design-tokens/colors.ts). The
+[`app/styles/tokens/colors.ts`](../app/styles/tokens/colors.ts). The
 CSS mirror is [`app/tokens.css`](../app/tokens.css). Code should
 reference the semantic `ROLE.*` layer, not raw scale steps.
 
@@ -75,7 +75,7 @@ work offline; CDN fetches stalled the Playwright stability gate).
 
 ## Mood targets
 
-OBJEXOOM should feel:
+BONE BUSTER should feel:
 
 - **Heavy** — dark backgrounds, weighty stencil headers, blood-red
   damage flashes
@@ -96,10 +96,10 @@ It should NOT feel:
 
 Every run picks one of five archetypes deterministically from
 `(seed >>> 0) % 5`. CONV3 (2026-05-15) denormalized `archetype`
-onto `ObjexoomMap` itself — every consumer reads `map.archetype`
+onto `BoneBusterMap` itself — every consumer reads `map.archetype`
 rather than recomputing the modulus. Each archetype is keyed across
 ~17 independent axes; the canonical registry of axes is at
-`src/archetypeRegistry.ts` (A6, Phase 21). When adding a 6th
+`src/world/archetypeRegistry.ts` (A6, Phase 21). When adding a 6th
 archetype, walk that registry top-to-bottom: TypeScript will catch
 the misses (every axis is `Record<PropArchetype, T>`).
 
@@ -129,10 +129,10 @@ remake's stencil-display + condensed-body type pairing.
 
 ## Brand lineage commitment
 
-OBJEXOOM keeps Objexiv's gradient signature visible (the wordmark
+BONE BUSTER keeps arcade-cabinet's gradient signature visible (the wordmark
 gradient uses the same indigo→violet→amber stops, pushed warmer at
 the right end with an ember tip). This is a **deliberate** brand
 relationship — touching it requires a brand decision, not a styling
 tweak. The four `LINEAGE.*` anchors in
-[`src/design-tokens/colors.ts`](../src/design-tokens/colors.ts) are
+[`app/styles/tokens/colors.ts`](../app/styles/tokens/colors.ts) are
 the load-bearing pieces.

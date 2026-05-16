@@ -41,17 +41,17 @@ const page = await ctx.newPage();
 page.on("pageerror", (err) => console.log(`  pageerror: ${err.message}`));
 
 console.log("PT7.1 — landing on mobile");
-await page.goto("http://localhost:5191/?objexoomDebug&objexoomSeed=12345", {
+await page.goto("http://localhost:5191/?bonebusterDebug&bonebusterSeed=12345", {
 	waitUntil: "domcontentloaded",
 });
 await page.waitForTimeout(800);
 await captureCDP(page, `${OUT}/01-landing.png`);
 
 console.log("PT7.2 — ingame with touch controls");
-await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
-await page.evaluate(() => window.__objexoom.start());
-await page.locator("[data-testid='objexoom-hp']").waitFor();
-await page.evaluate(() => window.__objexoom.collectAllPickups());
+await page.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 8000 });
+await page.evaluate(() => window.__bonebuster.start());
+await page.locator("[data-testid='bonebuster-hp']").waitFor();
+await page.evaluate(() => window.__bonebuster.collectAllPickups());
 await page.waitForTimeout(800);
 await captureCDP(page, `${OUT}/02-ingame.png`);
 
@@ -72,13 +72,13 @@ const ctx2 = await browser2.newContext({
 	viewport: { width: 412, height: 915 },
 });
 const page2 = await ctx2.newPage();
-await page2.goto("http://localhost:5191/?objexoomDebug&objexoomSeed=12345", {
+await page2.goto("http://localhost:5191/?bonebusterDebug&bonebusterSeed=12345", {
 	waitUntil: "domcontentloaded",
 });
-await page2.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
-await page2.evaluate(() => window.__objexoom.start());
-await page2.locator("[data-testid='objexoom-hp']").waitFor();
-await page2.evaluate(() => window.__objexoom.forceMissionComplete());
+await page2.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 8000 });
+await page2.evaluate(() => window.__bonebuster.start());
+await page2.locator("[data-testid='bonebuster-hp']").waitFor();
+await page2.evaluate(() => window.__bonebuster.triggerWin());
 await page2.waitForTimeout(2200);
 await captureCDP(page2, `${OUT}/03-mission-complete.png`);
 await browser2.close();

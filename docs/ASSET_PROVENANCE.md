@@ -51,7 +51,7 @@ The script is **idempotent** — re-running it skips outputs newer than their FB
 | `slasher/Machete/Machete.fbx` | `weapons/slasher/melee_machete.glb` | same | same |
 | `slasher/Meat Hook/MeatHook.fbx` | `weapons/slasher/melee_meathook.glb` | same | same |
 
-10 conversion jobs; all weapon outputs are referenced (directly or via the cycling melee-skin roster) from `src/models.ts` + `src/meleeSkins.ts`. Some loose enemy/character GLBs unpacked from `references/` (e.g. `enemies/horror/abomination_rigged.glb`) are NOT yet wired into runtime — they're staged for future content steps.
+10 conversion jobs; all weapon outputs are referenced (directly or via the cycling melee-skin roster) from `src/assets/models.ts` + `src/world/meleeSkins.ts`. Some loose enemy/character GLBs unpacked from `references/` (e.g. `enemies/horror/abomination_rigged.glb`) are NOT yet wired into runtime — they're staged for future content steps.
 
 ## Re-extraction recipe (fresh checkout)
 
@@ -60,14 +60,14 @@ A teammate cloning the repo gets a working `public/assets/models/` tree out of t
 1. Download the source packs (links above) into `references/` as the original `.zip` files.
 2. Unzip into `references/_extracted/` keeping the directory names this doc assumes (`horror_rigged/PSX Horror-Fantasy Megapack/...` and `slasher/<weapon>/...`).
 3. Run `pnpm assets:fbx-to-glb`. Idempotent.
-4. Confirm with `pnpm assets:verify-runtime` (asserts every GLB referenced by `src/models.ts` exists at the resolved path).
+4. Confirm with `pnpm assets:verify-runtime` (asserts every GLB referenced by `src/assets/models.ts` exists at the resolved path).
 
 ## Adding a new FBX source
 
 1. Drop the FBX under `references/_extracted/<pack>/<asset>/<file>.fbx`.
 2. Append a job to the `JOBS` array in `scripts/convert-fbx.mjs` with `{ fbx, glb, label }`.
 3. Add a row to the table above.
-4. Wire the resulting GLB into `src/models.ts` (skin roster, weapon model, or prop entry).
+4. Wire the resulting GLB into `src/assets/models.ts` (skin roster, weapon model, or prop entry).
 5. Run `pnpm assets:fbx-to-glb && pnpm assets:verify-runtime && pnpm verify`.
 
 ## Non-FBX sources
@@ -83,8 +83,8 @@ a fresh checkout:
 
 1. Mount the NAS at `/Volumes/home` (SMB to `192.168.1.200`).
 2. `cp "/Volumes/home/assets/3DPSX/PSX Mega Pack II v1.8/Light Sources/lamp_mx_"*.glb public/assets/models/props/lamps/`
-3. Copy each of the 30 props listed as keys of `PROP_CATALOGUE` in `src/scatter/propPool.ts` from `Props/` → `public/assets/models/props/scatter/`.
-4. `pnpm assets:verify-runtime` (asserts every URL in `src/models.ts`, `src/lampScatter.ts`, `src/scatter/propPool.ts` resolves).
+3. Copy each of the 30 props listed as keys of `PROP_CATALOGUE` in `src/world/scatter/propPool.ts` from `Props/` → `public/assets/models/props/scatter/`.
+4. `pnpm assets:verify-runtime` (asserts every URL in `src/assets/models.ts`, `src/world/lampScatter.ts`, `src/world/scatter/propPool.ts` resolves).
 
 The pack license (PSX Mega Pack II v1.8) lives in the pack's bundled
 `LICENSE.txt` on the NAS.

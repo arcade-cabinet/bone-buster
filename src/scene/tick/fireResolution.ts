@@ -1,5 +1,5 @@
 /**
- * ARCH2b — single-shot fire resolution, extracted from ObjexoomScene's
+ * ARCH2b — single-shot fire resolution, extracted from BoneBusterScene's
  * `objexoom:fire` event handler. Pure function over a context object
  * for the same reasons as ARCH2a's `tickEnemyLoop` (see that module).
  *
@@ -14,21 +14,12 @@
  *   - Per pellet: cast ray, find nearest enemy in cone, prefer barrel
  *     if closer; on barrel hit → damage + burst → explode if HP<=0.
  *     On enemy hit → damage + burst → on death: mesh.visible=false,
- *     imp-explode burst, body-parts spawn, kill counter increment.
+ *     bouncer-explode burst, body-parts spawn, kill counter increment.
  *   - On any kill this shot: gameRef.current.onKill x N, death sfx,
  *     subtle boom if sound enabled.
  *   - Returns nothing; mutates refs and the wider event bus.
  */
 
-import * as THREE from "three";
-import { type Barrel, pickRayBarrel } from "../../barrels";
-import { TILE } from "../../constants";
-import type { CollisionContext } from "../../engine";
-import { castRayAny, type Enemy, type ObjexoomMap } from "../../engine";
-import { dispatch } from "../../events";
-import type { GameRef, WeaponState } from "../../ObjexoomShell";
-import { pickRaySwitch, type Secret } from "../../secrets";
-import type { ObjexoomSettings } from "../../settings";
 import {
 	playBoom,
 	playBossDeath,
@@ -38,8 +29,18 @@ import {
 	playPistol,
 	playShotgun,
 	playSkeletonDeath,
-} from "../../sfx";
-import { WEAPONS, type WeaponId } from "../../weapons";
+} from "@audio/sfx";
+import type { CollisionContext } from "@engine/engine";
+import { type BoneBusterMap, castRayAny, type Enemy } from "@engine/engine";
+import { dispatch } from "@engine/events";
+import { applyVulnerabilityMultiplier } from "@engine/vulnerability";
+import { TILE } from "@shared/constants";
+import { WEAPONS, type WeaponId } from "@shared/weapons";
+import type { BoneBusterSettings } from "@store/settings";
+import type { GameRef, WeaponState } from "@views/Shell";
+import { type Barrel, pickRayBarrel } from "@world/barrels";
+import { pickRaySwitch, type Secret } from "@world/secrets";
+import * as THREE from "three";
 
 // QW1 — module-scope scratch vectors. Reused across every shot to
 // skip per-pellet allocations (shotgun = 7 allocs/shot pre-QW1). The
@@ -57,8 +58,8 @@ export interface FireResolutionContext {
 	weapon: WeaponId;
 	now: number;
 	camera: THREE.Camera;
-	map: ObjexoomMap;
-	settings: ObjexoomSettings;
+	map: BoneBusterMap;
+	settings: BoneBusterSettings;
 	ammoRef: { current: WeaponState };
 	gameRef: { current: GameRef };
 	enemiesRef: { current: Enemy[] };
@@ -124,7 +125,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	muzzleFlashUntilRef.current = now + 80;
 	muzzleColorRef.current.set(spec.muzzleColor);
 	// POL13 — per-weapon bloom tier. Drives the muzzleLight intensity
-	// multiplier in ObjexoomScene's per-frame decay block. Defaults to
+	// multiplier in BoneBusterScene's per-frame decay block. Defaults to
 	// 1.0 if the weapon spec doesn't declare one (back-compat).
 	muzzleIntensityScaleRef.current = spec.muzzleIntensity ?? 1.0;
 
@@ -245,7 +246,11 @@ export function resolveFire(ctx: FireResolutionContext): void {
 			continue;
 		}
 		if (bestEnemy) {
-			bestEnemy.hp -= spec.damage;
+			// D6 — apply per-kind vulnerability multiplier. Matching
+			// (kind, weapon) yields 1.5×; every other combo yields 1.0×
+			// so the base spec.damage is the floor.
+			const vulnMultiplier = applyVulnerabilityMultiplier(bestEnemy.kind, weapon);
+			bestEnemy.hp -= spec.damage * vulnMultiplier;
 			// POL19 — non-killing-hit stagger window. Only set when the
 			// hit doesn't kill (the kill path uses POL12 hitstop + body-
 			// parts spawn instead — a dead enemy doesn't flinch). Bosses
@@ -278,7 +283,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 				bestEnemy.dead = true;
 				killsThisShot += 1;
 				// POL10 — track boss kills in this shot so we can layer the
-				// boss-down sting on top of the standard skeleton-death cue.
+				// boss-down sting on top of the standard rattler-death cue.
 				if (bestEnemy.tier === "boss") {
 					bossKillsThisShot += 1;
 					// POL36 — boss-defeated banner. Per-enemy dispatch (not
@@ -289,7 +294,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 				}
 				const mesh = enemyMeshesRef.current.get(bestEnemy.id);
 				if (mesh) mesh.visible = false;
-				if (bestEnemy.kind === "imp") {
+				if (bestEnemy.kind === "bouncer") {
 					dispatch({
 						type: "burst",
 						x: bestEnemy.position.x,

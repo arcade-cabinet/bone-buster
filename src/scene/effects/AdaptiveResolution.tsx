@@ -79,7 +79,7 @@ export function stepPixelRatio(input: StepPixelRatioInput): StepPixelRatioResult
  * always `min(devicePixelRatio, 1.5)` per the Canvas prop.
  *
  * Optional callback fires on every adjustment for the HUD readout
- * gated on ?objexoomDebug.
+ * gated on ?bonebusterDebug.
  */
 export function AdaptiveResolution({
 	onUpdate,

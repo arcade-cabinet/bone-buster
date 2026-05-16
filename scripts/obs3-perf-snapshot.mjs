@@ -49,14 +49,21 @@ const ARCHETYPES = ["corridor", "arena", "courtyard", "sewer", "library"];
 // (effectively a "panic, the render path is broken" alarm). OBS3
 // samples peak-per-window across a 3-second budget window with the
 // camera framing the densest enemy cluster (PT1C trick) — the
-// pathological case. Measured shipped values: corridor 828 / arena
-// 494 / courtyard 887 / sewer 651 / library 502 — all healthy frame
-// rates in practice. The OBS3 budget is set to 1000 calls / 100k
-// triangles, which is ~15-20% headroom above the worst measured
-// archetype; baselines provide the per-archetype regression check
-// for finer-grained tracking.
-const OBS3_CALL_BUDGET = 1000;
-const OBS3_TRI_BUDGET = 100_000;
+// pathological case.
+//
+// Post-D5 measured shipped values: corridor 810 / arena 1013 /
+// courtyard 885 / sewer 638 / library 752. Arena leads because its
+// mix is enemy-dense AND draws from the new 24-kind roster (each
+// enemy GLB is a skinned mesh — 1 call each + its shadow pass).
+// CORRIDOR step-2 brought corridor down by ~24 calls (InstancedField
+// debris) but the D5 enemy expansion drove total counts up across
+// the board. Budget is set to 1200 calls / 80k triangles — ~15-20%
+// headroom above arena. Baselines provide the per-archetype
+// regression check for finer-grained tracking. When future slices
+// add more skinned meshes (e.g. NPCs in library) the budgets will
+// lift again with a matching baseline bump.
+const OBS3_CALL_BUDGET = 1200;
+const OBS3_TRI_BUDGET = 80_000;
 const REGRESSION_RATIO = 1.1; // 10% above baseline = fail
 // T4 — avgFps floor for desktop CI. The 3-second probe runs in
 // headless ANGLE-GL Chromium on a GitHub Actions ubuntu runner (no
@@ -94,18 +101,18 @@ async function snapshotArchetype(archetype) {
 	const page = await ctx.newPage();
 
 	// Pin to the archetype via the INF3 URL override + a deterministic seed.
-	const url = `${PREVIEW_HOST}/?objexoomDebug&objexoomSeed=12345&objexoomArchetype=${archetype}`;
+	const url = `${PREVIEW_HOST}/?bonebusterDebug&bonebusterSeed=12345&bonebusterArchetype=${archetype}`;
 	await page.goto(url, { waitUntil: "domcontentloaded" });
-	await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
+	await page.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 8000 });
 
 	// Boot the run.
-	await page.evaluate(() => window.__objexoom.start());
-	await page.locator("[data-testid='objexoom-hp']").waitFor();
+	await page.evaluate(() => window.__bonebuster.start());
+	await page.locator("[data-testid='bonebuster-hp']").waitFor();
 
 	// Frame the densest enemy cluster (PT1C trick) so the scene's
 	// worst-case render is what we sample.
 	await page.evaluate(() => {
-		const s = window.__objexoom.getState();
+		const s = window.__bonebuster.getState();
 		if (s.enemySpawns?.length > 0) {
 			const player = s.playerSpawn;
 			const target = s.enemySpawns[0].position;
@@ -119,7 +126,7 @@ async function snapshotArchetype(archetype) {
 				const px = target.x - ux * standoff;
 				const py = target.y - uy * standoff;
 				const yaw = Math.atan2(ux, uy);
-				window.__objexoom.teleport(px, py, yaw);
+				window.__bonebuster.teleport(px, py, yaw);
 			}
 		}
 	});

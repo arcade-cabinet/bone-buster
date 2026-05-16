@@ -1,14 +1,14 @@
 import { useGLTF } from "@react-three/drei";
+import { pickVehicleUrl, VEHICLE_VARIANTS } from "@world/vehicles";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import { pickVehicleUrl, VEHICLE_VARIANTS } from "../../vehicles";
 
 /**
  * COV10 step-2 — courtyard-archetype RV wreck.
  *
  * One wrecked vehicle prop placed at a sector centroid when the
  * archetype is "courtyard" (PRD §COV10). The variant is deterministic
- * per map seed via pickVehicleUrl. Mounted from ObjexoomScene only
+ * per map seed via pickVehicleUrl. Mounted from BoneBusterScene only
  * when `archetype === "courtyard"`.
  *
  * Yaw is also seeded deterministically so the wreck rests at a

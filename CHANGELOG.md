@@ -9,58 +9,58 @@ domain: history
 
 All notable changes to this project will be documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Conventional Commits](https://www.conventionalcommits.org).
 
-## [0.4.0](https://github.com/objexiv/objexoom/compare/v0.3.0...v0.4.0) (2026-05-16)
+## [0.4.0](https://github.com/arcade-cabinet/bone-buster/compare/v0.3.0...v0.4.0) (2026-05-16)
 
 
 ### Features
 
-* Phase 21 A6 archetype registry + T8 assetUrl unit test ([#50](https://github.com/objexiv/objexoom/issues/50)) ([5624666](https://github.com/objexiv/objexoom/commit/5624666fca939c4e7a320360849a355a847d4329))
+* Phase 21 A6 archetype registry + T8 assetUrl unit test ([#50](https://github.com/arcade-cabinet/bone-buster/issues/50)) ([5624666](https://github.com/arcade-cabinet/bone-buster/commit/5624666fca939c4e7a320360849a355a847d4329))
 
 
 ### Bug Fixes
 
-* **ci:** start vite dev server before OBS4 perf snapshot step ([#48](https://github.com/objexiv/objexoom/issues/48)) ([09cec9a](https://github.com/objexiv/objexoom/commit/09cec9ad49bcd0cc27dc44324d5cebbe1ab81637))
+* **ci:** start vite dev server before OBS4 perf snapshot step ([#48](https://github.com/arcade-cabinet/bone-buster/issues/48)) ([09cec9a](https://github.com/arcade-cabinet/bone-buster/commit/09cec9ad49bcd0cc27dc44324d5cebbe1ab81637))
 
 
 ### Performance Improvements
 
-* **audio:** A5 — defer music synth init off the start-game critical path ([#55](https://github.com/objexiv/objexoom/issues/55)) ([e0ac608](https://github.com/objexiv/objexoom/commit/e0ac608059d454285a4a38deae61262585519ad3))
-* **loader:** A4 — tiered asset preload (defer ~90MB off the landing screen) ([#57](https://github.com/objexiv/objexoom/issues/57)) ([80f4a28](https://github.com/objexiv/objexoom/commit/80f4a28d1ff91d965b336a363421a478ec3ea7a3))
-* Phase 21 QW2 + QW3 + QW4 + QW5 + QW6 batch ([#46](https://github.com/objexiv/objexoom/issues/46)) ([008e285](https://github.com/objexiv/objexoom/commit/008e285fbb17a6ea4c8b265efba8c3234d75f79f))
-* **render:** A3 — selective postprocess chain (drop Bloom under load) ([#56](https://github.com/objexiv/objexoom/issues/56)) ([dd98b16](https://github.com/objexiv/objexoom/commit/dd98b1677de86d1c609fc15fc91b3124cb1624d0))
+* **audio:** A5 — defer music synth init off the start-game critical path ([#55](https://github.com/arcade-cabinet/bone-buster/issues/55)) ([e0ac608](https://github.com/arcade-cabinet/bone-buster/commit/e0ac608059d454285a4a38deae61262585519ad3))
+* **loader:** A4 — tiered asset preload (defer ~90MB off the landing screen) ([#57](https://github.com/arcade-cabinet/bone-buster/issues/57)) ([80f4a28](https://github.com/arcade-cabinet/bone-buster/commit/80f4a28d1ff91d965b336a363421a478ec3ea7a3))
+* Phase 21 QW2 + QW3 + QW4 + QW5 + QW6 batch ([#46](https://github.com/arcade-cabinet/bone-buster/issues/46)) ([008e285](https://github.com/arcade-cabinet/bone-buster/commit/008e285fbb17a6ea4c8b265efba8c3234d75f79f))
+* **render:** A3 — selective postprocess chain (drop Bloom under load) ([#56](https://github.com/arcade-cabinet/bone-buster/issues/56)) ([dd98b16](https://github.com/arcade-cabinet/bone-buster/commit/dd98b1677de86d1c609fc15fc91b3124cb1624d0))
 
-## [0.3.0](https://github.com/objexiv/objexoom/compare/v0.2.2...v0.3.0) (2026-05-15)
+## [0.3.0](https://github.com/arcade-cabinet/bone-buster/compare/v0.2.2...v0.3.0) (2026-05-15)
 
 
 ### Features
 
-* **audio:** POL38 exit-portal audio swell ([#28](https://github.com/objexiv/objexoom/issues/28)) ([42e85b5](https://github.com/objexiv/objexoom/commit/42e85b5608c7fd03dcf30d73b39e911bfade12cc))
-* **ci:** OBS4 — perf-baseline regression gate ([#37](https://github.com/objexiv/objexoom/issues/37)) ([73890f5](https://github.com/objexiv/objexoom/commit/73890f5e20176098a5bdd32dd08820d9dfa2e31a))
-* **enemies:** POL42 wraith density per archetype ([#32](https://github.com/objexiv/objexoom/issues/32)) ([eca2a1a](https://github.com/objexiv/objexoom/commit/eca2a1a384f0a6ffab050d0888cf187d861fe7d7))
-* **hud:** POL36 boss HUD banner + aggro alert ([#26](https://github.com/objexiv/objexoom/issues/26)) ([f1c6a13](https://github.com/objexiv/objexoom/commit/f1c6a139c6bcdb5c4994d8d6c54e301ba59732b9))
-* **hud:** POL37 going-back countdown + flip POL36 [x] ([#27](https://github.com/objexiv/objexoom/issues/27)) ([f335fdd](https://github.com/objexiv/objexoom/commit/f335fdd495b1102f71fe06feaa735bedb145b386))
-* **hud:** PT4B-fold — screen-space arrow on RETURN TO SPAWN card ([#33](https://github.com/objexiv/objexoom/issues/33)) ([26f1c2f](https://github.com/objexiv/objexoom/commit/26f1c2fac575f153d497746dd1cc30907011372a))
-* **playtest:** CHAR1 — boss silhouette pre-kill framing ([#35](https://github.com/objexiv/objexoom/issues/35)) ([f777650](https://github.com/objexiv/objexoom/commit/f777650e0f870715a1e703108abcaf1ec8e9701a))
-* **scene:** POL39 flashlight pickup intensity boost ([#29](https://github.com/objexiv/objexoom/issues/29)) ([53647c0](https://github.com/objexiv/objexoom/commit/53647c0b83d567626548c52cde82d3c9dcc90868))
-* **scene:** POL40 body-part rest decals ([#30](https://github.com/objexiv/objexoom/issues/30)) ([8b89563](https://github.com/objexiv/objexoom/commit/8b89563ad3b4a3f4769f7f7c4e6d7bc30ccac4c5))
-* **scene:** POL41 per-archetype gib fade speed ([#31](https://github.com/objexiv/objexoom/issues/31)) ([208dbd9](https://github.com/objexiv/objexoom/commit/208dbd919d8670bee9642c6a7faf4ed72c65cd68))
-* **scene:** POL44 — muzzle-light decay at priority=1 useFrame ([#36](https://github.com/objexiv/objexoom/issues/36)) ([218f89d](https://github.com/objexiv/objexoom/commit/218f89da51348e4adbc94dcd012b46da4d0c2ab0))
-* **scene:** PT1C-fold — synthetic camera-forward burst on debug kill ([#34](https://github.com/objexiv/objexoom/issues/34)) ([4ea9df4](https://github.com/objexiv/objexoom/commit/4ea9df4c342dc9b0b7afd2e30419292075701328))
-* **timing-bus:** POL35 slow-mo timing bus ([#24](https://github.com/objexiv/objexoom/issues/24)) ([d3180c8](https://github.com/objexiv/objexoom/commit/d3180c844ce798a943888dc3dd486118b2fd00fc))
+* **audio:** POL38 exit-portal audio swell ([#28](https://github.com/arcade-cabinet/bone-buster/issues/28)) ([42e85b5](https://github.com/arcade-cabinet/bone-buster/commit/42e85b5608c7fd03dcf30d73b39e911bfade12cc))
+* **ci:** OBS4 — perf-baseline regression gate ([#37](https://github.com/arcade-cabinet/bone-buster/issues/37)) ([73890f5](https://github.com/arcade-cabinet/bone-buster/commit/73890f5e20176098a5bdd32dd08820d9dfa2e31a))
+* **enemies:** POL42 wraith density per archetype ([#32](https://github.com/arcade-cabinet/bone-buster/issues/32)) ([eca2a1a](https://github.com/arcade-cabinet/bone-buster/commit/eca2a1a384f0a6ffab050d0888cf187d861fe7d7))
+* **hud:** POL36 boss HUD banner + aggro alert ([#26](https://github.com/arcade-cabinet/bone-buster/issues/26)) ([f1c6a13](https://github.com/arcade-cabinet/bone-buster/commit/f1c6a139c6bcdb5c4994d8d6c54e301ba59732b9))
+* **hud:** POL37 going-back countdown + flip POL36 [x] ([#27](https://github.com/arcade-cabinet/bone-buster/issues/27)) ([f335fdd](https://github.com/arcade-cabinet/bone-buster/commit/f335fdd495b1102f71fe06feaa735bedb145b386))
+* **hud:** PT4B-fold — screen-space arrow on RETURN TO SPAWN card ([#33](https://github.com/arcade-cabinet/bone-buster/issues/33)) ([26f1c2f](https://github.com/arcade-cabinet/bone-buster/commit/26f1c2fac575f153d497746dd1cc30907011372a))
+* **playtest:** CHAR1 — boss silhouette pre-kill framing ([#35](https://github.com/arcade-cabinet/bone-buster/issues/35)) ([f777650](https://github.com/arcade-cabinet/bone-buster/commit/f777650e0f870715a1e703108abcaf1ec8e9701a))
+* **scene:** POL39 flashlight pickup intensity boost ([#29](https://github.com/arcade-cabinet/bone-buster/issues/29)) ([53647c0](https://github.com/arcade-cabinet/bone-buster/commit/53647c0b83d567626548c52cde82d3c9dcc90868))
+* **scene:** POL40 body-part rest decals ([#30](https://github.com/arcade-cabinet/bone-buster/issues/30)) ([8b89563](https://github.com/arcade-cabinet/bone-buster/commit/8b89563ad3b4a3f4769f7f7c4e6d7bc30ccac4c5))
+* **scene:** POL41 per-archetype gib fade speed ([#31](https://github.com/arcade-cabinet/bone-buster/issues/31)) ([208dbd9](https://github.com/arcade-cabinet/bone-buster/commit/208dbd919d8670bee9642c6a7faf4ed72c65cd68))
+* **scene:** POL44 — muzzle-light decay at priority=1 useFrame ([#36](https://github.com/arcade-cabinet/bone-buster/issues/36)) ([218f89d](https://github.com/arcade-cabinet/bone-buster/commit/218f89da51348e4adbc94dcd012b46da4d0c2ab0))
+* **scene:** PT1C-fold — synthetic camera-forward burst on debug kill ([#34](https://github.com/arcade-cabinet/bone-buster/issues/34)) ([4ea9df4](https://github.com/arcade-cabinet/bone-buster/commit/4ea9df4c342dc9b0b7afd2e30419292075701328))
+* **timing-bus:** POL35 slow-mo timing bus ([#24](https://github.com/arcade-cabinet/bone-buster/issues/24)) ([d3180c8](https://github.com/arcade-cabinet/bone-buster/commit/d3180c844ce798a943888dc3dd486118b2fd00fc))
 
-## [0.2.2](https://github.com/objexiv/objexoom/compare/v0.2.1...v0.2.2) (2026-05-15)
-
-
-### Bug Fixes
-
-* **ci:** collapse cd.yml into release.yml + add deploy-pages job ([#20](https://github.com/objexiv/objexoom/issues/20)) ([d82311c](https://github.com/objexiv/objexoom/commit/d82311cfc7c880ddc91df4d50269c6585e6dd342))
-
-## [0.2.1](https://github.com/objexiv/objexoom/compare/v0.2.0...v0.2.1) (2026-05-15)
+## [0.2.2](https://github.com/arcade-cabinet/bone-buster/compare/v0.2.1...v0.2.2) (2026-05-15)
 
 
 ### Bug Fixes
 
-* **scripts:** PT1 playtest mkdir output dir ([#18](https://github.com/objexiv/objexoom/issues/18)) ([eb09806](https://github.com/objexiv/objexoom/commit/eb0980619875fd3a6222354a30eb95e7d4104731))
+* **ci:** collapse cd.yml into release.yml + add deploy-pages job ([#20](https://github.com/arcade-cabinet/bone-buster/issues/20)) ([d82311c](https://github.com/arcade-cabinet/bone-buster/commit/d82311cfc7c880ddc91df4d50269c6585e6dd342))
+
+## [0.2.1](https://github.com/arcade-cabinet/bone-buster/compare/v0.2.0...v0.2.1) (2026-05-15)
+
+
+### Bug Fixes
+
+* **scripts:** PT1 playtest mkdir output dir ([#18](https://github.com/arcade-cabinet/bone-buster/issues/18)) ([eb09806](https://github.com/arcade-cabinet/bone-buster/commit/eb0980619875fd3a6222354a30eb95e7d4104731))
 
 ## [Unreleased]
 
@@ -74,7 +74,7 @@ All notable changes to this project will be documented in this file. The format 
   (`readPref`/`writePref` + JSON variants). New
   `src/persistence/settingsStore.ts` defines `validateSettings`
   (type-narrowing per-field with DEFAULT_SETTINGS fallback) +
-  `loadSettings` + `saveSettings`. `ObjexoomShell` async-hydrates on
+  `loadSettings` + `saveSettings`. `BoneBusterShell` async-hydrates on
   mount + auto-saves on change. Settings (difficulty, level, sound,
   sensitivity) now persist across sessions on BOTH web AND mobile.
   10 unit tests pin the validator contract.
@@ -85,7 +85,7 @@ All notable changes to this project will be documented in this file. The format 
   NIGHTMARE). Race-free prop-driven mount (not event-driven — the HUD
   subtree mounts AFTER the landing→game transition's AnimatePresence
   exit animation, so an event would fire before the listener
-  registered). New `__objexoom.setDifficulty(Difficulty)` debug hook
+  registered). New `__bonebuster.setDifficulty(Difficulty)` debug hook
   lets playtest scripts drive the chip in each of the 5 palettes.
 - **POL32 — Main-menu best-run readout.** Landing-page BestRunChip
   enriched with the **time dimension**. New two-row format: primary
@@ -111,7 +111,7 @@ All notable changes to this project will be documented in this file. The format 
   top-center per-kind: health=ember, flashlight=amber,
   chaingunAmmo=indigo, shotgunAmmo=violet, loot=amber-treasure.
 - **OBS1 — Perf readout overlay.** AdaptiveResolutionReadout shows
-  CALLS + TRIS peak per 60-frame window (gated on `?objexoomDebug`).
+  CALLS + TRIS peak per 60-frame window (gated on `?bone-busterDebug`).
 - **OBS2 — Perf-budget warning.** OBS1 readout border turns red +
   one-shot `console.warn` fires when draw-calls > 400 OR triangles
   > 50k for 3 consecutive 60-frame windows.
@@ -126,13 +126,13 @@ All notable changes to this project will be documented in this file. The format 
   comment to address Gemini's misreading (states three.js camera-
   forward is -Z, explains the full transform chain). Fixed directive
   branch-policy contradiction.
-- **ObjexoomShell settings boot path.** Mount now async-loads
+- **BoneBusterShell settings boot path.** Mount now async-loads
   persisted settings via STO1a's `loadSettings()`; URL flag
-  `?objexoomArchetype` still wins as override. Save-on-change effect
+  `?bone-busterArchetype` still wins as override. Save-on-change effect
   guards on `settingsHydratedRef` so the boot DEFAULT_SETTINGS
   doesn't clobber a persisted blob during the async window.
 
-- **AUDIO3 — HUD overlay extraction.** SecretFoundFlash + KeyPickupCeremony + GoingBackOverlay extracted from ObjexoomHUD.tsx (was ~819 lines, now ~606) into `src/hud/overlays/` (one file per overlay) + `HUDOverlays.tsx` aggregator. Adding a new overlay is a new-file operation + one-line addition. Closes all four slot types from docs/SLOT-ARCHITECTURE.md.
+- **AUDIO3 — HUD overlay extraction.** SecretFoundFlash + KeyPickupCeremony + GoingBackOverlay extracted from BoneBusterHUD.tsx (was ~819 lines, now ~606) into `src/hud/overlays/` (one file per overlay) + `HUDOverlays.tsx` aggregator. Adding a new overlay is a new-file operation + one-line addition. Closes all four slot types from docs/SLOT-ARCHITECTURE.md.
 - **AUDIO2 — sfx.ts migrated to audioBus.** All 19 play functions now `fire(channelId, t => synth.triggerAttackRelease(...))` through the typed bus. **Channel re-architecture mid-implementation:** AUDIO1's by-cue ChannelId list was incorrect — Tone.js's collision check is per-synth, so channels must be enumerated by SYNTH INSTANCE (`pickup` channel serves both `playPickup` and `playSecretFound` because both target `pickupSynth`). Final 15 channels: pistol/chaingun/shotgun/melee/hurt/death/pickup/door/doorTick/portal/boom/boomNoise/ambientDrone/aggro/hitSting. All `last*FireTime` globals deleted; the manual `jitter()` helper deleted. sfx.ts dropped from ~600 to ~470 lines.
 
 ### Added
@@ -160,7 +160,7 @@ All notable changes to this project will be documented in this file. The format 
 - **POL12 Hitstop on enemy kills.** `enemyTickLoop` reads an optional `hitstopUntilRef`; when within the window, scales its `dt` to 5% so enemy AI/movement/bullet-spawn appears to freeze. `fireResolution` sets `until = now + 80ms` on any enemy kill (150ms for bosses). Player camera, particle ticks, weapon cooldowns unaffected (independent loops). Reads as a "weighty kill" punch.
 - **POL16 Layered impact particles.** Pre-POL16 damage bursts were 15 violet monocolor motes (visually a single puff). Replaced with 3-layer system: 8 hot impact sparks (3.5-5.5 u/s, 220ms TTL, emissive 3.2×) + 6 gray smoke puffs (slow upward via negative gravity, 700ms TTL, larger radius) + 8 orange ember trails (mid-velocity, 500ms TTL, emissive 2.4×). `Mote` type extended with per-mote TTL/radius/gravity/emissiveIntensity. Other burst kinds (pickup/playerHit/explode) keep pre-POL16 shape; canonical bytes preserved.
 - **POL14 Chromatic-aberration pulse on player hits.** New `HitChromaticAberration` postprocessing wrapper replaces the static `<ChromaticAberration>` pass. Holds baseline (0.0015) in steady state — perceptually identical to pre-POL14 — but spikes to ~3.7× (0.0055) on every `playerHit` event and ease-out-cubics back over 180ms. Reads as the screen briefly fracturing under impact. No second pass added; the existing pass's offset is driven per-frame.
-- **POL13 Muzzle-flash bloom tier.** New optional `muzzleIntensity` on `WeaponSpec`. Multipliers — melee=0× (swing only), pistol=0.6×, chaingun=0.9×, shotgun=1.4×, flamethrower=1.1×. ObjexoomScene's muzzle-decay block multiplies the baseline by the per-weapon scale, so heavy weapons read as a genuine room-light flash and pistol pops stay punchy not blinding.
+- **POL13 Muzzle-flash bloom tier.** New optional `muzzleIntensity` on `WeaponSpec`. Multipliers — melee=0× (swing only), pistol=0.6×, chaingun=0.9×, shotgun=1.4×, flamethrower=1.1×. BoneBusterScene's muzzle-decay block multiplies the baseline by the per-weapon scale, so heavy weapons read as a genuine room-light flash and pistol pops stay punchy not blinding.
 - **POL15 Damage-curved screen shake.** Pre-POL15 shake scaled linearly (amount × 0.15). New non-linear curve `0.08·a + 0.018·a^1.7` so light taps stay quiet (1hp → 0.10) and heavy hits punch above the linear baseline (9hp → clamps to SHAKE_MAX faster). Chaingun spray reads as ambient rumble, shotgun pellet barrage snaps the camera.
 - **POL10-v2 + POL9-v2 Layered death stings.** Boss-down and player-death stings rebuilt as 3-layer cues. Boss: sub-bass thud (boomSynth at C1) + 4-note ascending tonal resolve (G1 → D2 → G2 → D3) + ambient swell (ambientDrone retriggered at C2). Player: sub-bass thud (A0, deeper than boss) + 4-note descending tonal (E3 → B2 → E2 → A1, wider interval) + reverb tail (masterReverb wet briefly pushed to 0.5 then ramped back). Replaces pre-v2 isolated 2-note / 3-note PluckSynth sequences with the layered weight + resolution + room-tone cue that reads as modernized-DOOM caliber.
 - **POL11-v2 Modernized-DOOM damage numbers.** New `DamageNumberField` rendered alongside other in-world effects. Tier-colored by damage magnitude (cool parchment → warm amber → hot ember → incandescent kill-amber), punch-in scale animation 1.25× → 1.0× ease-out quad over 140ms, kill-confirms boost upward velocity from 1.4u/s → 2.4u/s and prepend a "✦" bullet glyph. Crit-stack consolidation: `damageNumber` event carries `enemyId`, same-enemy hits within 350ms merge into the existing pool slot — 8 shotgun pellets read as one growing label, not 8 stacked numbers. Drop-shadow + outline for legibility on any backdrop. 24-number pool cap.
@@ -180,42 +180,42 @@ All notable changes to this project will be documented in this file. The format 
 
 - **POL6 Best-run chip on landing.** Async-opens runHistory on landing mount; renders `BEST {N}L · {N}K · {WON/DIED} · {N} SECRETS · {N} RUNS` below the menu. Hidden when no runs persisted (canonical byte-stability preserved).
 - **POL5 Secrets in run history.** RunRecord/RunInsert extended with `totalSecrets`. Additive ALTER TABLE migration in ensureSchema with try/catch (sql.js IF-NOT-EXISTS-on-ALTER fallback).
-- **POL4 Secrets HUD + RunStats integration.** New `runTotalSecrets` field + `secretFound` action. ObjexoomShell listens for `secretTriggered` event. HUD shows `SECRETS N` below KILLS/SCORE (hidden at 0). Win-screen summary gains `N SECRET[S]` segment.
+- **POL4 Secrets HUD + RunStats integration.** New `runTotalSecrets` field + `secretFound` action. BoneBusterShell listens for `secretTriggered` event. HUD shows `SECRETS N` below KILLS/SCORE (hidden at 0). Win-screen summary gains `N SECRET[S]` segment.
 - **E13 steps 6-15 Per-archetype identity tightening.** 10 distinct axes routed through `ArchetypeLightPalette` and per-archetype tables: prop density, debris density, decal density, decal pool, enemy count multiplier, pickup count multiplier, lamp-light color, hemisphere sky/ground, water tint, canvas background. Corridor preserves canonical literals on every axis so refLevel 0 byte-stability is intact.
 - **COV3 steps 2-8 Modular structures end-to-end.** Wall GLBs on every map (ref + procedural), per-archetype wall pools, per-archetype floor + ceiling tints on both sector and grid paths. 14 wall GLBs from PSX Mega Pack II Modular Structures (`hr_*`, `hs_*`, `rg_*`, `rtx_*`, `rx_*` families).
 - **`ScheduleWakeup`-at-end-of-turn forbidden in /loop dynamic mode.** Directive preamble + global memory rule. Stops the agent from politeness-disguised stops via the wakeup tool.
 - **DS.7 Design tokens in scene materials.** Zero literal hex codes remain in `src/scene/**/*.tsx`. Added 14 semantic anchors to `OBJEXOOM_PALETTE` covering wall variants, door colors, flashlight warmth, weapon untextured-fallback metals, ammo brass, treasure-chest woods, and ExitPortal hue variants. Brand-color tweaks now ripple to the 3D scene with a single edit to the design-tokens module.
 - **PA9b Chaingun shell ejection.** Extended `ShellEjectField` to dispatch shells on chaingun fires (was shotgun-only). Chaingun shell renders at 0.6× scale with slightly reduced lateral/upward velocity; ~11/sec at the chaingun's 90ms cooldown. `MAX_SHELLS` raised 40 → 80 to handle the burst rate. Reference clone's behavior is now fully matched.
-- **E5 Destructible barrels with AoE damage.** Pure-sim core in `src/barrels.ts` (spawn, ray-test, AoE resolve). Fire-path prioritizes barrels over enemies when both are on the ray. Chain reactions via queue. 5-variant skin pool (4 metal weathering + 1 wooden) cycled by id. 14 new unit tests. ([688104d](https://github.com/objexiv/objexoom/commit/688104d))
+- **E5 Destructible barrels with AoE damage.** Pure-sim core in `src/barrels.ts` (spawn, ray-test, AoE resolve). Fire-path prioritizes barrels over enemies when both are on the ray. Chain reactions via queue. 5-variant skin pool (4 metal weathering + 1 wooden) cycled by id. 14 new unit tests. ([688104d](https://github.com/arcade-cabinet/bone-buster/commit/688104d))
 - **3DPSX asset coverage maximization principle.** User directive 2026-05-14: "I want as much possible value from ALL the PSX assets — anything that makes sense in a level." STANDARDS.md, PRD.md, and the directive's COV1-COV14 queue encode the principle: every new feature uses a multi-variant pool, seeded by id.
-- **E1 Melee weapon slot.** BLADE (machete viewmodel), slot 1, 1.6-tile range, 55 dmg, 420ms cooldown, infinite ammo. Procedural white-noise whoosh SFX via `playMelee`. `baseOwnedWeapons()` helper consolidates the per-run loadout literals. ([8d71475](https://github.com/objexiv/objexoom/commit/8d71475))
-- **E9 Persistent run history.** `src/runHistory.ts` opens a sql.js DB lazily on first run-end, serialized as base64 in localStorage. Schema includes start/end ts, levels cleared, total kills, total damage taken, level set, outcome. Public API: `insert`, `listRecent`, `bestRun`, `runCount`, `clear`. Real-Chromium browser test covers persistence across reopens. ([5d74778](https://github.com/objexiv/objexoom/commit/5d74778))
-- **E12 Adaptive resolution.** `src/scene/effects/AdaptiveResolution.tsx` — 60-frame rolling FPS sampler with 2-window debounce drops `gl.setPixelRatio` toward 0.5 floor on sustained <30 FPS, raises toward `devicePixelRatio` cap on sustained >55 FPS. Debug HUD readout `FPS N • DPR x.xx` under `?objexoomDebug`. **Closes the last critical-tier reference parity gap.** ([57dd8fa](https://github.com/objexiv/objexoom/commit/57dd8fa))
-- **Asset infra.** `scripts/prepare-web-wasm.mjs` (postinstall + prebuild) and `scripts/verify-runtime-assets.mjs` (CI gate, 22 URLs / 8.01 MB total). ([81ed15d](https://github.com/objexiv/objexoom/commit/81ed15d))
+- **E1 Melee weapon slot.** BLADE (machete viewmodel), slot 1, 1.6-tile range, 55 dmg, 420ms cooldown, infinite ammo. Procedural white-noise whoosh SFX via `playMelee`. `baseOwnedWeapons()` helper consolidates the per-run loadout literals. ([8d71475](https://github.com/arcade-cabinet/bone-buster/commit/8d71475))
+- **E9 Persistent run history.** `src/runHistory.ts` opens a sql.js DB lazily on first run-end, serialized as base64 in localStorage. Schema includes start/end ts, levels cleared, total kills, total damage taken, level set, outcome. Public API: `insert`, `listRecent`, `bestRun`, `runCount`, `clear`. Real-Chromium browser test covers persistence across reopens. ([5d74778](https://github.com/arcade-cabinet/bone-buster/commit/5d74778))
+- **E12 Adaptive resolution.** `src/scene/effects/AdaptiveResolution.tsx` — 60-frame rolling FPS sampler with 2-window debounce drops `gl.setPixelRatio` toward 0.5 floor on sustained <30 FPS, raises toward `devicePixelRatio` cap on sustained >55 FPS. Debug HUD readout `FPS N • DPR x.xx` under `?bone-busterDebug`. **Closes the last critical-tier reference parity gap.** ([57dd8fa](https://github.com/arcade-cabinet/bone-buster/commit/57dd8fa))
+- **Asset infra.** `scripts/prepare-web-wasm.mjs` (postinstall + prebuild) and `scripts/verify-runtime-assets.mjs` (CI gate, 22 URLs / 8.01 MB total). ([81ed15d](https://github.com/arcade-cabinet/bone-buster/commit/81ed15d))
 - **`docs/PRD.md`** comprehensive remaining-work spec covering Phases 2-4 of the elevation roadmap plus B1.7/B2.1/B2.4/DS.7/AO.4-6/PA9b/PA-MOD7/INF2.
 
-### Changed
+### Parity milestone
 
 - **100% reference parity reached.** PARITY.md banner updated; only "partial → full" upgrade items remain (shell ejection on chaingun fires).
-- **Dropped arbitrary byte budgets from `verify-runtime-assets.mjs`.** The per-category limits (enemies 3MB, weapons 800KB, props 600KB) were quality-crippling — they forced the BLADE viewmodel and barrel.glb onto thinner variants when richer ones were available. The script still reports per-category totals; asset weight is a per-asset tuning decision, not a CI threshold. ([688104d](https://github.com/objexiv/objexoom/commit/688104d))
+- **Dropped arbitrary byte budgets from `verify-runtime-assets.mjs`.** The per-category limits (enemies 3MB, weapons 800KB, props 600KB) were quality-crippling — they forced the BLADE viewmodel and barrel.glb onto thinner variants when richer ones were available. The script still reports per-category totals; asset weight is a per-asset tuning decision, not a CI threshold. ([688104d](https://github.com/arcade-cabinet/bone-buster/commit/688104d))
 
-## [0.2.0](https://github.com/objexiv/objexoom/compare/v0.1.0...v0.2.0) (2026-05-14)
+## [0.2.0](https://github.com/arcade-cabinet/bone-buster/compare/v0.1.0...v0.2.0) (2026-05-14)
 
 
 ### Features
 
-* initial standalone repo extracted from objexiv/objexiv ([624d7ae](https://github.com/objexiv/objexoom/commit/624d7ae45b78bc23238a85a85bb475a7460851e7))
+* initial standalone repo extracted from arcade-cabinet/bone-buster ([624d7ae](https://github.com/arcade-cabinet/bone-buster/commit/624d7ae45b78bc23238a85a85bb475a7460851e7))
 
 
 ### Bug Fixes
 
-* add pnpm lockfile and fix lint/type errors for CI ([#11](https://github.com/objexiv/objexoom/issues/11)) ([93e7fd6](https://github.com/objexiv/objexoom/commit/93e7fd64bcf2c86ca538db6d5b8f6f0dcef383df))
+* add pnpm lockfile and fix lint/type errors for CI ([#11](https://github.com/arcade-cabinet/bone-buster/issues/11)) ([93e7fd6](https://github.com/arcade-cabinet/bone-buster/commit/93e7fd64bcf2c86ca538db6d5b8f6f0dcef383df))
 
 ## [0.1.0] — 2026-05-13
 
 ### Added
 
-Initial standalone release. OBJEXOOM was incubated as an easter egg inside `objexiv/objexiv` on the `feat/objexoom-easter-egg` branch and extracted into its own repo once it grew large enough to maintain on its own cadence. Brought across:
+Initial standalone release. BONE BUSTER was incubated as an easter egg inside `arcade-cabinet/bone-buster` on the `feat/bone-buster-easter-egg` branch and extracted into its own repo once it grew large enough to maintain on its own cadence. Brought across:
 
 - Full game shell: landing menu, difficulty + level select, debug-hooked main loop, HUD, mission complete + game over overlays.
 - Procedural sector + grid map engine, key-and-RealDoor `going_back` phase machine, lava damage, weapon switching, pickup spawning.

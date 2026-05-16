@@ -21,25 +21,25 @@ Source: [`reference-codebases/js13k2019-yet-another-doom-clone/`](https://github
 (read-only, gitignored locally; lives at
 `~/src/reference-codebases/js13k2019-yet-another-doom-clone/`).
 
-OBJEXOOM is a port of the reference's STRUCTURE — sector-portal
+BONE BUSTER is a port of the reference's STRUCTURE — sector-portal
 rendering, key-and-door progression, lava damage, ammo + weapon
 swap — onto modern tech (Vite + r3f + Capacitor) elevated with real
 3DPSX assets and a horror-tactical visual language. This doc tracks
-every reference mechanic and whether OBJEXOOM matches it.
+every reference mechanic and whether BONE BUSTER matches it.
 
 ## Legend
 
-- **✅ Present** — OBJEXOOM ships the same behavior or a stricter
+- **✅ Present** — BONE BUSTER ships the same behavior or a stricter
   superset. No work needed.
-- **🚀 Elevated** — OBJEXOOM ships a more capable version (more
+- **🚀 Elevated** — BONE BUSTER ships a more capable version (more
   weapons, richer assets, deeper audio, etc).
 - **⚠️ Partial** — Behavior exists but with caveats (different
   formula, missing edge case, etc).
-- **❌ Missing** — Reference has it, OBJEXOOM doesn't, **bug**.
+- **❌ Missing** — Reference has it, BONE BUSTER doesn't, **bug**.
 
 ## Player
 
-| Mechanic | Reference shape | OBJEXOOM | Status |
+| Mechanic | Reference shape | BONE BUSTER | Status |
 | --- | --- | --- | --- |
 | Health scale | 0–9 discrete | 0–9 (per `PLAYER_MAX_HP=9`), difficulty-scaled (×0.6 nightmare → ×1.5 too-young) | 🚀 Elevated |
 | Damage cooldown | 450 ms (250 on hard) before next hit can land | `last_user_hit` poll in `engine.ts` matches | ✅ Present |
@@ -54,7 +54,7 @@ every reference mechanic and whether OBJEXOOM matches it.
 
 ## Weapons
 
-| Mechanic | Reference shape | OBJEXOOM | Status |
+| Mechanic | Reference shape | BONE BUSTER | Status |
 | --- | --- | --- | --- |
 | Slot count | **1 (chaingun only)** | 3 ranged (pistol/chaingun/shotgun) | 🚀 Elevated |
 | Hitscan | Yes | Yes (`castRayAny`) | ✅ Present |
@@ -70,7 +70,7 @@ every reference mechanic and whether OBJEXOOM matches it.
 
 ## Enemies
 
-| Mechanic | Reference shape | OBJEXOOM | Status |
+| Mechanic | Reference shape | BONE BUSTER | Status |
 | --- | --- | --- | --- |
 | Kind count | 2 (`Enemy` skeleton-melee, `FlyingEnemy` flying) | 3 base kinds (skeleton, imp, wraith) + per-kind variant rosters | 🚀 Elevated |
 | Variant count | 0 (single mesh per kind) | 11 horror skins across the rosters (sewerfiend, plague_doctor, elk_demon, abomination ×2, anomaly, horned, nun, alien, clown ×2) | 🚀 Elevated |
@@ -89,11 +89,11 @@ every reference mechanic and whether OBJEXOOM matches it.
 
 ## Map / Level
 
-| Mechanic | Reference shape | OBJEXOOM | Status |
+| Mechanic | Reference shape | BONE BUSTER | Status |
 | --- | --- | --- | --- |
 | Level count | 4 hand-encoded + procedural remake | 4 reference levels (`refLevel.ts`) + procedural | ✅ Present |
-| Sector polygons | Yes (`MapPolygon`) | Yes (`ObjexoomSectorMap`) | ✅ Present |
-| Grid alternative | None | `ObjexoomGridMap` for procedural | 🚀 Elevated |
+| Sector polygons | Yes (`MapPolygon`) | Yes (`BoneBusterSectorMap`) | ✅ Present |
+| Grid alternative | None | `BoneBusterGridMap` for procedural | 🚀 Elevated |
 | Floor heights | Per-sector | Per-sector (`floorHeight`) | ✅ Present |
 | Ceiling heights | Per-sector | Per-sector (`ceilingHeight`) | ✅ Present |
 | Lava | floorHeight < 0 | Same convention | ✅ Present |
@@ -109,7 +109,7 @@ every reference mechanic and whether OBJEXOOM matches it.
 
 ## Pickups
 
-| Mechanic | Reference shape | OBJEXOOM | Status |
+| Mechanic | Reference shape | BONE BUSTER | Status |
 | --- | --- | --- | --- |
 | Health | +1 HP, amber sprite | `health` kind, amber-cross mesh, +1 HP scaled | ✅ Present |
 | Flashlight | Spawns mid-level, gates dark areas | `flashlight` kind, lantern mesh + `Flashlight` SpotLight | ✅ Present |
@@ -119,13 +119,13 @@ every reference mechanic and whether OBJEXOOM matches it.
 
 ## HUD / UI
 
-| Mechanic | Reference shape | OBJEXOOM | Status |
+| Mechanic | Reference shape | BONE BUSTER | Status |
 | --- | --- | --- | --- |
 | HP readout | Width-bar `hW.style.width` | HP pip row + numeric readout | 🚀 Elevated |
 | Crosshair | One static dot | `crosshairStyle` (indigo + violet ring) | 🚀 Elevated |
 | Ammo readout | None | Per-weapon numeric in muzzle color | 🚀 Elevated |
 | Weapon chips | None | Bottom-center row, hot-keyable, touch-tappable | 🚀 Elevated |
-| Kill counter | None | `objexoom-kills`, Black Ops One numerics | 🚀 Elevated |
+| Kill counter | None | `bone-buster-kills`, Black Ops One numerics | 🚀 Elevated |
 | Key indicator | None | `KEY ACQUIRED` / `FIND THE KEY` | 🚀 Elevated |
 | Level label | None | `E1M1` in `LEVEL_LABEL[level]` | 🚀 Elevated |
 | Pause menu | None | PAUSED overlay w/ run stats | 🚀 Elevated |
@@ -139,7 +139,7 @@ every reference mechanic and whether OBJEXOOM matches it.
 
 ## Audio
 
-| Mechanic | Reference shape | OBJEXOOM | Status |
+| Mechanic | Reference shape | BONE BUSTER | Status |
 | --- | --- | --- | --- |
 | Generation | `jsfxr` retro waveforms | Tone.js procedural synth + bank | 🚀 Elevated |
 | Sounds bank | 7 (boom/gun/collect/collect2/clock/hit/+death) | 14+ named voices in `sfx.ts` | 🚀 Elevated |
@@ -152,7 +152,7 @@ every reference mechanic and whether OBJEXOOM matches it.
 
 ## Rendering / FX
 
-| Mechanic | Reference shape | OBJEXOOM | Status |
+| Mechanic | Reference shape | BONE BUSTER | Status |
 | --- | --- | --- | --- |
 | Lighting | `lights[N]` shadow-mapped per level | ambient + directional + hemisphere + per-camera spotlight (flashlight) + muzzle pointLight | 🚀 Elevated |
 | Shadow maps | Pre-computed per static geometry | Real-time PCF shadow maps on directional + flashlight | 🚀 Elevated |
@@ -163,12 +163,12 @@ every reference mechanic and whether OBJEXOOM matches it.
 | Body-part shards | 4-6 cubes per enemy death | `BodyPartField` same shape | ✅ Present |
 | Bullet sphere | One amber dot | `BulletField` pooled glowing spheres | ✅ Present |
 | Treasure chest at exit | None | `TreasureChest` decorative chest w/ brass band + lock | 🚀 Elevated |
-| Adaptive resolution | `set_resolution(-1)` on level transition | `AdaptiveResolution` r3f component, 60-frame rolling FPS sampler, 2-window debounce, drops `gl.setPixelRatio` toward 0.5 floor on sustained <30 FPS / raises toward devicePixelRatio cap on sustained >55 FPS. Debug HUD readout under `?objexoomDebug`. | 🚀 Elevated |
+| Adaptive resolution | `set_resolution(-1)` on level transition | `AdaptiveResolution` r3f component, 60-frame rolling FPS sampler, 2-window debounce, drops `gl.setPixelRatio` toward 0.5 floor on sustained <30 FPS / raises toward devicePixelRatio cap on sustained >55 FPS. Debug HUD readout under `?debug`. | 🚀 Elevated |
 | Wall variant texture | None | 3-variant tinted box per cell | 🚀 Elevated |
 
 ## Run / progression
 
-| Mechanic | Reference shape | OBJEXOOM | Status |
+| Mechanic | Reference shape | BONE BUSTER | Status |
 | --- | --- | --- | --- |
 | Level transition | `setTimeout(_=>{set_resolution(-1); reset(); map.levels.shift(); map.load_level()}, 200)` | `status: "transitioning"` → 800 ms → new seed + reset HP/ammo/key (run stats preserved) | ✅ Present |
 | HP reset between levels | health=5 on death restart | Per-level HP preserved on advance, reset on death | 🚀 Elevated |

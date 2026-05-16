@@ -1,7 +1,7 @@
+import { resetPortalSwell, setPortalSwellVolume } from "@audio/sfx";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import type { PerspectiveCamera } from "three";
-import { resetPortalSwell, setPortalSwellVolume } from "../../sfx";
 
 /**
  * POL23 — exit-portal approach slot (see docs/SLOT-ARCHITECTURE.md).
@@ -18,7 +18,7 @@ import { resetPortalSwell, setPortalSwellVolume } from "../../sfx";
  * This avoids fighting the player's input — they can back out of
  * the portal and the FOV returns smoothly.
  *
- * Why slot, not a useFrame branch in ObjexoomScene: the FOV widening
+ * Why slot, not a useFrame branch in BoneBusterScene: the FOV widening
  * is a single concern (visual pull on approach). Bolting it into the
  * scene's main useFrame mixed it with HP regen, lava damage, boss
  * tracking, etc. A standalone slot is one read + one mutate per

@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
+import { ALL_PROPS } from "@world/scatter/propPool";
+import type { PropInstance } from "@world/scatter/propScatter";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import { ALL_PROPS } from "../../scatter/propPool";
-import type { PropInstance } from "../../scatter/propScatter";
 
 /**
  * E3 — renders the per-map decorative prop scatter. Each PropInstance

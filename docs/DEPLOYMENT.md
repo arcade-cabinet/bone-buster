@@ -5,11 +5,11 @@ status: current
 domain: ops
 ---
 
-# OBJEXOOM — deployment
+# BONE BUSTER — deployment
 
 ## Targets
 
-OBJEXOOM ships to three surfaces from the same Vite codebase:
+BONE BUSTER ships to three surfaces from the same Vite codebase:
 
 | Target | How | Status |
 | --- | --- | --- |
@@ -20,10 +20,10 @@ OBJEXOOM ships to three surfaces from the same Vite codebase:
 ## Web — GitHub Pages
 
 ```bash
-pnpm build:pages    # writes dist/ with base=/objexoom/
+pnpm build:pages    # writes dist/ with base=/bone-buster/
 ```
 
-The build sets Vite's `base: "/objexoom/"` so every asset URL resolves
+The build sets Vite's `base: "/bone-buster/"` so every asset URL resolves
 under the org-pages prefix. Source URLs in `models.ts` flow through
 `A()` which prefixes `import.meta.env.BASE_URL` — both base modes
 work identically downstream.
@@ -68,15 +68,15 @@ CI section.
 
 ## Secrets
 
-None at the moment. OBJEXOOM is single-player web-app + native shell;
+None at the moment. BONE BUSTER is single-player web-app + native shell;
 there are no API keys, no backend, no analytics yet. When that
 changes, this section gets updated and the secrets-handling decision
 lands in [DECISIONS](./DECISIONS.md).
 
 ## Domains
 
-- **Web**: served at `https://objexiv.github.io/objexoom/` (org Pages
-  subdir, set by `base: "/objexoom/"`).
+- **Web**: served at `https://arcade-cabinet.github.io/bone-buster/` (org Pages
+  subdir, set by `base: "/bone-buster/"`).
 - **Mobile**: no public listing yet — internal-track APK only.
 
 ## Local dev parity
@@ -85,7 +85,7 @@ lands in [DECISIONS](./DECISIONS.md).
 | --- | --- | --- | --- |
 | Node version | per `package.json#engines` (currently 20+) | actions/setup-node @v4 with same | Pages build env tracks Node 20 |
 | pnpm version | locked via `packageManager` field | actions/setup-pnpm same | same |
-| Vite base | `/` (dev) or `/` (regular build) | `/` for CI artifacts | `/objexoom/` for Pages |
+| Vite base | `/` (dev) or `/` (regular build) | `/` for CI artifacts | `/bone-buster/` for Pages |
 | Asset URLs | resolve via `A()` helper | same | same |
 
 ## Rollback

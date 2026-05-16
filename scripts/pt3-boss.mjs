@@ -43,19 +43,19 @@ const page = await ctx.newPage();
 page.on("pageerror", (err) => console.log(`  pageerror: ${err.message}`));
 
 console.log("PT3.1 — load arena, find boss");
-await page.goto(`${BASE}/?objexoomDebug&objexoomSeed=12345&objexoomArchetype=arena`, {
+await page.goto(`${BASE}/?bonebusterDebug&bonebusterSeed=12345&bonebusterArchetype=arena`, {
 	waitUntil: "domcontentloaded",
 });
-await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
-await page.evaluate(() => window.__objexoom.start());
-await page.locator("[data-testid='objexoom-hp']").waitFor();
-await page.evaluate(() => window.__objexoom.collectAllPickups());
+await page.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 8000 });
+await page.evaluate(() => window.__bonebuster.start());
+await page.locator("[data-testid='bonebuster-hp']").waitFor();
+await page.evaluate(() => window.__bonebuster.collectAllPickups());
 await page.waitForTimeout(400);
 
 // E2 boss-pick rule: farthest spawn from player.playerSpawn becomes
 // the boss-tier enemy. Mirror that here to find the boss target.
 const bossInfo = await page.evaluate(() => {
-	const state = window.__objexoom.getState();
+	const state = window.__bonebuster.getState();
 	const spawns = state.enemySpawns ?? [];
 	const player = state.playerSpawn ?? { x: 4, y: 4 };
 	if (spawns.length === 0) return null;
@@ -90,7 +90,7 @@ console.log(
 );
 await page.evaluate(
 	({ target, player }) => {
-		const hooks = window.__objexoom;
+		const hooks = window.__bonebuster;
 		const dx = target.x - player.x;
 		const dy = target.y - player.y;
 		const len = Math.hypot(dx, dy) || 1;
@@ -110,7 +110,7 @@ console.log(
 );
 await page.evaluate(
 	({ target, player }) => {
-		const hooks = window.__objexoom;
+		const hooks = window.__bonebuster;
 		const dx = target.x - player.x;
 		const dy = target.y - player.y;
 		const len = Math.hypot(dx, dy) || 1;
@@ -126,7 +126,7 @@ await page.waitForTimeout(500);
 await captureCDP(page, `${OUT}/01-pre-kill.png`);
 
 console.log("PT3.3 — killBoss (isolated POL10-v2 boss-death sting + 150ms hitstop)");
-await page.evaluate(() => window.__objexoom.killBoss());
+await page.evaluate(() => window.__bonebuster.killBoss());
 // Mid-hitstop (boss=150ms) and mid-burst capture.
 await page.waitForTimeout(120);
 await captureCDP(page, `${OUT}/02-death-moment.png`);
@@ -137,7 +137,7 @@ await page.waitForTimeout(400);
 await captureCDP(page, `${OUT}/03-post-death.png`);
 
 const after = await page.evaluate(() => {
-	const state = window.__objexoom.getState();
+	const state = window.__bonebuster.getState();
 	const enemies = state.enemySpawns ?? [];
 	return { totalEnemies: state.totalEnemies, kills: state.kills, enemyCount: enemies.length };
 });

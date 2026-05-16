@@ -1,7 +1,7 @@
 /**
- * CONV2 — `GameRef` callback construction extracted from ObjexoomShell.
+ * CONV2 — `GameRef` callback construction extracted from BoneBusterShell.
  *
- * Pre-CONV2 the 7-callback GameRef was inlined inside ObjexoomShell.tsx
+ * Pre-CONV2 the 7-callback GameRef was inlined inside BoneBusterShell.tsx
  * as a ~190-LOC `useRef<GameRef>({...})` block. Every callback closed
  * over Shell-local refs (lastPlayerHitAt, triggerFadeRef) plus
  * Shell-local state (settings, tuning, seed) plus reducer/dispatch.
@@ -22,16 +22,16 @@
  * updates flow back to Shell via the `setState` setter in deps.
  */
 
+import { playFlashlightClick, playHitSting, playPickup, playPlayerDeath } from "@audio/sfx";
+import type { PickupKind } from "@engine/engine";
+import { dispatch } from "@engine/events";
+import { WEAPONS, type WeaponId } from "@shared/weapons";
+import { advanceLevel, runStatsReducer } from "@store/runStats";
+import type { BoneBusterSettings, DifficultyTuning, LevelChoice } from "@store/settings";
+import type { FadeKind, GameRef, GameState } from "@views/Shell";
+import { GOING_BACK_BUDGET_MS } from "@views/Shell";
+import { LOOT_BONUSES, pickLootKind } from "@world/loot";
 import { useRef } from "react";
-import type { PickupKind } from "../../engine";
-import { dispatch } from "../../events";
-import { LOOT_BONUSES, pickLootKind } from "../../loot";
-import type { FadeKind, GameRef, GameState } from "../../ObjexoomShell";
-import { GOING_BACK_BUDGET_MS } from "../../ObjexoomShell";
-import { advanceLevel, runStatsReducer } from "../../runStats";
-import type { DifficultyTuning, LevelChoice, ObjexoomSettings } from "../../settings";
-import { playFlashlightClick, playHitSting, playPickup, playPlayerDeath } from "../../sfx";
-import { WEAPONS, type WeaponId } from "../../weapons";
 
 /**
  * Per-pickup-kind action table. Lives in this module rather than in
@@ -46,6 +46,11 @@ const AMMO_INCREMENT: Record<
 	health: "health",
 	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
 	shotgunAmmo: { weapon: "shotgun", amount: WEAPONS.shotgun.pickupAmmo },
+	// D2 — flamethrowerAmmo on-collect credits the weapon's pickupAmmo
+	// to the flamethrower slot. If the player doesn't own the flamethrower
+	// yet, the ammo accumulates so picking up the weapon later starts
+	// hot — same behavior as chaingun + shotgun ammo pre-pickup.
+	flamethrowerAmmo: { weapon: "flamethrower", amount: WEAPONS.flamethrower.pickupAmmo },
 	flashlight: "flashlight",
 	loot: "loot",
 };
@@ -53,7 +58,7 @@ const AMMO_INCREMENT: Record<
 export type UseGameRefDeps = Readonly<{
 	setState: React.Dispatch<React.SetStateAction<GameState>>;
 	triggerFadeRef: React.MutableRefObject<(kind: FadeKind, intensity?: number) => void>;
-	settings: ObjexoomSettings;
+	settings: BoneBusterSettings;
 	tuning: DifficultyTuning;
 	seed: number;
 	level: LevelChoice;
@@ -64,6 +69,14 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 	// Re-point on every render so callbacks always see current deps.
 	const depsRef = useRef(deps);
 	depsRef.current = deps;
+	// D3 — tracks the set of weapons that have already emitted a
+	// `weaponAcquired` event this session. setState's `prev` snapshot
+	// can lag across multiple collects in the same React batch (two
+	// shotgunAmmo pickups in a single `collectAllPickups` call both
+	// see `prev.ownedWeapons.shotgun === false`); a stable ref-tracked
+	// set is the correct dedup gate. Reset by useGameRef's mount —
+	// any new mount (level transition with new map key) starts fresh.
+	const acquiredRef = useRef<Set<string>>(new Set());
 
 	const gameRef = useRef<GameRef>({
 		onHit: (damage) => {
@@ -131,6 +144,19 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 			setState((prev) => {
 				if (prev.status !== "playing") return prev;
 				if (prev.phase === "going_back") return prev;
+				// D3 — RealDoor drop grants chaingun + shotgun + flamethrower.
+				// Fire weaponAcquired for any the player didn't already
+				// own, with the same acquiredRef dedup gate as the pickup
+				// path. setState callback is the right place: we know
+				// `prev.phase !== "going_back"` so this only runs once
+				// per level, and the snapshot is reliable inside that
+				// single-callback window.
+				for (const w of ["chaingun", "shotgun", "flamethrower"] as const) {
+					if (!prev.ownedWeapons[w] && !acquiredRef.current.has(w)) {
+						acquiredRef.current.add(w);
+						dispatch({ type: "weaponAcquired", weapon: w });
+					}
+				}
 				return {
 					...prev,
 					phase: "going_back",
@@ -223,6 +249,17 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 						};
 					}
 					return { ...prev, score: prev.score + LOOT_BONUSES.treasureScore };
+				}
+				// D3 — first-time weapon acquisition fires a typed event for
+				// the PickupChip HUD slot's chip-brighten beat. Dedup
+				// gate is `acquiredRef.current` (a stable ref-tracked
+				// set) — `prev.ownedWeapons` can't be trusted because
+				// React batches multiple setState callbacks against the
+				// same snapshot, so two ammo pickups for the same weapon
+				// in the same tick would both see `prev.X === false`.
+				if (!acquiredRef.current.has(action.weapon)) {
+					acquiredRef.current.add(action.weapon);
+					dispatch({ type: "weaponAcquired", weapon: action.weapon });
 				}
 				return {
 					...prev,

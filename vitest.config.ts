@@ -3,12 +3,34 @@ import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 
+/**
+ * Vitest config (PRD §BC2). Aliases mirror vite.config.ts so both
+ * builds resolve `@scene`, `@audio`, `@engine`, `@views`, etc.
+ * identically. The post-RESTRUCTURE bucket aliases point at the
+ * future destination dirs; the legacy `@` and `@app` aliases stay
+ * for the pre-RESTRUCTURE flat layout.
+ */
 export default defineConfig({
 	plugins: [react()],
 	resolve: {
 		alias: {
 			"@": path.resolve(__dirname, "./src"),
 			"@app": path.resolve(__dirname, "./app"),
+			// Post-RESTRUCTURE bucketed aliases — must match vite.config.ts.
+			"@scene": path.resolve(__dirname, "src/scene"),
+			"@audio": path.resolve(__dirname, "src/audio"),
+			"@engine": path.resolve(__dirname, "src/engine"),
+			"@ai": path.resolve(__dirname, "src/ai"),
+			"@assets": path.resolve(__dirname, "src/assets"),
+			"@store": path.resolve(__dirname, "src/store"),
+			"@platform": path.resolve(__dirname, "src/platform"),
+			"@shared": path.resolve(__dirname, "src/shared"),
+			"@world": path.resolve(__dirname, "src/world"),
+			"@views": path.resolve(__dirname, "app/views"),
+			"@components": path.resolve(__dirname, "app/components"),
+			"@atoms": path.resolve(__dirname, "app/atoms"),
+			"@hooks": path.resolve(__dirname, "app/hooks"),
+			"@styles": path.resolve(__dirname, "app/styles"),
 		},
 		// Match the arcade-cabinet/voxel-realms pattern — browser-mode
 		// vitest can otherwise load react/three from two paths

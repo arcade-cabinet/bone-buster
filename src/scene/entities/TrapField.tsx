@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
+import type { TrapInstance } from "@world/scatter/trapScatter";
+import { TRAPS } from "@world/traps";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import type { TrapInstance } from "../../scatter/trapScatter";
-import { TRAPS } from "../../traps";
 
 /**
  * COV8 step-2 — trap scatter renderer.

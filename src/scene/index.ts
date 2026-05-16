@@ -1,5 +1,5 @@
 // Barrel re-export for the scene/ subtree. The scene root
-// (`ObjexoomScene.tsx`) imports from here so it doesn't need to know
+// (`BoneBusterScene.tsx`) imports from here so it doesn't need to know
 // the folder layout — drop-in moves of individual components stay
 // internal.
 export { WALL_HEIGHT } from "./constants";

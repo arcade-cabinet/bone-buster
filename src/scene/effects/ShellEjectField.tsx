@@ -1,11 +1,11 @@
+import { addBoneBusterListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
+import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { OBJEXOOM_PALETTE } from "../../design-tokens";
-import { addObjexoomListener } from "../../events";
 
-const COLOR_BRASS = new THREE.Color(OBJEXOOM_PALETTE.shellBrass).getHex();
-const COLOR_BRASS_DEEP = new THREE.Color(OBJEXOOM_PALETTE.shellBrassDeep).getHex();
+const COLOR_BRASS = new THREE.Color(BONE_BUSTER_PALETTE.shellBrass).getHex();
+const COLOR_BRASS_DEEP = new THREE.Color(BONE_BUSTER_PALETTE.shellBrassDeep).getHex();
 
 // QW3 — module-scope shared geometry. All shells reference this one
 // CylinderGeometry; the Mesh per-shell still gives us scale +
@@ -50,7 +50,7 @@ export function ShellEjectField() {
 	const nextId = useRef(1);
 
 	useEffect(() => {
-		return addObjexoomListener("shellEject", (d) => {
+		return addBoneBusterListener("shellEject", (d) => {
 			shellsRef.current.push({
 				id: nextId.current++,
 				pos: { x: d.x, y: d.y, z: d.z },

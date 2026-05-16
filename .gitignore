@@ -32,6 +32,13 @@ coverage
 # outputs ARE tracked; the FBX/zip sources stay local.
 references/
 
+# itch.io fetcher local-only artifacts (scripts/fetch-itch.mjs):
+#   .itch-cache/   — owned-key metadata cache
+#   raw-assets/    — downloaded archives + extracted contents
+# Production assets live under public/assets/ after hand-promotion.
+.itch-cache/
+raw-assets/
+
 # Generated WASM artifacts — scripts/prepare-web-wasm.mjs copies these
 # from node_modules at postinstall + prebuild. Source of truth is the
 # npm package; we don't track the byte-identical copy.

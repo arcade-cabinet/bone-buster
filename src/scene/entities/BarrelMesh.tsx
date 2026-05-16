@@ -1,9 +1,9 @@
+import { BARREL_MODEL_URLS, pickBarrelModelUrl } from "@assets/models";
 import { useGLTF } from "@react-three/drei";
+import type { Barrel } from "@world/barrels";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
-import type { Barrel } from "../../barrels";
-import { BARREL_MODEL_URLS, pickBarrelModelUrl } from "../../models";
 
 /**
  * E5 — destructible barrel mesh. Each barrel renders one of 5 PSX
@@ -16,7 +16,7 @@ import { BARREL_MODEL_URLS, pickBarrelModelUrl } from "../../models";
  *
  * Visibility is bound to `barrel.exploded`. When the engine flags a
  * barrel exploded, the registered group's `.visible` flag flips false
- * (the registrar in ObjexoomScene handles the imperative update);
+ * (the registrar in BoneBusterScene handles the imperative update);
  * the mesh itself stays mounted so React doesn't churn the tree on
  * every chain reaction.
  */

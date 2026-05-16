@@ -47,17 +47,17 @@ const CDP_ENDPOINT = process.env.MOBILE_CDP_ENDPOINT || "http://localhost:9222";
 const WEBVIEW_HOST = process.env.MOBILE_WEBVIEW_HOST || "https://localhost";
 
 async function snapshotArchetypeMobile(page, archetype) {
-	const url = `${WEBVIEW_HOST}/?objexoomDebug&objexoomSeed=12345&objexoomArchetype=${archetype}`;
+	const url = `${WEBVIEW_HOST}/?bonebusterDebug&bonebusterSeed=12345&bonebusterArchetype=${archetype}`;
 	await page.goto(url, { waitUntil: "domcontentloaded" });
-	await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 15000 });
+	await page.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 15000 });
 
-	await page.evaluate(() => window.__objexoom.start());
-	await page.locator("[data-testid='objexoom-hp']").waitFor();
+	await page.evaluate(() => window.__bonebuster.start());
+	await page.locator("[data-testid='bonebuster-hp']").waitFor();
 
 	// Same PT1C pose as the desktop OBS3 script — frame the densest
 	// enemy cluster so the worst-case render is what we sample.
 	await page.evaluate(() => {
-		const s = window.__objexoom.getState();
+		const s = window.__bonebuster.getState();
 		if (s.enemySpawns?.length > 0) {
 			const player = s.playerSpawn;
 			const target = s.enemySpawns[0].position;
@@ -71,7 +71,7 @@ async function snapshotArchetypeMobile(page, archetype) {
 				const px = target.x - ux * standoff;
 				const py = target.y - uy * standoff;
 				const yaw = Math.atan2(ux, uy);
-				window.__objexoom.teleport(px, py, yaw);
+				window.__bonebuster.teleport(px, py, yaw);
 			}
 		}
 	});

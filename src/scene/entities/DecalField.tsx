@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
+import { DECAL_VARIANTS_ALL } from "@world/decals";
+import type { DecalInstance } from "@world/scatter/decalScatter";
 import { useMemo } from "react";
 import * as THREE from "three";
-import { DECAL_VARIANTS_ALL } from "../../decals";
-import type { DecalInstance } from "../../scatter/decalScatter";
 
 /**
  * COV6 step-2.1 — wall-quad billboard decal renderer.

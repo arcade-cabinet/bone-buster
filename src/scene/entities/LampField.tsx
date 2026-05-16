@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
+import type { LampInstance } from "@world/lampScatter";
+import { LAMP_VARIANTS_OFF, LAMP_VARIANTS_ON, lampUrlFor } from "@world/lampScatter";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import type { LampInstance } from "../../lampScatter";
-import { LAMP_VARIANTS_OFF, LAMP_VARIANTS_ON, lampUrlFor } from "../../lampScatter";
 
 /**
  * COV1 + E4 — renders the per-map lamp scatter. Each LampInstance gets
@@ -14,7 +14,7 @@ import { LAMP_VARIANTS_OFF, LAMP_VARIANTS_ON, lampUrlFor } from "../../lampScatt
  * E13 step-9: the pointLight color is now passed in (archetype-keyed
  * via `palette.lampLightColor`) so each archetype's lamps bathe the
  * scene in their own tint. Corridor still resolves to
- * `OBJEXOOM_PALETTE.flashlightWarm` so lamp-shadow byte-stability on
+ * `BONE_BUSTER_PALETTE.flashlightWarm` so lamp-shadow byte-stability on
  * refLevel 0 is preserved.
  */
 export function LampField({

@@ -6,7 +6,7 @@
  * Mirrors the PT2A/PT7 pattern of fresh browser-per-shot to avoid
  * Tone-graph collisions between successive starts.
  *
- * The difficulty is set via the `window.__objexoom.setDifficulty()`
+ * The difficulty is set via the `window.__bonebuster.setDifficulty()`
  * debug hook (POL31), which mutates the React Settings state directly.
  * That's intentionally simpler than driving the landing Settings panel:
  * the panel is touch-hostile in Playwright and the chip rendering path
@@ -45,16 +45,16 @@ for (const difficulty of DIFFICULTIES) {
 	page.on("pageerror", (err) => console.log(`  ${difficulty} pageerror: ${err.message}`));
 
 	console.log(`POL31 — capturing ${difficulty}`);
-	await page.goto("http://localhost:5191/?objexoomDebug&objexoomSeed=12345", {
+	await page.goto("http://localhost:5191/?bonebusterDebug&bonebusterSeed=12345", {
 		waitUntil: "domcontentloaded",
 	});
-	await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
-	await page.evaluate((diff) => window.__objexoom.setDifficulty(diff), difficulty);
+	await page.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 8000 });
+	await page.evaluate((diff) => window.__bonebuster.setDifficulty(diff), difficulty);
 	// Settings React state update flushes via setState — give it one
 	// tick before starting so the next mount of HUDOverlays reads the
 	// new settings.difficulty.
 	await page.waitForTimeout(50);
-	await page.evaluate(() => window.__objexoom.start());
+	await page.evaluate(() => window.__bonebuster.start());
 	// Chip is shown for 2s — capture at ~700ms after start so we catch
 	// the steady-state of the spring animation (post-settle).
 	await page.waitForTimeout(700);

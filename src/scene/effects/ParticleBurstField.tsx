@@ -1,12 +1,12 @@
+import { addBoneBusterListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
+import { BONE_BUSTER_PALETTE, SCALE } from "@styles/tokens/index";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { OBJEXOOM_PALETTE, SCALE } from "../../design-tokens";
-import { addObjexoomListener } from "../../events";
 
-const COLOR_WRAITH = new THREE.Color(OBJEXOOM_PALETTE.enemyWraithSoul).getHex();
-const COLOR_IMP = new THREE.Color(OBJEXOOM_PALETTE.enemyImpMagma).getHex();
-const COLOR_AMBER = new THREE.Color(OBJEXOOM_PALETTE.actionPickupGlow).getHex();
+const COLOR_PHASER = new THREE.Color(BONE_BUSTER_PALETTE.enemyWraithSoul).getHex();
+const COLOR_BOUNCER = new THREE.Color(BONE_BUSTER_PALETTE.enemyImpMagma).getHex();
+const COLOR_AMBER = new THREE.Color(BONE_BUSTER_PALETTE.actionPickupGlow).getHex();
 // POL16 — extra colors for the layered damage burst.
 const COLOR_SPARK = new THREE.Color(SCALE.amber[100]).getHex(); // hot white-amber impact
 const COLOR_SMOKE = new THREE.Color(SCALE.parchment[600]).getHex(); // cool gray smoke
@@ -66,7 +66,7 @@ export function ParticleBurstField() {
 	const nextId = useRef(1);
 
 	useEffect(() => {
-		return addObjexoomListener("burst", (detail) => {
+		return addBoneBusterListener("burst", (detail) => {
 			const now = performance.now();
 			if (detail.kind === "flameStream") {
 				// E8 step-2 — directional flame cone stream. Emits a wave
@@ -219,7 +219,7 @@ export function ParticleBurstField() {
 				const count = detail.kind === "pickup" ? 8 : detail.kind === "explode" ? 12 : 30; // playerHit
 				const colorHex =
 					detail.kind === "playerHit"
-						? COLOR_IMP // red — player hit
+						? COLOR_BOUNCER // red — player hit
 						: COLOR_AMBER; // amber — pickup / explode
 				for (let i = 0; i < count; i += 1) {
 					const theta = Math.random() * Math.PI * 2;
@@ -242,10 +242,10 @@ export function ParticleBurstField() {
 					});
 				}
 				// Preserve back-compat: violet damage burst is now replaced
-				// by the POL16 layered path above; the wraith violet color
-				// is retained for future use (e.g. a future "wraith death"
+				// by the POL16 layered path above; the phaser violet color
+				// is retained for future use (e.g. a future "phaser death"
 				// burst kind) but no event currently emits it.
-				void COLOR_WRAITH;
+				void COLOR_PHASER;
 			}
 			while (motesRef.current.length > MAX_MOTES) motesRef.current.shift();
 		});

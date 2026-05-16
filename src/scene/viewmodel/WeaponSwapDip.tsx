@@ -1,6 +1,6 @@
 import { useFrame } from "@react-three/fiber";
+import type { WeaponId } from "@shared/weapons";
 import { useEffect, useRef } from "react";
-import type { WeaponId } from "../../weapons";
 
 /**
  * POL20 — weapon-swap dip slot (see docs/SLOT-ARCHITECTURE.md).

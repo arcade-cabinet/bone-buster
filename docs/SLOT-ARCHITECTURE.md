@@ -32,7 +32,7 @@ point; the component is the implementation.**
 
 ### 1. HUD overlay slots — `<HUDOverlays>`
 
-Parent component mounted once in `ObjexoomHUD`. Each transient
+Parent component mounted once in `BoneBusterHUD`. Each transient
 overlay (SecretFoundFlash, DamageOverlay, FuturePickupCeremony,
 FutureKillStreak) is a self-contained sibling.
 
@@ -41,7 +41,7 @@ Contract for any HUD overlay:
 ```tsx
 function FooOverlay() {
 	const [activeKey, setActiveKey] = useState(0);
-	useEffect(() => addObjexoomListener("foo", () => setActiveKey(k => k + 1)), []);
+	useEffect(() => addBoneBusterListener("foo", () => setActiveKey(k => k + 1)), []);
 	if (activeKey === 0) return null;
 	return <motion.div key={activeKey} ... />;
 }
@@ -60,7 +60,7 @@ Each effect is its own component owning its uniform state. The
 export function HitChromaticAberration() {
 	const offset = useMemo(() => new Vector2(BASE_X, BASE_Y), []);
 	const pulseUntil = useRef(0);
-	useEffect(() => addObjexoomListener("playerHit", () => { ... }), []);
+	useEffect(() => addBoneBusterListener("playerHit", () => { ... }), []);
 	useFrame(() => { /* mutate offset */ });
 	return <ChromaticAberration offset={offset} />;
 }
@@ -68,7 +68,7 @@ export function HitChromaticAberration() {
 
 - Self-contained: owns its Vector2 / scalar uniform state.
 - No ref-into-the-wrapper antipattern.
-- Mounted as a sibling under `<EffectComposer>` in ObjexoomScene.
+- Mounted as a sibling under `<EffectComposer>` in BoneBusterScene.
 
 ### 3. Per-entity feedback slots — sibling components
 

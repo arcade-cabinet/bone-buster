@@ -34,12 +34,12 @@ async function captureCDP(path) {
 	await writeFile(path, Buffer.from(data, "base64"));
 }
 
-await page.goto("http://localhost:5191/?objexoomDebug&objexoomSeed=12345", {
+await page.goto("http://localhost:5191/?bonebusterDebug&bonebusterSeed=12345", {
 	waitUntil: "domcontentloaded",
 });
-await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
-await page.evaluate(() => window.__objexoom.start());
-await page.locator("[data-testid='objexoom-hp']").waitFor();
+await page.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 8000 });
+await page.evaluate(() => window.__bonebuster.start());
+await page.locator("[data-testid='bonebuster-hp']").waitFor();
 
 // collectAllPickups fires all in one tick, so only the last
 // pickup's chip survives. Instead, dispatch a single pickup

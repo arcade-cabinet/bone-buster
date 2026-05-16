@@ -42,6 +42,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build for GitHub Pages
+        # BC3 — base path comes from VITE_BASE_PATH (read by
+        # vite.config.ts via normalizeBasePath). The deployed
+        # Pages site lives under /bone-buster/, so the bundled
+        # asset URLs must prefix with that.
+        env:
+          VITE_BASE_PATH: /bone-buster/
         run: pnpm build:pages
       - name: Verify runtime asset bundle
         run: pnpm assets:verify-runtime

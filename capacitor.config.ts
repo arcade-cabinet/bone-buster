@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-	appId: "com.objexiv.objexoom",
-	appName: "OBJEXOOM",
+	appId: "com.bonebuster.app",
+	appName: "Bone Buster",
 	webDir: "dist",
 	server: {
 		androidScheme: "https",

@@ -34,58 +34,59 @@ When two docs disagree, use this order:
 
 ## Stack rules
 
-- **Vite-only.** No Next.js, no SSR, no `next/navigation`, no `"use
-  client"` directives outside their original purpose (harmless in Vite
-  but a flag that code came from Objexiv without cleanup).
-- **No Objexiv imports.** This is a standalone game. The commit-gate
-  enforces this.
-- **pnpm only.** No npm install, no yarn. The commit-gate enforces
-  this too.
+- **Vite-only.** No Next.js, no SSR, no `next/navigation`, no `"use client"` directives.
+- **pnpm only.** No npm install, no yarn. The commit-gate enforces this.
 - **Conventional Commits + squash-merge.** release-please drives
   versioning. See [`DECISIONS.md` D5](./docs/DECISIONS.md#d5).
 - **Biome only.** No ESLint, no Prettier. See
   [`DECISIONS.md` D4](./docs/DECISIONS.md#d4).
 - **Design tokens.** Use `ROLE.*` from
-  [`src/design-tokens/`](./src/design-tokens/), NOT raw hex / rgba /
+  [`app/styles/tokens/`](./app/styles/tokens/), NOT raw hex / rgba /
   scale steps. See [`DECISIONS.md` D7](./docs/DECISIONS.md#d7).
 
 ## Game architecture
 
 Full diagram in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
-- **`src/engine.ts` + `src/buildMap.ts` + `src/turtle.ts`** — pure-TS
+- **`src/engine/engine.ts` + `src/world/buildMap.ts` + `src/ai/turtle.ts`** — pure-TS
   sim. Maps, raycasts, collision, spawning. No DOM, no three.js, no
   `Math.random()` in sim code (use seedable RNG).
-- **`src/barrels.ts`** — pure-sim destructible barrel registry. Spawn,
+- **`src/world/barrels.ts`** — pure-sim destructible barrel registry. Spawn,
   ray-test, AoE resolution. Mirrors `engine.ts` shape: returns IDs +
   flags to the caller, no side effects. 14 unit tests in
-  `src/__tests__/unit/objexoom-barrels.test.ts`.
-- **`src/enemyAi.ts`** — FSM tick function with explicit states
+  `src/__tests__/unit/bone-buster-barrels.test.ts`.
+- **`src/ai/enemyAi.ts`** — FSM tick function with explicit states
   (0=patrol, 1=approach, 3=shoot). Tested via pure unit assertions in
-  `src/__tests__/unit/objexoom-enemyAi.test.ts`.
-- **`src/runHistory.ts`** — sql.js persistence layer for per-run
+  `src/__tests__/unit/bone-buster-enemyAi.test.ts`.
+- **`src/store/runHistory.ts`** — sql.js persistence layer for per-run
   stats. Pure-async open/insert/list/best/count/clear API; serialized
   as base64 in localStorage. WASM via `prepare-web-wasm.mjs`. Browser
   smoke test in `src/__tests__/browser/runHistory.browser.test.ts`.
-- **`src/yukaIntegration.ts`** — yuka EntityManager bridge: mirror
+- **`src/ai/yukaIntegration.ts`** — yuka EntityManager bridge: mirror
   sim positions, run steering, write back. Stateful, isolated.
-- **`src/ObjexoomScene.tsx`** — r3f scene tree orchestrator. Drives
+- **`app/views/Scene.tsx`** — r3f scene tree orchestrator. Drives
   mesh transforms from refs, NOT React state. Hosts the fire-path,
   the per-frame AI tick, the barrel explosion queue (`explodeBarrelRef`
   late-bind pattern). At 868 LOC as of PR #12; ARCH2 extracts
-  `useFireResolution` + `useEnemyTickLoop` before E3.
-- **`src/ObjexoomShell.tsx`** — game lifecycle, level transitions,
+  `useFireResolution` + `useEnemyTickLoop` before E3. Renamed to
+  `BoneBusterScene.tsx` by PRD §R8 source-string sweep.
+- **`app/views/Shell.tsx`** — game lifecycle, level transitions,
   debug-hook attach, run-history recording on terminal status.
-- **`src/models.ts`** — pose + animation registry per
+  Renamed to `BoneBusterShell.tsx` by PRD §R8 source-string sweep.
+- **`src/assets/models.ts`** — pose + animation registry per
   enemy/weapon/prop. Per-kind skin roster, deterministic pick by id.
-  URLs flow through `A()` (in `src/assetUrl.ts`) so `import.meta.env.BASE_URL`
+  URLs flow through `A()` (in `src/assets/assetUrl.ts`) so `import.meta.env.BASE_URL`
   is honored; see [`DECISIONS.md` D10](./docs/DECISIONS.md#d10).
 
 ## Design tokens
 
-- `src/design-tokens/colors.ts` — `LINEAGE`, `SCALE`, semantic `ROLE`
-  layer, back-compat `OBJEXOOM_PALETTE`.
-- `src/design-tokens/typography.ts` — `FONT_FAMILY`, weights, spacing,
+- `app/styles/tokens/colors.ts` — `LINEAGE`, `SCALE`, semantic `ROLE`
+  layer, plus the new `BONE_PALETTE` (PRD §R2) and the
+  current-name `OBJEXOOM_PALETTE` flat-key export (used by the
+  3D scene materials surface; renamed to `BONE_BUSTER_PALETTE`
+  by PRD §R8 source-string sweep, kept as back-compat alias
+  after the sweep).
+- `app/styles/tokens/typography.ts` — `FONT_FAMILY`, weights, spacing,
   sizes, line-heights.
 - `app/tokens.css` — `--obx-*` CSS mirror.
 - `app/fonts.css` — 12 `@font-face` declarations for Black Ops One +
@@ -103,8 +104,11 @@ inline justification.
 - `pnpm assets:fbx-to-glb` regenerates the curated GLBs. Edit
   `scripts/convert-fbx.mjs` to add new sources.
 - After regenerating, run `pnpm test:e2e:screenshots` to refresh the
-  canonical poses. They land under
-  `test-results/objexoom-screenshots/`.
+  canonical poses. They land under `test-results/objexoom-screenshots/`
+  (path preserved post-rebrand — the canonical screenshot harness's
+  output directory wasn't sweep-renamed to keep diff noise low and
+  avoid invalidating the `tests/perf-baselines/` cross-reference;
+  see R8b storage-key migration shim for the same pattern).
 
 ## Test discipline
 
@@ -115,8 +119,8 @@ Full doc: [`docs/TESTING.md`](./docs/TESTING.md).
 - **Browser (`pnpm test:browser`)** — Vitest in real Chromium. Empty
   for now; first standalone smoke tests queued.
 - **E2E (`pnpm test:e2e`)** — Playwright driving the actual built
-  game via `?objexoomDebug` hooks. Includes the 5 canonical
-  screenshot poses.
+  game via `?bonebusterDebug` hooks. Includes the 5 canonical
+  screenshot poses + 10 per-archetype poses.
 
 ## Ports
 
@@ -126,10 +130,12 @@ Vite dev pinned to **5191**, preview to **8191**, with
 
 ## Debug-hook contract
 
-When `?objexoomDebug` is in the URL, `window.__objexoom` exposes:
+When `?bonebusterDebug` is in the URL, `window.__bonebuster`
+exposes the following surface (legacy `?objexoomDebug` /
+`window.__objexoom` aliases also accepted via R8b shim):
 
 ```ts
-type ObjexoomDebugHooks = {
+type BoneBusterDebugHooks = {
   getState(): unknown;
   start(): void;
   teleport(x: number, y: number, yawRad?: number): void;
@@ -181,6 +187,6 @@ harness before the feature.
 ## Long-running branch
 
 Active dev rides one long-running branch
-(`feat/objexoom-game-buildout`) until the game is FULLY done. Zero
+(`feat/bone-buster-game-buildout`) until the game is FULLY done. Zero
 PR churn. See [`DECISIONS.md` D8](./docs/DECISIONS.md#d8). Hotfixes
 and unrelated work still get focused PRs.

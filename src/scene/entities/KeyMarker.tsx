@@ -1,7 +1,7 @@
 import { useFrame } from "@react-three/fiber";
+import { ROLE } from "@styles/tokens/index";
 import { useRef } from "react";
 import type * as THREE from "three";
-import { ROLE } from "../../design-tokens";
 
 /**
  * Floating amber torus marking the level's key pickup. Bobs + spins so

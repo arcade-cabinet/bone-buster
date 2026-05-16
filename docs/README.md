@@ -5,7 +5,7 @@ status: current
 domain: context
 ---
 
-# Docs map — OBJEXOOM
+# Docs map — BONE BUSTER
 
 Map of doc ownership for the standalone game repo. When two docs
 disagree, this is the authority chain:

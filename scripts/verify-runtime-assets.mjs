@@ -22,24 +22,25 @@ const root = resolve(import.meta.dirname, "..");
 // Source files that contribute A("/assets/models/...") references.
 // Lives as an explicit allowlist rather than a glob so additions are
 // deliberate.
+// RS3 — paths updated to the post-restructure layout.
 const SOURCE_FILES = [
-	resolve(root, "src/models.ts"),
-	resolve(root, "src/lampScatter.ts"),
-	resolve(root, "src/scatter/propPool.ts"),
-	resolve(root, "src/scatter/floorTiles.ts"),
-	resolve(root, "src/doors.ts"),
-	resolve(root, "src/decals.ts"),
-	resolve(root, "src/debris.ts"),
-	resolve(root, "src/largeProps.ts"),
-	resolve(root, "src/meleeSkins.ts"),
-	resolve(root, "src/vehicles.ts"),
-	resolve(root, "src/kitchen.ts"),
-	resolve(root, "src/loot.ts"),
-	resolve(root, "src/nature.ts"),
-	resolve(root, "src/npcs.ts"),
-	resolve(root, "src/traps.ts"),
-	resolve(root, "src/structures.ts"),
-	resolve(root, "src/floorTextures.ts"),
+	resolve(root, "src/assets/models.ts"),
+	resolve(root, "src/world/lampScatter.ts"),
+	resolve(root, "src/world/scatter/propPool.ts"),
+	resolve(root, "src/world/scatter/floorTiles.ts"),
+	resolve(root, "src/world/doors.ts"),
+	resolve(root, "src/world/decals.ts"),
+	resolve(root, "src/world/debris.ts"),
+	resolve(root, "src/world/largeProps.ts"),
+	resolve(root, "src/world/meleeSkins.ts"),
+	resolve(root, "src/world/vehicles.ts"),
+	resolve(root, "src/world/kitchen.ts"),
+	resolve(root, "src/world/loot.ts"),
+	resolve(root, "src/world/nature.ts"),
+	resolve(root, "src/world/npcs.ts"),
+	resolve(root, "src/world/traps.ts"),
+	resolve(root, "src/world/structures.ts"),
+	resolve(root, "src/world/floorTextures.ts"),
 ];
 
 function categoryOf(publicPath) {

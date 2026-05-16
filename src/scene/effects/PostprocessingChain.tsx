@@ -1,7 +1,7 @@
+import { addBoneBusterListener } from "@engine/events";
 import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import type { JSX } from "react";
 import { useEffect, useState } from "react";
-import { addObjexoomListener } from "../../events";
 import { HitChromaticAberration } from "./HitChromaticAberration";
 import { stepLowQuality } from "./stepLowQuality";
 
@@ -54,7 +54,7 @@ export function PostprocessingChain() {
 		let consecutiveLow = 0;
 		let consecutiveHigh = 0;
 		let currentLow = false;
-		return addObjexoomListener("fpsUpdate", ({ fps, pixelRatio }) => {
+		return addBoneBusterListener("fpsUpdate", ({ fps, pixelRatio }) => {
 			const stepped = stepLowQuality({
 				avgFps: fps,
 				pixelRatio: pixelRatio ?? 1,

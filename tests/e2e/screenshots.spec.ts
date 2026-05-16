@@ -18,7 +18,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { chromium, type Page, test } from "@playwright/test";
 
-type ObjexoomDebugHooks = {
+type BoneBusterDebugHooks = {
 	getState: () => unknown;
 	start: () => void;
 	teleport: (x: number, y: number, yawRad?: number) => void;
@@ -29,7 +29,7 @@ type ObjexoomDebugHooks = {
 	triggerWin: () => void;
 };
 
-const DEBUG_URL = "/?objexoomDebug&objexoomSeed=12345";
+const DEBUG_URL = "/?bonebusterDebug&bonebusterSeed=12345";
 const OUT_DIR = "test-results/objexoom-screenshots";
 const VIEWPORT = { width: 1440, height: 900 } as const;
 
@@ -97,7 +97,7 @@ async function captureViaCDP(page: Page, outPath: string): Promise<void> {
 
 async function waitForHooks(page: Page): Promise<void> {
 	await page.waitForFunction(
-		() => Boolean((window as unknown as { __objexoom?: unknown }).__objexoom),
+		() => Boolean((window as unknown as { __bonebuster?: unknown }).__bonebuster),
 		undefined,
 		{ timeout: 15_000 },
 	);
@@ -116,9 +116,11 @@ async function withGame(baseURL: string, fn: (page: Page) => Promise<void>): Pro
 	});
 	const page = await context.newPage();
 	// Block external font loads — they stall page.screenshot's font-wait.
+	// CodeQL js/incomplete-url-substring-sanitization: `===` exact host match
+	// instead of `.includes()` so the rule can't be tricked by a hostname
+	// like `fonts.googleapis.com.attacker.example`.
 	await page.route(
-		(url) =>
-			url.hostname.includes("fonts.googleapis.com") || url.hostname.includes("fonts.gstatic.com"),
+		(url) => url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com",
 		(route) => route.abort(),
 	);
 	try {
@@ -142,9 +144,17 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 				: "http://localhost:3000";
 		await withGame(baseURL, async (page) => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
-			await page.getByRole("heading", { name: /OBJEXOOM/ }).waitFor();
-			// T7 — 15 frames is enough to settle the landing fade animation.
-			await waitForFrames(page, 15);
+			// R3 — Bone Buster wordmark is an inline SVG with
+			// `role="img" aria-label="Bone Buster"`. The legacy <h1>
+			// was removed when the wordmark moved to SVG.
+			await page.getByRole("img", { name: /Bone Buster/i }).waitFor();
+			// Wait for Bungee/Bungee-Inline/Bungee-Shade woff2 to land
+			// before settling — capturing mid-load shows the fallback
+			// (system stencil) which reads as flipped letterforms.
+			await page.evaluate(() => document.fonts.ready);
+			// Settle the staggered drop-in + 600ms Tilt Prism flicker
+			// (~2.0s total from mount). 130 frames ≈ 2.2s at 60fps.
+			await waitForFrames(page, 130);
 			await captureViaCDP(page, `${OUT_DIR}/landing.png`);
 		});
 	});
@@ -159,11 +169,13 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __bonebuster: BoneBusterDebugHooks }).__bonebuster.start();
 			});
-			await page.locator("[data-testid='objexoom-hp']").waitFor();
+			await page.locator("[data-testid='bonebuster-hp']").waitFor();
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.collectAllPickups();
+				(
+					window as unknown as { __bonebuster: BoneBusterDebugHooks }
+				).__bonebuster.collectAllPickups();
 			});
 			// T7 — 45 frames (≈750ms @60fps) settles SpotLight + shadow map composite.
 			await waitForFrames(page, 45);
@@ -181,9 +193,9 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __bonebuster: BoneBusterDebugHooks }).__bonebuster.start();
 			});
-			await page.locator("[data-testid='objexoom-hp']").waitFor();
+			await page.locator("[data-testid='bonebuster-hp']").waitFor();
 			// T7 — 30 frames (≈500ms @60fps) for the dark-mode pose.
 			await waitForFrames(page, 30);
 			await captureViaCDP(page, `${OUT_DIR}/ingame-flashlight-off.png`);
@@ -200,9 +212,9 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __bonebuster: BoneBusterDebugHooks }).__bonebuster.start();
 			});
-			await page.locator("[data-testid='objexoom-hp']").waitFor();
+			await page.locator("[data-testid='bonebuster-hp']").waitFor();
 			// Teleport AWAY from spawn before flipping to going_back —
 			// `onReachSpawn` fires automatically when phase=going_back AND
 			// player is within ~0.4 tiles of spawn. The player starts AT
@@ -210,7 +222,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			// trip onReachSpawn and the LEVEL COMPLETE overlay would
 			// render instead of the strobing going_back walk back.
 			await page.evaluate(() => {
-				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
+				const hooks = (window as unknown as { __bonebuster: BoneBusterDebugHooks }).__bonebuster;
 				const state = hooks.getState() as {
 					playerSpawn?: { x: number; y: number };
 					exitPosition?: { x: number; y: number };
@@ -248,16 +260,16 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __bonebuster: BoneBusterDebugHooks }).__bonebuster.start();
 			});
-			await page.locator("[data-testid='objexoom-hp']").waitFor();
+			await page.locator("[data-testid='bonebuster-hp']").waitFor();
 			// Clear N levels: each level needs killAllEnemies + collectKey
 			// + triggerWin (flips phase to going_back) + teleport-to-spawn
 			// (engine fires onReachSpawn → status="transitioning" →
 			// next level mounts). One full cycle per iteration.
 			for (let i = 0; i < 6; i += 1) {
 				await page.evaluate(() => {
-					const hooks = (window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom;
+					const hooks = (window as unknown as { __bonebuster?: BoneBusterDebugHooks }).__bonebuster;
 					if (!hooks) return;
 					hooks.killAllEnemies();
 					hooks.collectKey();
