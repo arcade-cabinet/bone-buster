@@ -171,14 +171,21 @@ jobs:
             # in debug builds automatically.
             sleep 15
             # Find the WebView's abstract-socket name. Format is
-            # `webview_devtools_remote_<pid>` for the WebView's host process.
-            WV_SOCKET=$(adb shell cat /proc/net/unix \
-              | grep webview_devtools_remote \
-              | head -n1 \
-              | awk '{print $NF}' \
-              | sed 's|^@||')
-            if [ -z "$WV_SOCKET" ]; then
-              echo "T5 — no webview_devtools_remote socket found"
+            # `webview_devtools_remote_<pid>`. We pin this to OUR
+            # app's PID rather than picking the first socket the
+            # grep returns — a fresh emulator can have multiple
+            # processes (system WebView updater, etc) listening on
+            # similar sockets, and attaching to the wrong one
+            # turns the perf gate into noise.
+            APP_PID=$(adb shell pidof -s com.objexiv.objexoom | tr -d '\r')
+            if [ -z "$APP_PID" ]; then
+              echo "T5 — com.objexiv.objexoom process not running"
+              adb logcat -d -t 200 chromium:I '*:S'
+              exit 1
+            fi
+            WV_SOCKET="webview_devtools_remote_${APP_PID}"
+            if ! adb shell cat /proc/net/unix | grep -q "@${WV_SOCKET}$"; then
+              echo "T5 — expected socket @${WV_SOCKET} not found"
               adb logcat -d -t 200 chromium:I '*:S'
               exit 1
             fi
