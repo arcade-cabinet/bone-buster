@@ -24,7 +24,7 @@
 - [x] **IF1** — general-purpose itch.io fetcher. PRD §IF1.
 - [x] **IF2** — owned-key metadata cache (316 packs). PRD §IF2.
 - [x] **IF3** — `docs/ITCH-INVENTORY.md`. PRD §IF3.
-- [ ] **IF4** — `scripts/itch-allowlist.json`. PRD §IF4.
+- [x] **IF4** — `scripts/itch-allowlist.json`. PRD §IF4.
 - [ ] **IF5** — bulk download + extract. PRD §IF5.
 - [ ] **IF6** — FBX→GLB conversion pass. PRD §IF6.
 - [ ] **IF7** — `docs/ASSET-INVENTORY.md`. PRD §IF7.
