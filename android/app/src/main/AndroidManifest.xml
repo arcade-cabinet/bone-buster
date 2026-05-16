@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- S1 — Android release-build hardening.
+         allowBackup=false: opt OUT of Android's auto-backup feature; the
+            game's only persisted state is local run-history (POL36 / E9
+            sqlite blob) which is per-device and re-derivable, not user-
+            sensitive data worth syncing through Google's backup service.
+         fullBackupContent=false: explicit opt-out for legacy backup paths
+            on devices that don't honor allowBackup=false alone.
+         dataExtractionRules: Android 12+ replacement for the older
+            backup descriptor; declares the same "no backup, no
+            device-transfer" stance in the modern schema. -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
