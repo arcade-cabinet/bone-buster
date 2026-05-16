@@ -33,9 +33,9 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 
 ### BUILD-CONFIG — Vite + Vitest + Pages alignment
 
-- [ ] **BC1** — `vite.config.ts` overhaul matching voxel-realms pattern. PRD §BC1.
-- [ ] **BC2** — `vitest.config.ts` overhaul. PRD §BC2.
-- [ ] **BC3** — Pages base-path fix end-to-end (fixes the currently-broken deploy). PRD §BC3.
+- [x] **BC1** — `vite.config.ts` overhaul matching voxel-realms pattern. PRD §BC1.
+- [x] **BC2** — `vitest.config.ts` overhaul. PRD §BC2.
+- [x] **BC3** — Pages base-path fix end-to-end (fixes the currently-broken deploy). PRD §BC3.
 - [ ] **BC4** — foldable viewport + safe-area CSS. PRD §BC4.
 - [ ] **BC5** — touch joysticks on foldable. PRD §BC5.
 - [ ] **BC6** — responsive HUD scaling. PRD §BC6.
