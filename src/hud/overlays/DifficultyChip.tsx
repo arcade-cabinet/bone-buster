@@ -85,7 +85,7 @@ export function DifficultyChip({ difficulty, runId }: { difficulty: Difficulty; 
 					style={{
 						position: "absolute",
 						left: "50%",
-						top: 140,
+						top: "calc(140px + var(--obx-safe-top, 0px))",
 						transform: "translateX(-50%)",
 						padding: "10px 28px",
 						background: `${spec.bg}d0`,

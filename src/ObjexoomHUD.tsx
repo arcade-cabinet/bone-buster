@@ -203,8 +203,8 @@ export function ObjexoomHUD({
 			<div
 				style={{
 					position: "absolute",
-					bottom: touchMode ? undefined : 18,
-					top: touchMode ? 90 : undefined,
+					bottom: touchMode ? undefined : "calc(18px + var(--obx-safe-bottom, 0px))",
+					top: touchMode ? "calc(90px + var(--obx-safe-top, 0px))" : undefined,
 					left: "50%",
 					transform: "translateX(-50%)",
 					display: "flex",
@@ -247,7 +247,9 @@ export function ObjexoomHUD({
 			<div
 				style={{
 					position: "absolute",
-					bottom: touchMode ? STICK_RADIUS * 2 + 24 : 50,
+					bottom: touchMode
+						? `calc(${STICK_RADIUS * 2 + 24}px + var(--obx-safe-bottom, 0px))`
+						: "calc(50px + var(--obx-safe-bottom, 0px))",
 					left: "50%",
 					transform: "translateX(-50%)",
 					padding: "8px 16px",
@@ -379,8 +381,8 @@ function AdaptiveResolutionReadout() {
 			data-testid="objexoom-fps-readout"
 			style={{
 				position: "absolute",
-				left: 12,
-				bottom: 12,
+				left: "calc(12px + var(--obx-safe-left, 0px))",
+				bottom: "calc(12px + var(--obx-safe-bottom, 0px))",
 				fontFamily: FONT_FAMILY.body,
 				fontSize: 11,
 				letterSpacing: LETTER_SPACING.hudLabel,
@@ -502,9 +504,9 @@ function VirtualStick({
 			onPointerCancel={onUp}
 			style={{
 				position: "absolute",
-				bottom: 24,
-				left: anchor === "left" ? 24 : undefined,
-				right: anchor === "right" ? 24 : undefined,
+				bottom: "calc(24px + var(--obx-safe-bottom, 0px))",
+				left: anchor === "left" ? "calc(24px + var(--obx-safe-left, 0px))" : undefined,
+				right: anchor === "right" ? "calc(24px + var(--obx-safe-right, 0px))" : undefined,
 				width: STICK_RADIUS * 2,
 				height: STICK_RADIUS * 2,
 				borderRadius: "50%",
@@ -548,8 +550,8 @@ function FireButton() {
 			}}
 			style={{
 				position: "absolute",
-				right: 24,
-				bottom: STICK_RADIUS * 2 + 48,
+				right: "calc(24px + var(--obx-safe-right, 0px))",
+				bottom: `calc(${STICK_RADIUS * 2 + 48}px + var(--obx-safe-bottom, 0px))`,
 				width: 72,
 				height: 72,
 				borderRadius: "50%",
@@ -627,11 +629,16 @@ function OverlayCard({
 	);
 }
 
+// BC4 — every viewport-edge anchor adds the matching `--obx-safe-*`
+// inset (declared in app/tokens.css). On desktop the env() falls back
+// to 0px and the HUD looks identical; on foldables / notched phones /
+// status-bar overlays the chip slides clear of the cutout instead of
+// being clipped by it.
 const cornerStyle = (corner: "top-left" | "top-right"): CSSProperties => ({
 	position: "absolute",
-	top: 16,
-	left: corner === "top-left" ? 16 : undefined,
-	right: corner === "top-right" ? 16 : undefined,
+	top: "calc(16px + var(--obx-safe-top, 0px))",
+	left: corner === "top-left" ? "calc(16px + var(--obx-safe-left, 0px))" : undefined,
+	right: corner === "top-right" ? "calc(16px + var(--obx-safe-right, 0px))" : undefined,
 	padding: "10px 14px",
 	background: ROLE.bgPanelAlpha,
 	borderRadius: 12,
@@ -669,7 +676,7 @@ const crosshairStyle: CSSProperties = {
 
 const hintStyle: CSSProperties = {
 	position: "absolute",
-	bottom: 18,
+	bottom: "calc(18px + var(--obx-safe-bottom, 0px))",
 	left: "50%",
 	transform: "translateX(-50%)",
 	fontSize: 11,

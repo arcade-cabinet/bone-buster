@@ -85,7 +85,7 @@ export function PickupChip() {
 					style={{
 						position: "absolute",
 						left: "50%",
-						top: 80,
+						top: "calc(80px + var(--obx-safe-top, 0px))",
 						transform: "translateX(-50%)",
 						padding: "8px 22px",
 						background: `${active.spec.bg}cc`,

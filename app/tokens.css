@@ -95,6 +95,15 @@
 	--obx-glow-damage: 0 0 0 4px rgba(220, 38, 38, 0.45), 0 0 24px rgba(220, 38, 38, 0.6);
 	--obx-glow-pickup: 0 0 16px rgba(245, 158, 11, 0.6);
 	--obx-glow-strobe: 0 0 32px rgba(255, 117, 24, 0.55);
+
+	/* BC4 — safe-area variables for foldable / notched / status-bar
+	   devices. HUD chips that anchor to a viewport edge add the
+	   matching `--obx-safe-*` to their offset so the chip stays
+	   clear of the cutout. Fallback to 0 keeps desktop layout exact. */
+	--obx-safe-top: env(safe-area-inset-top, 0px);
+	--obx-safe-right: env(safe-area-inset-right, 0px);
+	--obx-safe-bottom: env(safe-area-inset-bottom, 0px);
+	--obx-safe-left: env(safe-area-inset-left, 0px);
 }
 
 @media (prefers-reduced-motion: reduce) {

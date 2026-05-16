@@ -2,8 +2,13 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-		<meta name="theme-color" content="#03050b" />
+		<!-- BC4 — viewport tuned for foldables. `viewport-fit=cover`
+		     extends content beneath the notch / status bar so HUD
+		     bands can use `env(safe-area-inset-*)` for padding;
+		     `user-scalable=no` blocks pinch-zoom on touch so the
+		     player can't accidentally zoom the canvas mid-combat. -->
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+		<meta name="theme-color" content="#0F0C12" />
 		<!--
 		  S2 — Content Security Policy. Defense-in-depth — there are no
 		  current XSS sinks in the codebase (zero innerHTML / eval /
@@ -41,6 +46,14 @@
 		<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
 		<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
 		<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+		<!-- BC4 — PWA standalone hints. `mobile-web-app-capable` is the
+		     modern standard (Chrome 108+); `apple-mobile-web-app-capable`
+		     stays for iOS Safari, which never adopted the unprefixed
+		     name. The status-bar style only applies on iOS. The app
+		     title is the home-screen label — R8 source-string sweep
+		     re-points this at "Bone Buster" alongside the document
+		     title. -->
+		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		<meta name="apple-mobile-web-app-title" content="OBJEXOOM" />
