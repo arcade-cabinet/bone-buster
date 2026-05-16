@@ -136,12 +136,18 @@ jobs:
       - uses: android-actions/setup-android@v4
       - run: pnpm install --frozen-lockfile
       - name: Install Playwright Chromium (CDP client only — no browser launch)
-        run: pnpm exec playwright install chromium
-      - name: Build web bundle + Capacitor sync + assembleDebug
-        run: |
-          pnpm build
-          pnpm cap:sync
-          cd android && ./gradlew assembleDebug
+        # `--with-deps` mirrors the `perf` job above. CDP-only usage
+        # still needs Playwright's system deps installed on the runner
+        # for the chromium browser-launcher fallback paths it loads.
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Download debug APK from android job
+        # The `android` job already produced + uploaded
+        # `app-debug-apk`. Downloading saves the ~3-5min of repeating
+        # the build, sync, and gradle steps here.
+        uses: actions/download-artifact@v7
+        with:
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/
       - name: Enable KVM (faster emulator boot)
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
@@ -191,14 +197,24 @@ jobs:
             fi
             echo "T5 — forwarding tcp:9222 to $WV_SOCKET"
             adb forward tcp:9222 localabstract:$WV_SOCKET
-            # Probe the CDP root endpoint to confirm.
+            # Probe the CDP root endpoint to confirm. Hard-fail
+            # if 20 attempts don't get a response — otherwise the
+            # downstream `pnpm test:perf:mobile` would fail with
+            # an opaque "connection refused" further along.
+            CDP_LIVE=0
             for i in {1..20}; do
               if curl -s http://localhost:9222/json/version | grep -q "Browser"; then
-                echo "T5 — CDP endpoint live"
+                echo "T5 — CDP endpoint live after ${i}s"
+                CDP_LIVE=1
                 break
               fi
               sleep 1
             done
+            if [ "$CDP_LIVE" -ne 1 ]; then
+              echo "T5 — CDP endpoint never responded on tcp:9222"
+              adb logcat -d -t 200 chromium:I '*:S'
+              exit 1
+            fi
             # Run the mobile perf probe through the CDP-connected WebView.
             pnpm test:perf:mobile
       - uses: actions/upload-artifact@v7
