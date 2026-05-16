@@ -3,6 +3,19 @@ name: Release
 on:
   push:
     branches: [main]
+  # Manual escape-hatch: lets us redeploy Pages without cutting a
+  # new release tag. Needed when a squash-merge collapses many
+  # commits and release-please's parser doesn't see a user-facing
+  # leading conventional-commit on the first body line (it parses
+  # the commit body, not the subject, so `feat:` in the subject +
+  # `docs:` as first body line counts as no-user-facing-change).
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force the build-pages + deploy-pages jobs even when release-please did not cut a release'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write
@@ -30,7 +43,12 @@ jobs:
 
   build-pages:
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    # Run when release-please cut a new release (normal path) OR
+    # when a maintainer manually fired the workflow with
+    # force_deploy=true (escape-hatch path).
+    if: |
+      needs.release-please.outputs.release_created == 'true' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
