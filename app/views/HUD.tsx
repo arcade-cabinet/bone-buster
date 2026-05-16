@@ -8,6 +8,7 @@ import {
 	LETTER_SPACING,
 	ROLE,
 	SCALE,
+	TYPE,
 } from "@styles/tokens/index";
 import { HUDOverlays } from "@views/hudOverlays/HUDOverlays";
 import type { GameState } from "@views/Shell";
@@ -390,7 +391,10 @@ function AdaptiveResolutionReadout() {
 				position: "absolute",
 				left: "calc(12px + var(--obx-safe-left, 0px))",
 				bottom: "calc(12px + var(--obx-safe-bottom, 0px))",
-				fontFamily: FONT_FAMILY.body,
+				// R7 — debug overlay reads in JetBrains Mono per spec;
+				// the digit grid lines up vertically across re-renders
+				// when each FPS tick changes a digit.
+				fontFamily: TYPE.mono,
 				// BC6 — clamp(10px, 1.2vmin, 13px) declared in app/tokens.css
 				fontSize: "var(--obx-hud-fs-hint, 11px)",
 				letterSpacing: LETTER_SPACING.hudLabel,

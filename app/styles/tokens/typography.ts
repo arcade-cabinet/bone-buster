@@ -51,11 +51,29 @@ export const TYPE = {
 	flair: '"Tilt Prism", "Bungee", "Bungee Inline", ui-sans-serif, system-ui, sans-serif',
 } as const;
 
+/**
+ * R7 — legacy FONT_FAMILY surface re-pointed at the bone palette.
+ *
+ * Originally FONT_FAMILY held the OBJEXOOM-era Rajdhani / Black Ops
+ * One stacks. The R7 HUD refresh pivots HUD chips + readouts to the
+ * Bungee / Space Grotesk / JetBrains Mono triad without touching
+ * every call site — by re-pointing FONT_FAMILY at TYPE's stacks,
+ * the existing `FONT_FAMILY.display` references in HUD.tsx,
+ * hudOverlays/*, and Landing.tsx all switch fonts in one place.
+ *
+ * Net effect: numerals + level names now render in Bungee (display);
+ * sub-labels render in Space Grotesk (body); debug overlay renders
+ * in JetBrains Mono (mono). PRD §R7 acceptance met.
+ *
+ * New code should reference TYPE directly. FONT_FAMILY is retained
+ * as a compatibility re-export; future cleanup commits can sweep
+ * `FONT_FAMILY.<key>` → `TYPE.<key>` without changing the rendered
+ * pixels (the stacks are now identical).
+ */
 export const FONT_FAMILY = {
-	body: '"Rajdhani", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-	display:
-		'"Black Ops One", "Rajdhani", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
-	mono: 'ui-monospace, "Menlo", "Monaco", "Consolas", monospace',
+	body: TYPE.body,
+	display: TYPE.display,
+	mono: TYPE.mono,
 } as const;
 
 export const FONT_WEIGHT = {
