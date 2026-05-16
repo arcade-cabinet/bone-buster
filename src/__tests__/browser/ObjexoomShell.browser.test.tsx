@@ -42,13 +42,13 @@ afterEach(() => {
 });
 
 describe("ObjexoomShell — landing surface", () => {
-	it("renders the OBJEXOOM wordmark + menu items", async () => {
+	it("renders the Bone Buster wordmark + menu items", async () => {
 		render(<ObjexoomShell />);
 
-		// Wordmark — Black Ops One stencil "OBJEXOOM" in the gradient
-		// heading. The motion.h1 may split across lines so the role
-		// lookup is the stable contract.
-		expect(await screen.findByRole("heading", { name: /OBJEXOOM/ })).toBeDefined();
+		// R3 — Bone Buster wordmark is an inline SVG with
+		// `role="img" aria-label="Bone Buster"`. Replaces the prior
+		// `<h1>OBJEXOOM</h1>` heading.
+		expect(await screen.findByRole("img", { name: /Bone Buster/i })).toBeDefined();
 
 		// All four primary menu items should be addressable by role +
 		// accessible name.
@@ -60,14 +60,14 @@ describe("ObjexoomShell — landing surface", () => {
 
 	it("does NOT expose window.__objexoom without the debug query param", async () => {
 		render(<ObjexoomShell />);
-		await screen.findByRole("heading", { name: /OBJEXOOM/ });
+		await screen.findByRole("img", { name: /Bone Buster/i });
 		expect((window as unknown as { __objexoom?: unknown }).__objexoom).toBeUndefined();
 	});
 
 	it("exposes the full debug-hook surface when ?objexoomDebug is set", async () => {
 		setSearchParams("?objexoomDebug");
 		render(<ObjexoomShell />);
-		await screen.findByRole("heading", { name: /OBJEXOOM/ });
+		await screen.findByRole("img", { name: /Bone Buster/i });
 
 		const hooks = (
 			window as unknown as {

@@ -1,7 +1,9 @@
 import { motion, useReducedMotion } from "framer-motion";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
+import { BoneBusterWordmark } from "./BoneBusterWordmark";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "./design-tokens";
+import { TYPE } from "./design-tokens/typography";
 import { formatRunDuration, openRunHistory, type RunRecord } from "./runHistory";
 import {
 	DIFFICULTY_BLURB,
@@ -91,8 +93,15 @@ export function ObjexoomLanding({
 					transition={{ duration: 0.6, ease: "easeOut" }}
 				>
 					<div style={eyebrowStyle}>VERSION 0.1 · EARLY ACCESS</div>
-					<h1 style={titleStyle}>OBJEXOOM</h1>
-					<div style={tagStyle}>RIP AND TEAR · THE OBJEXIV CUT</div>
+					<BoneBusterWordmark width={720} height={180} />
+					<motion.div
+						style={tagStyle}
+						initial={{ opacity: 0, y: 6 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.45, delay: 1.2, ease: "easeOut" }}
+					>
+						They had it coming.
+					</motion.div>
 				</motion.div>
 			</header>
 
@@ -138,7 +147,7 @@ export function ObjexoomLanding({
 			</main>
 
 			<footer style={footerStyle}>
-				<span>OBJEXOOM v0.1</span>
+				<span>Bone Buster v0.5</span>
 				<span style={{ opacity: 0.5 }}>·</span>
 				<span>ESC → exit</span>
 				<span style={{ opacity: 0.5 }}>·</span>
@@ -175,7 +184,7 @@ function MainMenu({
 }) {
 	return (
 		<motion.nav
-			aria-label="OBJEXOOM main menu"
+			aria-label="Bone Buster main menu"
 			style={menuStyle}
 			initial={{ opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
@@ -540,24 +549,14 @@ const eyebrowStyle: CSSProperties = {
 	marginBottom: 8,
 };
 
-const titleStyle: CSSProperties = {
-	margin: 0,
-	fontFamily: FONT_FAMILY.display,
-	fontWeight: FONT_WEIGHT.regular,
-	letterSpacing: LETTER_SPACING.display,
-	fontSize: "clamp(56px, 14vw, 144px)",
-	lineHeight: 0.9,
-	background: ROLE.wordmarkGradient,
-	WebkitBackgroundClip: "text",
-	WebkitTextFillColor: "transparent",
-	textShadow: `0 4px 48px ${ROLE.accentPrimary}33`,
-};
-
 const tagStyle: CSSProperties = {
-	marginTop: 4,
-	fontSize: 12,
-	letterSpacing: "0.3em",
-	opacity: 0.7,
+	marginTop: 18,
+	fontFamily: TYPE.body,
+	fontSize: 16,
+	fontWeight: 500,
+	letterSpacing: "0.14em",
+	color: ROLE.text.secondary,
+	textTransform: "uppercase",
 };
 
 const mainStyle: CSSProperties = {

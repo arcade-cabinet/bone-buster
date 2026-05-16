@@ -142,9 +142,17 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 				: "http://localhost:3000";
 		await withGame(baseURL, async (page) => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
-			await page.getByRole("heading", { name: /OBJEXOOM/ }).waitFor();
-			// T7 — 15 frames is enough to settle the landing fade animation.
-			await waitForFrames(page, 15);
+			// R3 — Bone Buster wordmark is an inline SVG with
+			// `role="img" aria-label="Bone Buster"`. The legacy <h1>
+			// was removed when the wordmark moved to SVG.
+			await page.getByRole("img", { name: /Bone Buster/i }).waitFor();
+			// Wait for Bungee/Bungee-Inline/Bungee-Shade woff2 to land
+			// before settling — capturing mid-load shows the fallback
+			// (system stencil) which reads as flipped letterforms.
+			await page.evaluate(() => document.fonts.ready);
+			// Settle the staggered drop-in + 600ms Tilt Prism flicker
+			// (~2.0s total from mount). 130 frames ≈ 2.2s at 60fps.
+			await waitForFrames(page, 130);
 			await captureViaCDP(page, `${OUT_DIR}/landing.png`);
 		});
 	});
