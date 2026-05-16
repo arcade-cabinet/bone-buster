@@ -161,7 +161,11 @@ export function EnemyMesh({
 	);
 }
 
-// Preload every skin variant in the roster, not just the primary.
-for (const m of Object.values(ENEMY_MODELS)) {
-	for (const s of m.roster) useGLTF.preload(s.url);
+// A4 — tier 2 (map-mount). Every skin variant in the roster
+// is preloaded, not just the primary, so per-archetype enemy
+// remaps don't hit a cold fetch.
+export function preloadEnemyRoster(): void {
+	for (const m of Object.values(ENEMY_MODELS)) {
+		for (const s of m.roster) useGLTF.preload(s.url);
+	}
 }

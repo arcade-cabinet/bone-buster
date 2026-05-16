@@ -70,6 +70,8 @@ export function BarrelMesh({
 	);
 }
 
-// Preload every barrel variant during the splash screen so the first
+// A4 — tier 2 (map-mount). Every barrel variant so the first
 // level doesn't stall on a fetch when 3+ barrels spawn at once.
-for (const u of BARREL_MODEL_URLS) useGLTF.preload(u);
+export function preloadBarrels(): void {
+	for (const u of BARREL_MODEL_URLS) useGLTF.preload(u);
+}

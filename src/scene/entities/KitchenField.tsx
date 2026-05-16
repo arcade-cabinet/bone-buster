@@ -29,4 +29,8 @@ function KitchenMesh({ inst }: { inst: KitchenInstance }) {
 	);
 }
 
-for (const url of KITCHEN_PROPS) useGLTF.preload(url);
+// A4 — tier 3 (deferred). Kitchen scatter is library-archetype
+// only (20% of library sectors); first-frame is fine without it.
+export function preloadKitchenProps(): void {
+	for (const url of KITCHEN_PROPS) useGLTF.preload(url);
+}

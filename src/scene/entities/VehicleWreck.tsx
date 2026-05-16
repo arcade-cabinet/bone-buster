@@ -38,4 +38,7 @@ export function VehicleWreck({
 	);
 }
 
-for (const url of VEHICLE_VARIANTS) useGLTF.preload(url);
+// A4 — tier 3 (deferred). Wrecks are courtyard-archetype anchors.
+export function preloadVehicleWrecks(): void {
+	for (const url of VEHICLE_VARIANTS) useGLTF.preload(url);
+}

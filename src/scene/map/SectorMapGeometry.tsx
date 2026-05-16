@@ -184,6 +184,12 @@ function ModularWall({
 	);
 }
 
-for (const url of ALL_WALL_URLS) {
-	useGLTF.preload(url);
+// A4 — tier 2 (map-mount). Same wall set as MapGeometry. Both
+// are exported so the orchestrator can call them without
+// importing MapGeometry's transitively from SectorMap (no-op
+// duplicate calls are cheap; useGLTF.preload dedupes internally).
+export function preloadSectorWalls(): void {
+	for (const url of ALL_WALL_URLS) {
+		useGLTF.preload(url);
+	}
 }

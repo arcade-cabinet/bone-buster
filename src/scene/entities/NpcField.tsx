@@ -64,4 +64,7 @@ function NpcMesh({ inst }: { inst: NpcInstance }) {
 	);
 }
 
-for (const url of NPC_URL_LIST) useGLTF.preload(url);
+// A4 — tier 3 (deferred). NPCs are library-archetype only.
+export function preloadNpcs(): void {
+	for (const url of NPC_URL_LIST) useGLTF.preload(url);
+}

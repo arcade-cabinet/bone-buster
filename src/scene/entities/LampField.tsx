@@ -65,6 +65,11 @@ function LampMesh({ lamp, lightColor }: { lamp: LampInstance; lightColor: string
 // render loop. The on/off symmetry means flipping the `on` flag at
 // runtime (E4) won't hit a cold fetch either. The URLs already flow
 // through assetUrl.A() inside lampScatter.ts.
-for (const url of [...LAMP_VARIANTS_OFF, ...LAMP_VARIANTS_ON]) {
-	useGLTF.preload(url);
+// A4 — tier 2 (map-mount). Lamps are part of the first-frame
+// lighting set. Off + On variants both preloaded so E4 runtime
+// flips don't hit a cold fetch.
+export function preloadLamps(): void {
+	for (const url of [...LAMP_VARIANTS_OFF, ...LAMP_VARIANTS_ON]) {
+		useGLTF.preload(url);
+	}
 }

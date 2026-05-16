@@ -68,4 +68,8 @@ function extractFirstTexture(root: THREE.Object3D): THREE.Texture | null {
 	return found;
 }
 
-for (const url of DECAL_VARIANTS_ALL) useGLTF.preload(url);
+// A4 — tier 3 (deferred). Decals are flavor on walls/floors —
+// not visible until the player gets close to a textured surface.
+export function preloadDecals(): void {
+	for (const url of DECAL_VARIANTS_ALL) useGLTF.preload(url);
+}

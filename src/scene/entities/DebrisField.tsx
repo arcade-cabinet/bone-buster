@@ -29,4 +29,8 @@ function DebrisMesh({ inst }: { inst: DebrisInstance }) {
 	);
 }
 
-for (const url of DEBRIS_VARIANTS) useGLTF.preload(url);
+// A4 — tier 3 (deferred). Debris is visual flavor in sector bodies
+// — not strictly needed for the first frame.
+export function preloadDebris(): void {
+	for (const url of DEBRIS_VARIANTS) useGLTF.preload(url);
+}

@@ -12,6 +12,7 @@ import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
 import { loadSettings, saveSettings } from "./persistence/settingsStore";
+import { preloadTier1Critical } from "./preload";
 import { openRunHistory, type RunHistory } from "./runHistory";
 import {
 	advanceLevel,
@@ -246,6 +247,16 @@ export function ObjexoomShell() {
 	// load doesn't trigger a redundant write of DEFAULT_SETTINGS back
 	// over the same blob.
 	const settingsHydratedRef = useRef(false);
+	// A4 — fire tier-1 preload on shell mount. The pistol viewmodel
+	// must be hot before the user clicks Start Game; everything else
+	// is split into tier 2 (map-mount) and tier 3 (deferred) and
+	// fires from inside `ObjexoomScene`. Pre-A4 every entity file's
+	// module-scope IIFE pumped all ~90 MB of GLBs into the loader
+	// at app boot, contending with the landing-screen UI.
+	useEffect(() => {
+		preloadTier1Critical();
+	}, []);
+
 	// STO1a — async-hydrate persisted settings on mount. The override
 	// for `?objexoomArchetype` still wins (URL flag → procedural) so
 	// the test/debug harness can short-circuit the persisted value

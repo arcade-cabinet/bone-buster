@@ -45,4 +45,7 @@ function TrapMesh({ inst }: { inst: TrapInstance }) {
 	);
 }
 
-for (const def of TRAPS) useGLTF.preload(def.url);
+// A4 — tier 3 (deferred). Traps are sparse and player-discovered.
+export function preloadTraps(): void {
+	for (const def of TRAPS) useGLTF.preload(def.url);
+}
