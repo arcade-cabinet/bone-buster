@@ -1,981 +1,395 @@
 ---
-title: PRD — remaining work to a fully polished playable BONE BUSTER
-updated: 2026-05-14
+title: PRD — Bone Buster overhaul (remaining work)
+updated: 2026-05-15
 status: current
 domain: product
 ---
 
-# BONE BUSTER — Product Requirements (remaining work)
-
-This is the comprehensive remaining-work spec. Every item that is
-NOT yet shipped on `feat/bone-buster-game-buildout` has:
-
-1. A user story
-2. Acceptance criteria
-3. Asset paths (when assets are required)
-4. Dependencies (which items must ship first)
-5. Estimated commit count
-
-`docs/PARITY.md` and `docs/ELEVATION.md` are the historical
-catalogues. This PRD is the executable plan; the
-`.agent-state/directive.md` is its checklist mirror.
-
-## Top-level principle — 3DPSX asset coverage maximization
-
-User directive 2026-05-14: **"I want as much possible value from ALL
-the PSX assets — anything that makes sense in a level."**
-
-The 3DPSX library on the NAS is ~1,400+ GLBs across PSX Mega Pack II
-v1.8 (520+ assets in Buildings/Debris/Decals/Doors/Large Props/Light
-Sources/Masks/Modular Props/Modular Structures/Props/Structures/
-Weapons), Props (Farm/Kitchen/Tools/Traps/Weapons/Electrical/Misc),
-Fantasy (Knight/Skeleton/Bat/Loot/Mine/Buildings/Weapons), Vehicles,
-Environment (Nature/Buildings), and Characters.
-
-Every gameplay feature in this PRD MUST take maximum advantage of the
-library:
-
-- Multi-variant pools by default. A "barrel" is 5 GLBs cycled by id,
-  not one. A "lamp" is ≥2 variants. A "decoration" is ≥6 variants per
-  archetype.
-- Asset weight is a deliberate per-asset tuning decision — never an
-  arbitrary CI gate. The 6.8 KB Farm barrel was the wrong choice over
-  the 408 KB Mega Pack II metal barrel; the verify-script no longer
-  enforces those budgets.
-- New asset categories surface dedicated work items. The COV* queue
-  in the directive tracks one task per category.
-
-## Status at a glance
-
-**Shipped on this branch (200+ commits since 624d7ae):**
-
-- Full repository extraction from arcade-cabinet/bone-buster (archive tag preserved)
-- Visual: design tokens, horror-tactical typography (Black Ops One +
-  Rajdhani), 5 canonical screenshots, polygon-contains fix
-- Engine: BoneBusterScene decomposition (1900→<800 LOC orchestrator),
-  yuka pursuit, sector + grid maps, lava damage, going-back phase
-- Audio: 14-voice procedural Tone.js bank + per-archetype ambient bed (E11)
-- AI: per-enemy GameEntity registry, FSM, per-archetype enemy mix (E13 step-3)
-- Assets: 163 GLB URLs wired (enemies, weapons, props, structures);
-  ~81 MB on-disk total, BASE_URL-aware `A()` helper
-- Test harness: 498+ unit tests, 6 real-Chromium browser tests, 5
-  canonical e2e screenshots, 5 per-archetype e2e screenshots, ANGLE-GL launch args
-- Infra: pinned ports (5191/8191), Vitest 2-project setup,
-  Capacitor scaffold, dependabot grouped, release-please wired
-- Reference parity: **100% reached** (E12 closed the last gap)
-- Persistence: sql.js run history (E9) + secrets persistence (POL5)
-- Weapons: BLADE melee slot (E1), chaingun + shotgun + flamethrower (E8) — 5-weapon roster
-- All standalone hardening shipped: B1.7, B2.1, B2.4, DS.7, AO.4, AO.5, AO.6, PA9b, PA-MOD7, INF2
-- All elevation phases shipped: E2-E13 inclusive
-- All COV phases shipped: COV1-COV14 plus COV3 steps 2-8 (modular structures end-to-end)
-- Polish phase POL1-POL7 shipped: score field, secrets HUD + history, archetype HUD label,
-  best-run chip on landing, transitioning + died cards show run stats
-
-**Remaining work:** procedural-archetype identity is now exhaustively
-keyed across 15+ axes; outstanding gaps are exploratory rather than
-"reach feature parity" items. See the directive for the current
-forward-sweep queue.
-
-## Dependency DAG
-
-The DAG below shows what must ship before what. Independent leaves
-can run in parallel; everything else waits on its ancestors.
-
-```text
-                              ┌──────────────────┐
-                              │ INF2             │
-                              │ copy-assets      │
-                              └────────┬─────────┘
-                                       │
-   ┌──────────┐   ┌──────────┐    ┌────▼─────┐    ┌──────────┐
-   │ B1.7     │   │ B2.1     │    │  B2.4    │    │ AO.5/.6  │
-   │ FBX→GLB  │   │ Android  │    │  CD      │    │ PWA      │
-   └────┬─────┘   │ APK      │    │  Pages   │    │ manifest │
-        │         └────┬─────┘    └────┬─────┘    └────┬─────┘
-        │              │               │               │
-        ▼              ▼               ▼               ▼
-   ┌──────────────────────────────────────────────────────────┐
-   │  Standalone hardening — independent of gameplay features  │
-   └──────────────────────────────────────────────────────────┘
-
-  ┌──────────┐
-  │ DS.7     │  scene-material token rollout — independent
-  └──────────┘
-  ┌──────────┐
-  │ AO.4     │  asset directory tidy — independent
-  └──────────┘
-  ┌──────────┐
-  │ PA-MOD7  │  gltfjsx typed components — needed by E4 (lit lamps)
-  └────┬─────┘
-       │
-       ├─────────────┐
-       ▼             ▼
-  ┌──────────┐  ┌──────────┐
-  │  E4 lit  │  │ PA9b     │  shell ejection extension
-  │  lamps   │  └──────────┘
-  └────┬─────┘
-       │
-       ▼  ┌──────────────────────────┐
-       └──┤  E3 decorative scatter   │ ───┐
-          └──────────────┬───────────┘    │
-                         │                ▼
-                         │           ┌──────────┐
-                         │           │  E5      │  destructible barrels
-                         │           └────┬─────┘
-                         │                │
-                         ▼                ▼
-                    ┌──────────┐    ┌──────────┐
-                    │  E13     │    │  E6      │  switches + secrets
-                    │  archetypes│  └──────────┘
-                    └────┬─────┘
-                         │
-                         ▼
-                    ┌──────────┐
-                    │  E2      │  bosses
-                    └────┬─────┘
-                         │
-                         ▼
-                    ┌──────────┐  ┌──────────┐  ┌──────────┐
-                    │  E7      │  │  E8      │  │  E11     │
-                    │  water   │  │  flame   │  │  ambient │
-                    └────┬─────┘  └──────────┘  └──────────┘
-                         │
-                         ▼
-                    ┌──────────┐
-                    │  E10 3D  │
-                    │  HUD     │
-                    └──────────┘
-```
-
-The standalone-hardening lane (B1.7, B2.1, B2.4, AO.5/.6, INF2) is
-fully parallel to the gameplay lanes. They can land in any order at
-any point.
-
-## Standalone hardening
-
-### B1.7 — FBX→GLB regeneration
-
-**User story.** As a maintainer, I want `pnpm assets:fbx-to-glb` to
-produce every GLB referenced by `models.ts` from a documented FBX
-source, so that license-restricted FBX sources stay local while the
-public/assets/ outputs are reproducible.
-
-**Acceptance.**
-
-- `references/` symlink (gitignored) points at a real FBX source set.
-- `pnpm assets:fbx-to-glb` exits 0 and writes GLBs that pass
-  `pnpm assets:verify-runtime`.
-- A `references/MANIFEST.md` (local-only) lists each source FBX with
-  attribution.
-
-**Asset paths.** Source: `references/_extracted/` (per-pack). Output:
-`public/assets/models/{enemies,weapons,props}/`.
-
-**Dependencies.** None.
-
-**Estimated commits.** 1.
-
-### B2.1 — Capacitor Android APK
-
-**User story.** As a player on Android, I want a downloadable APK that
-launches BONE BUSTER with touch controls so I can play without a desktop
-browser.
-
-**Acceptance.**
-
-- `cap add android` succeeds.
-- `pnpm cap:sync:android && cd android && ./gradlew assembleDebug`
-  produces `dist-android/app-debug.apk`.
-- APK installs on a Pixel emulator, `BoneBusterShell` renders, both
-  virtual joysticks respond, fire button fires, weapon switching
-  works.
-- Capacitor config sets `webDir: "dist"`, `appId: "com.arcadecabinet.bonebuster"`.
-- `.github/workflows/ci.yml` adds an `actions/setup-java@v4` +
-  `android-actions/setup-android@v3` step that uploads the APK as a
-  CI artifact.
-
-**Asset paths.** N/A (Capacitor wraps the existing build).
-
-**Dependencies.** None.
-
-**Estimated commits.** 2-3 (one for cap add, one for CI step, one
-for any Android-specific shim).
-
-### B2.4 — GitHub Pages CD on release tag
-
-**User story.** As a maintainer, I want a release-please tag to
-automatically deploy `pnpm build:pages` output to `arcade-cabinet.github.io/bone-buster/`
-so the live demo always matches the latest release.
-
-**Acceptance.**
-
-- `.github/workflows/cd.yml` triggers on `push` to a release tag.
-- Runs `pnpm build:pages` (which sets BASE_URL=/bone-buster/).
-- Publishes `dist/` to the `gh-pages` branch via
-  `peaceiris/actions-gh-pages@v4`.
-- `arcade-cabinet.github.io/bone-buster/` serves the built game; every asset
-  resolves with the `/bone-buster/` prefix (verified via the `A()`
-  helper).
-
-**Dependencies.** B2.2 (CI), B2.3 (release-please) — both shipped.
-
-**Estimated commits.** 1.
-
-### INF2 — Build-time copy-public-assets
-
-**User story.** As a deployment engineer, I want the build step to
-mirror `public/assets/` into the build output and report per-category
-totals so I have visibility into what's shipping without having to
-chase down which files made the cut.
-
-**Acceptance.**
-
-- `scripts/copy-public-assets.mjs` exists; runs at build time via a
-  package.json hook.
-- Logs per-category file counts + totals (matching
-  verify-runtime-assets output shape).
-- **No arbitrary byte budgets.** Asset weight is a deliberate tuning
-  decision per asset, not a CI threshold — we'd rather wire the
-  408 KB metal barrel than the 6.8 KB Farm variant because the
-  visual fidelity matters. Reporting is enough; if a specific asset
-  needs to be lighter, that's a per-asset decision.
-
-**Dependencies.** None.
-
-**Estimated commits.** 1.
-
-### AO.5 / AO.6 — PWA manifest + favicons
-
-**User story.** As a player on mobile, I want to add BONE BUSTER to my
-home screen with a proper icon and full-screen launch so it feels
-like an app, not a web page.
-
-**Acceptance.**
-
-- `public/manifest.webmanifest` declares `name: "BONE BUSTER"`,
-  `short_name: "BONE BUSTER"`, `theme_color` from `--obx-bg-void`,
-  `background_color`, `display: "fullscreen"`, `orientation:
-  "landscape"`, and icons at 192/512 + maskable variants.
-- `public/favicon.ico` + `public/apple-touch-icon.png` present.
-- `index.html` head includes:
-  - `<link rel="manifest" href="/manifest.webmanifest">`
-  - `<link rel="apple-touch-icon" href="/apple-touch-icon.png">`
-  - `<meta name="theme-color" content="…">`
-- Lighthouse PWA score ≥ 90 against a local dev build.
-
-**Asset paths.** Generated via favicon.io from the BONE BUSTER wordmark
-SVG; manifest icons rasterized from `public/assets/branding/wordmark.svg`
-(create if absent).
-
-**Dependencies.** None.
+# Bone Buster — Product Requirements (remaining work)
 
-**Estimated commits.** 1.
-
-## Visual / token rollout
-
-### DS.7 — Tokens in scene materials
-
-**User story.** As a designer, I want every material color in the
-scene to route through the `BONE BUSTER_PALETTE` / `ROLE` token set so
-brand changes are one-line.
-
-**Acceptance.**
-
-- Zero literal hex codes (`#xxxxxx`) anywhere under
-  `src/scene/**/*.tsx` outside the design-tokens module.
-- Materials referencing lava, key glow, fire muzzle, pickup tints,
-  exit portal hues, all door colors use `BONE BUSTER_PALETTE.*` or
-  `ROLE.*`.
-- The 5 canonical screenshots re-shot and visually compared — no
-  regression.
-
-**Dependencies.** None.
-
-**Estimated commits.** 1-2.
-
-### AO.4 — Slasher weapon bundle reorg
-
-**User story.** As a maintainer, I want the 5 staged melee GLBs
-(axe, knife, machete, chainsaw, meathook) under
-`public/assets/models/weapons/slasher/` so the directory hierarchy
-mirrors the conceptual grouping in `ASSET_INVENTORY.md`.
-
-**Acceptance.**
-
-- 5 melee GLBs moved (or git-renamed) into `weapons/slasher/`.
-- `src/models.ts` paths updated.
-- `pnpm assets:verify-runtime` still passes.
-- `public/README.md` documents the slasher subdir convention.
-
-**Dependencies.** None. (E1 already wires the machete via the current
-flat path; this is a pure reorg.)
-
-**Estimated commits.** 1.
-
-## Parity polish
-
-### PA9b — Chaingun shell ejection
-
-**User story.** As a player firing the chaingun, I want each pulse to
-eject a brass shell with bounce + spin so the weapon feels mechanical,
-matching the reference clone's chaingun-shell behavior.
-
-**Acceptance.**
+Authoritative spec for the **overhaul** work-unit. Every
+unshipped item has a user story / motivation, the specific
+surfaces it touches, an acceptance criterion the global
+commit-gate or `pnpm verify` can confirm, and the
+dependencies it carries.
 
-- The `onFire` block in `BoneBusterScene` emits an
-  `bone-buster:shellEject` event for `weapon === "chaingun"` in addition
-  to the existing `weapon === "shotgun"` branch.
-- Shell visuals differ: chaingun shell is smaller (0.6× scale) and
-  ejects toward camera-right with slightly less velocity than the
-  shotgun shell.
-- Per-shell despawn budget preserved; `ShellEjectField` cap raised
-  proportionally if needed.
-
-**Dependencies.** None.
-
-**Estimated commits.** 1.
-
-### PA-MOD7 — gltfjsx typed GLB components
-
-**User story.** As an engineer, I want each GLB to be available as a
-typed React component with named bones (muzzle, barrel tip, exhaust
-port) so visual effects can attach to mesh-relative anchors instead
-of camera-relative offsets.
-
-**Acceptance.**
-
-- `pnpm gltfjsx public/assets/models/weapons/pistol.glb -t` produces
-  `src/scene/viewmodel/generated/Pistol.tsx` with typed `nodes` +
-  `materials` interfaces.
-- At least one consumer (muzzle flash) attaches to a named bone (eg
-  `nodes.MuzzleBone`) rather than the camera position.
-- A `pnpm assets:regenerate-gltfjsx` script regenerates the whole set;
-  the generated dir is gitignored to keep the diff clean.
+This PRD is the executable plan. `.agent-state/directive.md`
+is its lean queue mirror — one line per item, pointing back
+here for the why and the acceptance bar. Shipped milestone
+history lives in `docs/ROADMAP.md` (human-readable summary)
+and in `git log` + `.agent-state/decisions.ndjson` (audit
+trail).
 
-**Dependencies.** None directly. **E4** (lit lamps) benefits from
-this.
+Authority chain when docs disagree (per `AGENTS.md`):
+DESIGN > ARCHITECTURE > DECISIONS > **PRD (this doc)** >
+directive > ROADMAP.
 
-**Estimated commits.** 2 (one for the script + one consumer, one for
-folding into E4).
+## Lanes
 
-## Phase 2 — Mechanical elevation
-
-### E5 — Destructible barrels with AoE damage
-
-**User story.** As a player, I want to shoot explosive barrels to take
-out groups of enemies, creating tactical chains and rewarding
-positioning.
+Top-down execution order — within a lane items are
+topological; across lanes ITCH-FETCH gates D5/D7/D9/A11,
+REBRAND gates anything visual, BUILD-CONFIG gates the
+deployed-Pages acceptance, RESTRUCTURE happens once the
+import surface is stable, MIGRATE is residual cleanup.
 
-**Acceptance.**
+1. ITCH-FETCH — full itch.io library audit + extract
+2. REBRAND — typography + palette + landing redesign
+3. IDENTITY — gameplay-design depth (HUD, weapons, enemies, levels)
+4. ARCHETYPE INTERLEAVE — content audit + perf pass per archetype
+5. AUDIO — itch.io horror/ambient/SFX integration
+6. BUILD-CONFIG — Vite/Vitest/Pages alignment
+7. RESTRUCTURE — app/ + src/ layout per arcade-cabinet conventions
+8. MIGRATE — final residual
 
-- New `PickupKind` or sibling type for `"barrel"` (or a dedicated
-  `Barrel` registry in `engine.ts`); barrels are placed at sector-load
-  time using a deterministic seed.
-- Each barrel has HP (3-5); take any weapon hit, decrement HP, on 0
-  trigger:
-  - `bone-buster:burst` event with `kind: "explode"`, 18 motes
-  - AoE damage to every enemy + the player within 2.5 tiles
-  - Chain-react: barrels inside the AoE also explode (recursive
-    1-tick delayed)
-- Barrel GLB: `/Volumes/home/assets/3DPSX/Props/Mega Pack II/barrel*.glb`
-  (multiple variants available; pick the rust-textured one for the
-  horror-tactical palette).
-- Sfx: reuse `playBoom` with a slight pitch shift.
+---
 
-**Asset paths.** Source from 3DPSX Mega Pack II; copy to
-`public/assets/models/props/barrel.glb`.
+## ITCH-FETCH — full library audit + extract
 
-**Dependencies.** None directly. Pairs well with **E3** (scatter
-generates barrel slots).
+**Motivation:** The user owns 316 itch.io keys (verified via
+`~/src/arcade-cabinet/voxel-realms/.itch-cache/all-keys.json`).
+The current `references/` directory holds a fraction of that
+library. The PSX/retro bucket alone (37 keys) covers character
+megapacks, modular mansion assets, machinery, traps, vehicles,
+farm/food, weapon variants — most never downloaded. ITCH-FETCH
+unblocks every downstream content lane (D5/D7/D9/A11).
 
-**Estimated commits.** 2-3.
+### IF1 — General-purpose itch.io fetcher
 
-### E6 — Switches + secret walls + hidden rooms
-
-**User story.** As a player who explores aggressively, I want to find
-hidden switches that reveal secret areas containing rare pickups
-(extra health, weapon ammo, shortcut to next level).
-
-**Acceptance.**
+- **Surfaces:** `scripts/fetch-itch.mjs` (new), `package.json` script `itch:fetch`.
+- **Reference shape:** `~/src/arcade-cabinet/voxel-realms/scripts/fetch-itch-audio.mjs` — drop the "-audio" coupling.
+- **Acceptance:** `pnpm itch:fetch --dry --filter=psx` lists matching owned packs by category without downloading. Idempotent (re-running skips already-downloaded archives). Reads `ITCH_API_KEY` from `.env` (gitignored).
 
-- New `MapInteractive` type: switches at known sector edges.
-- Fire-while-aiming at a switch triggers it; switch state persists for
-  the run.
-- Each refLevel ships at least one secret area: switch raises (or
-  retracts) a wall, exposing a hidden sector with a guaranteed
-  flashlight + ammo pack.
-- Switch visual: small panel GLB from
-  `/Volumes/home/assets/3DPSX/Props/Switch/` (multiple available).
-- Sfx: `playDoorTick` + a low rumble.
+### IF2 — Owned-key metadata cache
 
-**Asset paths.**
-`public/assets/models/props/switch.glb`,
-`public/assets/models/props/switch_pressed.glb`.
+- **Surfaces:** `.itch-cache/all-keys.json` (gitignored), `scripts/fetch-itch.mjs`.
+- **Acceptance:** Fresh fetch from the itch.io API populates `.itch-cache/all-keys.json` with all 316 owned packs. Each entry has category inference (PSX / audio / 3D-low-poly / 2D / weapons / tileset / characters / horror / nature / misc).
 
-**Dependencies.** None.
+### IF3 — Whole-library inventory doc
 
-**Estimated commits.** 2-3.
+- **Surfaces:** `docs/ITCH-INVENTORY.md` (new).
+- **Acceptance:** `pnpm itch:fetch --inventory` writes every owned pack to the doc grouped by category, with title + url + category + (downloaded? extracted? wired?) status flags. Re-runnable; deterministic ordering.
 
-## Phase 3 — Visual elevation
+### IF4 — Opt-in allow-list per category
 
-### E3 — Decorative sector prop scatter
-
-**User story.** As a player exploring a sector, I want it to feel
-inhabited — barrels, chains, crates, debris piles — instead of an
-empty floor between walls.
-
-**Acceptance.**
+- **Surfaces:** `scripts/itch-allowlist.json` (new).
+- **Acceptance:** Initial draft includes all 37 PSX/retro packs + 15 audio packs + 5 horror-character extras (~57 packs total). Editing the JSON gates the next fetch.
 
-- New `scatter` config per archetype: prop pool, density, walkable vs
-  blocking.
-- Deterministic seed (`sectorId * map.seed`) chooses which props
-  spawn where; same seed → identical scatter.
-- Props are collision-flat by default (the player walks through them);
-  a `blocking: true` flag opts a prop into the collision system.
-- No visible repeats within a single FOV — distributor uses
-  rejection sampling.
-- 2-5 props per sector at default density; configurable per archetype.
+### IF5 — Bulk download + extract
 
-**Asset paths.** 3DPSX Mega Pack II — 200+ modular props available.
-Curate ~30 into `public/assets/models/props/scatter/`.
+- **Surfaces:** `raw-assets/archives/` (gitignored), `raw-assets/extracted/{category}/{pack}/` (gitignored), `scripts/fetch-itch.mjs`.
+- **Acceptance:** `pnpm itch:fetch` walks the allow-list, downloads to archives/, extracts (zip + 7z + tar.gz) to extracted/{category}/. Re-running skips finished work. Disk-usage summary printed at end.
 
-**Dependencies.** None directly. Pairs with **E4** (some scatter is
-lit lamps), **E5** (some scatter is destructible barrels).
+### IF6 — FBX→GLB conversion pass
 
-**Estimated commits.** 3-4 (scatter system + asset curation + per-archetype
-tuning).
+- **Surfaces:** `scripts/convert-fbx.mjs` (extend), `references/_extracted/{category}/`.
+- **Acceptance:** Existing converter walks `raw-assets/extracted/**.fbx` (and `.obj`, `.glb`) and emits GLBs to `references/_extracted/{category}/`. Materials embedded; textures inlined. Production wiring happens via D7-X.
 
-### E4 — Lit lamp props with real shadow projection
+### IF7 — Asset inventory doc
 
-**User story.** As a player walking through a dim sector, I want lit
-lamps to cast actual shadows and illuminate the immediate area, making
-the lighting feel real instead of pre-baked.
+- **Surfaces:** `docs/ASSET-INVENTORY.md` (refresh), `scripts/audit-extracted-assets.mjs` (new).
+- **Acceptance:** Inventory groups every extracted GLB by category with suggested archetype assignment (corridor / arena / courtyard / sewer / library). Source of truth for D5 / D7 / D9 sub-pickers. Re-runnable from the references tree.
 
-**Acceptance.**
+---
 
-- `lamp_on.glb` (shipped) spawns at scatter-designated lamp slots.
-- Each lamp emits a `<pointLight>` scoped to a 4-tile radius with
-  shadow-mapping enabled.
-- Performance: total active lit-lamp count capped at 8 to keep
-  shadow-map composite within budget.
-- Flashlight effect doesn't double-light the lamp itself (lamp's own
-  emissive prevents the bleed).
-- Per-level archetype controls lamp density.
+## REBRAND — typography + palette + landing redesign
 
-**Asset paths.** `public/assets/models/props/lamp_on.glb` (shipped).
+**Motivation:** Lock-in of the Bone Buster identity per
+`docs/REBRAND.md`. Sequential: each item gates the next.
 
-**Dependencies.** **PA-MOD7** (named-bone access for the lamp's bulb
-emitter origin). **E3** (scatter places the lamp slots).
+### R1 — Self-hosted Bone Buster fonts
 
-**Estimated commits.** 2.
+- **Surfaces:** `package.json` (`@fontsource/{bungee,bungee-inline,bungee-shade,space-grotesk,jetbrains-mono,tilt-prism}`), `src/design-tokens/typography.ts` (new exports `TYPE.display`, `TYPE.body`, `TYPE.mono`, `TYPE.flair`), `app/fonts.css`.
+- **Acceptance:** Every `font-family` reference in app code resolves through `TYPE.*`. CSP gate (S2) still passes — no remote font URLs. Smoke test loads landing in Vitest browser project and asserts computed `font-family` includes "Bungee" for the display element.
 
-### E2 — Boss enemies (rigged horror)
+### R2 — Bone palette swap
 
-**User story.** As a player who has cleared the regular enemies on a
-level, I want to face a distinctive, harder-hitting boss whose death
-unlocks the exit portal.
+- **Surfaces:** `src/design-tokens/colors.ts` (`ROLE.*` values), `app/tokens.css` (`--obx-*` mirror).
+- **Acceptance:** ROLE.* names unchanged; values match `docs/REBRAND.md` §Color scheme (warm cream + buster-orange + dried-blood on charcoal-violet). 5 canonical screenshots refresh; visual diff against expectations.
 
-**Acceptance.**
+### R3 — Landing redesign
 
-- New `Enemy.tier === "boss"` flag (or a parallel `Boss` type).
-- Boss HP = 3-5× standard.
-- Each refLevel's final sector spawns exactly one boss.
-- Boss has a named-track attack telegraph animation distinct from
-  regular enemies.
-- HUD overlay: `BOSS APPROACHES` on first sight; `BOSS DEFEATED` on
-  death.
-- Portal stays locked until the boss is dead.
-- Distinctive aggro alert + death stinger SFX.
+- **Surfaces:** `app/landing/Landing.tsx` (replaces `BoneBusterLanding.tsx` after RESTRUCTURE; pre-RESTRUCTURE lands at `src/BoneBusterLanding.tsx`).
+- **Acceptance:** SVG `<text>` logo in Bungee, layered Bungee Inline + Bungee Shade for letterpress depth, framer-motion stagger drop-in, Tilt Prism axis flicker on lock-in. "They had it coming." tagline in Space Grotesk. Browser smoke test renders the route and asserts the tagline string is present.
 
-**Asset paths.**
-`references/_extracted/horror_rigged/{plague_doctor,abomination,elk_demon,clown_a,clown_b}/final_rigged.fbx`
-→ regen via `pnpm assets:fbx-to-glb` into
-`public/assets/models/enemies/bosses/`.
+### R4 — Animated scuff shader
 
-**Dependencies.** **B1.7** (FBX regeneration must work; bosses come
-from FBX sources). **E3** + **E13** preferred (archetypes inform boss
-choice, scatter sets the boss's room dressing).
+- **Surfaces:** `src/shaders/scuff.frag` (or canvas `<canvas>` Perlin noise component), Landing background.
+- **Acceptance:** Animated noise tinted `surface.elevated` with occasional `accent.primary` scratch flashes. Falls back to static SVG noise on AdaptiveResolution low-quality.
 
-**Estimated commits.** 3-4.
+### R5 — Radix card-menu
 
-## Phase 4 — Polish + variety
+- **Surfaces:** Landing `<NavigationMenu>`, framer-motion hover.
+- **Acceptance:** Landing's button list becomes Radix `<NavigationMenu>` styled as -2°-tilted ticket-stub cards. Keyboard nav preserved (Tab order + Enter activate).
 
-### E13 — Procedural archetype deepening
+### R6 — Audio logo sting
 
-**User story.** As a replayer of procedural mode, I want each run to
-feel structurally different — sometimes I'm in a tight corridor, next
-run an open arena, next a dripping sewer.
+- **Surfaces:** `src/audio/logoSting.ts` (new), Landing mount effect.
+- **Acceptance:** Tone.js 1.2s minor-key arpeggio (A2-C3-E3) + rim-shot on lock-in. Fires once on landing mount; dedupes across re-mounts (module-level flag).
 
-**Acceptance.**
+### R7 — HUD palette + type refresh
 
-- 5 archetypes seeded by `(map.seed % 5)`: corridor, arena,
-  courtyard, sewer, library.
-- Each archetype config covers:
-  - sector-density / size range
-  - prop-density (E3 hook)
-  - enemy-mix (which kinds prefer this archetype)
-  - lighting palette (which `BONE BUSTER_PALETTE` color tints the fog
-    + directional)
-  - SFX ambient bed (E11 hook)
-- `buildMap` reads the archetype config and applies all of the above.
-- Visual identity test: a screenshot of each archetype is distinct
-  to the eye.
+- **Surfaces:** `BoneBusterHUD.tsx` chips + readouts.
+- **Acceptance:** Numerals + level names use TYPE.display; sub-labels use TYPE.body; debug overlay uses TYPE.mono.
 
-**Dependencies.** **E3** (scatter config), **E11** (ambient SFX
-hookup).
+### R8 — Source-string sweep
 
-**Estimated commits.** 4-5.
+- **Surfaces:** every `src/**`, `tests/**`, `docs/**`, `.github/**`, `package.json`, `capacitor.config.ts`.
+- **Acceptance:** No `objexoom` / `Objexoom` / `OBJEXOOM` literals outside changelog appendices and intentional historical references. Unit tests pin the post-rebrand contract. `?objexoomDebug` URL flag is renamed (decision: keep it `?objexoomDebug` for back-compat in PR #60 doc-pass; D9 in this PRD covers the actual flag rename and updates every e2e test).
 
-### E7 — Animated water + sewer biome
+### R9 — Capacitor + Android namespace rename
 
-**User story.** As a player entering a sewer-archetype level, I want
-to wade through actual water — surface ripples, slower movement,
-visible foot splashes — not just a blue floor.
+- **Surfaces:** `capacitor.config.ts` (`appId=com.arcadecabinet.bonebuster`, `appName=Bone Buster`), `android/app/build.gradle`, Java package path `com/objexiv/objexoom/` → `com/arcadecabinet/bonebuster/`.
+- **Acceptance:** `pnpm cap:sync` succeeds. S1 hardening test's package-path assertion updated. APK built via `assembleDebug` installs and launches.
 
-**Acceptance.**
+### R10 — release-please rename
 
-- New `WaterSector` type with a UV-scrolled normal-map plane.
-- Standing in water applies `PLAYER_MOVE_SPEED × 0.6`.
-- Optional splashes: `bone-buster:burst` with `kind: "splash"` on
-  position changes inside water.
-- Asset: `PSX-Ocean-Surface` mesh from 3DPSX (unmined per
-  ASSET_INVENTORY.md).
+- **Surfaces:** `release-please-config.json` (`package-name="bone-buster"`).
+- **Acceptance:** Next release tag cuts a fresh `v0.5.0` with REBRAND as the headline; release-please bot posts a green release PR.
 
-**Asset paths.**
-`/Volumes/home/assets/3DPSX/PSX-Ocean-Surface/*.glb` →
-`public/assets/models/props/water_surface.glb`.
+---
 
-**Dependencies.** **E13** (sewer archetype calls water sectors).
+## IDENTITY — gameplay-design depth
 
-**Estimated commits.** 2-3.
+### D1 — Locked-weapon HUD as status indicator
 
-### E8 — Flamethrower weapon
+- **Surfaces:** `BoneBusterHUD.tsx` weapon-chip render.
+- **Acceptance:** Locked chips render with dim numeral, no border, no `cursor: not-allowed`. Matches DOOM-style ownership row. Visual gate refreshes.
 
-**User story.** As a player who has been overwhelmed by a horde, I
-want a continuous-fire AoE weapon that trades aim precision for
-crowd control.
+### D2 — Procedural maps spawn weapon-ammo pickups
 
-**Acceptance.**
+- **Surfaces:** `src/buildMap.ts` pickup spawn logic, `src/scatter/{archetype}/`.
+- **Acceptance:** Every generated map spawns ≥1 chaingunAmmo + ≥1 shotgunAmmo, plus 1 flamethrowerAmmo every 3 maps. Per-archetype bias (arena → chaingun, courtyard → shotgun, library → rare flamethrower). Spawn locations farthest-from-spawn sector. Unit test pins min counts across 50 seeds.
 
-- 5th `WeaponId = "flamethrower"`.
-- Continuous-fire: held trigger dispatches `bone-buster:fire` every
-  100ms.
-- Cone-shaped damage: 60° spread, 4-tile range, 8 dmg/tick.
-- Particle stream via `ParticleBurstField` with `kind: "flame"`
-  (amber/ember gradient).
-- Ammo from `flamethrower_fuel` pickup (new `PickupKind`).
-- Asset: `Flamethrower.glb` (shipped).
+### D3 — Weapon-acquired HUD beat
 
-**Asset paths.** `public/assets/models/weapons/Flamethrower.glb`
-(shipped). Fuel canister: use `/Volumes/home/assets/3DPSX/PSX Mega Pack II v1.8/Props/canister_*.glb` (search `mcp__assets-library__search_assets` for "canister" when NAS is mounted; pick the rust-tinted variant for palette fit).
+- **Surfaces:** `BoneBusterHUD.tsx` PickupChip + new weapon-acquired ref handler.
+- **Acceptance:** First time `ownedWeapons[X]` flips false→true, 600ms chip-brighten animation fires. Idempotent (no replay on weapon switch). Unit test asserts the ref-trigger fires exactly once per weapon.
 
-**Dependencies.** None directly. E1's `WeaponId` widening + base
-records pattern is the template.
+### D4 — Enemy kind rename
 
-**Estimated commits.** 2-3.
+- **Surfaces:** `src/engine.ts` (EnemyKind union), `src/models.ts` (ENEMY_MODELS), `src/enemyAi.ts`, every test.
+- **Acceptance:** `skeleton→rattler`, `wraith→phaser`, `imp→bouncer`. HUD strings + kill-confirm popups updated. All ~700 tests green.
 
-### E10 — 3D HUD elements
+### D5 — Promote enemy variants + new extracts to 24 first-class kinds
 
-**User story.** As a player, I want the HUD's key indicator and ammo
-counters to feel three-dimensional — a small spinning key icon in the
-corner when I have the key, ammo cells that pulse when I'm low.
+- **Surfaces:** `src/engine.ts` (EnemyKind union grows from 3 → 24), `src/models.ts`, `src/enemyAi.ts`, `src/enemyMix.ts` (per-archetype mix tables).
+- **Acceptance:** Roster = 3 renames (D4) + 9 promotions of already-shipped variants + 12 new extracts from ITCH-FETCH. Full table at `docs/REBRAND.md` §"Enemy roster — 24 first-class kinds". `enemyMix.ts` per-archetype distribution sums to 1.0 for each archetype. Browser smoke test loads each archetype + asserts 24 distinct kinds reachable across 100 seeds.
 
-**Acceptance.**
+### D6 — Weapon vs enemy vulnerability tags
 
-- A second small `<Canvas>` (or HUD-scene viewport) renders 3D
-  miniatures.
-- Floating mini-key GLB spins in screen-top-right when `state.hasKey`.
-- Damage-flash: when player takes damage, all 3D HUD elements flash
-  red briefly.
-- Performance: total triangle count under 2k.
+- **Surfaces:** `src/engine.ts` (Enemy.vulnerability tag), `src/weapons.ts` (damage modifier), HUD targeting overlay.
+- **Acceptance:** Each enemy kind tags one vulnerability (BLADE / PISTOL / CHAINGUN / SHOTGUN / FLAMETHROWER); damage from that weapon is +50%. HUD shows vulnerability icon when targeting (subtle overlay). Unit test pins damage multiplier.
 
-**Dependencies.** **PA-MOD7** preferred (typed mini-models). Phase 4
-ordering — wait for E2/E3/E13 to land first.
+### D7 — Per-archetype content interleave (5 slices)
 
-**Estimated commits.** 2.
+See **ARCHETYPE INTERLEAVE** lane below.
 
-### E11 — Per-level ambient creature SFX
+### D8 — Level-name generator
 
-**User story.** As a player exploring a dark sector, I want to hear
-distant growls, drips, chains, and wind that match the level's
-archetype, making the world feel inhabited offscreen.
+- **Surfaces:** `src/levelNames.ts` (new), `BoneBusterHUD.tsx` top-left readout.
+- **Acceptance:** Per-archetype pool of alliterative two-word names (table at `docs/REBRAND.md`). `pickLevelName(archetype, seed)` deterministic. HUD reads generated name instead of `E1M1 · CORRIDOR`. refLevel(0) returns fixed "Welcome Wing". Unit test pins deterministic mapping for 10 archetype × seed combinations.
 
-**Acceptance.**
+### D9 — references/ weapon promotions
 
-- New `playAmbientLayer(name: string)` API in `sfx.ts`.
-- Per-archetype ambient bed declared in the same config as E13:
-  - corridor → distant footsteps + occasional growl
-  - arena → chains rattling on a slow loop
-  - sewer → constant drips + far-off splashes
-  - courtyard → wind + distant howl
-  - library → page rustles + faint whisper
-- Volume reactive: `phase === "going_back"` doubles the ambient bed
-  intensity.
-- Cross-fades on level transition (1.5s).
+- **Surfaces:** `src/meleeSkins.ts` (MELEE_SKIN_URLS), `src/models.ts` weapon entries.
+- **Acceptance:** 4 unused melee weapons from `references/SlasherWeaponPackRelease10.zip` (chainsaw, kitchen knife, meat hook, axe) wired into MELEE_SKIN_URLS rotation. Uzi.zip exposed as chaingun skin variant; Handcannon.glb as pistol variant; Shotgun.glb wired as canonical shotgun if not already. Unit test pins full reachability.
 
-**Dependencies.** **E13** (archetype config carries the ambient name).
+---
 
-**Estimated commits.** 2.
+## ARCHETYPE INTERLEAVE — content audit + perf pass per archetype
 
-## COV — 3DPSX asset coverage tasks
+**Motivation:** Each archetype gets a content audit + perf
+pass slice. Order: corridor → arena → courtyard → sewer →
+library. After the first slice ships, the `InstancedField` +
+`EphemeralPool` factories generalize for the remaining four.
 
-Each item is a directive checkbox in `.agent-state/directive.md`
-(COV1-COV14). User stories below; acceptance criteria mirror those
-in the directive. These can run in parallel with the E*/PA*/etc.
-lanes — they're per-category coverage drives, not architectural
-features. Many of them naturally fold into E3 (scatter), E4 (lit
-lamps), E6 (traps via switches), and the archetype work (E13).
+For each archetype X ∈ {corridor, arena, courtyard, sewer, library}:
 
-### COV1 — Light Sources
+### D7-X — Per-archetype content audit
 
-10 GLBs in PSX Mega Pack II/Light Sources. Wire ≥2 lamp variants as
-scatter in dim sectors; each emits a scoped `pointLight`. Pairs
-directly with E4 (real shadow projection). Performance: cap active
-lit lamps at 8.
+- **Surfaces:** `src/scatter/{X}/`, `src/enemyMix.ts` ({X} row), `references/` assignments, archetype-specific scene tweaks.
+- **Acceptance:** Outside-the-box discipline applies — every audit produces two outputs: (a) slotted asset assignments + (b) "ideas this asset gave me" list. Slot if obvious; ideas either ship inside the slice OR get added to `docs/REBRAND.md` "Parked" list. Canonical archetype screenshot refresh visually matches the new content.
 
-### COV2 — Large Props & Machinery
+### A1-X — InstancedField refactor for static scatter
 
-52 GLBs of cranes, generators, pipes, machinery. ≥6 scattered into
-archetype-appropriate sectors. Some collision-block, some pass-through;
-per-archetype filter.
+- **Surfaces:** `src/scene/render/InstancedField.tsx` (new for corridor; reused for others), `src/scene/{X}Scene.tsx` static-scatter mount.
+- **Acceptance:** All static walls + props + lamps + debris + decals + large-props in {X} render via one `<InstancedField>` per kind. OBS3 baseline at `tests/perf-baselines/{X}.json` updated with new draw-call count; regression check fails if subsequent commit raises draw-calls > 10% above the baseline. Visual gate unchanged.
 
-### COV3 — Modular Structures
+### A2-X — EphemeralPool refactor for transient scatter
 
-210 GLBs. Rebuild at least one refLevel using these as wall/floor
-tile primitives instead of the procedural box extrusion. This is the
-biggest visual ROI item in the whole COV queue — unlocks the E13
-archetype identity story.
+- **Surfaces:** `src/scene/render/EphemeralPool.tsx` (new for corridor; reused for others), `src/scene/{X}Scene.tsx` ephemeral mount (body parts, shells, motes, bullets).
+- **Acceptance:** Ephemeral entities render via `<EphemeralPool>` with `setMatrixAt` + scale-to-zero for expired slots. Unit test asserts pool reclamation on entity expiry.
 
-### COV4 — Props (Mega Pack II)
+---
 
-137 GLBs. ≥10 prop variants in the E3 scatter pool, curated per
-archetype (kitchen/factory/temple/sewer).
+## AUDIO — itch.io horror/ambient/SFX integration
 
-### COV5 — Debris & Misc
+**Depends on IF5.** Replaces the current Tone.js placeholder
+synth bank with sampled audio from owned itch.io horror /
+ambient / SFX packs.
 
-34 destroyed-prop variants. ≥5 spawn per sector body; reads as "this
-place has been overrun." Acts as ambient scatter background.
+### A11a — Audio inventory
 
-### COV6 — Decals
+- **Surfaces:** `docs/AUDIO-INVENTORY.md` (new).
+- **Acceptance:** Catalog every audio file across the 15 owned audio packs (horror SFX, ambient, music, footsteps, UI clicks). Slot suggestions per channel.
 
-12 wall-decals (blood, scorch, faction marks). Seeded onto wall faces
-by tile hash; ≥3 per sector.
+### A11b — `public/assets/audio/` layout
 
-### COV7 — Doors & Gates
+- **Surfaces:** `public/assets/audio/{ambient,music,sfx,footsteps,ui}/`.
+- **Acceptance:** Selected files (per A11a) extracted from `raw-assets/extracted/`, organized into the layout, tracked in git. `pnpm assets:verify-runtime` extended to walk audio referenced in `src/sfx.ts` + new modules.
 
-6 variants. RealDoor + LockedDoor cycle through ≥3 by seed. Adds
-visual variety to the key-door moment that currently feels uniform.
+### A11c — sfx.ts integration
 
-### COV8 — Traps
+- **Surfaces:** `src/sfx.ts`, new `src/audio/*` modules.
+- **Acceptance:** Synth gunfire replaced with sample-backed `Tone.Player` instances. Per-step footstep audio fires on each ground frame. Placeholder UI clicks replaced. Browser smoke test asserts no `Tone.Synth` instances remain in the gameplay-event path.
 
-20 trap GLBs (spike, swinging blade, pressure plate). Treat as level
-hazards with tick damage on player overlap. Pairs with E6 (switches
-disarm).
+### A11d — Per-archetype ambient
 
-### COV9 — Melee viewmodel variants
+- **Surfaces:** `src/audio/ambientGraph.ts` (new), per-archetype Scene mount.
+- **Acceptance:** Horror dark ambient for sewer / library; mystery for corridor; retro combat for arena. Cross-fade between moods via existing Tone.js Crossfade.
 
-3 swords, 5 knives, 5 revolvers, baseball bats, katana, cleaver.
-Post-E1, `pickMeleeSkin(level.seed)` rotates BLADE between
-machete/katana/cleaver/bat per run.
+### A11e — Music graph integration
 
-### COV10 — Vehicles (PS1-RVS, 3 GLBs)
+- **Surfaces:** `src/audio/musicGraph.ts` (new).
+- **Acceptance:** Per-archetype background music loops. Boss-tier music when `devil` enemy spawns. Victory sting on mission complete. No clipping at the master bus on the louder samples.
 
-Wrecked-vehicle props as permanent set-dressing in courtyard
-archetype.
+### A11f — Runtime audio verifier
 
-### COV11 — Environment/Nature
+- **Surfaces:** `scripts/verify-runtime-audio.mjs` (new), `package.json` `assets:verify-runtime` script.
+- **Acceptance:** Walks every audio URL referenced in `src/`, confirms file exists on disk. CI gate added to `pnpm verify`.
 
-5 seasons × ~40 bushes, 44 trees, 12 grass tufts. Outdoor archetype
-seeds one seasonal pass; trees + grass as collision-flat scatter.
+---
 
-### COV12 — Fantasy loot
+## BUILD-CONFIG — Vite + Vitest + Pages alignment
 
-Bottles, books, scrolls, dungeon loot pack. Rare bonus pickups
-(XP/score/ammo cache).
+**Motivation:** Align with the canonical
+`~/src/arcade-cabinet/voxel-realms/{vite,vitest}.config.ts`
+pattern, fix the deployed Pages site (currently broken),
+and make the build viable on a foldable form factor.
 
-### COV13 — Kitchen
+**Diagnosed Pages defect (2026-05-15):**
+`https://arcade-cabinet.github.io/bone-buster/` returns 200
+but `index.html` references `/objexoom/assets/index-*.js`
+(404). Root cause: hardcoded `base: "/objexoom/"` in
+`vite.config.ts:8` for `mode === "github-pages"`. Compounded
+by stale `package.json` `homepage` field.
 
-48 GLBs. Kitchen-archetype sector uses these as set-dressing.
+### BC1 — vite.config.ts overhaul
 
-### COV14 — Characters (Chibi + individuals)
+- **Surfaces:** `vite.config.ts`.
+- **Reference:** `~/src/arcade-cabinet/voxel-realms/vite.config.ts`.
+- **Acceptance:** `base` reads from `VITE_BASE_PATH` env-var via `normalizeBasePath()`, not mode-driven. `manualChunks` splits vendor (`vendor-three`, `vendor-react`, `vendor-sqlite`, `vendor-misc`, project-internal `game-engine`). `resolve.alias` matches the post-RESTRUCTURE layout (`@scene`, `@audio`, `@engine`, `@views`, `@components`, `@atoms`, `@hooks`). `optimizeDeps.include` + `dedupe: ['react','react-dom','three']` populated.
 
-14 + 66 GLBs. Non-hostile hub NPCs as set-dressing in the HUB sector
-type (6th archetype joining corridor/arena/courtyard/sewer/library
-per E13). New `EnemyKind = "npc"` variant the FSM treats as ambient
-(no aggro, no LOS, no attack). Spec lives at `.agent-state/directive.md` §COV14.
+### BC2 — vitest.config.ts overhaul
 
-## Phase 5 — Playability polish (POL / OBS / AUD / PT)
+- **Surfaces:** `vitest.config.ts`.
+- **Acceptance:** Matches voxel-realms `unit` + `browser` projects structure; both projects read the same aliases as vite. All ~700 tests pass against the new resolver.
 
-The shipped game (Phases 1-4) clears the modernized-DOOM mechanical
-bar. Phase 5 is where the agent foreground judgement catches the
-"reads as student-grade" cuts that canonical screenshots miss — HUD
-acknowledgments, audio mix bands, draw-call budgets, and per-archetype
-visual identity. Each item below has its full shipped-notes spec in
-`.agent-state/directive.md` § Phase 16-18; this section captures the
-**user-facing acceptance** that an outside reviewer can verify against
-the running game without reading the directive shipped-notes.
+### BC3 — Pages base-path fix end-to-end
 
-### POL29 — Boss visual identity pre-kill (Shipped)
+- **Surfaces:** `vite.config.ts`, `.github/workflows/release.yml`, `package.json` `homepage`.
+- **Acceptance:** Three changes in one commit: (a) `vite.config.ts` reads `VITE_BASE_PATH`; (b) `release.yml` passes `VITE_BASE_PATH=/bone-buster/` to the `build:pages` step; (c) `package.json` `homepage = "https://arcade-cabinet.github.io/bone-buster/"`. Verification: tag a release, `release.yml` succeeds, fetch the Pages URL, `index.html` references `/bone-buster/assets/...`, every referenced asset URL returns 200 (verified via `mcp__chrome-devtools-mcp__list_network_requests`).
 
-**User story:** A new player walks into the boss room and immediately
-reads "this is a different fight" — the silhouette is visually
-distinct from a regular skeleton BEFORE the player connects a hit.
-
-**Acceptance:**
-- Boss-tier enemies render at 1.6× regular scale (already shipped in
-  E2).
-- Boss-tier enemies carry a blood-red emissive rim at intensity 0.22
-  on every `MeshStandardMaterial` in the cloned GLB. Per-instance
-  material clone (no shared-cache mutation). Rim is preserved through
-  POL19 EnemyHitFlash stagger (different attribute path).
-- PT3 capture at boss death frame shows distinct red-emissive bone
-  color in the body-parts flight, vs. neutral bone color for regular
-  skeleton.
-
-**Implementation:** `src/scene/entities/EnemyMesh.tsx` `useMemo` that
-runs on mount, traverses the cloned scene, clones each
-`MeshStandardMaterial` per-instance, sets `emissive = SCALE.blood[600]`
-(`#dc2626`) + `emissiveIntensity = 0.22`. Only fires for `tier === "boss"`.
-
-### POL30 — Pickup ceremony differentiation (Shipped)
-
-**User story:** A player who picks up a flashlight / ammo / health
-pack sees a distinct top-center HUD chip naming the pickup — they
-learn what they just collected without having to read the HUD ammo
-delta.
-
-**Acceptance:**
-- New `<PickupChip>` HUD overlay slot mounts under
-  `src/hud/overlays/`.
-- Listens for `pickupCollected` event (extended in `events.ts`).
-- Renders a 700ms transient chip top-center with per-kind palette:
-  - health → ember
-  - flashlight → amber
-  - chaingunAmmo → indigo
-  - shotgunAmmo → violet
-  - loot → amber-treasure
-- Spring-eased entry/exit via AnimatePresence.
-- Keys route through the existing POL22 KeyPickupCeremony (no
-  double-render).
-
-**Implementation:** `src/hud/overlays/PickupChip.tsx`. Dispatch lives
-in `BoneBusterShell.onCollectPickup` before state apply.
-
-### POL31 — Difficulty acknowledgment HUD chip (Shipped)
-
-**User story:** A player who picks NIGHTMARE in the landing Settings
-panel and clicks NEW GAME sees a 2-second transient chip naming the
-chosen difficulty in its palette before the run starts in earnest.
-Cool indigo at the easy end, hot blood-red at NIGHTMARE.
-
-**Acceptance:**
-- New `<DifficultyChip>` HUD overlay slot under `src/hud/overlays/`.
-- Driven by a monotonic `runId` prop (NOT an event — AnimatePresence
-  mode="wait" on the landing→game transition adds a 350ms exit
-  animation, so an event-based listener would register AFTER the
-  dispatch fired). The chip's effect on `[runId]` is race-free by
-  construction: when the new HUD subtree mounts, it reads the
-  current runId on first render and triggers on the next bump.
-- Per-difficulty palette:
-  - tooYoung → deep indigo (cool/calm)
-  - notTooRough → medium indigo
-  - hurtMePlenty → amber (default)
-  - ultraViolence → ember-orange
-  - nightmare → blood-red (intense)
-- 2-second hold, spring-eased entry/exit.
-- Fires on both NEW GAME and RESUME RUN landing→playing transitions.
-- Skips boot-time runId=0 (no chip before the player has clicked
-  anything).
-
-**Implementation:** `src/hud/overlays/DifficultyChip.tsx`,
-`BoneBusterShell.tsx` `runId` state + `prevStatusRef` effect, props
-threaded through `BoneBusterHUD → HUDOverlays`. Debug hook
-`window.__bonebuster.setDifficulty(Difficulty)` lets playtest scripts
-drive the chip in each palette. 5 captures land in
-`test-results/pol31-difficulty-chip/`.
-
-### STO1a — Capacitor Preferences settings persistence (Shipped)
-
-**User story:** A returning player's settings (difficulty, level,
-sound, sensitivity) survive across sessions on BOTH web AND mobile.
-The previous behavior was that every session started at
-`DEFAULT_SETTINGS`, forcing the player to re-select NIGHTMARE every
-time the page loaded.
-
-**Acceptance:**
-- `@capacitor/preferences` (^8.0.1) installed and used as the KV
-  abstraction. The plugin's web implementation wraps `localStorage`
-  under a `CapacitorStorage.` key namespace; the native
-  implementation maps to NSUserDefaults / SharedPreferences.
-- `src/persistence/preferences.ts` exposes `readPref`, `writePref`,
-  `removePref` + JSON variants as the thin facade. App code MUST go
-  through this module — no direct `localStorage` access permitted.
-- `src/persistence/settingsStore.ts` defines
-  `validateSettings(unknown): BoneBusterSettings` (per-field type
-  guards with DEFAULT_SETTINGS fallback; mouseSensitivity clamped
-  to [0.5, 2.5], touchLookSensitivity to [0.5, 4]; stringified
-  numbers coerce back to LevelChoice).
-- `BoneBusterShell` async-hydrates persisted settings on mount, guards
-  the save-on-change effect against the bootstrap, then auto-writes
-  every change.
-- URL flag `?archetype` still wins as override (test/debug
-  harness path).
-- 10 unit tests pin the validator contract.
-
-**Implementation:** New `src/persistence/` module. The full SQLite
-migration (run history → `@capacitor-community/sqlite` + jeep-sqlite)
-is staged as STO1b — see `.agent-state/directive.md` § Phase 19.
-
-### POL32 — Main-menu best-run readout (Shipped)
-
-**User story:** A returning player sees their best run from prior
-sessions on the landing screen — a stencil chip between the menu
-and the page footer reading e.g. `BEST RUN · M5 · 3:42 · 124 KILLS`
-with a secondary footer line for outcome / total run count / total
-secrets. New player (no run history) sees nothing — the readout
-doesn't take up landing space.
-
-**Acceptance:**
-- Two-row stencil chip mounted in `MainMenu` via `BestRunChip`.
-- Primary row: `BEST RUN · {LEVEL} · {DURATION} · {KILLS} KILLS`.
-  - LEVEL is `M{N}` for hand-authored levels, `RANDOM` for procedural.
-  - DURATION is `m:ss` or `h:mm:ss` (formatRunDuration).
-- Secondary row: `{WON|DIED} · {N} RUN{S} · {SECRETS}` (secrets
-  only when > 0).
-- Reads from `openRunHistory().bestRun()` (E9 sql.js persistence layer).
-- Hidden entirely when `bestRun() === null` (no reserved landing space).
-- Primary row uses `ROLE.accentPrimary` with text-shadow glow;
-  secondary row uses `ROLE.textSecondary` for hierarchy.
-- 6 unit tests pin `formatRunDuration` contract (sub-minute,
-  minute-range, hour-range, negative/non-finite clamp, zero-padding).
-
-**Implementation:** `src/BoneBusterLanding.tsx` `BestRunChip` extended
-on top of the existing POL6 chip. New `formatRunDuration` export
-from `src/runHistory.ts` co-locates the format rule with the data.
-
-### OBS1 — Perf readout overlay (Shipped)
-
-**User story:** When running with `?debug`, the agent (or a
-playtest engineer) sees a top-left readout showing FPS, dynamic-pixel-
-ratio, draw-calls (peak per 60-frame window), and triangles (peak)
-so frame drops are caught BEFORE the user notices them.
-
-**Acceptance:**
-- `gl.info.autoReset` disabled on mount so r3f doesn't zero counters
-  between useFrame and the actual render.
-- Peak calls + peak triangles tracked across each 60-frame window
-  via refs; `gl.info.reset()` called manually after sampling.
-- Readout shows `FPS N · DPR x.xx · CALLS N · TRIS Nk`.
-- Gated on `?debug` URL flag.
-
-**Implementation:** `src/scene/effects/AdaptiveResolution.tsx` +
-`AdaptiveResolutionReadout`. Verified: corridor archetype reports
-CALLS 256 + TRIS 12.8k under canonical workload.
-
-### OBS2 — Perf-budget warning (Shipped)
-
-**User story:** When draw-calls > 400 OR triangles > 50k for 3
-consecutive 60-frame windows, the OBS1 readout border turns red and
-a one-shot `console.warn` fires — so regressions get caught
-automatically when running playtests rather than eyeballing numbers.
-
-**Acceptance:**
-- Constants `OBS2_CALL_BUDGET = 400`, `OBS2_TRI_BUDGET = 50_000`,
-  `OBS2_CONSECUTIVE_WINDOWS = 3` exported from
-  `AdaptiveResolution.tsx`.
-- Consecutive-window counter + warned-once ref.
-- Border + text turn red (`#ef4444` / `#fca5a5`) when threshold
-  breached for 3 consecutive windows.
-- One-shot `console.warn("[OBS2] perf-budget exceeded: ...")` fires
-  on the first threshold breach per session.
-- Threshold recovery resets both refs and clears the red state.
-
-**Implementation:** `src/scene/effects/AdaptiveResolution.tsx`.
-Verified false-positive-free at corridor canonical workload.
-
-### AUD1 — SFX mix coherence audit (Shipped)
-
-**User story:** Future contributors can't silently push one synth's
-volume 4dB above the rest and ruin the mix — every shipped synth
-has a documented dB category band, and the test suite fails if any
-synth drifts outside its band.
-
-**Acceptance:**
-- `src/sfx.ts` exports `SFX_VOLUMES` (shipped dB per synth),
-  `SFX_BANDS` (5 category dB ranges), `SFX_CATEGORIES` (synth →
-  category mapping with `satisfies` keeping the type-level join
-  honest).
-- Categories:
-  - `ambient` — drone, never foreground: -34 to -26 dB
-  - `uiFeedback` — pickup/door/portal/hit/tick: -16 to -8 dB
-  - `weaponFire` — pistol/chaingun/shotgun/melee: -16 to -4 dB
-  - `killSting` — death/boom/aggro/hitSting: -14 to -4 dB
-  - `musicVoice` — 6-voice procedural music: -36 to -28 dB
-- 15 per-synth band-check tests in
-  `src/__tests__/unit/bone-buster-sfx-mix.test.ts`.
-- Invariant: every synth has a category (keys match).
-- Invariant: `ambient.max < uiFeedback.min` AND `< weaponFire.min`
-  (ambient must be strictly quietest).
-
-**Implementation:** Type-level + test-only — no runtime audio
-behavior change. The shipped volumes already fit their bands; this
-commit just pins them so future drift fails a test.
-
-### PT7 — Mobile touch playtest (Shipped)
-
-**User story:** The agent captures the game at Pixel-class mobile
-viewport (412×915, touch + isMobile) and verifies the touch controls,
-HUD, and mission-complete CTA all read correctly on a small screen.
-
-**Acceptance:**
-- `scripts/pt7-mobile.mjs` captures 3 beats at Pixel 5 viewport:
-  1. Landing — stencil BONE BUSTER gradient title adapts, 4 menu items
-     left-aligned with bullet arrows, 3-column compact footer.
-  2. In-game — HEALTH 9/9 + KILLS 0/3 HUD top, weapon dock top-center,
-     two virtual sticks at bottom corners, big orange-red FIRE button
-     bottom-right (modernized-DOOM mobile FPS layout).
-  3. Mission complete (fresh browser context to avoid Tone collision)
-     — stencil MISSION COMPLETE wraps to 2 lines, stat grid + amber
-     RETURN TO MENU CTA tappable.
-- All 3 beats PASS visual inspection; no fold-forward gaps surfaced.
-
-**Implementation:** `scripts/pt7-mobile.mjs` using
-`page.context().newCDPSession()` + Pixel 5 device descriptor.
-
-## Acceptance checklist (cross-cutting)
-
-Every PRD item must satisfy these to be marked `[x]` in the
-directive:
-
-1. `pnpm verify` green (lint + check + test + test:browser +
-   assets:verify-runtime).
-2. For visual changes: relevant canonical screenshot re-shot and
-   visually inspected. Spec drift = bug.
-3. For new mechanics: at least one unit OR browser test pinning the
-   contract.
-4. CHANGELOG.md updated under Unreleased section.
-5. PARITY.md or ELEVATION.md updated to reflect the new state.
-6. Directive checkbox flipped in the same commit as the code change.
-
-## Estimated total commit count to "fully done"
-
-Summing all sections: **~50 forward commits**. The branch already has
-~52 commits; comfortably-rounded the path to "fully polished playable
-game" is another ~50-60 commits.
-
-## Order of attack
-
-Recommended execution order, given the DAG and dependency arrows:
-
-1. **Standalone-hardening lane (parallel):** B1.7, B2.1, B2.4, AO.4,
-   AO.5/.6, INF2, DS.7. Mostly mechanical, low-risk.
-2. **Phase 2 mechanics:** E5 barrels, E6 secrets — adds tactical
-   depth.
-3. **Visual scaffolding:** PA-MOD7 → E3 scatter → E4 lit lamps.
-4. **Boss tier:** B1.7 must land first (FBX regen) → E2 bosses.
-5. **Archetype deepening:** E13 once E3 + E2 are stable.
-6. **Polish layer:** E7, E8, E11 (any order).
-7. **Final touches:** E10 3D HUD, PA9b chaingun shells.
-
-Re-sequence whenever a dependency surfaces — the DAG is the
-constraint, not this list.
+### BC4 — Foldable viewport + safe-area CSS
+
+- **Surfaces:** `index.html` (meta viewport), `app/tokens.css` (safe-area padding).
+- **Acceptance:** `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">`. HUD padding uses `env(safe-area-inset-*)`. Visual gate at unfolded foldable resolution shows no clipped chips.
+
+### BC5 — Touch joysticks on foldable
+
+- **Surfaces:** `PlayerController.tsx` (`isCoarsePointer()` gate), settings menu.
+- **Acceptance:** Joystick gate uses `(pointer: coarse) OR (max-width: 1024px AND any-pointer: coarse)` so a foldable in unfolded tablet mode still produces touch sticks. In-game "touch sticks: forced / auto / off" override added to settings, persists via existing settingsStore.
+
+### BC6 — Responsive HUD scaling
+
+- **Surfaces:** `BoneBusterHUD.tsx` chip CSS.
+- **Acceptance:** Chip widths use `clamp(120px, 20vw, 280px)` so unfolded foldable (~2200px) HUD reads at readable scale. Visual gate at 880×2100 and 2200×1400 both render legibly.
+
+### BC7 — Foldable smoke test
+
+- **Surfaces:** `tests/e2e/foldable-screenshots.spec.ts` (new), `package.json` (`test:e2e:screenshots:foldable` script).
+- **Acceptance:** Two new canonical screenshots — unfolded 2200×1400 and folded 880×2100 — captured via Playwright device emulation. Gates `pnpm test:e2e:screenshots:foldable` script. Both screenshots tracked in `test-results/bone-buster-screenshots/`.
+
+---
+
+## RESTRUCTURE — app/ + src/ layout
+
+**Motivation:** Adopt the canonical arcade-cabinet layout:
+root `app/` for `.tsx` (React/JSX) decomposed into
+atoms/components/hooks/views/styles; root `src/` for `.ts`
+(no JSX) bucketed by responsibility. Project-name prefixes
+drop from filenames — folder owns the namespace.
+
+Reference: `~/src/arcade-cabinet/voxel-realms/{app,src}`.
+
+### RS1 — Migration plan
+
+- **Surfaces:** `docs/RESTRUCTURE-PLAN.md` (new).
+- **Acceptance:** Spreadsheet of every current `src/*.{ts,tsx}` file with its new home. Sub-bucket conventions documented (`app/atoms/`, `app/components/`, `app/hooks/`, `app/views/`, `app/styles/`, `src/ai/`, `src/assets/`, `src/audio/`, `src/engine/`, `src/platform/`, `src/scene/`, `src/shared/`, `src/store/`, `src/world/`).
+
+### RS2 — Resolver + tsconfig paths
+
+- **Surfaces:** `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`.
+- **Acceptance:** `include`, `paths`, alias rewrites so both `app/` and `src/` compile and resolve. Build emits one bundle.
+
+### RS3 — Bulk `git mv`
+
+- **Surfaces:** every src file.
+- **Acceptance:** Per-bucket commits (one commit per target directory) so reviewers see one chunk at a time. Import statements updated as part of each move commit (sed pass). All tests green between commits.
+
+### RS4 — Drop project-name prefix on filenames
+
+- **Surfaces:** `BoneBusterShell.tsx` → `app/shell/Shell.tsx`, `BoneBusterHUD.tsx` → `app/hud/HUD.tsx`, `BoneBusterLanding.tsx` → `app/landing/Landing.tsx`, `BoneBusterScene.tsx` → `app/scene/Scene.tsx`.
+- **Acceptance:** Import-statement sweep updates every reference. Build + tests green.
+
+### RS5 — Test imports + verify gate
+
+- **Surfaces:** `vitest.config.ts` project includes, every test file's imports.
+- **Acceptance:** All ~700 unit + 6 browser tests pass against new paths. `pnpm verify` green.
+
+### RS6 — Docs that reference file paths
+
+- **Surfaces:** `docs/ARCHITECTURE.md` file table, `README.md`, `AGENTS.md`, `CLAUDE.md`.
+- **Acceptance:** No surviving references to `src/BoneBuster*.tsx`. Examples in docs use the new paths.
+
+---
+
+## MIGRATE — final residual
+
+Remote rename `objexiv/objexoom` → `arcade-cabinet/bone-buster`
+completed by the user 2026-05-15. Local repo stays at
+`~/src/objexiv/objexoom`; GitHub's git-protocol redirect routes
+the existing origin URL transparently.
+
+### M4 — Old-repo Pages redirect
+
+- **Surfaces:** OLD `objexiv/objexoom` repo's `gh-pages` branch `index.html`, OLD repo README.
+- **Acceptance:** `index.html` carries `<meta http-equiv="refresh" content="0; url=https://arcade-cabinet.github.io/bone-buster/">`. OLD README links to new home. (Performed against the old repo via gh CLI; no local-repo change.)
+
+### M5 — Archive grace
+
+- **Surfaces:** GH repo settings on the OLD repo.
+- **Acceptance:** After 30 days of quiet traffic (verify via `gh api repos/objexiv/objexoom/traffic/views`), `gh repo archive objexiv/objexoom`. Redirect remains live on the archived repo.
+
+---
+
+## Parked — out of scope until the overhaul backlog drains
+
+These are good ideas with no acceptance gate yet. Sliced
+into a lane only when an item up-prioritizes them.
+
+- Ghost Hunting Tools as a new gameplay layer (spirit box, EMF reader, UV flashlight, walkie-talkie, crucifix, tape recorder) — brainstormed in `docs/REBRAND.md`.
+- Per-enemy-variant flavor names in kill-confirmation popup ("You busted a Plaguebeak (Stained-Cassock variant)").
+- Bespoke commissioned logo — current SVG re-letter with Bungee/Inline/Shade is good enough for ship.
+- Slasher melee weapons as distinct damage-profile variants (chainsaw: loud-attract; meat-hook: pull; axe: heavy-slow).
+
+---
+
+## Shipped history
+
+Per-release shipped-milestone summaries live in
+`docs/ROADMAP.md`. Per-decision rationale lives in
+`docs/DECISIONS.md`. Per-commit audit trail lives in
+`git log` + `.agent-state/decisions.ndjson`. This PRD only
+carries the **remaining** work — items that ship are deleted
+from here in the same commit that closes them.

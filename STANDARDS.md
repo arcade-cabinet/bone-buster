@@ -27,6 +27,81 @@ preference, the standards win.
   table is fine; a 250-line file owning three subsystems is not. The
   reader-can-hold-it-in-head test is the gate.
 
+## Quality bar — modernized polished DOOM
+
+Every shipped feature is benchmarked against "what does this
+look, feel, sound like in DOOM 2016 / Eternal, modernized and
+polished?" — never against "what's the minimum that satisfies
+the directive line?" If the implementation reads as
+student-grade compared to that bar, it's a bug to fold
+forward, not a shipped item.
+
+Concrete polish checklist applied to every visual/audio
+feature:
+
+- **Damage numbers:** punch-in scale (1.2→1.0 ease over 120ms),
+  tiered color by magnitude, kill-confirm uses distinct
+  glyph weight + brighter color + larger scale + slight
+  upward velocity boost. Numbers track the enemy's head,
+  not frozen world position. Outline + drop-shadow for
+  legibility. Crit-stack on rapid same-target hits.
+- **Hit feedback:** screen-shake magnitude scaled by damage
+  taken; hitstop (1-2 frames) on enemy kills;
+  chromatic-aberration pulse on player hits; muzzle-flash
+  bloom scales with weapon damage tier.
+- **Audio stings:** layered cues (sub-bass + tonal + ambient
+  duck), never just isolated notes.
+- **Materials:** procedural detail (tri-planar, normal maps,
+  emissive variance) per archetype, not flat tinted color.
+- **Particles:** layered systems (impact spark + smoke puff
+  + ember trail), not single-color bursts.
+- **Lighting:** dynamic per-shot point lights, gobo-like
+  flicker on lamps, light-falloff curves matched per
+  archetype palette.
+- **UI animations:** spring-eased, never linear; entry/exit
+  cards have stagger; numbers tick rather than snap.
+
+Commit messages must cite which polish dimensions were
+applied. If none apply, justify why in the commit body.
+Background reviewers catch code smell; the agent's
+foreground judgement catches polish-bar shortfall before
+commit.
+
+## Slot architecture pattern
+
+Every new visual/audio feedback feature must answer:
+
+1. Does it observe an existing entity/event/pose? → it's a
+   slot. Mount as a sibling, listen, render, fade.
+2. Does it change how the rendered thing is rendered? → it's
+   part of the host component's render contract.
+3. Does it fire audio? → it's a bus channel.
+
+If none of the three answer cleanly, sit with the design
+before writing code.
+
+Full spec at [`docs/SLOT-ARCHITECTURE.md`](./docs/SLOT-ARCHITECTURE.md).
+Reference shapes: `HitChromaticAberration`,
+`SecretFoundFlash`, `EnemyHitFlash`, `WeaponSwapDip`.
+
+## Continuous execution — no end-of-turn
+
+The directive is a continuous queue, not a turn boundary.
+Stopping at the end of a turn — even with a scheduled
+wake-up — is a stop. After every shipped commit, pick the
+next `[ ]` item and start it in the same turn.
+
+End-of-turn summaries that say "next wake picks up X" are
+stops in disguise. Only stop on:
+- directive drained AND no forward-sweep work surfaces,
+- test/CI failure needing user knowledge,
+- destructive action needing per-op authorization,
+- ambiguous design question that flips scope.
+
+Context auto-compacts. Long turns are fine. See the
+global CLAUDE.md "There is no such thing as a pause point"
+section for the canonical list of banned phrases.
+
 ## Game design
 
 - **Procedural geometry + curated assets** — the mix, not one or the

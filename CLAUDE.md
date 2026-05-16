@@ -5,45 +5,22 @@
 
 ## START HERE (any new agent, every session)
 
-Read these in order, then pick the next item without asking:
+Reading order:
 
-1. This file (you're here).
-2. [`.agent-state/directive.md`](.agent-state/directive.md) — the active overhaul backlog. ONE long-running branch holds every commit until the backlog drains. Pick the topmost unchecked item; lane order is `ITCH-FETCH → REBRAND → IDENTITY → ARCHETYPE INTERLEAVE → AUDIO → RESTRUCTURE → MIGRATE`.
-3. [`docs/REBRAND.md`](docs/REBRAND.md) — locked Bone Buster identity (name, tagline, fonts, palette, 24-kind enemy roster).
-4. [`docs/DESIGN.md`](docs/DESIGN.md) — product truth.
-5. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system truth.
-6. `git status && git log --oneline -10`.
+1. This file — entry pointer only.
+2. [`docs/PRD.md`](docs/PRD.md) — authoritative remaining-work spec (user stories, surfaces, acceptance bars per item).
+3. [`.agent-state/directive.md`](.agent-state/directive.md) — lean queue; one line per `[ ]` item pointing back at its PRD section.
+4. [`STANDARDS.md`](STANDARDS.md) — quality bar (modernized polished DOOM), slot architecture, no-end-of-turn, design tokens, audio, testing, mobile, git hygiene.
+5. [`docs/DECISIONS.md`](docs/DECISIONS.md) — binding technical decisions.
+6. [`docs/REBRAND.md`](docs/REBRAND.md) — locked Bone Buster identity.
+7. `git status && git log --oneline -10`.
 
-**Single source of truth chain when docs disagree:**
-DESIGN > ARCHITECTURE > DECISIONS > REBRAND > directive.
+**Authority chain when docs disagree:**
+DESIGN > ARCHITECTURE > DECISIONS > PRD > directive > ROADMAP.
 
-**Operating mandate (user verbatim, persistent):**
-- "I want a FULLY POLISHED PLAYABLE GAME"
-- "I want as much possible value from ALL the PSX assets — anything that makes sense in a level"
-- "ZERO ambiguity, ZERO deferments, ZERO chance the next agent doesn't understand what to do"
+**Operating loop:** drain the directive top-down — each item points at its PRD section for the acceptance bar. Single long-running overhaul branch holds every commit; reviewer trio runs locally per commit; fold findings forward; push + open one PR per coherent slice. Full operational rules live in `STANDARDS.md` and the global `~/.claude/CLAUDE.md`. Local repo stays at `~/src/objexiv/objexoom` regardless of remote rename — GitHub's git-protocol redirect handles the URL change.
 
-**Forbidden output phrases** (also enforced by directive §"Forbidden phrases"):
-deferred, v2+, out of scope, future work, tracked separately, follow-up, TODO, FIXME, stub, placeholder, mock for now, pause point, fresh session, next session, stopping point, clean handoff.
-
-**Run loop (no exceptions):**
-
-```text
-while directive has [ ] items in priority order:
-    pick the topmost
-    read its acceptance criterion in the directive
-    implement → pnpm verify → commit → dispatch reviewer trio LOCALLY → fold findings into next commit → flip [ ]→[x] in same/next commit
-done
-# Push + open PR only when a coherent slice is fully done (lane-sized).
-# The only legitimate stops: user halt | red CI on main | a true external blocker.
-```
-
-**Workflow rules (user-directed):**
-
-- ONE long-running feature branch holds every commit. No per-item branches.
-- Reviewer trio (`comprehensive-review:full-review`, `feature-dev:code-reviewer`, `security-scanning:security-sast`, `code-simplifier`) runs LOCALLY on each commit. Fold findings forward. Never amend reviewed commits.
-- NO `Phase N` numbering. The directive's overhaul backlog is a single un-phased queue.
-- Local repo stays at `~/src/objexiv/objexoom` regardless of remote rename. GitHub redirects handle the URL change.
-- Asset source = `references/` (already on disk) + itch.io API (user owns 316 keys; fetch via the voxel-realms-derived `scripts/fetch-itch.mjs`). NOT the NAS.
+**Asset sources:** `references/` (already on disk) + itch.io API (user owns 316 keys; fetch via `scripts/fetch-itch.mjs`). NAS is not consulted for the active overhaul.
 
 ## Profiles loaded
 
