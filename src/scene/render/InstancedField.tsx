@@ -7,31 +7,28 @@
  * written via setMatrixAt so the GPU draws N instances in 1 draw
  * call instead of N draw calls.
  *
- * Generic over the instance shape — caller provides:
- *   - url: the GLB to instance (single asset, single skin).
- *   - instances: array with { position, yaw, scale? } per instance.
- *   - count cap: hard ceiling so a runaway scatter never exceeds
- *     the pre-allocated InstancedMesh buffer.
+ * Two component forms keep the rules-of-hooks clean:
  *
- * The factory does NOT compose multi-mesh GLBs — it pulls the
- * first Mesh found via `traverse`. Existing scatter assets are
- * single-mesh (the PSX pack workflow normalizes to this shape);
- * for multi-mesh GLBs the caller falls back to the non-instanced
- * `<primitive>` path until A1-step-2 generalizes.
+ *   InstancedField — caller passes (geometry, material). Use for
+ *     procedural sources (BodyPart / Shell / Bullet ephemeral
+ *     components have module-scope shared geometry).
+ *
+ *   InstancedGltfField — caller passes (url). Use for GLB-backed
+ *     scatter (debris, lamps, props). Wraps useGLTF + the first-Mesh
+ *     extractor and feeds the resolved (geometry, material) into
+ *     InstancedField underneath.
  *
  * Step-1 in this commit:
- *   - factory exists + is unit-tested for the instance-transform
+ *   - factories exist + are unit-tested for the instance-transform
  *     math (matrix composition per instance is the surface that
  *     can silently regress).
- *   - One canonical migration target chosen (DebrisField) wired
- *     in a follow-up commit; this commit ships the factory alone
- *     so the failure list at the migration commit is just "wire
- *     the new component", not "build + wire + verify all in one."
+ *   - Migration of existing Field / Pool components to use these
+ *     factories is step-2.
  */
 
 import { useGLTF } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
-import type { InstancedMesh, Mesh } from "three";
+import type { BufferGeometry, InstancedMesh, Material, Mesh, Object3D } from "three";
 import { Matrix4, Quaternion, Vector3 } from "three";
 
 export type InstancedFieldInstance = Readonly<{
@@ -42,15 +39,20 @@ export type InstancedFieldInstance = Readonly<{
 }>;
 
 export type InstancedFieldProps = Readonly<{
-	/** GLB URL to instance. Must be a single-mesh asset. */
-	url: string;
-	/** Per-instance transforms. */
+	geometry: BufferGeometry;
+	material: Material | readonly Material[];
 	instances: readonly InstancedFieldInstance[];
 	/**
 	 * Hard cap on instances rendered. Pre-allocates the InstancedMesh
 	 * buffer at mount time. Mount-time only — changing the cap remounts
 	 * the InstancedMesh. Default 256.
 	 */
+	maxInstances?: number;
+}>;
+
+export type InstancedGltfFieldProps = Readonly<{
+	url: string;
+	instances: readonly InstancedFieldInstance[];
 	maxInstances?: number;
 }>;
 
@@ -73,7 +75,7 @@ export function composeInstanceMatrix(inst: InstancedFieldInstance): Matrix4 {
  * Locate the first Mesh inside a loaded GLB scene. Returns null if
  * no Mesh found (caller falls back to non-instanced path).
  */
-export function findFirstMesh(scene: import("three").Object3D): Mesh | null {
+export function findFirstMesh(scene: Object3D): Mesh | null {
 	let found: Mesh | null = null;
 	scene.traverse((child) => {
 		if (!found && (child as Mesh).isMesh) {
@@ -83,11 +85,16 @@ export function findFirstMesh(scene: import("three").Object3D): Mesh | null {
 	return found;
 }
 
-export function InstancedField({ url, instances, maxInstances = 256 }: InstancedFieldProps) {
-	const gltf = useGLTF(url);
+/**
+ * (geometry, material) form. Use for procedural sources.
+ */
+export function InstancedField({
+	geometry,
+	material,
+	instances,
+	maxInstances = 256,
+}: InstancedFieldProps) {
 	const meshRef = useRef<InstancedMesh | null>(null);
-
-	const sourceMesh = useMemo(() => findFirstMesh(gltf.scene), [gltf.scene]);
 
 	useEffect(() => {
 		const im = meshRef.current;
@@ -100,14 +107,35 @@ export function InstancedField({ url, instances, maxInstances = 256 }: Instanced
 		im.instanceMatrix.needsUpdate = true;
 	}, [instances, maxInstances]);
 
-	if (!sourceMesh) return null;
-
 	return (
 		<instancedMesh
 			ref={meshRef}
-			args={[sourceMesh.geometry, sourceMesh.material, maxInstances]}
+			args={[geometry, material as Material, maxInstances]}
 			castShadow
 			receiveShadow
+		/>
+	);
+}
+
+/**
+ * GLB-source convenience wrapper. Loads the GLB, pulls its first
+ * Mesh, and feeds the resolved (geometry, material) into
+ * InstancedField. Returns null when the GLB has no mesh.
+ */
+export function InstancedGltfField({
+	url,
+	instances,
+	maxInstances = 256,
+}: InstancedGltfFieldProps) {
+	const gltf = useGLTF(url);
+	const sourceMesh = useMemo(() => findFirstMesh(gltf.scene), [gltf.scene]);
+	if (!sourceMesh) return null;
+	return (
+		<InstancedField
+			geometry={sourceMesh.geometry}
+			material={sourceMesh.material as Material | readonly Material[]}
+			instances={instances}
+			maxInstances={maxInstances}
 		/>
 	);
 }

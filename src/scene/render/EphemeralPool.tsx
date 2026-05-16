@@ -8,25 +8,21 @@
  * so the GPU draws nothing for it). Expired slots are reclaimed by
  * the next allocation.
  *
- * The contract on the caller side is identical to InstancedField:
- *   - url: single GLB to instance
- *   - instances: caller-managed array; expired entries flagged
- *     via `expired: true` get scale-to-zero matrices
+ * Two component forms (same shape as InstancedField + InstancedGltfField):
  *
- * Reclamation:
- *   - allocSlot(pool, instance) returns the slot index assigned;
- *     overwrites the first expired slot, or extends if pool not
- *     yet full.
- *   - markExpired(pool, slotIdx) flips the slot's `expired` flag
- *     so the next render scale-zeros it.
+ *   EphemeralPool       — (geometry, material) form
+ *   EphemeralGltfPool   — (url) wrapper
  *
- * Step-1 ships the factory + unit test for the allocation/reclamation
- * lifecycle. Migration of an existing ephemeral component is step-2.
+ * Allocation lifecycle (caller-side):
+ *   - allocSlot(slots, maxSlots): index of first expired slot, or
+ *     length (extension), or -1 when full + no expired.
+ *   - markExpired(slot): flips the slot's `expired` flag so the
+ *     next render scale-zeros it.
  */
 
 import { useGLTF } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
-import type { InstancedMesh } from "three";
+import type { BufferGeometry, InstancedMesh, Material } from "three";
 import { Matrix4, Quaternion, Vector3 } from "three";
 import { composeInstanceMatrix, findFirstMesh } from "./InstancedField";
 
@@ -39,6 +35,13 @@ export type EphemeralPoolSlot = {
 };
 
 export type EphemeralPoolProps = Readonly<{
+	geometry: BufferGeometry;
+	material: Material | readonly Material[];
+	slots: readonly EphemeralPoolSlot[];
+	maxSlots?: number;
+}>;
+
+export type EphemeralGltfPoolProps = Readonly<{
 	url: string;
 	slots: readonly EphemeralPoolSlot[];
 	maxSlots?: number;
@@ -73,11 +76,8 @@ export function composeExpiredMatrix(): Matrix4 {
 	return m;
 }
 
-export function EphemeralPool({ url, slots, maxSlots = 128 }: EphemeralPoolProps) {
-	const gltf = useGLTF(url);
+export function EphemeralPool({ geometry, material, slots, maxSlots = 128 }: EphemeralPoolProps) {
 	const meshRef = useRef<InstancedMesh | null>(null);
-
-	const sourceMesh = useMemo(() => findFirstMesh(gltf.scene), [gltf.scene]);
 
 	useEffect(() => {
 		const im = meshRef.current;
@@ -95,14 +95,26 @@ export function EphemeralPool({ url, slots, maxSlots = 128 }: EphemeralPoolProps
 		im.instanceMatrix.needsUpdate = true;
 	}, [slots, maxSlots]);
 
-	if (!sourceMesh) return null;
-
 	return (
 		<instancedMesh
 			ref={meshRef}
-			args={[sourceMesh.geometry, sourceMesh.material, maxSlots]}
+			args={[geometry, material as Material, maxSlots]}
 			castShadow
 			receiveShadow
+		/>
+	);
+}
+
+export function EphemeralGltfPool({ url, slots, maxSlots = 128 }: EphemeralGltfPoolProps) {
+	const gltf = useGLTF(url);
+	const sourceMesh = useMemo(() => findFirstMesh(gltf.scene), [gltf.scene]);
+	if (!sourceMesh) return null;
+	return (
+		<EphemeralPool
+			geometry={sourceMesh.geometry}
+			material={sourceMesh.material as Material | readonly Material[]}
+			slots={slots}
+			maxSlots={maxSlots}
 		/>
 	);
 }
