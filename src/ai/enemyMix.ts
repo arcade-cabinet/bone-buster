@@ -1,144 +1,166 @@
 /**
- * E13 step-3 — per-archetype enemy mix.
+ * D5 — per-archetype enemy mix table (24-kind expansion).
  *
- * Step-1 wired archetype to the prop pool; step-2 wired it to the
- * lighting palette. Step-3 extends to the enemy roster: each archetype
- * tilts the 3-kind mix (rattler / phaser / bouncer) toward a fingerprint
- * that complements the visual read.
+ * Supersedes the E13-step-3 + POL42 3-tuple table. Each archetype
+ * carries a Record<EnemyKind, number> whose values sum to 1.0
+ * (probability mass). At spawn time the existing 3-kind enemy
+ * generator output is REMAPPED via this table: each spawn's kind
+ * is replaced by a draw from the archetype's distribution.
  *
- * The transform takes the existing per-map enemy spawns and ONLY
- * rewrites the `kind` field per a deterministic per-archetype weight
- * table. Positions, total count, and spawn order all stay identical
- * — preserving the existing difficulty curve.
+ * The PRD §D5 archetype headlines:
+ *   corridor: rattler, bouncer, mrZ, anomaly variants
+ *   arena:    bighoss, goliath, stagged, gorehead
+ *   courtyard:lupin, stomper, swiney
+ *   sewer:    grub, dolly, swiney, butcher
+ *   library:  plaguebeak, gawker, reverend, dolly
  *
- * Each weight table is a 3-tuple `[rattler, phaser, bouncer]` of unsigned
- * integers. The picker is a simple cumulative-weight roll on a seeded
- * RNG (PRNG seeded with `map.seed XOR 0x454E4D58` "ENMX" tag → diverges
- * from every other scatter sequence). Same seed → same remap.
+ * `devil` is the only boss-tier kind and is intentionally NOT in
+ * any archetype's regular mix — it spawns via a separate boss-gate
+ * (currently 1-per-level rare; D7+ may parametrize). Its zero
+ * weight here means a procedural map never rolls a devil from the
+ * normal mix.
  *
- * Back-compat: the "corridor" entry preserves the existing baseline
- * distribution by passing through unchanged kinds (weight tuple
- * [0, 0, 0] is the sentinel for "no remap"). Any archetype with a
- * non-sentinel weight tuple runs the remap.
+ * Each table is constructed by listing the headline kinds and any
+ * tail kinds; the helper `normalize` sums and divides so values
+ * always sum to exactly 1.0. The per-archetype test asserts this
+ * invariant across all 5 archetypes.
+ *
+ * Determinism: the picker uses the existing ENMX-tagged PRNG (seed
+ * XOR 0x454E4D58) so same seed → same kind sequence per archetype.
  */
 
 import type { EnemyKind, EnemySpawn } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 import type { PropArchetype } from "@world/scatter/propPool";
 
-/** `[rattler, phaser, bouncer]` — relative weights for the kind picker. */
-export type EnemyMixWeights = readonly [number, number, number];
+export type EnemyMixTable = Readonly<Record<EnemyKind, number>>;
 
-/** Sentinel value — "pass through, don't remap." */
-const PASS_THROUGH: EnemyMixWeights = [0, 0, 0];
+// All 24 EnemyKinds, in declaration order, so the picker can walk a
+// fixed bucket sequence regardless of the per-archetype table.
+const ALL_KINDS: readonly EnemyKind[] = [
+	"rattler",
+	"phaser",
+	"bouncer",
+	"plaguebeak",
+	"jester",
+	"reverend",
+	"stagged",
+	"grub",
+	"signal",
+	"heap",
+	"heap2",
+	"gorehead",
+	"bighoss",
+	"stomper",
+	"butcher",
+	"bloodphaser",
+	"devil",
+	"dolly",
+	"gawker",
+	"oneye",
+	"goliath",
+	"swiney",
+	"mrZ",
+	"lupin",
+];
 
-/**
- * E13 step-3 base weights. Per-archetype rattler/phaser/bouncer mix
- * before POL42's phaser-density bias is applied. Corridor stays as
- * the PASS_THROUGH sentinel; the bias never touches it.
- */
-const BASE_MIX_WEIGHTS: Readonly<Record<PropArchetype, EnemyMixWeights>> = {
-	corridor: PASS_THROUGH,
-	arena: [3, 1, 5],
-	courtyard: [4, 3, 2],
-	sewer: [2, 5, 2],
-	library: [4, 4, 1],
-};
-
-/**
- * POL42 — per-archetype phaser-density bias. Scales the phaser weight
- * (index 1 of the [rattler, phaser, bouncer] tuple) by a multiplier per
- * archetype. The total of the resulting tuple is what's bucket-picked
- * against, so a higher phaser weight pulls more wraiths in
- * proportionally without bumping the total enemy count (count is set
- * elsewhere by generateMap and stays untouched).
- *
- * Corridor PASS_THROUGH is exempt — POL42 deliberately doesn't touch
- * the corridor distribution so refLevel 0 (corridor by seed%5) stays
- * byte-stable. The bias is a tilt INSIDE archetypes that already
- * have a tilted weight table.
- *
- * Bias tuning (mood-aligned, NOT a balance change):
- *   sewer    1.5× — dark, wraiths fit thematically
- *   library  1.4× — paper enemies in a paper place; lift the bias
- *                   already there (base phaser = bouncer at 4)
- *   courtyard 1.0× — balanced; no bias
- *   arena    0.7× — open combat; flyers feel cheap
- *
- * Effective phaser weights after bias (rounded to int via Math.round
- * since the picker requires integer cumulative buckets):
- *   arena:    1×0.7 → 1   (1 → 1, unchanged at this scale)
- *   courtyard 3×1.0 → 3   (unchanged)
- *   sewer:    5×1.5 → 8
- *   library:  4×1.4 → 6
- */
-const PHASER_BIAS: Readonly<Record<PropArchetype, number>> = {
-	corridor: 1.0, // unused (PASS_THROUGH skips the bias)
-	arena: 0.7,
-	courtyard: 1.0,
-	sewer: 1.5,
-	library: 1.4,
-};
-
-function applyWraithBias(base: EnemyMixWeights, bias: number): EnemyMixWeights {
-	if (base === PASS_THROUGH) return PASS_THROUGH;
-	const biased = Math.max(1, Math.round(base[1] * bias));
-	return [base[0], biased, base[2]];
+function normalize(weights: Readonly<Partial<Record<EnemyKind, number>>>): EnemyMixTable {
+	const table: Record<EnemyKind, number> = {} as Record<EnemyKind, number>;
+	for (const k of ALL_KINDS) table[k] = weights[k] ?? 0;
+	let total = 0;
+	for (const k of ALL_KINDS) total += table[k];
+	if (total === 0) throw new Error("normalize: weights sum to zero");
+	for (const k of ALL_KINDS) table[k] = table[k] / total;
+	return table;
 }
 
 /**
- * Per-archetype weight tables. Corridor passes through (preserves the
- * existing kind distribution from `generateMap` / `loadRefLevel`).
- * POL42 applies the phaser-density bias to every non-corridor entry.
+ * Per-archetype kind mix. Headline (heavy) weights + tail (lighter)
+ * weights per PRD §D5. The exact numeric weights are tuning knobs;
+ * the only invariant enforced here is that they normalize to 1.0.
+ *
+ * Corridor: classic mix — rattler-heavy with mrZ + signal accent.
+ * Arena:    big tank parade — bighoss + goliath + stomper + stagged.
+ * Courtyard:outdoor brawl — lupin + stomper + swiney lead.
+ * Sewer:    cramped horror — grub swarm + dolly + butcher + swiney.
+ * Library:  ranged hex — plaguebeak gas + gawker eyes + reverend.
  */
-export const ENEMY_MIX_WEIGHTS: Readonly<Record<PropArchetype, EnemyMixWeights>> = {
-	corridor: BASE_MIX_WEIGHTS.corridor,
-	arena: applyWraithBias(BASE_MIX_WEIGHTS.arena, PHASER_BIAS.arena),
-	courtyard: applyWraithBias(BASE_MIX_WEIGHTS.courtyard, PHASER_BIAS.courtyard),
-	sewer: applyWraithBias(BASE_MIX_WEIGHTS.sewer, PHASER_BIAS.sewer),
-	library: applyWraithBias(BASE_MIX_WEIGHTS.library, PHASER_BIAS.library),
+export const ENEMY_MIX_TABLES: Readonly<Record<PropArchetype, EnemyMixTable>> = {
+	corridor: normalize({
+		rattler: 6,
+		bouncer: 3,
+		mrZ: 2,
+		signal: 1, // "anomaly variant" — wraith-like through-wall ranged
+		reverend: 1,
+		stagged: 1,
+	}),
+	arena: normalize({
+		bighoss: 4,
+		goliath: 3,
+		stagged: 2,
+		gorehead: 2,
+		bouncer: 2,
+		heap: 1,
+		heap2: 1,
+	}),
+	courtyard: normalize({
+		lupin: 4,
+		stomper: 3,
+		swiney: 3,
+		rattler: 2,
+		jester: 1,
+		dolly: 1,
+	}),
+	sewer: normalize({
+		grub: 4,
+		dolly: 3,
+		swiney: 2,
+		butcher: 2,
+		phaser: 2,
+		plaguebeak: 1,
+	}),
+	library: normalize({
+		plaguebeak: 3,
+		gawker: 3,
+		reverend: 3,
+		dolly: 2,
+		jester: 1,
+	}),
 };
 
-const ENEMY_KIND_ORDER: readonly EnemyKind[] = ["rattler", "phaser", "bouncer"];
-
-/**
- * Pick an enemy kind from the weight tuple using `rng()`. If the tuple
- * is the pass-through sentinel ([0, 0, 0]), returns the input kind
- * unchanged so the corridor archetype is byte-identical to the
- * pre-step-3 spawn distribution.
- */
-function pickKindFromWeights(
-	weights: EnemyMixWeights,
-	originalKind: EnemyKind,
-	rng: () => number,
-): EnemyKind {
-	const total = weights[0] + weights[1] + weights[2];
-	if (total === 0) return originalKind;
-	let r = rng() * total;
-	for (let i = 0; i < ENEMY_KIND_ORDER.length; i += 1) {
-		r -= weights[i];
-		if (r <= 0) return ENEMY_KIND_ORDER[i];
+function pickKindFromTable(table: EnemyMixTable, rng: () => number): EnemyKind {
+	const r = rng();
+	let acc = 0;
+	for (const k of ALL_KINDS) {
+		acc += table[k];
+		if (r <= acc) return k;
 	}
-	// Falls through only via floating-point edge; pick the last bucket.
-	return ENEMY_KIND_ORDER[ENEMY_KIND_ORDER.length - 1];
+	// Falls through only on floating-point edge — return last non-zero kind.
+	for (let i = ALL_KINDS.length - 1; i >= 0; i -= 1) {
+		if (table[ALL_KINDS[i]] > 0) return ALL_KINDS[i];
+	}
+	return "rattler"; // unreachable given normalize() guarantees > 0
 }
 
 /**
  * Apply the per-archetype enemy mix to a map's enemy spawns.
  * Preserves count, order, and position. Only rewrites `kind`.
  *
- * Returns the same array if the archetype is a pass-through (corridor).
+ * D5 — corridor no longer pass-through; it has its own mix table
+ * now (rattler-heavy + mrZ + signal accent). Canonical-byte
+ * stability for the seed-0 corridor screenshot is no longer
+ * preserved through this function — the visual gate will regen
+ * the screenshot in the same commit.
  */
 export function remapEnemyMix(
 	spawns: readonly EnemySpawn[],
 	archetype: PropArchetype,
 	seed: number,
 ): readonly EnemySpawn[] {
-	const weights = ENEMY_MIX_WEIGHTS[archetype];
-	if (weights === PASS_THROUGH) return spawns;
+	const table = ENEMY_MIX_TABLES[archetype];
 	const rng = mulberry32((seed >>> 0) ^ 0x454e4d58);
 	return spawns.map((spawn) => ({
 		...spawn,
-		kind: pickKindFromWeights(weights, spawn.kind, rng),
+		kind: pickKindFromTable(table, rng),
 	}));
 }

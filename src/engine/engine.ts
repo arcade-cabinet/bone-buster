@@ -4,14 +4,46 @@ import type { PropArchetype } from "@world/scatter/propPool";
 
 export type Cell = "empty" | "wall" | "door" | "spawn" | "exit" | "key" | "lava";
 
-// Reference enemy roster (game.js → all_objects):
-//   rattler  = closest analogue to the reference's vanilla `Enemy` —
-//               ground unit, melee on contact, dies cleanly.
-//   phaser    = reference `FlyingEnemy` — no-clip movement, weaker but
-//               harder to corner; shoots EnemyBullets at the player.
-//   bouncer       = reference `Enemy` variant with explode-on-death — bursts
-//               into 3-5 BodyPart particles. Higher HP than rattler.
-export type EnemyKind = "rattler" | "phaser" | "bouncer";
+// D5 — enemy roster expanded from the 3 base kinds (rattler / phaser /
+// bouncer, named in D4) to 24 first-class kinds. The base 3 carry
+// the canonical mechanics; the 21 additions are split into:
+//
+//   - 9 promotions: skin variants that previously shared one of the
+//     base 3 mechanic profiles are now first-class kinds. Mechanic
+//     differentiation lives in src/ai/enemyAi.ts behavior switches.
+//   - 12 new extracts: GLBs newly converted from the PSX horror
+//     megapack, each with its own mechanic shape.
+//
+// Full table at docs/REBRAND.md §"Enemy roster — 24 first-class kinds".
+// Per-archetype distribution at src/ai/enemyMix.ts.
+export type EnemyKind =
+	// Base 3 (D4 rename).
+	| "rattler"
+	| "phaser"
+	| "bouncer"
+	// 9 promotions (D5).
+	| "plaguebeak"
+	| "jester"
+	| "reverend"
+	| "stagged"
+	| "grub"
+	| "signal"
+	| "heap"
+	| "heap2"
+	| "gorehead"
+	// 12 new extracts (D5).
+	| "bighoss"
+	| "stomper"
+	| "butcher"
+	| "bloodphaser"
+	| "devil"
+	| "dolly"
+	| "gawker"
+	| "oneye"
+	| "goliath"
+	| "swiney"
+	| "mrZ"
+	| "lupin";
 
 export type EnemySpawn = Readonly<{
 	kind: EnemyKind;

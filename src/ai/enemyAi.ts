@@ -33,19 +33,66 @@ export const CHASE_SPEED_RATTLER = 1.1;
 export const CHASE_SPEED_PHASER = 1.5;
 export const CHASE_SPEED_BOUNCER = 0.9;
 
-// Y2 — per-kind wander tuning. Skeletons wander tight, imps moderate,
-// wraiths sweep wide. Bearing jitter per second adds organic drift
-// (mirrors yuka.WanderBehavior's jitter parameter).
-export const WANDER_RADIUS: Record<Enemy["kind"], number> = {
+// D5 — each of the 24 kinds inherits from one of the 3 base behavior
+// profiles for shared mechanics (wander tuning, chase speed, AI
+// branch). Per-kind differentiation (gas cloud, fan-shot, charge,
+// etc) lives in D6+ behavior switches; D5 step-1 just classifies.
+export type BaseKind = "rattler" | "phaser" | "bouncer";
+export const BASE_KIND: Record<Enemy["kind"], BaseKind> = {
+	// Base 3.
+	rattler: "rattler",
+	phaser: "phaser",
+	bouncer: "bouncer",
+	// 9 promotions — mechanic profile per docs/REBRAND.md table.
+	plaguebeak: "bouncer", // imp-like, slower
+	jester: "bouncer", // imp-like, erratic
+	reverend: "rattler", // skeleton-like, ranged
+	stagged: "bouncer", // imp-like, charging
+	grub: "rattler", // skeleton-like, low HP fast
+	signal: "phaser", // wraith-like, ranged through walls
+	heap: "bouncer", // imp-tank
+	heap2: "bouncer", // heavier heap
+	gorehead: "rattler", // skeleton-like, charge
+	// 12 new extracts.
+	bighoss: "bouncer", // slow tank
+	stomper: "bouncer", // charge variant
+	butcher: "rattler", // melee + sound aggro
+	bloodphaser: "phaser", // red phaser variant
+	devil: "rattler", // boss-tier; spawn-gate handled elsewhere
+	dolly: "bouncer", // tiny fast erratic
+	gawker: "phaser", // ranged with eye-tracking
+	oneye: "rattler", // slow charge melee
+	goliath: "bouncer", // heavy tank variant
+	swiney: "bouncer", // fast aggressive
+	mrZ: "rattler", // 3-shot zombie
+	lupin: "bouncer", // werewolf aggressive
+};
+
+// Y2 — per-kind wander tuning. Rattlers wander tight, bouncers
+// moderate, phasers sweep wide. Bearing jitter per second adds
+// organic drift (mirrors yuka.WanderBehavior's jitter parameter).
+// D5 — derived from BASE_KIND so all 24 kinds inherit cleanly. The
+// per-kind table form is preserved (instead of computing-via-lookup)
+// so D6+ can override individual kinds without restructuring callers.
+const WANDER_BY_BASE: Record<BaseKind, number> = {
 	rattler: 0.7,
 	bouncer: 1.0,
 	phaser: 1.8,
 };
-export const WANDER_JITTER_RAD_PER_SEC: Record<Enemy["kind"], number> = {
+const JITTER_BY_BASE: Record<BaseKind, number> = {
 	rattler: 0.4,
 	bouncer: 0.6,
 	phaser: 0.9,
 };
+function fromBase<T>(table: Record<BaseKind, T>): Record<Enemy["kind"], T> {
+	const out = {} as Record<Enemy["kind"], T>;
+	for (const k of Object.keys(BASE_KIND) as Enemy["kind"][]) {
+		out[k] = table[BASE_KIND[k]];
+	}
+	return out;
+}
+export const WANDER_RADIUS: Record<Enemy["kind"], number> = fromBase(WANDER_BY_BASE);
+export const WANDER_JITTER_RAD_PER_SEC: Record<Enemy["kind"], number> = fromBase(JITTER_BY_BASE);
 
 // Y3 — bouncer Pursuit lead. Imps anticipate the player's position by
 // projecting along the player's recent velocity. Lead time scales

@@ -236,10 +236,54 @@ const PHASER_SKINS: EnemySkin[] = [
 	},
 ];
 
+// D5 — single-skin helper for the 21 first-class kinds added in this
+// step. Each gets its own GLB but no animation track wiring yet
+// (NO_ANIMS → static-with-bob render). D6+ will rig animations per
+// kind once the per-kind mechanics drive the FSM. The roster is a
+// 1-element array so the renderer's variant-cycle code path stays
+// uniform across all 24 kinds.
+function singleSkinModel(urlPath: string, heightTiles: number, floorOffset = 0): EnemyModel {
+	const skin: EnemySkin = {
+		url: A(urlPath),
+		heightTiles,
+		yawOffsetRad: 0,
+		floorOffset,
+		anims: NO_ANIMS,
+	};
+	return { ...skin, roster: [skin] };
+}
+
 export const ENEMY_MODELS: Record<EnemyKind, EnemyModel> = {
+	// Base 3 — keep full skin rosters.
 	rattler: { ...RATTLER_SKINS[0], roster: RATTLER_SKINS },
 	bouncer: { ...BOUNCER_SKINS[0], roster: BOUNCER_SKINS },
 	phaser: { ...PHASER_SKINS[0], roster: PHASER_SKINS },
+	// 9 promotions — point at the existing roster GLBs that previously
+	// rendered as cosmetic skin variants of the base 3.
+	plaguebeak: singleSkinModel("/assets/models/enemies/horror/plague_doctor.glb", 1.8),
+	jester: singleSkinModel("/assets/models/enemies/horror/clown_1.glb", 1.5),
+	reverend: singleSkinModel("/assets/models/enemies/horror/nun.glb", 1.8),
+	stagged: singleSkinModel("/assets/models/enemies/horror/elk_demon.glb", 1.9),
+	grub: singleSkinModel("/assets/models/enemies/horror/sewerfiend.glb", 1.5),
+	signal: singleSkinModel("/assets/models/enemies/horror/alien.glb", 1.6, 0.6),
+	heap: singleSkinModel("/assets/models/enemies/horror/abomination.glb", 1.7),
+	heap2: singleSkinModel("/assets/models/enemies/horror/abomination2.glb", 1.4),
+	gorehead: singleSkinModel("/assets/models/enemies/horror/horned.glb", 1.7),
+	// 12 new extracts — promoted from references/_extracted/psx/
+	// psx-horror-fantasy-megapack to public/assets/models/enemies/horror/
+	// in this commit.
+	bighoss: singleSkinModel("/assets/models/enemies/horror/bighoss.glb", 2.0),
+	stomper: singleSkinModel("/assets/models/enemies/horror/stomper.glb", 2.2),
+	butcher: singleSkinModel("/assets/models/enemies/horror/butcher.glb", 1.8),
+	bloodphaser: singleSkinModel("/assets/models/enemies/horror/bloodphaser.glb", 1.2, 0.4),
+	devil: singleSkinModel("/assets/models/enemies/horror/devil.glb", 2.4),
+	dolly: singleSkinModel("/assets/models/enemies/horror/dolly.glb", 1.0),
+	gawker: singleSkinModel("/assets/models/enemies/horror/gawker.glb", 1.4),
+	oneye: singleSkinModel("/assets/models/enemies/horror/oneye.glb", 1.7),
+	goliath: singleSkinModel("/assets/models/enemies/horror/goliath.glb", 2.1),
+	swiney: singleSkinModel("/assets/models/enemies/horror/swiney.glb", 1.3),
+	mrZ: singleSkinModel("/assets/models/enemies/horror/mrZ.glb", 1.7),
+	lupin: singleSkinModel("/assets/models/enemies/horror/lupin.glb", 1.8),
 };
 
 export type WeaponModel = {
