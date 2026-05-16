@@ -1,14 +1,14 @@
 {
-	"name": "objexoom",
+	"name": "bonebuster",
 	"private": true,
 	"version": "0.4.0",
 	"type": "module",
 	"packageManager": "pnpm@10.2.0",
-	"description": "OBJEXOOM — a polished DOOM-flavored arcade FPS. Procedural sectors, real PSX monsters, and a flashlight you absolutely need.",
+	"description": "Bone Buster — a procedural arcade FPS in the PSX-jank tradition. They had it coming.",
 	"homepage": "https://arcade-cabinet.github.io/bone-buster/",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/objexiv/objexoom.git"
+		"url": "https://github.com/arcade-cabinet/bone-buster.git"
 	},
 	"license": "UNLICENSED",
 	"scripts": {

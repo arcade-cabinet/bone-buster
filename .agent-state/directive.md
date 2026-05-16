@@ -31,11 +31,6 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 
 ## Queue
 
-### REBRAND — remaining items
-
-- [x] **R9** — Capacitor + Android namespace rename to `com.bonebuster.app` (capacitor.config.ts, android namespace + applicationId + MainActivity package path + strings.xml + CI adb commands). Also swept `__objexoom*` window globals + `objexoom-*` test-ids + 80 `objexoom-*` test filenames to `bonebuster*`. URL params modernized to canonical `bonebuster{Seed,Archetype,Debug}` in code/tests (Shell.tsx shim still accepts legacy). App label OBJEXOOM → Bone Buster.
-- [ ] **R10** — release-please `package-name` rename. PRD §R10.
-
 ### IDENTITY — gameplay-design depth
 
 - [ ] **D1** — locked-weapon HUD as status indicator. PRD §D1.
