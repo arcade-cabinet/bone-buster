@@ -1,5 +1,6 @@
 import { ScuffShader } from "@atoms/ScuffShader";
 import { BoneBusterWordmark } from "@atoms/Wordmark";
+import { playLogoSting } from "@audio/logoSting";
 import { getMusicLoadProgress } from "@audio/sfx";
 import { formatRunDuration, openRunHistory, type RunRecord } from "@store/runHistory";
 import {
@@ -82,6 +83,18 @@ export function ObjexoomLanding({
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
 	}, [onQuit]);
+
+	// R6 — fire the logo sting once on landing mount. Gated on
+	// settings.soundEnabled + the module-level played flag (so
+	// soft-navigating back to landing doesn't re-fire). The first
+	// audio play also unlocks Howler's AudioContext on browsers that
+	// require a user gesture — but since this effect runs on mount
+	// without a click, autoplay-blocked browsers will silently no-op
+	// and the sting will fire on the first MENU click instead.
+	useEffect(() => {
+		if (!settings.soundEnabled) return;
+		void playLogoSting();
+	}, [settings.soundEnabled]);
 
 	return (
 		<div style={rootStyle}>

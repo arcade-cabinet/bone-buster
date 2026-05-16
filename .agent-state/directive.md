@@ -34,7 +34,7 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 ### REBRAND — remaining items
 
 - [x] **R5b** — responsive landing stack for portrait + foldable viewports. Wordmark fills band on both 880×2100 and 2200×1400; tagline + menu legible.
-- [ ] **R6** — logo sting via Howler + OGG sample (re-scoped from Tone.js). PRD §R6.
+- [x] **R6** — logo sting via Howler + OGG sample (re-scoped from Tone.js). PRD §R6.
 - [ ] **R7** — HUD palette + type refresh. PRD §R7.
 - [ ] **R8** — source-string `OBJEXOOM`→`BONE BUSTER` sweep. PRD §R8.
 - [ ] **R9** — Capacitor + Android namespace rename. PRD §R9.
