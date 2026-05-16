@@ -21,7 +21,7 @@
 
 ### ITCH-FETCH — full library audit + extract
 
-- [ ] **IF1** — general-purpose itch.io fetcher. PRD §IF1.
+- [x] **IF1** — general-purpose itch.io fetcher. PRD §IF1.
 - [ ] **IF2** — owned-key metadata cache (316 packs). PRD §IF2.
 - [ ] **IF3** — `docs/ITCH-INVENTORY.md`. PRD §IF3.
 - [ ] **IF4** — `scripts/itch-allowlist.json`. PRD §IF4.

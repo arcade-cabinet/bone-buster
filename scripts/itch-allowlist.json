@@ -1,0 +1,4 @@
+{
+	"_comment": "Pack titles allow-listed for download by scripts/fetch-itch.mjs (PRD §IF4). Add a title to enable that pack's archives; remove to skip. Categories are inferred from the title by scripts/fetch-itch.mjs and stored alongside the extracted output. The empty starter list keeps IF1 dry-run honest until IF4 populates it from the inventory (IF3).",
+	"titles": []
+}
