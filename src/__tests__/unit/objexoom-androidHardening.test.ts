@@ -55,34 +55,49 @@ describe("S1 — Android release-build hardening", () => {
 	});
 
 	describe("app/build.gradle", () => {
+		// Extract the release {} block so assertions don't accidentally
+		// match a debug or other buildType block where minifyEnabled
+		// might be intentionally false. (Patched per
+		// CodeRabbit PR #59 review.)
+		const releaseBlock = BUILD_GRADLE.match(/release\s*\{[\s\S]*?\n\s*\}/)?.[0] ?? "";
+
 		it("release buildType has minifyEnabled true", () => {
-			// Loose match to allow "true" with or without preceding
-			// whitespace/quotes Capacitor-version-dependent.
-			expect(BUILD_GRADLE).toMatch(/minifyEnabled\s+true/);
-			expect(BUILD_GRADLE).not.toMatch(/minifyEnabled\s+false/);
+			expect(releaseBlock).not.toBe("");
+			expect(releaseBlock).toMatch(/minifyEnabled\s+true/);
 		});
 
 		it("release buildType has shrinkResources true", () => {
-			expect(BUILD_GRADLE).toMatch(/shrinkResources\s+true/);
+			expect(releaseBlock).toMatch(/shrinkResources\s+true/);
 		});
 
-		it("references proguard-rules.pro (custom keep-rules)", () => {
-			expect(BUILD_GRADLE).toMatch(/proguard-rules\.pro/);
+		it("release buildType references proguard-rules.pro", () => {
+			expect(releaseBlock).toMatch(/proguard-rules\.pro/);
 		});
 	});
 
 	describe("data_extraction_rules.xml", () => {
+		// Extract each backup section so domain assertions are
+		// scoped — a cloud-backup section that lost its excludes
+		// can't pass on the strength of device-transfer's. (Patched
+		// per CodeRabbit PR #59 review.)
+		const cloudBackup = DATA_EXTRACTION.match(/<cloud-backup>[\s\S]*?<\/cloud-backup>/)?.[0] ?? "";
+		const deviceTransfer =
+			DATA_EXTRACTION.match(/<device-transfer>[\s\S]*?<\/device-transfer>/)?.[0] ?? "";
+
 		it("excludes ALL cloud-backup domains (no Google Drive sync)", () => {
-			expect(DATA_EXTRACTION).toMatch(/<cloud-backup>[\s\S]*<\/cloud-backup>/);
-			// At minimum the 5 standard domains.
+			expect(cloudBackup).not.toBe("");
 			for (const domain of ["root", "database", "sharedpref", "external", "file"]) {
 				const re = new RegExp(`<exclude\\s+domain="${domain}"`);
-				expect(DATA_EXTRACTION, `cloud-backup must exclude domain="${domain}"`).toMatch(re);
+				expect(cloudBackup, `cloud-backup must exclude domain="${domain}"`).toMatch(re);
 			}
 		});
 
 		it("excludes ALL device-transfer domains (no D2D copy)", () => {
-			expect(DATA_EXTRACTION).toMatch(/<device-transfer>[\s\S]*<\/device-transfer>/);
+			expect(deviceTransfer).not.toBe("");
+			for (const domain of ["root", "database", "sharedpref", "external", "file"]) {
+				const re = new RegExp(`<exclude\\s+domain="${domain}"`);
+				expect(deviceTransfer, `device-transfer must exclude domain="${domain}"`).toMatch(re);
+			}
 		});
 	});
 
