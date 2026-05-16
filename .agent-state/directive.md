@@ -35,8 +35,6 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 
 Order: corridor → arena → courtyard → sewer → library. First slice generalizes the `InstancedField` + `EphemeralPool` factories; subsequent slices reuse.
 
-- [ ] **CORRIDOR** — D7-corridor + A1-corridor + A2-corridor. PRD §ARCHETYPE INTERLEAVE.
-- [ ] **ARENA** — D7-arena + A1-arena + A2-arena. PRD §ARCHETYPE INTERLEAVE.
 - [ ] **COURTYARD** — D7-courtyard + A1-courtyard + A2-courtyard. PRD §ARCHETYPE INTERLEAVE.
 - [ ] **SEWER** — D7-sewer + A1-sewer + A2-sewer. PRD §ARCHETYPE INTERLEAVE.
 - [ ] **LIBRARY** — D7-library + A1-library + A2-library. PRD §ARCHETYPE INTERLEAVE.
