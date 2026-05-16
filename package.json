@@ -48,6 +48,8 @@
 		"assets:fbx-to-glb": "node scripts/convert-fbx.mjs",
 		"assets:bulk-fbx-to-glb": "node scripts/bulk-convert-fbx.mjs",
 		"assets:audit-extracted": "node scripts/audit-extracted-assets.mjs",
+		"audio:promote": "node scripts/promote-audio.mjs",
+		"audio:promote:apply": "node scripts/promote-audio.mjs --apply",
 		"itch:fetch": "node scripts/fetch-itch.mjs",
 		"itch:fetch:dry": "node scripts/fetch-itch.mjs --dry",
 		"itch:inventory": "node scripts/fetch-itch.mjs --inventory",

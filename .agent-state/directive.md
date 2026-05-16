@@ -34,7 +34,7 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 ### AUDIO — Howler swap + itch.io sample integration
 
 - [x] **A11a** — `docs/AUDIO-INVENTORY.md`. PRD §A11a.
-- [ ] **A11b** — `public/assets/audio/` layout + tracked files. PRD §A11b.
+- [x] **A11b** — `public/assets/audio/` layout + tracked files. PRD §A11b.
 - [ ] **A11c** — Howler.js swap + sprite registry, remove Tone.js procedural surface. PRD §A11c.
 - [ ] **A11d** — per-archetype ambient. PRD §A11d.
 - [ ] **A11e** — music graph integration. PRD §A11e.
