@@ -69,6 +69,14 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 	// Re-point on every render so callbacks always see current deps.
 	const depsRef = useRef(deps);
 	depsRef.current = deps;
+	// D3 — tracks the set of weapons that have already emitted a
+	// `weaponAcquired` event this session. setState's `prev` snapshot
+	// can lag across multiple collects in the same React batch (two
+	// shotgunAmmo pickups in a single `collectAllPickups` call both
+	// see `prev.ownedWeapons.shotgun === false`); a stable ref-tracked
+	// set is the correct dedup gate. Reset by useGameRef's mount —
+	// any new mount (level transition with new map key) starts fresh.
+	const acquiredRef = useRef<Set<string>>(new Set());
 
 	const gameRef = useRef<GameRef>({
 		onHit: (damage) => {
@@ -136,6 +144,19 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 			setState((prev) => {
 				if (prev.status !== "playing") return prev;
 				if (prev.phase === "going_back") return prev;
+				// D3 — RealDoor drop grants chaingun + shotgun + flamethrower.
+				// Fire weaponAcquired for any the player didn't already
+				// own, with the same acquiredRef dedup gate as the pickup
+				// path. setState callback is the right place: we know
+				// `prev.phase !== "going_back"` so this only runs once
+				// per level, and the snapshot is reliable inside that
+				// single-callback window.
+				for (const w of ["chaingun", "shotgun", "flamethrower"] as const) {
+					if (!prev.ownedWeapons[w] && !acquiredRef.current.has(w)) {
+						acquiredRef.current.add(w);
+						dispatch({ type: "weaponAcquired", weapon: w });
+					}
+				}
 				return {
 					...prev,
 					phase: "going_back",
@@ -228,6 +249,17 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 						};
 					}
 					return { ...prev, score: prev.score + LOOT_BONUSES.treasureScore };
+				}
+				// D3 — first-time weapon acquisition fires a typed event for
+				// the PickupChip HUD slot's chip-brighten beat. Dedup
+				// gate is `acquiredRef.current` (a stable ref-tracked
+				// set) — `prev.ownedWeapons` can't be trusted because
+				// React batches multiple setState callbacks against the
+				// same snapshot, so two ammo pickups for the same weapon
+				// in the same tick would both see `prev.X === false`.
+				if (!acquiredRef.current.has(action.weapon)) {
+					acquiredRef.current.add(action.weapon);
+					dispatch({ type: "weaponAcquired", weapon: action.weapon });
 				}
 				return {
 					...prev,

@@ -204,6 +204,26 @@ export interface PickupCollectedEvent {
 }
 
 /**
+ * D3 — fires the first time the player picks up a weapon (the
+ * underlying ownedWeapons[X] flips false→true). The PickupChip
+ * HUD slot listens for this and renders a 600ms chip-brighten
+ * beat in the weapon's accent palette so the moment reads as a
+ * discrete teach beat. Idempotent per weapon — a second pickup
+ * of the same weapon's ammo does NOT re-dispatch, so the chip
+ * fires exactly once per weapon per session.
+ *
+ * Carries the WeaponId as a string discriminant (the receiver
+ * can narrow against WEAPON_ORDER from shared/weapons.ts);
+ * imports the WeaponId type would re-introduce a circular
+ * import from engine.ts that the rest of this module already
+ * avoids.
+ */
+export interface WeaponAcquiredEvent {
+	type: "weaponAcquired";
+	weapon: "melee" | "pistol" | "chaingun" | "shotgun" | "flamethrower";
+}
+
+/**
  * POL36 — fires the first time the player camera has line-of-sight
  * to any tier="boss" enemy on the current map. The BossBanner HUD
  * slot listens for this and renders a one-shot "⚠ BOSS APPROACHES"
@@ -247,6 +267,7 @@ export type ObjexoomEvent =
 	| KeyPickedUpEvent
 	| FlashlightAcquiredEvent
 	| PickupCollectedEvent
+	| WeaponAcquiredEvent
 	| BossSpottedEvent
 	| BossDefeatedEvent;
 

@@ -23,11 +23,7 @@
  * again on subsequent ammo pickups of the same weapon).
  */
 
-import {
-	addBoneBusterListener,
-	dispatch,
-	type WeaponAcquiredEvent,
-} from "@engine/events";
+import { addBoneBusterListener, dispatch, type WeaponAcquiredEvent } from "@engine/events";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 afterEach(() => {
