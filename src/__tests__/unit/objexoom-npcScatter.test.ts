@@ -2,9 +2,9 @@
  * COV14 step-2 — ambient NPC scatter contract.
  */
 
+import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
 import { describe, expect, it } from "vitest";
 import { ARCHETYPE_NAMES } from "../../archetype";
-import type { ObjexoomSectorMap, Vec2 } from "../../engine";
 import { spawnNpcs } from "../../scatter/npcScatter";
 
 function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {

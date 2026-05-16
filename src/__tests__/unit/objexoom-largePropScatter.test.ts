@@ -2,8 +2,8 @@
  * COV2 step-2 — anchor-piece scatter contract.
  */
 
+import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
 import { describe, expect, it } from "vitest";
-import type { ObjexoomSectorMap, Vec2 } from "../../engine";
 import { LARGE_PROPS } from "../../largeProps";
 import { loadRefLevel } from "../../refLevel";
 import { blockerCirclesOf, spawnLargeProps } from "../../scatter/largePropScatter";

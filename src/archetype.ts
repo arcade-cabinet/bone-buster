@@ -9,7 +9,7 @@
  * cycle through every run. Same seed → same archetype across reloads.
  */
 
-import type { ObjexoomMap } from "./engine";
+import type { ObjexoomMap } from "@engine/engine";
 import type { PropArchetype } from "./scatter/propPool";
 
 /**

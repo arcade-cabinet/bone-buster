@@ -10,8 +10,8 @@
  *  - Every prop is in the matching archetype bucket.
  */
 
+import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
 import { describe, expect, it } from "vitest";
-import type { ObjexoomGridMap, ObjexoomMap } from "../../engine";
 import { loadRefLevel } from "../../refLevel";
 import { POOLS, type PropArchetype } from "../../scatter/propPool";
 import { PROPS_PER_SECTOR_MAX, spawnProps } from "../../scatter/propScatter";

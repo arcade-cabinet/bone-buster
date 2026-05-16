@@ -1,7 +1,7 @@
+import { addObjexoomListener } from "@engine/events";
 import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import type { JSX } from "react";
 import { useEffect, useState } from "react";
-import { addObjexoomListener } from "../../events";
 import { HitChromaticAberration } from "./HitChromaticAberration";
 import { stepLowQuality } from "./stepLowQuality";
 

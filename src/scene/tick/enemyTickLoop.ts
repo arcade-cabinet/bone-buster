@@ -28,14 +28,6 @@
  *   dt                   — clamped delta seconds for the tick
  */
 
-import type * as THREE from "three";
-import type * as Yuka from "yuka";
-import {
-	SKELETON_ATTACK_COOLDOWN_MS,
-	SKELETON_ATTACK_RANGE,
-	SKELETON_DAMAGE,
-} from "../../constants";
-import { tickEnemyFsm } from "../../enemyAi";
 import {
 	type CollisionContext,
 	type Enemy,
@@ -44,8 +36,16 @@ import {
 	makeEnemyBullet,
 	type ObjexoomMap,
 	resolveCollisionAny,
-} from "../../engine";
-import { dispatch } from "../../events";
+} from "@engine/engine";
+import { dispatch } from "@engine/events";
+import {
+	SKELETON_ATTACK_COOLDOWN_MS,
+	SKELETON_ATTACK_RANGE,
+	SKELETON_DAMAGE,
+} from "@shared/constants";
+import type * as THREE from "three";
+import type * as Yuka from "yuka";
+import { tickEnemyFsm } from "../../enemyAi";
 import type { GameRef } from "../../ObjexoomShell";
 import type { ObjexoomSettings } from "../../settings";
 import { panForPosition, playAggroAlert, playHurt } from "../../sfx";

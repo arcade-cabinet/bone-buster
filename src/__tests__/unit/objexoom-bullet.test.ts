@@ -1,5 +1,5 @@
+import { ENEMY_BULLET_TTL_MS, generateMap, makeEnemyBullet, stepEnemyBullet } from "@engine/engine";
 import { describe, expect, it } from "vitest";
-import { ENEMY_BULLET_TTL_MS, generateMap, makeEnemyBullet, stepEnemyBullet } from "@/engine";
 
 describe("objexoom EnemyBullet (C2)", () => {
 	const map = generateMap(12345);

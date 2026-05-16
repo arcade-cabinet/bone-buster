@@ -1,11 +1,11 @@
+import type { ObjexoomGridMap } from "@engine/engine";
 import { useGLTF, useTexture } from "@react-three/drei";
+import { TILE } from "@shared/constants";
 import { Suspense, useMemo } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 import { pickArchetype } from "../../archetype";
-import { TILE } from "../../constants";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
-import type { ObjexoomGridMap } from "../../engine";
 import { FLOOR_TEXTURES } from "../../floorTextures";
 import { getArchetypeLightPalette } from "../../lighting/archetypePalette";
 import type { PropArchetype } from "../../scatter/propPool";

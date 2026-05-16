@@ -2,10 +2,10 @@
  * E13 step-5 — per-archetype sector density / size contract.
  */
 
+import { generateMap } from "@engine/engine";
 import { describe, expect, it } from "vitest";
 import { ARCHETYPE_NAMES } from "../../archetype";
 import { ARCHETYPE_MAP_SHAPES, getArchetypeMapShape } from "../../archetypeMapShape";
-import { generateMap } from "../../engine";
 
 describe("E13 step-5 — archetype map shapes", () => {
 	it("ships an entry for every archetype", () => {

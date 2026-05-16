@@ -2,9 +2,9 @@
  * COV11 step-2 — courtyard-archetype nature scatter contract.
  */
 
+import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
 import { describe, expect, it } from "vitest";
 import { ARCHETYPE_NAMES } from "../../archetype";
-import type { ObjexoomSectorMap, Vec2 } from "../../engine";
 import { spawnNature } from "../../scatter/natureScatter";
 
 function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {

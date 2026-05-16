@@ -1,5 +1,5 @@
+import { getSectorAtPoint, isSectorMap } from "@engine/engine";
 import { describe, expect, it } from "vitest";
-import { getSectorAtPoint, isSectorMap } from "@/engine";
 import { loadRefLevel } from "@/refLevel";
 import type { RefLevelIndex } from "@/turtle";
 

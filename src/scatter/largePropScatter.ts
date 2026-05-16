@@ -18,12 +18,12 @@
  *    `blocking: true` + a `blockingRadius` consumed by collision).
  */
 
+import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import { polygonContains } from "@engine/engine";
+import { mulberry32 } from "@engine/prng";
 import { pickArchetype } from "../archetype";
-import type { ObjexoomMap, Vec2 } from "../engine";
-import { polygonContains } from "../engine";
 import type { LargePropDef } from "../largeProps";
 import { LARGE_PROPS, pickLargePropDef } from "../largeProps";
-import { mulberry32 } from "../prng";
 import type { PropArchetype } from "./propPool";
 
 const SKIP_RADIUS = 5;

@@ -10,9 +10,9 @@
  *  - WATER_SPEED_MULTIPLIER is in a sensible range.
  */
 
+import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
+import { isInWaterAt, polygonContains, WATER_SPEED_MULTIPLIER } from "@engine/engine";
 import { describe, expect, it } from "vitest";
-import type { ObjexoomGridMap, ObjexoomMap } from "../../engine";
-import { isInWaterAt, polygonContains, WATER_SPEED_MULTIPLIER } from "../../engine";
 import { loadRefLevel } from "../../refLevel";
 
 function makeGridMap(): ObjexoomGridMap {

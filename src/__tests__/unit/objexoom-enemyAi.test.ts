@@ -1,3 +1,5 @@
+import type { Enemy, ObjexoomGridMap } from "@engine/engine";
+import { generateMap } from "@engine/engine";
 import { describe, expect, it } from "vitest";
 import {
 	GETHELP_RADIUS,
@@ -9,8 +11,6 @@ import {
 	WANDER_JITTER_RAD_PER_SEC,
 	WANDER_RADIUS,
 } from "@/enemyAi";
-import type { Enemy, ObjexoomGridMap } from "@/engine";
-import { generateMap } from "@/engine";
 
 function makeEnemy(partial: Partial<Enemy> = {}): Enemy {
 	return {

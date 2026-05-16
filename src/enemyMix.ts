@@ -22,8 +22,8 @@
  * non-sentinel weight tuple runs the remap.
  */
 
-import type { EnemyKind, EnemySpawn } from "./engine";
-import { mulberry32 } from "./prng";
+import type { EnemyKind, EnemySpawn } from "@engine/engine";
+import { mulberry32 } from "@engine/prng";
 import type { PropArchetype } from "./scatter/propPool";
 
 /** `[skeleton, wraith, imp]` — relative weights for the kind picker. */

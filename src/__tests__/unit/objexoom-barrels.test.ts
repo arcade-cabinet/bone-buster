@@ -11,6 +11,7 @@
  *    player-included
  */
 
+import type { ObjexoomMap } from "@engine/engine";
 import { describe, expect, it } from "vitest";
 import {
 	BARREL_AOE_DAMAGE,
@@ -22,7 +23,6 @@ import {
 	resolveExplosion,
 	spawnBarrels,
 } from "../../barrels";
-import type { ObjexoomMap } from "../../engine";
 
 function makeMap(pickupCount: number, seed = 1): ObjexoomMap {
 	return {

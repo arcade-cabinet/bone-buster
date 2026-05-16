@@ -1,6 +1,6 @@
+import { generateMap, spawnPickups } from "@engine/engine";
+import { TILE } from "@shared/constants";
 import { describe, expect, it } from "vitest";
-import { TILE } from "@/constants";
-import { generateMap, spawnPickups } from "@/engine";
 
 describe("objexoom pickup placement (D6)", () => {
 	for (const seed of [12345, 67890, 42, 1729]) {

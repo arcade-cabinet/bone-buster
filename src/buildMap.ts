@@ -1,6 +1,6 @@
+import { generateMap, type ObjexoomMap } from "@engine/engine";
 import { ARCHETYPE_NAMES } from "./archetype";
 import { getArchetypeMapShape } from "./archetypeMapShape";
-import { generateMap, type ObjexoomMap } from "./engine";
 import { loadRefLevel } from "./refLevel";
 import type { Difficulty, LevelChoice } from "./settings";
 

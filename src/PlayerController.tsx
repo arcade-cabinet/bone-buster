@@ -1,6 +1,3 @@
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
-import { PLAYER_HEIGHT, PLAYER_MOVE_SPEED, PLAYER_TURN_SENSITIVITY } from "./constants";
 import {
 	computePortalEdges,
 	getFloorHeightAtAny,
@@ -8,8 +5,11 @@ import {
 	type ObjexoomMap,
 	resolveCollisionAny,
 	WATER_SPEED_MULTIPLIER,
-} from "./engine";
-import { addObjexoomListener, dispatch } from "./events";
+} from "@engine/engine";
+import { addObjexoomListener, dispatch } from "@engine/events";
+import { useFrame, useThree } from "@react-three/fiber";
+import { PLAYER_HEIGHT, PLAYER_MOVE_SPEED, PLAYER_TURN_SENSITIVITY } from "@shared/constants";
+import { useEffect, useMemo, useRef } from "react";
 import type { ObjexoomSettings } from "./settings";
 
 type Props = Readonly<{

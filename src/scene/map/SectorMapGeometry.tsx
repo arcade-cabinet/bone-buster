@@ -1,10 +1,10 @@
+import { computePortalEdges, edgeKey, type ObjexoomSectorMap } from "@engine/engine";
 import { useGLTF } from "@react-three/drei";
 import { useMemo } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 import { pickArchetype } from "../../archetype";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
-import { computePortalEdges, edgeKey, type ObjexoomSectorMap } from "../../engine";
 import { getArchetypeLightPalette } from "../../lighting/archetypePalette";
 import type { PropArchetype } from "../../scatter/propPool";
 import { ALL_WALL_URLS, pickWallUrl } from "../../structures";

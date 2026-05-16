@@ -8,8 +8,8 @@
  * slice.
  */
 
+import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
 import { describe, expect, it } from "vitest";
-import type { ObjexoomGridMap, ObjexoomMap } from "../../engine";
 import {
 	countLampVariants,
 	LAMP_VARIANTS_OFF,

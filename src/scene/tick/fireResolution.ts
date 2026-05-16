@@ -20,12 +20,13 @@
  *   - Returns nothing; mutates refs and the wider event bus.
  */
 
+import type { CollisionContext } from "@engine/engine";
+import { castRayAny, type Enemy, type ObjexoomMap } from "@engine/engine";
+import { dispatch } from "@engine/events";
+import { TILE } from "@shared/constants";
+import { WEAPONS, type WeaponId } from "@shared/weapons";
 import * as THREE from "three";
 import { type Barrel, pickRayBarrel } from "../../barrels";
-import { TILE } from "../../constants";
-import type { CollisionContext } from "../../engine";
-import { castRayAny, type Enemy, type ObjexoomMap } from "../../engine";
-import { dispatch } from "../../events";
 import type { GameRef, WeaponState } from "../../ObjexoomShell";
 import { pickRaySwitch, type Secret } from "../../secrets";
 import type { ObjexoomSettings } from "../../settings";
@@ -39,7 +40,6 @@ import {
 	playShotgun,
 	playSkeletonDeath,
 } from "../../sfx";
-import { WEAPONS, type WeaponId } from "../../weapons";
 
 // QW1 — module-scope scratch vectors. Reused across every shot to
 // skip per-pellet allocations (shotgun = 7 allocs/shot pre-QW1). The

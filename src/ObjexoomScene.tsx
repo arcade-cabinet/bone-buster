@@ -1,12 +1,3 @@
-import { useFrame, useThree } from "@react-three/fiber";
-import type { RefObject } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import * as THREE from "three";
-import type * as Yuka from "yuka";
-import { pickArchetype } from "./archetype";
-import { type Barrel, resolveExplosion, spawnBarrels } from "./barrels";
-import { PLAYER_HEIGHT, TILE } from "./constants";
-import { remapEnemyMix } from "./enemyMix";
 import {
 	computePortalEdges,
 	ENEMY_BULLET_DAMAGE,
@@ -19,8 +10,18 @@ import {
 	spawnEnemies,
 	spawnPickups,
 	stepEnemyBullet,
-} from "./engine";
-import { addObjexoomListener, dispatch } from "./events";
+} from "@engine/engine";
+import { addObjexoomListener, dispatch } from "@engine/events";
+import { useFrame, useThree } from "@react-three/fiber";
+import { PLAYER_HEIGHT, TILE } from "@shared/constants";
+import type { WeaponId } from "@shared/weapons";
+import type { RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
+import type * as Yuka from "yuka";
+import { pickArchetype } from "./archetype";
+import { type Barrel, resolveExplosion, spawnBarrels } from "./barrels";
+import { remapEnemyMix } from "./enemyMix";
 import { type LampInstance, spawnLamps } from "./lampScatter";
 import { getArchetypeLightPalette } from "./lighting/archetypePalette";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
@@ -102,7 +103,6 @@ import {
 	setAmbientPhase,
 	stopAmbient,
 } from "./sfx";
-import type { WeaponId } from "./weapons";
 import { clearYuka, makeYukaEntityAt, removeYukaEntity, tickYuka } from "./yukaIntegration";
 
 type SceneProps = Readonly<{

@@ -13,9 +13,9 @@
  * survives map mutations to other sectors.
  */
 
+import type { MapSector, ObjexoomMap, Vec2 } from "@engine/engine";
 import { pickArchetype } from "../archetype";
 import { pickDecalUrlByArchetype } from "../decals";
-import type { MapSector, ObjexoomMap, Vec2 } from "../engine";
 import type { PropArchetype } from "./propPool";
 
 const WALL_OFFSET = 0.05;

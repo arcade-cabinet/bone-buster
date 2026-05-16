@@ -3,9 +3,9 @@
  * Pins resolveCollisionAny's blocker-pushout behavior.
  */
 
+import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import { resolveCollisionAny } from "@engine/engine";
 import { describe, expect, it } from "vitest";
-import type { ObjexoomSectorMap, Vec2 } from "../../engine";
-import { resolveCollisionAny } from "../../engine";
 
 const farSector: ObjexoomSectorMap = {
 	kind: "sectors",

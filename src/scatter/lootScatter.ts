@@ -16,8 +16,8 @@
  * flag.
  */
 
-import type { ObjexoomMap, PickupSpawn, Vec2 } from "../engine";
-import { isSectorMap } from "../engine";
+import type { ObjexoomMap, PickupSpawn, Vec2 } from "@engine/engine";
+import { isSectorMap } from "@engine/engine";
 import { type LootKind, pickLootKind } from "../loot";
 
 export interface LootSpawn {

@@ -1,5 +1,5 @@
+import { mulberry32, RNG_TAGS } from "@engine/prng";
 import { describe, expect, it } from "vitest";
-import { mulberry32, RNG_TAGS } from "../../prng";
 
 /**
  * CONV1 — byte-stability snapshot for the canonical mulberry32 PRNG.

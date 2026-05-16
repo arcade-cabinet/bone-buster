@@ -12,9 +12,9 @@
  * future `?objexoom=ref1..5` URL flag (forthcoming commit).
  */
 
+import { OBJEXOOM_PALETTE } from "@shared/constants";
 import { useMemo } from "react";
 import * as THREE from "three";
-import { OBJEXOOM_PALETTE } from "./constants";
 import { type DecodedLevel, levelBounds, type Polygon } from "./turtle";
 
 type Props = Readonly<{

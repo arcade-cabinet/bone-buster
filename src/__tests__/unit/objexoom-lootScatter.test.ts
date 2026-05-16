@@ -2,8 +2,8 @@
  * COV12 step-2 — loot scatter contract.
  */
 
+import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
 import { describe, expect, it } from "vitest";
-import type { ObjexoomSectorMap, Vec2 } from "../../engine";
 import { lootPickupSpawn, pickLootSpawn } from "../../scatter/lootScatter";
 
 function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {

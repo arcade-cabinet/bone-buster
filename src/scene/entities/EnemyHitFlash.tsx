@@ -1,8 +1,8 @@
+import type { Enemy } from "@engine/engine";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { SCALE } from "../../design-tokens";
-import type { Enemy } from "../../engine";
 
 /**
  * POL19 — enemy hit-flash slot (see docs/SLOT-ARCHITECTURE.md).

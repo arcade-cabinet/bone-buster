@@ -16,7 +16,7 @@
  * ray, or null. Triggered switches are inert (can't be re-fired).
  */
 
-import type { Vec2 } from "./engine";
+import type { Vec2 } from "@engine/engine";
 
 export interface SecretSpec {
 	/** Stable id per map; survives reloads of the same seed. */

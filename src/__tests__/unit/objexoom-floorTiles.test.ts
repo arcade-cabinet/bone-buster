@@ -9,9 +9,9 @@
  *  - Grid maps return [].
  */
 
+import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
+import { polygonContains } from "@engine/engine";
 import { describe, expect, it } from "vitest";
-import type { ObjexoomGridMap, ObjexoomMap } from "../../engine";
-import { polygonContains } from "../../engine";
 import { loadRefLevel } from "../../refLevel";
 import { FLOOR_TILE_VARIANTS, floorTileUrlFor, spawnFloorTiles } from "../../scatter/floorTiles";
 

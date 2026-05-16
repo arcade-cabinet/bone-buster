@@ -7,14 +7,14 @@
  * because that would conflict with the event-name encoding.
  */
 
-import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	addObjexoomListener,
 	type BurstEvent,
 	dispatch,
 	type FpsUpdateEvent,
 	type ObjexoomEvent,
-} from "../../events";
+} from "@engine/events";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 afterEach(() => {
 	vi.restoreAllMocks();

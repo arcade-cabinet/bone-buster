@@ -1,6 +1,6 @@
-import { PISTOL_MAX_RANGE, PLAYER_RADIUS, SKELETON_HP, TILE } from "./constants";
-import { mulberry32 } from "./prng";
-import type { PropArchetype } from "./scatter/propPool";
+import { mulberry32 } from "@engine/prng";
+import { PISTOL_MAX_RANGE, PLAYER_RADIUS, SKELETON_HP, TILE } from "@shared/constants";
+import type { PropArchetype } from "../scatter/propPool";
 
 export type Cell = "empty" | "wall" | "door" | "spawn" | "exit" | "key" | "lava";
 
@@ -105,7 +105,7 @@ export type ObjexoomSectorMap = ObjexoomMapBase &
 		 * can scatter several per level without re-shaping the map.
 		 * Grid maps don't carry secrets in this slice.
 		 */
-		secrets?: readonly import("./secrets").SecretSpec[];
+		secrets?: readonly import("../secrets").SecretSpec[];
 		/**
 		 * COV3 step-1 — when true, SectorMapGeometry OMITS the procedural
 		 * floor shape and FloorTileField renders modular asphalt tiles
@@ -788,7 +788,7 @@ export function castRayAny(
 // just describes the actor shape so unit tests can reason about it.
 // Y5 — yuka-backed projectile step. Imported as a value (only used by
 // stepEnemyBullet) so engine.ts itself stays free of yuka imports.
-import { yukaProjectileStep } from "./yukaIntegration";
+import { yukaProjectileStep } from "../yukaIntegration";
 
 export const ENEMY_BULLET_SPEED = 1.4 * TILE; // ≈ 1 cell / second
 // L1 — damage values rescaled for the 0-9 HP scale. Imp bullets land

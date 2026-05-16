@@ -1,6 +1,6 @@
+import type { EnemySpawn } from "@engine/engine";
 import { describe, expect, it } from "vitest";
 import { ENEMY_MIX_WEIGHTS, remapEnemyMix } from "../../enemyMix";
-import type { EnemySpawn } from "../../engine";
 
 /**
  * POL42 — per-archetype wraith density. Tests pin both the static

@@ -18,10 +18,10 @@
  * every other scatter sequence.
  */
 
+import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import { polygonContains } from "@engine/engine";
+import { mulberry32 } from "@engine/prng";
 import { pickArchetype } from "../archetype";
-import type { ObjexoomMap, Vec2 } from "../engine";
-import { polygonContains } from "../engine";
-import { mulberry32 } from "../prng";
 
 const INSTANCES_PER_SECTOR_MIN = 4;
 const INSTANCES_PER_SECTOR_MAX = 8;

@@ -1,10 +1,10 @@
+import type { Pickup } from "@engine/engine";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 import { OBJEXOOM_PALETTE, ROLE } from "../../design-tokens";
-import type { Pickup } from "../../engine";
 import { LOOT_URL_LIST, LOOT_URLS, type LootKind, pickLootKind } from "../../loot";
 
 /**

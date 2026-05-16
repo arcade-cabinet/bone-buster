@@ -1,8 +1,8 @@
+import type { EnemyBullet } from "@engine/engine";
 import { useFrame } from "@react-three/fiber";
 import { type RefObject, useRef } from "react";
 import * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
-import type { EnemyBullet } from "../../engine";
 
 // Shared geometry + material across every bullet mesh. All bullets are
 // identical visually, so allocating one of each at module load and

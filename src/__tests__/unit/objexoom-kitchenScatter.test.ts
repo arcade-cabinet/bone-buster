@@ -2,9 +2,9 @@
  * COV13 step-2 — kitchen scatter contract.
  */
 
+import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
 import { describe, expect, it } from "vitest";
 import { ARCHETYPE_NAMES } from "../../archetype";
-import type { ObjexoomSectorMap, Vec2 } from "../../engine";
 import { KITCHEN_PROPS } from "../../kitchen";
 import { spawnKitchen } from "../../scatter/kitchenScatter";
 

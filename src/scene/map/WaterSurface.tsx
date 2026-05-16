@@ -1,7 +1,7 @@
+import type { MapSector } from "@engine/engine";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import type { MapSector } from "../../engine";
 
 /**
  * E7 step-1 — animated water surface for `isWater: true` sectors.

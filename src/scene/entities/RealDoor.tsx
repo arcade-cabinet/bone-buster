@@ -1,10 +1,10 @@
+import { dispatch } from "@engine/events";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import type * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 import { DOOR_VARIANTS, pickDoorUrl } from "../../doors";
-import { dispatch } from "../../events";
 import { playDoor, playDoorTick, playPortal } from "../../sfx";
 
 /**

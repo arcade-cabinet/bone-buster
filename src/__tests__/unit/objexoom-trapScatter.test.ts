@@ -2,8 +2,8 @@
  * COV8 step-2 — trap scatter + tick-damage contract.
  */
 
+import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
 import { describe, expect, it } from "vitest";
-import type { ObjexoomSectorMap, Vec2 } from "../../engine";
 import {
 	disarmSector,
 	spawnTraps,

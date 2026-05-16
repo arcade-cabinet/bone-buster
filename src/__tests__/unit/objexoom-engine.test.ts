@@ -1,5 +1,3 @@
-import { describe, expect, it } from "vitest";
-import { TILE } from "@/constants";
 import {
 	castRay,
 	castRaySectors,
@@ -23,7 +21,9 @@ import {
 	resolveCollision,
 	resolveCollisionSectors,
 	type Vec2,
-} from "@/engine";
+} from "@engine/engine";
+import { TILE } from "@shared/constants";
+import { describe, expect, it } from "vitest";
 
 const SEED = 0xdeadbeef;
 

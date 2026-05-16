@@ -1,13 +1,14 @@
+import type { ObjexoomMap, PickupKind } from "@engine/engine";
+import { addObjexoomListener, dispatch } from "@engine/events";
 import { Canvas } from "@react-three/fiber";
+import { PLAYER_MAX_HP } from "@shared/constants";
+import { computeFadePeak, FADE_COLOR_BY_KIND } from "@shared/fadeTriggers";
+import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ARCHETYPE_NAMES, pickArchetype } from "./archetype";
 import { buildMap } from "./buildMap";
-import { PLAYER_MAX_HP } from "./constants";
 import { ROLE, SCALE } from "./design-tokens";
-import type { ObjexoomMap, PickupKind } from "./engine";
-import { addObjexoomListener, dispatch } from "./events";
-import { computeFadePeak, FADE_COLOR_BY_KIND } from "./fadeTriggers";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
@@ -43,7 +44,6 @@ import {
 	stopAmbient,
 	stopMusic,
 } from "./sfx";
-import { WEAPON_ORDER, WEAPONS, type WeaponId } from "./weapons";
 
 export type GameStatus = "landing" | "playing" | "paused" | "dead" | "transitioning" | "won";
 

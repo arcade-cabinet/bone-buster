@@ -1,8 +1,8 @@
+import { addObjexoomListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
-import { addObjexoomListener } from "../../events";
 import { getArchetypeLightPalette } from "../../lighting/archetypePalette";
 import type { PropArchetype } from "../../scatter/propPool";
 

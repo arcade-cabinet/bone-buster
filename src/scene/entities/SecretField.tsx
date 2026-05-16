@@ -1,8 +1,8 @@
+import { addObjexoomListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import type * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
-import { addObjexoomListener } from "../../events";
 import type { Secret } from "../../secrets";
 import { playDoor, playDoorTick } from "../../sfx";
 

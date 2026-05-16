@@ -22,8 +22,8 @@
  *   https://mugen87.github.io/yuka/examples/
  */
 
+import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
 import * as Yuka from "yuka";
-import type { ObjexoomSectorMap, Vec2 } from "./engine";
 
 // Singleton — there's exactly one OBJEXOOM scene at a time so a
 // module-scoped manager is the right granularity. The Scene's effect

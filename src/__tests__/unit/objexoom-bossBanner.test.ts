@@ -43,7 +43,7 @@ describe("POL36 boss banner dispatch", () => {
 	});
 
 	it("bossSpotted dispatches exactly once per enemy id via the firedRef gate", async () => {
-		const { dispatch } = await import("../../events");
+		const { dispatch } = await import("@engine/events");
 		const fired = new Set<number>();
 
 		// Simulate the enemyTickLoop gate: only dispatch if not already fired
@@ -60,7 +60,7 @@ describe("POL36 boss banner dispatch", () => {
 	});
 
 	it("bossSpotted dispatches independently for separate enemy ids", async () => {
-		const { dispatch } = await import("../../events");
+		const { dispatch } = await import("@engine/events");
 		const fired = new Set<number>();
 		function maybeSpot(enemyId: number) {
 			if (fired.has(enemyId)) return;
@@ -76,7 +76,7 @@ describe("POL36 boss banner dispatch", () => {
 	});
 
 	it("bossDefeated dispatches per-enemy not per-shot (multi-boss kill on same shot fires N events)", async () => {
-		const { dispatch } = await import("../../events");
+		const { dispatch } = await import("@engine/events");
 		// Simulate fireResolution's per-enemy branch in a shot that kills 2 bosses.
 		const killedBossIds = [101, 102];
 		for (const id of killedBossIds) dispatch({ type: "bossDefeated", enemyId: id });

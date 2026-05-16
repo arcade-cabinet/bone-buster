@@ -2,10 +2,10 @@
  * E13 step-3 — per-archetype enemy mix contract.
  */
 
+import type { EnemyKind, EnemySpawn } from "@engine/engine";
 import { describe, expect, it } from "vitest";
 import { ARCHETYPE_NAMES } from "../../archetype";
 import { ENEMY_MIX_WEIGHTS, remapEnemyMix } from "../../enemyMix";
-import type { EnemyKind, EnemySpawn } from "../../engine";
 
 function makeSpawns(count: number, kind: EnemyKind = "skeleton"): EnemySpawn[] {
 	return Array.from({ length: count }, (_, i) => ({

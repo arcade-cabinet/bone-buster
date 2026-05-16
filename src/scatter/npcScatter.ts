@@ -22,11 +22,11 @@
  * every other scatter sequence.
  */
 
+import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import { polygonContains } from "@engine/engine";
+import { mulberry32 } from "@engine/prng";
 import { pickArchetype } from "../archetype";
-import type { ObjexoomMap, Vec2 } from "../engine";
-import { polygonContains } from "../engine";
 import { type NpcKind, pickNpcKind } from "../npcs";
-import { mulberry32 } from "../prng";
 
 const PER_SECTOR_MIN = 0;
 const PER_SECTOR_MAX = 2;

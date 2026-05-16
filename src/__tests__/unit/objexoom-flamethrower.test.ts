@@ -7,9 +7,9 @@
  * exercised by the browser-mode + e2e suites).
  */
 
+import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
 import { describe, expect, it } from "vitest";
 import { WEAPON_MODELS } from "../../models";
-import { WEAPON_ORDER, WEAPONS, type WeaponId } from "../../weapons";
 
 describe("E8 — flamethrower weapon slot", () => {
 	it("WeaponId includes flamethrower", () => {

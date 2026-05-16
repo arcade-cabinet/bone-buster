@@ -10,13 +10,13 @@
  *  - Maps with no enemy spawns produce no bosses (defensive).
  */
 
-import { describe, expect, it } from "vitest";
 import {
 	BOSS_HP_MULTIPLIER,
 	BOSS_VISUAL_SCALE,
 	pickBossSpawnIndex,
 	spawnEnemies,
-} from "../../engine";
+} from "@engine/engine";
+import { describe, expect, it } from "vitest";
 import { loadRefLevel } from "../../refLevel";
 
 describe("E2 — boss spawn selection", () => {

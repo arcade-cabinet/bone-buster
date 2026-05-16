@@ -20,8 +20,8 @@
  *    accidentally counts as a kill or vice versa.
  */
 
-import type { ObjexoomMap, Vec2 } from "./engine";
-import { mulberry32 } from "./prng";
+import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import { mulberry32 } from "@engine/prng";
 
 /** Default barrel HP. Tuned so a pistol shot doesn't pop a barrel on
  * the first hit (you need to actually aim at it), but the shotgun

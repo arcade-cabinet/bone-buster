@@ -22,16 +22,16 @@
  * updates flow back to Shell via the `setState` setter in deps.
  */
 
+import type { PickupKind } from "@engine/engine";
+import { dispatch } from "@engine/events";
+import { WEAPONS, type WeaponId } from "@shared/weapons";
 import { useRef } from "react";
-import type { PickupKind } from "../../engine";
-import { dispatch } from "../../events";
 import { LOOT_BONUSES, pickLootKind } from "../../loot";
 import type { FadeKind, GameRef, GameState } from "../../ObjexoomShell";
 import { GOING_BACK_BUDGET_MS } from "../../ObjexoomShell";
 import { advanceLevel, runStatsReducer } from "../../runStats";
 import type { DifficultyTuning, LevelChoice, ObjexoomSettings } from "../../settings";
 import { playFlashlightClick, playHitSting, playPickup, playPlayerDeath } from "../../sfx";
-import { WEAPONS, type WeaponId } from "../../weapons";
 
 /**
  * Per-pickup-kind action table. Lives in this module rather than in

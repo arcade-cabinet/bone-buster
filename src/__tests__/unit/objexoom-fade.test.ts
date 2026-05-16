@@ -9,8 +9,9 @@
 // only one source. CONV9 moved the tables to src/fadeTriggers.ts;
 // the test now imports them so a change to the real table either
 // passes (assertions still hold) or fails (assertions need re-baselining).
+
+import { computeFadePeak, FADE_COLOR_BY_KIND, FADE_PEAK_BY_KIND } from "@shared/fadeTriggers";
 import { describe, expect, it } from "vitest";
-import { computeFadePeak, FADE_COLOR_BY_KIND, FADE_PEAK_BY_KIND } from "../../fadeTriggers";
 import type { FadeKind } from "../../ObjexoomShell";
 
 describe("objexoom J9 — fade trigger derivations", () => {

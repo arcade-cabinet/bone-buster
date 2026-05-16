@@ -18,10 +18,10 @@
  * every other scatter sequence.
  */
 
+import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import { polygonContains } from "@engine/engine";
+import { mulberry32 } from "@engine/prng";
 import { pickArchetype } from "../archetype";
-import type { ObjexoomMap, Vec2 } from "../engine";
-import { polygonContains } from "../engine";
-import { mulberry32 } from "../prng";
 import { TRAPS, type TrapDef, type TrapKind } from "../traps";
 import type { PropArchetype } from "./propPool";
 

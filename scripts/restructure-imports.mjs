@@ -89,25 +89,39 @@ function aliasForPath(newPath) {
 }
 
 /**
- * The set of legal import-specifier shapes for one move. Used when
- * rewriting importers — we accept the old path in either of the
- * forms an author might have used (alias prefix, repo-relative, or
- * importer-relative).
+ * The set of legal import-specifier shapes for one move, computed
+ * per-importer because the relative form changes with importer
+ * depth. Returns specifiers that could appear in importerPath's
+ * source pointing at fromPath:
+ *   - alias forms (`@/<rest>`, `@app/<rest>`, any bucket alias that
+ *     covered the old path)
+ *   - the importer-relative form (`./constants`, `../../weapons`)
  */
-function buildSpecifierMatchers(fromPath) {
+function buildSpecifierMatchers(fromPath, importerPath) {
 	const noExt = fromPath.replace(/\.(ts|tsx)$/, "");
-	const specifiers = new Set([noExt]);
-	specifiers.add(`./${noExt}`);
+	const specifiers = new Set();
 	if (noExt.startsWith("src/")) {
 		specifiers.add(`@/${noExt.slice(4)}`);
 	}
 	if (noExt.startsWith("app/")) {
 		specifiers.add(`@app/${noExt.slice(4)}`);
 	}
-	// Any pre-existing bucket alias usage that pointed at the old
-	// flat path (e.g. `@/weapons` for a still-flat src/weapons.ts).
-	const flatAlias = noExt.startsWith("src/") ? `@/${noExt.slice(4)}` : null;
-	if (flatAlias) specifiers.add(flatAlias);
+	// Importer-relative form. Drop the extension so authors who wrote
+	// `from './constants'` (no extension) and `from './constants.ts'`
+	// (with extension — rare but legal) both match.
+	const importerDir = dirname(importerPath);
+	const rel = relative(importerDir, noExt);
+	const normalized = rel.startsWith(".") ? rel : `./${rel}`;
+	specifiers.add(normalized);
+	// Also allow any pre-existing bucket alias usage if the old path
+	// already lived under a bucket (e.g. `@scene/foo` for a file that
+	// then moves inside src/scene/).
+	const oldAliased = aliasForPath(fromPath);
+	if (oldAliased) {
+		specifiers.add(
+			oldAliased.remainder ? `${oldAliased.alias}/${oldAliased.remainder}` : oldAliased.alias,
+		);
+	}
 	return specifiers;
 }
 
@@ -129,15 +143,25 @@ async function rewriteFile(filePath, moves) {
 	const abs = join(REPO_ROOT, filePath);
 	const original = await readFile(abs, "utf8");
 	let next = original;
+
+	// Pass 1: any moved file is itself an importer of OTHER modules.
+	// Its sibling-relative imports were authored against its OLD
+	// location and break when the file moves. Reanchor them to the
+	// new directory.
+	const selfMove = moves.find((m) => m.to === filePath);
+	if (selfMove) {
+		next = reanchorOwnImports(next, selfMove.from, selfMove.to);
+	}
+
+	// Pass 2: every other file that imports a moved module gets its
+	// import-specifier rewritten to the new path / alias.
 	for (const move of moves) {
-		const matchers = buildSpecifierMatchers(move.from);
+		const matchers = buildSpecifierMatchers(move.from, filePath);
 		const replacement = rewriteSpecifierFor(filePath, move.to);
 		for (const matcher of matchers) {
-			// Match either `from "X"` or `from 'X'`. Escape regex meta.
 			const escaped = matcher.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 			const re = new RegExp(`(from\\s+['"])${escaped}(['"])`, "g");
 			next = next.replace(re, `$1${replacement}$2`);
-			// Also catch dynamic imports: `import("X")` / `import('X')`.
 			const dynRe = new RegExp(`(import\\(\\s*['"])${escaped}(['"]\\s*\\))`, "g");
 			next = next.replace(dynRe, `$1${replacement}$2`);
 		}
@@ -147,6 +171,27 @@ async function rewriteFile(filePath, moves) {
 		return true;
 	}
 	return false;
+}
+
+/**
+ * Pass-1 reanchor: rewrite every relative import in `source` so it
+ * resolves the same target after the file moves from `fromPath` to
+ * `toPath`. Alias imports (`@/x`, `@scene/y`) are unaffected because
+ * they don't depend on the importer's directory.
+ */
+function reanchorOwnImports(source, fromPath, toPath) {
+	const fromDir = dirname(fromPath);
+	const toDir = dirname(toPath);
+	if (fromDir === toDir) return source;
+	const re = /(from\s+['"]|import\(\s*['"])(\.[^'"]+)(['"])/g;
+	return source.replace(re, (_full, prefix, spec, suffix) => {
+		// Resolve the import against the OLD directory, then re-express
+		// it relative to the NEW directory.
+		const targetFromOld = resolve("/", fromDir, spec).slice(1);
+		const reAnchored = relative(toDir, targetFromOld);
+		const normalized = reAnchored.startsWith(".") ? reAnchored : `./${reAnchored}`;
+		return `${prefix}${normalized}${suffix}`;
+	});
 }
 
 async function main() {

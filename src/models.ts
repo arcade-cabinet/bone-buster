@@ -11,9 +11,9 @@
  * of each ENEMY_MODELS entry for the full list each rig ships.
  */
 
+import type { EnemyKind } from "@engine/engine";
+import type { WeaponId } from "@shared/weapons";
 import { A } from "./assetUrl";
-import type { EnemyKind } from "./engine";
-import type { WeaponId } from "./weapons";
 
 export type EnemyAnimSet = {
 	idle: string;

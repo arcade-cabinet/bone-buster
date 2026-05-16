@@ -4,9 +4,9 @@
  * regardless of the input seed.
  */
 
+import type { ObjexoomMap } from "@engine/engine";
 import { describe, expect, it } from "vitest";
 import { ARCHETYPE_NAMES, pickArchetype } from "../../archetype";
-import type { ObjexoomMap } from "../../engine";
 import { applyArchetypeOverride } from "../../ObjexoomShell";
 
 function fakeMap(seed: number): ObjexoomMap {

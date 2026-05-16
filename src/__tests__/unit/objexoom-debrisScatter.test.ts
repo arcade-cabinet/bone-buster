@@ -2,8 +2,8 @@
  * COV5 step-2 — debris scatter contract.
  */
 
+import { polygonContains } from "@engine/engine";
 import { describe, expect, it } from "vitest";
-import { polygonContains } from "../../engine";
 import { loadRefLevel } from "../../refLevel";
 import { DEBRIS_VARIANTS, spawnDebris } from "../../scatter/debrisScatter";
 

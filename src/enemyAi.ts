@@ -14,8 +14,8 @@
  * the player from picking off patrolling enemies one-by-one.
  */
 
-import type { CollisionContext, Enemy, EnemyFsmState, ObjexoomMap, Vec2 } from "./engine";
-import { hasLineOfSightAny, resolveCollisionAny } from "./engine";
+import type { CollisionContext, Enemy, EnemyFsmState, ObjexoomMap, Vec2 } from "@engine/engine";
+import { hasLineOfSightAny, resolveCollisionAny } from "@engine/engine";
 // Y1/Y3/Y8 — yuka-backed step math. The hand-rolled FSM stays
 // (it's the "thin compat shim" Y8 calls out); the per-frame patrol +
 // chase displacement now flows through `yukaStepToward` / `yukaWanderTarget`
