@@ -1,14 +1,14 @@
 # Bone Buster — live work queue
 
-**Status:** ACTIVE
-**Branch:** `overhaul/bone-buster` — one long-running branch holds every commit until the queue drains.
+**Status:** RELEASED
+**Branch:** `overhaul/bone-buster` — one long-running branch held every commit while the queue drained.
 **Authority chain:** DESIGN > ARCHITECTURE > DECISIONS > **PRD** > this file > ROADMAP.
 **Spec:** [`docs/PRD.md`](../docs/PRD.md) carries the user stories, surfaces, and acceptance bars. Each item below points at its PRD section for the why and the verifiable acceptance.
 **Standards:** [`STANDARDS.md`](../STANDARDS.md) carries doctrine (quality bar, slot architecture, no-end-of-turn, design tokens, etc).
 **Decisions:** [`docs/DECISIONS.md`](../docs/DECISIONS.md) carries binding technical decisions.
 **Audit trail:** shipped items live in `git log` + `.agent-state/decisions.ndjson` + `CHANGELOG.md`. They are not preserved in this file.
 
-## Operating loop
+## Operating loop (for the next directive)
 
 1. Pick the topmost unchecked item.
 2. Read its PRD section for the acceptance bar.
@@ -17,26 +17,18 @@
 5. Flip `[ ]` → `[x]` in the same commit; **delete the item from this file** in the next forward-going commit (per the prune-shipped-from-directive rule).
 6. Push + open one PR per coherent slice (lane completion or larger), not per commit (per the no-pr-per-commit rule).
 
-## Lane ordering (corrected 2026-05-16)
-
-Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first ordering forced double-work because new components landed in the old `src/BoneBuster*.tsx` shape that RESTRUCTURE will move. Going forward:
-
-1. **BUILD-CONFIG** — Vite/Vitest/Pages alignment. Get the deployed gh-pages target green.
-2. **RESTRUCTURE** — adopt `app/` + `src/` layout; drop project-name prefix on filenames. Migrate every shipped component (`BoneBusterWordmark`, `ScuffShader`, `audio/logoSting.ts`, `OBJEXOOM*` → `Shell/Hud/Landing/Scene`) in one mechanical pass.
-3. **AUDIO** — Howler.js swap + sample integration. Replaces all Tone.js procedural-synth surface. Depends on ITCH-FETCH (shipped) + RESTRUCTURE.
-4. **REBRAND** (R6-R10) — remaining rebrand items. R6 logo sting becomes sampled OGG via Howler (re-scoped).
-5. **IDENTITY** — depends on REBRAND palette + ITCH-FETCH extracts.
-6. **ARCHETYPE INTERLEAVE** — per-archetype content + perf. Depends on everything above.
-7. **MIGRATE** — old-repo Pages redirect + 30-day archive. Parallel residual.
-
 ## Queue
 
-### ARCHETYPE INTERLEAVE — per-archetype content + perf slice
+(empty — the overhaul backlog is drained. Authoring a new
+directive starts from `docs/PRD.md` and any remaining items
+there, or from new user intent.)
 
-Order: corridor → arena → courtyard → sewer → library. First slice generalizes the `InstancedField` + `EphemeralPool` factories; subsequent slices reuse.
+## Closeout note (2026-05-16)
 
+ARCHETYPE INTERLEAVE drained — see commits `a4daceb` through
+`be4e4af` and the per-archetype audit docs under `docs/audits/`.
 
-### MIGRATE — final residual
-
-- [ ] **M4** — OLD repo Pages redirect to new home. PRD §M4.
-- [ ] **M5** — 30-day archive grace + `gh repo archive`. PRD §M5.
+MIGRATE lane (M4 + M5) cut as non-applicable — GitHub's
+repo-rename redirect handles all the durable substitutes;
+there is no separate OLD repo with a Pages deployment to
+manage. PRD §MIGRATE updated with the empirical findings.

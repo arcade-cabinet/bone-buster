@@ -398,24 +398,42 @@ Reference: `~/src/arcade-cabinet/voxel-realms/{app,src}`.
 
 ---
 
-## MIGRATE — final residual
+## MIGRATE — final residual (NON-APPLICABLE — cut)
 
 Remote rename `objexiv/objexoom` → `arcade-cabinet/bone-buster`
 completed by the user 2026-05-15. Local repo stays at
 `~/src/objexiv/objexoom`; GitHub's git-protocol redirect routes
 the existing origin URL transparently.
 
-### M4 — Old-repo Pages redirect
+Empirical check on 2026-05-16:
 
-- **Surfaces:** OLD `objexiv/objexoom` repo's `gh-pages` branch `index.html`, OLD repo README.
-- **Acceptance:** `index.html` carries `<meta http-equiv="refresh" content="0; url=https://arcade-cabinet.github.io/bone-buster/">`. OLD README links to new home. (Performed against the old repo via gh CLI; no local-repo change.)
+- `gh repo view objexiv/objexoom` resolves to `arcade-cabinet/bone-buster`
+  — the GitHub-internal repo rename handles all git + API
+  redirects transparently. There is no separate OLD repo to
+  manage.
+- `https://objexiv.github.io/objexoom/` returns 404 — no
+  legacy Pages site was ever deployed under that URL. The
+  historical `package.json` "homepage" field for the
+  `objexoom` name pointed at the source github URL, not at a
+  Pages deployment.
+- The live Pages site is the new `arcade-cabinet.github.io/bone-buster/`
+  and only that.
 
-### M5 — Archive grace
+**M4 (OLD-repo Pages redirect) and M5 (30-day archive grace)
+both presupposed a separate OLD repo with its own gh-pages
+deployment. Neither artifact exists.** GitHub's repo-rename
+redirect is the durable substitute for both items:
 
-- **Surfaces:** GH repo settings on the OLD repo.
-- **Acceptance:** After 30 days of quiet traffic (verify via `gh api repos/objexiv/objexoom/traffic/views`), `gh repo archive objexiv/objexoom`. Redirect remains live on the archived repo.
+- Git-protocol redirect: cloning from the old origin URL
+  succeeds.
+- HTTP redirect on github.com URLs: visiting the old web
+  URL redirects to the new repo page.
+- No Pages site to redirect; no separate repo to archive.
 
----
+M4 + M5 are cut, not deferred. If a future external tool
+shows stale traffic against an old Pages URL we don't know
+about, re-open as a new directive item with the actual URL
+captured.
 
 ## Parked — out of scope until the overhaul backlog drains
 
