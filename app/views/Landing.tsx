@@ -1,3 +1,5 @@
+import { ScuffShader } from "@atoms/ScuffShader";
+import { BoneBusterWordmark } from "@atoms/Wordmark";
 import { getMusicLoadProgress } from "@audio/sfx";
 import { formatRunDuration, openRunHistory, type RunRecord } from "@store/runHistory";
 import {
@@ -11,10 +13,8 @@ import {
 import { motion, useReducedMotion } from "framer-motion";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
-import { BoneBusterWordmark } from "./BoneBusterWordmark";
-import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "./design-tokens";
-import { TYPE } from "./design-tokens/typography";
-import { ScuffShader } from "./ScuffShader";
+import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "../../src/design-tokens";
+import { TYPE } from "../../src/design-tokens/typography";
 
 type Props = Readonly<{
 	settings: ObjexoomSettings;

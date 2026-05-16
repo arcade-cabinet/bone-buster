@@ -50,7 +50,7 @@ describe("T1 — POL1 score wiring", () => {
 		// inside a `score > 0` check. Pre-T1 this gate was inline
 		// boolean logic; if anyone removes it the SCORE chip would
 		// render "SCORE 0" on every fresh run.
-		const hudSrc = await readFile(resolve(__dirname, "../../ObjexoomHUD.tsx"), "utf-8");
+		const hudSrc = await readFile(resolve(__dirname, "../../../app/views/HUD.tsx"), "utf-8");
 		expect(hudSrc).toMatch(/state\.score\s*>\s*0/);
 	});
 

@@ -1,6 +1,6 @@
+import { GOING_BACK_BUDGET_MS } from "@views/Shell";
 import { describe, expect, it } from "vitest";
 import { formatCountdown } from "../../hud/overlays/GoingBackOverlay";
-import { GOING_BACK_BUDGET_MS } from "../../ObjexoomShell";
 
 /**
  * POL37 — going-back countdown. Tests cover the formatter contract +

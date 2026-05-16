@@ -28,10 +28,10 @@ import { dispatch } from "@engine/events";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import { advanceLevel, runStatsReducer } from "@store/runStats";
 import type { DifficultyTuning, LevelChoice, ObjexoomSettings } from "@store/settings";
+import type { FadeKind, GameRef, GameState } from "@views/Shell";
+import { GOING_BACK_BUDGET_MS } from "@views/Shell";
 import { LOOT_BONUSES, pickLootKind } from "@world/loot";
 import { useRef } from "react";
-import type { FadeKind, GameRef, GameState } from "../../ObjexoomShell";
-import { GOING_BACK_BUDGET_MS } from "../../ObjexoomShell";
 
 /**
  * Per-pickup-kind action table. Lives in this module rather than in

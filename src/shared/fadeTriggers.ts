@@ -9,8 +9,8 @@
  * assertions read against the token-resolved string at import time.
  */
 
+import type { FadeKind } from "@views/Shell";
 import { ROLE, SCALE } from "../design-tokens";
-import type { FadeKind } from "../ObjexoomShell";
 
 export const FADE_COLOR_BY_KIND: Readonly<Record<FadeKind, string>> = {
 	damage: ROLE.actionDamage,

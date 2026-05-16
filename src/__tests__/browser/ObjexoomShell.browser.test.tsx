@@ -22,8 +22,8 @@
  */
 
 import { cleanup, render, screen } from "@testing-library/react";
+import { ObjexoomShell } from "@views/Shell";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ObjexoomShell } from "../../ObjexoomShell";
 
 function setSearchParams(qs: string) {
 	const url = new URL(window.location.href);

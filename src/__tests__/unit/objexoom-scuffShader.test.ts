@@ -1,5 +1,5 @@
+import { hash, smoothstep, valueNoise } from "@atoms/ScuffShader";
 import { describe, expect, it } from "vitest";
-import { hash, smoothstep, valueNoise } from "../../ScuffShader";
 
 /**
  * R4 contract pins. The ScuffShader noise field is decorative, but

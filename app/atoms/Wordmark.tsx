@@ -19,8 +19,8 @@
 
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { useEffect, useState } from "react";
-import { BONE_PALETTE, ROLE } from "./design-tokens";
-import { TYPE } from "./design-tokens/typography";
+import { BONE_PALETTE, ROLE } from "../../src/design-tokens";
+import { TYPE } from "../../src/design-tokens/typography";
 
 const TITLE = "BONE BUSTER";
 

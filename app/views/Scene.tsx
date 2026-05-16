@@ -12,6 +12,7 @@ import {
 	setAmbientPhase,
 	stopAmbient,
 } from "@audio/sfx";
+import { PlayerController } from "@components/PlayerController";
 import {
 	computePortalEdges,
 	ENEMY_BULLET_DAMAGE,
@@ -31,6 +32,7 @@ import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { PLAYER_HEIGHT, TILE } from "@shared/constants";
 import type { WeaponId } from "@shared/weapons";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "@store/settings";
+import type { GameRef, LevelPhase, WeaponState } from "@views/Shell";
 import { pickArchetype } from "@world/archetype";
 import { type Barrel, resolveExplosion, spawnBarrels } from "@world/barrels";
 import { type LampInstance, spawnLamps } from "@world/lampScatter";
@@ -63,8 +65,6 @@ import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type * as Yuka from "yuka";
-import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
-import { PlayerController } from "./PlayerController";
 import {
 	AdaptiveResolution,
 	BarrelMesh,
@@ -100,10 +100,10 @@ import {
 	VehicleWreck,
 	WeaponSwapDip,
 	WeaponViewmodel,
-} from "./scene";
-import { tickEnemyLoop } from "./scene/tick/enemyTickLoop";
-import { resolveFire } from "./scene/tick/fireResolution";
-import { createTimeScaleBus } from "./scene/tick/timeScaleBus";
+} from "../../src/scene";
+import { tickEnemyLoop } from "../../src/scene/tick/enemyTickLoop";
+import { resolveFire } from "../../src/scene/tick/fireResolution";
+import { createTimeScaleBus } from "../../src/scene/tick/timeScaleBus";
 
 type SceneProps = Readonly<{
 	map: ObjexoomMap;

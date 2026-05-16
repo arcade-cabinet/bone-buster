@@ -22,7 +22,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import { BONE_PALETTE } from "./design-tokens";
+import { BONE_PALETTE } from "../../src/design-tokens";
 
 type Props = Readonly<{
 	className?: string;

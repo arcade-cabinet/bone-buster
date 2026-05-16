@@ -5,9 +5,9 @@
  */
 
 import type { ObjexoomMap } from "@engine/engine";
+import { applyArchetypeOverride } from "@views/Shell";
 import { ARCHETYPE_NAMES, pickArchetype } from "@world/archetype";
 import { describe, expect, it } from "vitest";
-import { applyArchetypeOverride } from "../../ObjexoomShell";
 
 function fakeMap(seed: number): ObjexoomMap {
 	// CONV3 — archetype is now denormalized onto the map type. The fake

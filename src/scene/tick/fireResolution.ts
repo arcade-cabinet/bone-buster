@@ -36,10 +36,10 @@ import { dispatch } from "@engine/events";
 import { TILE } from "@shared/constants";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import type { ObjexoomSettings } from "@store/settings";
+import type { GameRef, WeaponState } from "@views/Shell";
 import { type Barrel, pickRayBarrel } from "@world/barrels";
 import { pickRaySwitch, type Secret } from "@world/secrets";
 import * as THREE from "three";
-import type { GameRef, WeaponState } from "../../ObjexoomShell";
 
 // QW1 — module-scope scratch vectors. Reused across every shot to
 // skip per-pellet allocations (shotgun = 7 allocs/shot pre-QW1). The

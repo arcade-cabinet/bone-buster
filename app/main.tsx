@@ -1,7 +1,7 @@
 import { ensureJeepSqliteReady } from "@platform/persistence/initJeepSqlite";
+import { ObjexoomShell } from "@views/Shell";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { ObjexoomShell } from "@/ObjexoomShell";
 // Bone Buster fonts (PRD §R1). Self-hosted via @fontsource/*; no CDN.
 // Each import is byte-for-byte the woff2 from the font package. Order
 // is display-first so the wordmark paints without FOIT on landing.

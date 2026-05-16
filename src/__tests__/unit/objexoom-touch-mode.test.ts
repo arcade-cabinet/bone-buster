@@ -1,5 +1,5 @@
+import { resolveTouchMode } from "@views/Shell";
 import { describe, expect, it, vi } from "vitest";
-import { resolveTouchMode } from "../../ObjexoomShell";
 
 describe("BC5 — resolveTouchMode", () => {
 	it("'on' pins to true regardless of detection", () => {
