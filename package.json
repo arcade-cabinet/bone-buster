@@ -48,6 +48,7 @@
 		"itch:fetch": "node scripts/fetch-itch.mjs",
 		"itch:fetch:dry": "node scripts/fetch-itch.mjs --dry",
 		"itch:inventory": "node scripts/fetch-itch.mjs --inventory",
+		"itch:refresh-keys": "node scripts/fetch-itch.mjs --refresh-keys",
 		"assets:pwa-icons": "node scripts/generate-pwa-icons.mjs",
 		"assets:publish-screenshots": "bash scripts/publish-screenshots.sh",
 		"assets:verify-runtime": "node scripts/verify-runtime-assets.mjs",

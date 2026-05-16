@@ -144,10 +144,35 @@ function writeInventory(packsList) {
 	console.log(`Wrote ${INVENTORY_PATH} (${packsList.length} packs, ${cats.length} categories)`);
 }
 
+function refreshKeys(key) {
+	// Walks /api/1/key/keys?page=N (50 items/page) until the API returns
+	// an empty page, accumulates every owned download_key, writes the
+	// merged result to .itch-cache/all-keys.json. Per PRD §IF2.
+	mkdirSync(CACHE, { recursive: true });
+	const out = [];
+	let page = 1;
+	while (true) {
+		const resp = apiGet(key, `/api/1/my-owned-keys?page=${page}`);
+		const keys = resp?.owned_keys ?? [];
+		if (keys.length === 0) break;
+		out.push(...keys);
+		console.log(`  page ${page}: +${keys.length} keys (total ${out.length})`);
+		page++;
+		if (page > 100) {
+			console.error("  refreshKeys: page-cap hit at 100, bailing");
+			break;
+		}
+	}
+	writeFileSync(KEYS_PATH, JSON.stringify(out, null, 2));
+	console.log(`refreshKeys: wrote ${out.length} owned keys to ${KEYS_PATH}`);
+	return out;
+}
+
 async function main() {
 	const argv = process.argv.slice(2);
 	const DRY = argv.includes("--dry");
 	const INVENTORY = argv.includes("--inventory");
+	const REFRESH_KEYS = argv.includes("--refresh-keys");
 	const filterArg = argv.find((a) => a.startsWith("--filter="));
 	const categoryFilter = filterArg
 		? new Set(
@@ -159,6 +184,11 @@ async function main() {
 		: null;
 
 	const KEY = loadKey();
+
+	if (REFRESH_KEYS) {
+		refreshKeys(KEY);
+		if (!INVENTORY) return;
+	}
 
 	if (!existsSync(KEYS_PATH)) {
 		console.error(
