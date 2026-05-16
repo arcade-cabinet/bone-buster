@@ -31,25 +31,6 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 
 ## Queue
 
-### BUILD-CONFIG — Vite + Vitest + Pages alignment
-
-- [x] **BC1** — `vite.config.ts` overhaul matching voxel-realms pattern. PRD §BC1.
-- [x] **BC2** — `vitest.config.ts` overhaul. PRD §BC2.
-- [x] **BC3** — Pages base-path fix end-to-end (fixes the currently-broken deploy). PRD §BC3.
-- [x] **BC4** — foldable viewport + safe-area CSS. PRD §BC4.
-- [x] **BC5** — touch joysticks on foldable. PRD §BC5.
-- [x] **BC6** — responsive HUD scaling. PRD §BC6.
-- [x] **BC7** — foldable smoke test. PRD §BC7.
-
-### RESTRUCTURE — app/ + src/ layout per arcade-cabinet conventions
-
-- [x] **RS1** — migration plan `docs/RESTRUCTURE-PLAN.md`. PRD §RS1.
-- [x] **RS2** — resolver + tsconfig paths. PRD §RS2.
-- [x] **RS3** — bulk `git mv` (per-bucket commits — rs3a-rs3h shipped). PRD §RS3.
-- [x] **RS4** — drop project-name prefix on FILENAMES (Wordmark, Landing, Shell, HUD, Scene). Function-name rename (`ObjexoomShell` → `Shell` identifier) deferred to R8 source-string sweep. PRD §RS4.
-- [x] **RS5** — test imports + verify gate (full `pnpm verify` against new paths). PRD §RS5.
-- [x] **RS6** — docs path references (CLAUDE.md, AGENTS.md, README, ARCHITECTURE — no surviving `src/Objexoom*` mentions). PRD §RS6.
-
 ### AUDIO — Howler swap + itch.io sample integration
 
 - [ ] **A11a** — `docs/AUDIO-INVENTORY.md`. PRD §A11a.
