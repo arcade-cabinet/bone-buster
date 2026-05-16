@@ -55,9 +55,9 @@ async function withFoldable(
 		isMobile: true,
 	});
 	const page = await context.newPage();
+	// CodeQL js/incomplete-url-substring-sanitization — exact hostname match.
 	await page.route(
-		(url) =>
-			url.hostname.includes("fonts.googleapis.com") || url.hostname.includes("fonts.gstatic.com"),
+		(url) => url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com",
 		(route) => route.abort(),
 	);
 	try {
