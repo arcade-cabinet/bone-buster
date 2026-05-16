@@ -59,7 +59,7 @@ describe("COV8 step-2 — spawnTraps determinism", () => {
 
 	it("returns [] for grid maps", () => {
 		const grid = { ...SECTOR_FIXTURE, kind: "grid" } as unknown as BoneBusterSectorMap;
-		expect(spawnTraps(grid as unknown as BoneBusterSectorMap)).toEqual([]);
+		expect(spawnTraps(grid)).toEqual([]);
 	});
 
 	it("places at least one trap on arena-archetype maps (heavy density)", () => {

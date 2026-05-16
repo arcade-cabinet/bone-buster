@@ -28,7 +28,7 @@ function makeEnemy(partial: Partial<Enemy> = {}): Enemy {
 	};
 }
 
-describe("objexoom enemyAi FSM (C3)", () => {
+describe("bonebuster enemyAi FSM (C3)", () => {
 	const map = generateMap(12345) as BoneBusterGridMap;
 	const ctx = { doorOpen: false };
 
