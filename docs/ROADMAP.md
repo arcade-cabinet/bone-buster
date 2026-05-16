@@ -31,7 +31,7 @@ Selected highlights — full audit trail is in `git log` and
 
 **Standalone repo bring-up:**
 - Canonical `polygonContains` fix
-- BONE BUSTER design token system (`src/design-tokens/`) + CSS mirror
+- BONE BUSTER design token system (`app/styles/tokens/`) + CSS mirror
   + horror-tactical fonts (Black Ops One + Rajdhani)
 - Dependabot grouped, release-please wired, CI green
 - Asset reorg + BASE_URL helper + 5 canonical screenshots verified

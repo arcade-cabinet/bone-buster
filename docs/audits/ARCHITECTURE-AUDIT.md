@@ -25,9 +25,9 @@ Specifics, not flattery.
 ### 1.1 Sim purity is real and held
 
 `docs/ARCHITECTURE.md` §"Sim purity" is not aspirational — it is
-verified. `src/engine.ts`, `src/buildMap.ts`, `src/enemyAi.ts`,
-`src/turtle.ts`, `src/refLevel.ts`, `src/runStats.ts`, `src/settings.ts`,
-`src/weapons.ts` all grep clean against `Math.random|performance.now|Date.now`
+verified. `src/engine/engine.ts`, `src/world/buildMap.ts`, `src/ai/enemyAi.ts`,
+`src/ai/turtle.ts`, `src/world/refLevel.ts`, `src/store/runStats.ts`, `src/store/settings.ts`,
+`src/shared/weapons.ts` all grep clean against `Math.random|performance.now|Date.now`
 AND against `import .* (three|@react-three|react)`. The only foreign
 runtime in the sim layer is `yuka`, and the integration adapter at
 `src/yukaIntegration.ts:1-30` documents this is a deliberate
@@ -45,7 +45,7 @@ inspected preserves the pre-step literal in the corridor entry with
 an explicit comment:
 
 - `src/archetypeMapShape.ts:35` — "Pre-step-5 defaults — preserves canonical procedural seed-0 maps."
-- `src/lighting/archetypePalette.ts:9-13` — "the 'corridor' entry uses the literal colors that ObjexoomScene had before this module shipped".
+- `src/scene/lighting/archetypePalette.ts:9-13` — "the 'corridor' entry uses the literal colors that ObjexoomScene had before this module shipped".
 - `src/structures.ts:31-36` — "Corridor pool — frozen step-2 contract. Do not reorder."
 - `src/enemyMix.ts:40` — `corridor: PASS_THROUGH` sentinel (not a literal mix table — the no-op preserves the pre-mix counts).
 
@@ -91,7 +91,7 @@ audit trail that prevents regression.
 
 ### 1.6 Scatter directory is uniformly pure data
 
-`src/scatter/*.ts` (11 files, 1655 LOC) all grep clean against
+`src/world/scatter/*.ts` (11 files, 1655 LOC) all grep clean against
 `three|@react-three|react` imports. Each module exports a
 `spawnFoo(map, ...) → FooInstance[]` shape, consumed by a paired
 `<FooField>` r3f component under `src/scene/entities/`. The contract
@@ -111,7 +111,7 @@ Ranked by current pain × growth rate.
 but DECISIONS.md has no D-entry for it, so the call has slipped.
 
 `ObjexoomShell.tsx` is currently:
-- App-level state machine (status: landing/playing/paused/dead/transitioning/won) — `src/ObjexoomShell.tsx:67-72`
+- App-level state machine (status: landing/playing/paused/dead/transitioning/won) — `app/views/Shell.tsx:67-72`
 - Level transition orchestration (going_back / level-complete / advance) — embedded in `onWin` + `onReachSpawn` callbacks at lines 448, 479
 - Run history persistence boundary — calls `openRunHistory`, `saveSettings`
 - Audio lifecycle (music start/stop/mood) — imports 16 functions from sfx.ts (head shows 16 distinct imports at lines 35-49)
@@ -148,7 +148,7 @@ it's recomputed at every consumer:
 - `src/buildMap.ts:26` — `ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length]`
 - `src/archetype.ts:39` — `pickArchetype(map)` is the official helper
 - Per-scatter modules each call `pickArchetype(map)` independently —
-  `src/scatter/debrisScatter.ts:65`, `floorTiles.ts:69`,
+  `src/world/scatter/debrisScatter.ts:65`, `floorTiles.ts:69`,
   `kitchenScatter.ts`, etc. all recompute it.
 
 The risk surface here is small (the function is one line) but the
@@ -187,7 +187,7 @@ screenshots for the modules using THAT copy while others stay
 green. Worse, the per-system XOR tags (LMP/PROP/FLRT/DEBR/etc) are
 hardcoded inline next to each copy with no central registry.
 
-**Surgical first commit:** add `src/prng.ts` exporting
+**Surgical first commit:** add `src/engine/prng.ts` exporting
 `mulberry32(seed: number)` and an XOR_TAGS readonly registry
 (`LMP: 0x4C4D5050`, `PROP: 0x50524F50`, ...) keyed by `RngTag`
 union. Each consumer imports `mulberry32` + the named tag. Delete
@@ -200,13 +200,13 @@ behavior change by construction.
 The five-archetype dispatch table is duplicated as a `Record<…>`
 structure at minimum 10 sites:
 
-- `src/scatter/debrisScatter.ts:37-41` (density tuple)
-- `src/scatter/decalScatter.ts:32-36` (multiplier)
-- `src/scatter/largePropScatter.ts:39-43` (density tuple)
-- `src/scatter/propPool.ts:182-244` (prop pools)
-- `src/scatter/propScatter.ts:50-54` (density tuple)
-- `src/scatter/trapScatter.ts:47-51` (density tuple)
-- `src/lighting/archetypePalette.ts:114-208` (palette config)
+- `src/world/scatter/debrisScatter.ts:37-41` (density tuple)
+- `src/world/scatter/decalScatter.ts:32-36` (multiplier)
+- `src/world/scatter/largePropScatter.ts:39-43` (density tuple)
+- `src/world/scatter/propPool.ts:182-244` (prop pools)
+- `src/world/scatter/propScatter.ts:50-54` (density tuple)
+- `src/world/scatter/trapScatter.ts:47-51` (density tuple)
+- `src/scene/lighting/archetypePalette.ts:114-208` (palette config)
 - `src/floorTextures.ts:39-58` (texture sets)
 - `src/decals.ts:61-65` (variant pools)
 - `src/structures.ts:69-73` (wall pools)
@@ -245,7 +245,7 @@ develops.)
 
 ### 2.5 Sim/render boundary is mostly clean BUT the GameRef callback surface is bloated
 
-`GameRef` at `src/ObjexoomShell.tsx:119-127` has 7 callbacks:
+`GameRef` at `app/views/Shell.tsx:119-127` has 7 callbacks:
 
 ```
 onHit(damage)
@@ -264,7 +264,7 @@ Shell state; Shell exposes a callback per mutation." Two problems:
 1. Many of these callbacks are already paired with an event
    dispatch — `onPickupKey` AND `dispatch({type: "keyPickedUp"})`
    AND `dispatch({type: "burst", kind: "pickup"})` all fire from
-   `src/ObjexoomScene.tsx:818-823`. The bus is the authoritative
+   `app/views/Scene.tsx:818-823`. The bus is the authoritative
    feed; the callback exists because Shell holds state the bus
    can't directly mutate.
 2. The growth pattern: every new gameplay event adds a callback.
@@ -340,7 +340,7 @@ zero hits. This is genuinely held.
 
 ### 3.4 UI components reaching into sim is bidirectional and intentional
 
-`src/ObjexoomHUD.tsx`, `src/hud/overlays/*.tsx` all import from
+`app/views/HUD.tsx`, `app/views/hudOverlays/*.tsx` all import from
 `./events` (listen for dispatched events) and from `./settings` (type
 imports only) — that's the documented seam. No issues found.
 
@@ -355,13 +355,13 @@ imports only) — that's the documented seam. No issues found.
 Same shape across `debrisScatter`, `largePropScatter`, `propScatter`,
 `trapScatter`, etc.: `Record<PropArchetype, [min: number, max: number]>`
 with a `pickInt(rng, [min, max])` inline somewhere in the spawn
-function. Lift to `src/scatter/util.ts` exporting
+function. Lift to `src/world/scatter/util.ts` exporting
 `pickArchetypeRange<T>(table: Record<PropArchetype, [number, number]>,
 archetype, rng): number`. ~5 LOC each call site shrinks.
 
 ### 4.3 Scatter spawn function signature — 11 copies
 
-Every `src/scatter/*.ts` exports `spawnFoo(map: ObjexoomMap): FooInstance[]`
+Every `src/world/scatter/*.ts` exports `spawnFoo(map: ObjexoomMap): FooInstance[]`
 with the same boilerplate: seed RNG with XOR tag, iterate sectors,
 per-sector pick count via archetype range, push instances. A
 `buildSectorScatter<T>({tag, archetypeRange, place})` generic would
@@ -431,7 +431,7 @@ which falls back to `corridor` if you forget) is touched correctly.
 
 ### 6.2 Multiplayer
 
-**Bottleneck:** the entire `GameRef` orchestration (`src/ObjexoomShell.tsx:119-127`)
+**Bottleneck:** the entire `GameRef` orchestration (`app/views/Shell.tsx:119-127`)
 is single-player by construction. `GameState` is one HP, one ammo
 record, one weapon. Everything keyed off "the player" assumes one
 player. `?objexoomDebug` exposes `teleport(x, y)` with no player
@@ -465,11 +465,11 @@ fights) means:
 - New event types `bossSpotted`/`bossDefeated` are tied to "the boss"
   (singular).
 
-Files touched: `src/engine.ts`, `src/events.ts`, `src/audioBus.ts`,
-`src/sfx.ts`, `src/scene/entities/EnemyMesh.tsx`,
+Files touched: `src/engine/engine.ts`, `src/engine/events.ts`, `src/audio/audioBus.ts`,
+`src/audio/sfx.ts`, `src/scene/entities/EnemyMesh.tsx`,
 `src/scene/entities/EnemyHitFlash.tsx`,
 `src/scene/hooks/{enemyTickLoop,fireResolution}.ts`,
-`src/hud/overlays/BossBanner.tsx`. ~8 files.
+`app/views/hudOverlays/BossBanner.tsx`. ~8 files.
 
 The boss system is small enough today that a second type IS the
 right time to extract a `BOSS_TABLE: Record<BossKind, BossConfig>`
@@ -521,7 +521,7 @@ confirms is pure-sim; the doc comment self-identifies as such),
 (scatter is pure data), `kitchen.ts`, `nature.ts`, `npcs.ts`,
 `vehicles.ts`, `largeProps.ts`, `loot.ts`, `meleeSkins.ts`,
 `floorTextures.ts`, `structures.ts`, `archetype.ts`,
-`archetypeMapShape.ts`, `enemyMix.ts`. Plus the 11 `src/scatter/*.ts`
+`archetypeMapShape.ts`, `enemyMix.ts`. Plus the 11 `src/world/scatter/*.ts`
 files.
 
 That's ~30 pure-sim modules that don't appear in the architecture
@@ -531,7 +531,7 @@ is.
 
 **Fix:** ARCHITECTURE.md should describe the sim layer as a
 folder-structure-defined zone ("everything not under `src/scene/`,
-`src/hud/`, `src/persistence/`, and not ending in `.tsx`") rather
+`src/hud/`, `src/platform/persistence/`, and not ending in `.tsx`") rather
 than as a hand-curated module list that drifts.
 
 ### 7.3 ARCHITECTURE.md doesn't mention `src/scene/hooks/`
@@ -545,7 +545,7 @@ lines 67-75 doesn't acknowledge them. Add an entry.
 > "AudioBus refactor — last, biggest. Refactor sfx.ts from 25 free
 > functions + 15 global timers into one bus with named channels."
 
-Audio bus is shipped (`src/audioBus.ts` exists). sfx.ts:2 imports
+Audio bus is shipped (`src/audio/audioBus.ts` exists). sfx.ts:2 imports
 `fire` from audioBus. The migration described in item 4 ran. Strike
 the §"Migration order" or mark it complete.
 
@@ -591,7 +591,7 @@ Either is fine; consistency is the win.
 
 In order, top three commits if I had this week:
 
-1. **§2.3** — collapse the 12 `mulberry32` copies into `src/prng.ts`. ~80 LOC delta. Pure mechanical refactor. Tests pin byte-stability.
+1. **§2.3** — collapse the 12 `mulberry32` copies into `src/engine/prng.ts`. ~80 LOC delta. Pure mechanical refactor. Tests pin byte-stability.
 2. **§2.2** — denormalize `archetype: PropArchetype` onto `ObjexoomMap`. ~30 LOC. Unblocks §6.1 (6th archetype) and §6.4 (curated level).
 3. **§7.5** — add D15/D16/D17/D18 to DECISIONS.md. Doc-only commit. Restores the audit trail.
 

@@ -199,7 +199,7 @@ totally different games. Pinning eliminates the collision.
 **Status:** Locked
 **Date:** 2026-05-13
 
-All asset URLs in `src/models.ts` flow through `A(path)` which
+All asset URLs in `src/assets/models.ts` flow through `A(path)` which
 prefixes `import.meta.env.BASE_URL`.
 
 **Why:** Three's loaders (useGLTF, GLTFLoader) fetch URLs via `fetch`
@@ -216,7 +216,7 @@ helper applies the prefix once, every site stays readable.
 
 PA-MOD7's original framing was "wire gltfjsx so muzzle bones become addressable as named refs." Investigation showed the wired GLBs (`pistol.glb`, `chaingun.glb`, `shotgun.glb`, `melee_machete.glb`) ship with only generic node names like `Gun` / `Bullet` — no muzzle/barrel/tip bones to address. gltfjsx would have generated typed components over those generic names, but the muzzle position would still need to be specified out-of-band.
 
-**Call:** add a `muzzleBboxFrac: [x, y, z]` to `WeaponModel` in `src/models.ts` specifying the muzzle's position as a fraction of the GLB's bounding box on each axis (0 = bbox min, 1 = bbox max). The viewmodel computes the bbox at mount, multiplies by the frac, and parents an empty `<group ref={muzzleRef}>` at that local position — so the marker rides through the same `autoScale` + `rotation` the rest of the weapon does. `BoneBusterScene` reads the world-position of the muzzle ref each frame instead of `camera.position` for `muzzleLightRef`. (Earlier draft called this `muzzleOffset` measured in absolute weapon-local units; the bbox-frac form was the actual implementation chosen because GLB authoring scales vary.)
+**Call:** add a `muzzleBboxFrac: [x, y, z]` to `WeaponModel` in `src/assets/models.ts` specifying the muzzle's position as a fraction of the GLB's bounding box on each axis (0 = bbox min, 1 = bbox max). The viewmodel computes the bbox at mount, multiplies by the frac, and parents an empty `<group ref={muzzleRef}>` at that local position — so the marker rides through the same `autoScale` + `rotation` the rest of the weapon does. `BoneBusterScene` reads the world-position of the muzzle ref each frame instead of `camera.position` for `muzzleLightRef`. (Earlier draft called this `muzzleOffset` measured in absolute weapon-local units; the bbox-frac form was the actual implementation chosen because GLB authoring scales vary.)
 
 **Why:**
 - Solves the user-visible outcome (muzzle light at the barrel tip rather than camera center) without a codegen step, new devDep, or per-asset re-export.
@@ -309,7 +309,7 @@ AO.5's original acceptance referenced "Lighthouse PWA score ≥ 90." Lighthouse 
 **Status:** Locked.
 **Date:** 2026-04-30 (shipped); backfilled 2026-05-15 per ARCHITECTURE audit §7.5
 
-`src/audioBus.ts` keys channels by SYNTH INSTANCE, not by cue. Multiple cues (e.g. `playPickup`, `playSecretFound`) that share the underlying `Tone.PolySynth` route through the SAME channel; channels schedule via a strictly-increasing `t` so Tone's "Start time must be strictly greater than previous start time" check never trips.
+`src/audio/audioBus.ts` keys channels by SYNTH INSTANCE, not by cue. Multiple cues (e.g. `playPickup`, `playSecretFound`) that share the underlying `Tone.PolySynth` route through the SAME channel; channels schedule via a strictly-increasing `t` so Tone's "Start time must be strictly greater than previous start time" check never trips.
 
 **Why:**
 - Pre-AUDIO1, every cue had its own scheduling state. Two cues firing into the same synth in the same JS tick (e.g. pickup chime + secret-found chime via overlapping pickups) would race on Tone's per-synth precondition and throw mid-frame.
@@ -376,9 +376,9 @@ Source: `src/runHistory.ts:79-104`, `src/__tests__/unit/bone-buster-sqljsRemoval
 **Status:** Locked.
 **Date:** 2026-05-11 (shipped); backfilled 2026-05-15
 
-`src/persistence/createDatabase.ts` returns a `DatabaseAdapter` backed by:
+`src/platform/persistence/createDatabase.ts` returns a `DatabaseAdapter` backed by:
 - **Native (iOS/Android):** `@capacitor-community/sqlite` via the Capacitor bridge → a real SQLite database in the app sandbox.
-- **Web:** `jeep-sqlite` (IndexedDB-backed sql.js shim via a custom element). The element is mounted once at app boot via `src/persistence/initJeepSqlite.ts`.
+- **Web:** `jeep-sqlite` (IndexedDB-backed sql.js shim via a custom element). The element is mounted once at app boot via `src/platform/persistence/initJeepSqlite.ts`.
 
 Settings (light, hot-read) use `@capacitor/preferences` instead — also localStorage-backed on web, native KV store on native.
 
@@ -392,7 +392,7 @@ Settings (light, hot-read) use `@capacitor/preferences` instead — also localSt
 - *Pure IndexedDB.* — DIY query layer is bigger than the persistence module itself.
 - *sql.js everywhere.* — preserves the localStorage roundtrip that breaks under Capacitor.
 
-Source: `src/persistence/createDatabase.ts`, `src/persistence/database.ts`, `src/runHistory.ts`, `capacitor.config.ts:13-17` (encryption opt-out rationale).
+Source: `src/platform/persistence/createDatabase.ts`, `src/platform/persistence/database.ts`, `src/store/runHistory.ts`, `capacitor.config.ts:13-17` (encryption opt-out rationale).
 
 ---
 

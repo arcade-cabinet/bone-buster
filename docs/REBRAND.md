@@ -65,9 +65,9 @@ The 5 archetype lighting palettes (`archetypePalette.ts`) get a one-pass refresh
 
 ### Component-level files affected
 
-- `src/ObjexoomLanding.tsx` → `src/BoneBusterLanding.tsx` (new SVG logo + Radix nav + shader background)
-- `src/design-tokens/role.ts` — palette swap (names survive; values shift)
-- `src/design-tokens/typography.ts` — NEW: exports `TYPE.display`, `TYPE.body`, `TYPE.mono`, `TYPE.flair`
+- `app/views/Landing.tsx` → `app/views/Landing.tsx` (new SVG logo + Radix nav + shader background)
+- `app/styles/tokens/role.ts` — palette swap (names survive; values shift)
+- `app/styles/tokens/typography.ts` — NEW: exports `TYPE.display`, `TYPE.body`, `TYPE.mono`, `TYPE.flair`
 - `src/scene/shaders/scuffBackground.tsx` — NEW: `<canvas>` Perlin-noise shader
 - `src/audio/logoSting.ts` — NEW: Tone.js arpeggio + rim-shot
 - `src/ui/CardMenu.tsx` — NEW: Radix-based ticket-stub stack menu
@@ -118,7 +118,7 @@ Current: 3 kinds (`skeleton`, `wraith`, `imp`) with cosmetic skin variants. Afte
 | `mrZ` | `mrZ` | Zombie — takes 3 shots regardless of weapon. Retro callback. |
 | `werewolf` | `lupin` | Aggressive. COURTYARD archetype only. |
 
-### Per-archetype mix tables (updates to `src/enemyMix.ts`)
+### Per-archetype mix tables (updates to `src/ai/enemyMix.ts`)
 
 | Archetype | Headline kinds (heavy weight) | Tail kinds (lighter weight) |
 |---|---|---|

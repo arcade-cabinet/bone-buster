@@ -55,7 +55,7 @@ is preserved — and stands on its own with new horror-tactical axes:
 | `ember[400]` `#ff7518` | **new for BONE BUSTER** | lava, going-back-strobe |
 
 Full scales (50–950) and semantic role layer live in
-[`src/design-tokens/colors.ts`](../src/design-tokens/colors.ts). The
+[`app/styles/tokens/colors.ts`](../app/styles/tokens/colors.ts). The
 CSS mirror is [`app/tokens.css`](../app/tokens.css). Code should
 reference the semantic `ROLE.*` layer, not raw scale steps.
 
@@ -99,7 +99,7 @@ Every run picks one of five archetypes deterministically from
 onto `BoneBusterMap` itself — every consumer reads `map.archetype`
 rather than recomputing the modulus. Each archetype is keyed across
 ~17 independent axes; the canonical registry of axes is at
-`src/archetypeRegistry.ts` (A6, Phase 21). When adding a 6th
+`src/world/archetypeRegistry.ts` (A6, Phase 21). When adding a 6th
 archetype, walk that registry top-to-bottom: TypeScript will catch
 the misses (every axis is `Record<PropArchetype, T>`).
 
@@ -134,5 +134,5 @@ gradient uses the same indigo→violet→amber stops, pushed warmer at
 the right end with an ember tip). This is a **deliberate** brand
 relationship — touching it requires a brand decision, not a styling
 tweak. The four `LINEAGE.*` anchors in
-[`src/design-tokens/colors.ts`](../src/design-tokens/colors.ts) are
+[`app/styles/tokens/colors.ts`](../app/styles/tokens/colors.ts) are
 the load-bearing pieces.

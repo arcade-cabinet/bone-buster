@@ -41,52 +41,52 @@ When two docs disagree, use this order:
 - **Biome only.** No ESLint, no Prettier. See
   [`DECISIONS.md` D4](./docs/DECISIONS.md#d4).
 - **Design tokens.** Use `ROLE.*` from
-  [`src/design-tokens/`](./src/design-tokens/), NOT raw hex / rgba /
+  [`app/styles/tokens/`](../app/styles/tokens/), NOT raw hex / rgba /
   scale steps. See [`DECISIONS.md` D7](./docs/DECISIONS.md#d7).
 
 ## Game architecture
 
 Full diagram in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
-- **`src/engine.ts` + `src/buildMap.ts` + `src/turtle.ts`** — pure-TS
+- **`src/engine/engine.ts` + `src/world/buildMap.ts` + `src/ai/turtle.ts`** — pure-TS
   sim. Maps, raycasts, collision, spawning. No DOM, no three.js, no
   `Math.random()` in sim code (use seedable RNG).
-- **`src/barrels.ts`** — pure-sim destructible barrel registry. Spawn,
+- **`src/world/barrels.ts`** — pure-sim destructible barrel registry. Spawn,
   ray-test, AoE resolution. Mirrors `engine.ts` shape: returns IDs +
   flags to the caller, no side effects. 14 unit tests in
   `src/__tests__/unit/bone-buster-barrels.test.ts`.
-- **`src/enemyAi.ts`** — FSM tick function with explicit states
+- **`src/ai/enemyAi.ts`** — FSM tick function with explicit states
   (0=patrol, 1=approach, 3=shoot). Tested via pure unit assertions in
   `src/__tests__/unit/bone-buster-enemyAi.test.ts`.
-- **`src/runHistory.ts`** — sql.js persistence layer for per-run
+- **`src/store/runHistory.ts`** — sql.js persistence layer for per-run
   stats. Pure-async open/insert/list/best/count/clear API; serialized
   as base64 in localStorage. WASM via `prepare-web-wasm.mjs`. Browser
   smoke test in `src/__tests__/browser/runHistory.browser.test.ts`.
-- **`src/yukaIntegration.ts`** — yuka EntityManager bridge: mirror
+- **`src/ai/yukaIntegration.ts`** — yuka EntityManager bridge: mirror
   sim positions, run steering, write back. Stateful, isolated.
-- **`src/ObjexoomScene.tsx`** — r3f scene tree orchestrator. Drives
+- **`app/views/Scene.tsx`** — r3f scene tree orchestrator. Drives
   mesh transforms from refs, NOT React state. Hosts the fire-path,
   the per-frame AI tick, the barrel explosion queue (`explodeBarrelRef`
   late-bind pattern). At 868 LOC as of PR #12; ARCH2 extracts
   `useFireResolution` + `useEnemyTickLoop` before E3. Renamed to
   `BoneBusterScene.tsx` by PRD §R8 source-string sweep.
-- **`src/ObjexoomShell.tsx`** — game lifecycle, level transitions,
+- **`app/views/Shell.tsx`** — game lifecycle, level transitions,
   debug-hook attach, run-history recording on terminal status.
   Renamed to `BoneBusterShell.tsx` by PRD §R8 source-string sweep.
-- **`src/models.ts`** — pose + animation registry per
+- **`src/assets/models.ts`** — pose + animation registry per
   enemy/weapon/prop. Per-kind skin roster, deterministic pick by id.
-  URLs flow through `A()` (in `src/assetUrl.ts`) so `import.meta.env.BASE_URL`
+  URLs flow through `A()` (in `src/assets/assetUrl.ts`) so `import.meta.env.BASE_URL`
   is honored; see [`DECISIONS.md` D10](./docs/DECISIONS.md#d10).
 
 ## Design tokens
 
-- `src/design-tokens/colors.ts` — `LINEAGE`, `SCALE`, semantic `ROLE`
+- `app/styles/tokens/colors.ts` — `LINEAGE`, `SCALE`, semantic `ROLE`
   layer, plus the new `BONE_PALETTE` (PRD §R2) and the
   current-name `OBJEXOOM_PALETTE` flat-key export (used by the
   3D scene materials surface; renamed to `BONE_BUSTER_PALETTE`
   by PRD §R8 source-string sweep, kept as back-compat alias
   after the sweep).
-- `src/design-tokens/typography.ts` — `FONT_FAMILY`, weights, spacing,
+- `app/styles/tokens/typography.ts` — `FONT_FAMILY`, weights, spacing,
   sizes, line-heights.
 - `app/tokens.css` — `--obx-*` CSS mirror.
 - `app/fonts.css` — 12 `@font-face` declarations for Black Ops One +

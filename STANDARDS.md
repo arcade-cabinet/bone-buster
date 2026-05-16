@@ -148,14 +148,14 @@ budget."
 ## Design tokens
 
 - Component code references the semantic `ROLE.*` layer from
-  [`src/design-tokens/`](./src/design-tokens/) — NOT raw hex, NOT
+  [`app/styles/tokens/`](../app/styles/tokens/) — NOT raw hex, NOT
   rgba, NOT scale steps. See
   [`DECISIONS.md` D7](./docs/DECISIONS.md#d7).
 - Typography uses `FONT_FAMILY.display` (Black Ops One) or
   `FONT_FAMILY.body` (Rajdhani). Never `"Inter"` / `"Poppins"` /
   `"Helvetica"` literals — those bypass the offline-safe fontset.
 - The four `LINEAGE.*` anchors in
-  [`src/design-tokens/colors.ts`](./src/design-tokens/colors.ts) are
+  [`app/styles/tokens/colors.ts`](../app/styles/tokens/colors.ts) are
   arcade-cabinet-brand load-bearing. Edits there require a brand decision,
   not a tweak.
 - New visual axis? Add a scale + ROLE entry; don't reach for an
@@ -201,7 +201,7 @@ budget."
 
 ## Asset URLs
 
-Every asset URL in `src/models.ts` flows through `A()` so
+Every asset URL in `src/assets/models.ts` flows through `A()` so
 `import.meta.env.BASE_URL` is honored. Raw `/assets/...` literals in
 loader call sites are bugs (will 404 in gh-pages). See
 [`DECISIONS.md` D10](./docs/DECISIONS.md#d10).

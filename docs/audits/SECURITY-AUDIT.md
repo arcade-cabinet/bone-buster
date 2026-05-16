@@ -105,7 +105,7 @@ Evidence:
 - `dist/index.html` — same.
 - `grep -rn 'innerHTML|eval(|new Function|dangerouslySetInnerHTML' src/ app/` returned **zero hits** — so the current attack surface for XSS is genuinely empty, but a CSP would lock that in against future regressions.
 
-Why this is LOW not MEDIUM: no current sink for an injection payload. Query-string flags (`?objexoomSeed`, `?objexoomArchetype`) flow through validators (`^[0-9]+$` for seed at `src/ObjexoomShell.tsx:178`, an indexOf-against-allowlist for archetype at `src/ObjexoomShell.tsx:208`) and end up as numeric / enum values that drive procedural generation — no DOM injection path.
+Why this is LOW not MEDIUM: no current sink for an injection payload. Query-string flags (`?objexoomSeed`, `?objexoomArchetype`) flow through validators (`^[0-9]+$` for seed at `app/views/Shell.tsx:178`, an indexOf-against-allowlist for archetype at `app/views/Shell.tsx:208`) and end up as numeric / enum values that drive procedural generation — no DOM injection path.
 
 Recommendation: add to `index.html`:
 ```html
@@ -153,7 +153,7 @@ Effectively zero-impact since the game is offline, but it's a one-line hardening
 ## Finding 5 — Run-history SQLite uses `"no-encryption"`
 **Severity: LOW** (intentional, documented; flagged for completeness)
 
-`src/persistence/database.ts` `CapacitorDatabase.open()` calls `createConnection(this.#dbName, false, "no-encryption", 1, false)`.
+`src/platform/persistence/database.ts` `CapacitorDatabase.open()` calls `createConnection(this.#dbName, false, "no-encryption", 1, false)`.
 
 `capacitor.config.ts:13-17` explicitly disables iOS/Android SQLite encryption with the rationale "run history is not sensitive data and encryption would add a passphrase-management surface we don't need for a single-player game."
 
@@ -164,7 +164,7 @@ This is the right call. Documenting because: if scope ever expands (player accou
 ## Finding 6 — `__objexoomJeepSqliteReady` global on prod
 **Severity: LOW** (information disclosure, no exploit value)
 
-`src/persistence/initJeepSqlite.ts:31, 49, 77, 81, 95` sets `window.__objexoomJeepSqliteReady = boolean` unconditionally on every web build (not gated by `?objexoomDebug`). The `window.__objexoom` debug-hook surface IS correctly gated — confirmed by reading the minified bundle:
+`src/platform/persistence/initJeepSqlite.ts:31, 49, 77, 81, 95` sets `window.__objexoomJeepSqliteReady = boolean` unconditionally on every web build (not gated by `?objexoomDebug`). The `window.__objexoom` debug-hook surface IS correctly gated — confirmed by reading the minified bundle:
 
 ```
 dist/assets/index-Ce7km5p2.js:  function v6(){return!1}   // the compiled debugHooksEnabled()
@@ -229,8 +229,8 @@ A Vite plugin like `vite-plugin-sri3` could add this. Low priority.
 - `grep -rn 'innerHTML|outerHTML|document.write|eval(|new Function|dangerouslySetInnerHTML|location.href.*='` across `src/` and `app/` — **zero hits**.
 - `grep -rn 'fetch(|XMLHttpRequest|axios|sendBeacon|WebSocket|EventSource'` — **zero hits**. The game has no network surface at all.
 - Query-string flag parsing:
-  - `?objexoomSeed=N` — validated with `/^[0-9]+$/` regex then `Number.parseInt` masked to `& 0xffffffff` (`src/ObjexoomShell.tsx:177-181`). Cannot inject NaN/Infinity/non-numeric.
-  - `?objexoomArchetype=name` — `ARCHETYPE_NAMES.indexOf(archetype as ...)` validates against a hardcoded enum allowlist (`src/ObjexoomShell.tsx:208-212`); unknown values return seed unchanged. No way for the value to escape this validator.
+  - `?objexoomSeed=N` — validated with `/^[0-9]+$/` regex then `Number.parseInt` masked to `& 0xffffffff` (`app/views/Shell.tsx:177-181`). Cannot inject NaN/Infinity/non-numeric.
+  - `?objexoomArchetype=name` — `ARCHETYPE_NAMES.indexOf(archetype as ...)` validates against a hardcoded enum allowlist (`app/views/Shell.tsx:208-212`); unknown values return seed unchanged. No way for the value to escape this validator.
   - `?objexoomDebug` — only `URL.searchParams.has()`; value is never read.
 - Production debug-gate verified at bytecode level: `dist/assets/index-Ce7km5p2.js` contains `function v6(){return!1}` for the `debugHooksEnabled` function, and the `window.__objexoom = {...}` assignment is wrapped in `if(v6())return ...` — confirmed dead-code in prod bundle.
 - CI workflow secrets surface: `grep -rEn 'secrets\.' .github/` returns no app-defined secrets. Only `GITHUB_TOKEN`-equivalent permissions used. `release.yml` permissions are scoped to `contents: write, pull-requests: write, issues: write, pages: write, id-token: write` — appropriate for release-please + GH Pages OIDC deploy. No PAT, no SSH key, no signing key in workflows.
@@ -239,7 +239,7 @@ A Vite plugin like `vite-plugin-sri3` could add this. Low priority.
 - Capacitor config (`capacitor.config.ts`) — `androidScheme: "https"` (correct, avoids `http://localhost` MITM on Android), no `allowNavigation` whitelist (good — no external URLs), no `cleartext`, no `iosScheme: "http"`.
 - Android `INTERNET` permission is the only listed user permission (zero-trust starting point); no `WRITE_EXTERNAL_STORAGE`, no `READ_*`, no `CAMERA`, no `LOCATION`, no `RECORD_AUDIO`.
 - TypeScript `strict: true`, `noImplicitAny: true` (`tsconfig.json:7-8`) — narrows the unsafe-cast attack surface.
-- `localStorage` access is limited to a legacy-migration code path in `src/runHistory.ts:80-102` which reads and immediately removes the legacy `objexoom.runHistory` key on first boot. New code goes through `Capacitor.Preferences` (`src/persistence/preferences.ts`) which is `localStorage`-backed on web. No PII stored.
+- `localStorage` access is limited to a legacy-migration code path in `src/runHistory.ts:80-102` which reads and immediately removes the legacy `objexoom.runHistory` key on first boot. New code goes through `Capacitor.Preferences` (`src/platform/persistence/preferences.ts`) which is `localStorage`-backed on web. No PII stored.
 - No `.env*` files in repo, none referenced by code. `import.meta.env.BASE_URL` is the only env access (`src/assetUrl.ts:13`) and is a Vite build-time constant.
 - Build artifacts: `dist/index.html` has no inline scripts (just one module script tag pointing to a hashed asset URL). No `data:` URIs of script. Asset paths use content-hashed filenames preventing cache-poison via stale asset.
 

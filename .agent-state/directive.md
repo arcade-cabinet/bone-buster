@@ -48,7 +48,7 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 - [x] **RS3** — bulk `git mv` (per-bucket commits — rs3a-rs3h shipped). PRD §RS3.
 - [x] **RS4** — drop project-name prefix on FILENAMES (Wordmark, Landing, Shell, HUD, Scene). Function-name rename (`ObjexoomShell` → `Shell` identifier) deferred to R8 source-string sweep. PRD §RS4.
 - [x] **RS5** — test imports + verify gate (full `pnpm verify` against new paths). PRD §RS5.
-- [ ] **RS6** — docs path references (CLAUDE.md, AGENTS.md, README, ARCHITECTURE — no surviving `src/Objexoom*` mentions). PRD §RS6.
+- [x] **RS6** — docs path references (CLAUDE.md, AGENTS.md, README, ARCHITECTURE — no surviving `src/Objexoom*` mentions). PRD §RS6.
 
 ### AUDIO — Howler swap + itch.io sample integration
 

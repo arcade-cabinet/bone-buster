@@ -12,7 +12,7 @@ Target: web (GitHub Pages) + Capacitor Android/iOS. Reference device: Pixel 5a.
 ## Existing instrumentation read first (so we don't suggest dupes)
 
 - `src/scene/effects/AdaptiveResolution.tsx` is the OBS1 emitter: per-frame `gl.info.render.calls`/`triangles` are accumulated as peak across a 60-frame window, then emitted on `objexoom:fpsUpdate`. It runs `gl.info.autoReset = false` once and `gl.info.reset()` every useFrame.
-- `src/ObjexoomHUD.tsx:316-405` is the OBS2 overlay — debug-build banner when calls > budget or tris > budget; HUD readout under `?objexoomDebug`.
+- `app/views/HUD.tsx:316-405` is the OBS2 overlay — debug-build banner when calls > budget or tris > budget; HUD readout under `?objexoomDebug`.
 - `scripts/obs3-perf-snapshot.mjs` (OBS3) launches Chromium per-archetype, drives `?objexoomArchetype=<X>&objexoomSeed=12345`, samples `objexoom:fpsUpdate` over a 3s window, compares peak vs `tests/perf-baselines/<archetype>.json`, fails on >10% regression or absolute budget (1000 calls / 100k tris).
 - `.github/workflows/ci.yml` job `perf` (lines 33-56) is OBS4 — runs `pnpm test:perf` after `verify`.
 - Tracked baselines (`tests/perf-baselines/*.json`):
@@ -129,7 +129,7 @@ shadow-camera-far={14}
 ---
 
 ### 6. Postprocessing chain runs Bloom + ChromaticAberration + Vignette every frame
-**File:** `src/ObjexoomScene.tsx:1039-1043`
+**File:** `app/views/Scene.tsx:1039-1043`
 
 ```tsx
 <EffectComposer>
@@ -323,7 +323,7 @@ Items 1, 3, 5 are the ones that would meaningfully change debugging speed for fu
 - **Math.random in sim paths**: grep'd `src/sim/**`, `src/engine/**`, `src/systems/**` — they don't exist as dirs. The actual sim files (`engine.ts`, `enemyAi.ts`, `traps.ts`) are clean; the only `Math.random` uses are in particle/shell-eject visual paths where determinism isn't required.
 - **react.memo missing on heavy components**: grep returned zero hits; nothing in the scene tree is memoized. Per-frame allocations are the bigger fish; React-tree re-renders only happen on map remount (re-keyed by `${settings.level}-${seed}-${map.seed}`).
 - **Texture duplication**: every `useGLTF.preload(url)` is unique per URL; drei's cache dedupes. No redundant texture loads.
-- **WASM regression**: confirmed sql.js is gone, jeep-sqlite path is in `src/persistence/`. Don't suggest re-adding wasm.
+- **WASM regression**: confirmed sql.js is gone, jeep-sqlite path is in `src/platform/persistence/`. Don't suggest re-adding wasm.
 
 ---
 

@@ -43,7 +43,7 @@ to bigger maps.
 surface type ships separately. Walls / doorways are step-2 and step-3.
 
 **Acceptance for step-1:**
-- New `src/scatter/floorTiles.ts` exports `spawnFloorTiles(map)` →
+- New `src/world/scatter/floorTiles.ts` exports `spawnFloorTiles(map)` →
   `FloorTileInstance[]`. Deterministic per `map.seed XOR 0x464C5254`
   ("FLRT" tag). Returns `[]` for any refLevel other than index 0
   (gated by a new `map.useModularFloor: boolean` field on

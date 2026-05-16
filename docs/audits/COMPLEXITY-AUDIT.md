@@ -23,14 +23,14 @@ The same 9-line PRNG body appears in:
 - `src/barrels.ts:189` (variant — `| 0` masking instead of `>>> 0`, drift)
 - `src/lampScatter.ts:59`
 - `src/enemyMix.ts:101`
-- `src/scatter/debrisScatter.ts:51`
-- `src/scatter/floorTiles.ts:47`
-- `src/scatter/kitchenScatter.ts:38`
-- `src/scatter/largePropScatter.ts:54`
-- `src/scatter/natureScatter.ts:42`
-- `src/scatter/npcScatter.ts:44`
-- `src/scatter/propScatter.ts:66`
-- `src/scatter/trapScatter.ts:57`
+- `src/world/scatter/debrisScatter.ts:51`
+- `src/world/scatter/floorTiles.ts:47`
+- `src/world/scatter/kitchenScatter.ts:38`
+- `src/world/scatter/largePropScatter.ts:54`
+- `src/world/scatter/natureScatter.ts:42`
+- `src/world/scatter/npcScatter.ts:44`
+- `src/world/scatter/propScatter.ts:66`
+- `src/world/scatter/trapScatter.ts:57`
 
 12 are byte-identical; the `src/barrels.ts:189` variant uses `| 0` (signed int coerce) where the rest use `>>> 0` (unsigned). That single divergence is a determinism risk if `seed` ever lands negative: barrels would produce a different stream than the scatters at that seed, breaking the "canonical byte-stability" invariant called out in `MEMORY.md`.
 
@@ -38,19 +38,19 @@ Fix: introduce `src/rng.ts` exporting `mulberry32(seed: number): () => number` a
 
 ### F2. `ObjexoomShell.tsx` is a 1129-LOC god component — HIGH — complexity
 
-`src/ObjexoomShell.tsx:1` declares one component `ObjexoomShell` that owns: URL parsing (`readSeedFromUrl:168`, `readArchetypeFromUrl:187`, `applyArchetypeOverride:206`), base-ammo/base-weapon tables (`baseAmmo:134`, `baseOwnedWeapons:145`, `ammoIncrement:153`), settings hydration with localStorage, the `GameState` reducer dispatch surface, the entire `gameRef.current.onHit/onKill/onPickupKey/onWin/...` callback graph (the snippet around `:378` runs ~250 LOC just for those callbacks), fade-overlay timing, going-back deadline scheduling, runId/runHistory lifecycle, debug-hook exposure, and the React tree render.
+`app/views/Shell.tsx:1` declares one component `ObjexoomShell` that owns: URL parsing (`readSeedFromUrl:168`, `readArchetypeFromUrl:187`, `applyArchetypeOverride:206`), base-ammo/base-weapon tables (`baseAmmo:134`, `baseOwnedWeapons:145`, `ammoIncrement:153`), settings hydration with localStorage, the `GameState` reducer dispatch surface, the entire `gameRef.current.onHit/onKill/onPickupKey/onWin/...` callback graph (the snippet around `:378` runs ~250 LOC just for those callbacks), fade-overlay timing, going-back deadline scheduling, runId/runHistory lifecycle, debug-hook exposure, and the React tree render.
 
-15 `useRef` + 6 `useState` in one file is the symptom (`src/ObjexoomShell.tsx:333,358,376,378,639,687,763,764,837,839,841,843,...`).
+15 `useRef` + 6 `useState` in one file is the symptom (`app/views/Shell.tsx:333,358,376,378,639,687,763,764,837,839,841,843,...`).
 
-Fix: extract `gameRef` callbacks into `src/shell/gameCallbacks.ts` as a factory `makeGameCallbacks(deps): GameRef` that takes refs/setters as arguments. Extract URL helpers into `src/shell/urlParams.ts`. Extract the base-table constants into `src/weapons.ts` (where `WEAPONS` already lives). Target ≤ 500 LOC for `ObjexoomShell.tsx`.
+Fix: extract `gameRef` callbacks into `src/shell/gameCallbacks.ts` as a factory `makeGameCallbacks(deps): GameRef` that takes refs/setters as arguments. Extract URL helpers into `src/shell/urlParams.ts`. Extract the base-table constants into `src/shared/weapons.ts` (where `WEAPONS` already lives). Target ≤ 500 LOC for `ObjexoomShell.tsx`.
 
 ### F3. `ObjexoomScene.tsx` is a 1046-LOC choreographer with mixed concerns — HIGH — complexity
 
-`src/ObjexoomScene.tsx:123` is one function `ObjexoomScene` with ≥ 14 `useEffect` blocks (`:279,341,355,371,381,391,398,424,428,437,638,710,786,...`), 47 `useRef`s (per ripgrep count), and 8+ scatter wirings (`spawnLamps, spawnProps, spawnDebris, spawnDecals, spawnTraps, spawnKitchen, spawnNature, spawnNpcs, spawnFloorTiles, spawnLargeProps, spawnSecrets, spawnBarrels` — see imports at `:8-92`). The boundary between "set up scatter once on map change" and "react to runtime events" is fuzzy.
+`app/views/Scene.tsx:123` is one function `ObjexoomScene` with ≥ 14 `useEffect` blocks (`:279,341,355,371,381,391,398,424,428,437,638,710,786,...`), 47 `useRef`s (per ripgrep count), and 8+ scatter wirings (`spawnLamps, spawnProps, spawnDebris, spawnDecals, spawnTraps, spawnKitchen, spawnNature, spawnNpcs, spawnFloorTiles, spawnLargeProps, spawnSecrets, spawnBarrels` — see imports at `:8-92`). The boundary between "set up scatter once on map change" and "react to runtime events" is fuzzy.
 
 Fix: introduce `src/scene/scatterAggregate.ts` exposing `useScatterFor(map, archetype): { lamps, props, debris, decals, traps, kitchen, nature, npcs, floorTiles, largeProps, secrets, barrels }`. Move the 12 `useMemo`/`useState` scatter wirings out of `ObjexoomScene` into the aggregate hook. Estimated ~150 LOC out of `ObjexoomScene.tsx`.
 
-### F4. `src/engine.ts` is 1174 LOC and owns 4 distinct subsystems — HIGH — complexity
+### F4. `src/engine/engine.ts` is 1174 LOC and owns 4 distinct subsystems — HIGH — complexity
 
 `src/engine.ts:1` mixes: map generation (`generateMap:253`, `mulberry32:152`, `carveRoom:171`, `carveCorridor:179`, `bfsReachable:209`), grid + sector raycast/collision (`resolveCollision:454`, `castRay:508`, `hasLineOfSight:548`, `resolveCollisionAny:692`, `castRayAny:762`, `castRaySectors:1010`), enemy + pickup spawning (`spawnEnemies:634`, `spawnPickups:667`, `pickBossSpawnIndex:610`), and enemy-bullet integration (`makeEnemyBullet:798`, `stepEnemyBullet:835`). These four subsystems share only the `Vec2` and `ObjexoomMap` types.
 
@@ -64,7 +64,7 @@ Fix: split into `src/mapGen.ts` (generateMap + carve/bfs/mulberry), `src/collisi
 
 `src/scene/hooks/enemyTickLoop.ts:1`, `src/scene/hooks/fireResolution.ts:1`, `src/scene/hooks/returnBearing.ts:1`, `src/scene/hooks/timeScaleBus.ts:1` are all pure functions / factories with **zero `useRef`/`useState`/`useEffect`** (ripgrep: `useRef` count is 0 in every file under that dir). Naming as "hooks" misleads readers into expecting React semantics and a hook-rules audit.
 
-Fix: rename `src/scene/hooks/` → `src/scene/tick/` (or `src/scene/sim/`). Update the 4 import sites in `src/ObjexoomScene.tsx:89-91`. No behavior change.
+Fix: rename `src/scene/hooks/` → `src/scene/tick/` (or `src/scene/sim/`). Update the 4 import sites in `app/views/Scene.tsx:89-91`. No behavior change.
 
 ### F7. `src/scene/hooks/returnBearing.ts` uses module-scope mutable state — MEDIUM — coupling
 
@@ -82,17 +82,17 @@ Fix: thread a per-shot `rng: () => number` into `FireResolutionContext` (created
 
 ### F9. `ObjexoomShell.tsx` and `ObjexoomScene.tsx` both subscribe to `playerHit` — MEDIUM — coupling
 
-`src/ObjexoomScene.tsx:356` `addObjexoomListener("playerHit", ...)` dispatches a `burst` event for visuals. `src/ObjexoomHUD.tsx:63` `addObjexoomListener("playerHit", ...)` flashes a key indicator. `src/ObjexoomShell.tsx` *also* dispatches `playerHit` from `gameRef.current.onHit` at `:386`. The flow is: damage → `gameRef.onHit` (Shell) → dispatch `playerHit` → Scene picks it up and dispatches `burst` at the player position → Scene also dispatches `shake` from inside `onHit`. Two indirections for a single event.
+`app/views/Scene.tsx:356` `addObjexoomListener("playerHit", ...)` dispatches a `burst` event for visuals. `app/views/HUD.tsx:63` `addObjexoomListener("playerHit", ...)` flashes a key indicator. `app/views/Shell.tsx` *also* dispatches `playerHit` from `gameRef.current.onHit` at `:386`. The flow is: damage → `gameRef.onHit` (Shell) → dispatch `playerHit` → Scene picks it up and dispatches `burst` at the player position → Scene also dispatches `shake` from inside `onHit`. Two indirections for a single event.
 
 Fix: inline the Scene's `playerHit→burst` mapping into `gameRef.onHit` in `ObjexoomShell.tsx`. The Scene only needs the player position which is already on `cameraRef.current`. Drop the `playerHit` listener in `ObjexoomScene.tsx:356-371`. HUD listener stays (it's the legit consumer).
 
 ### F10. `ObjexoomHUD.tsx` mixes virtual stick + fire button + adaptive resolution readout + 10+ inline styles — MEDIUM — complexity
 
-`src/ObjexoomHUD.tsx:42` `ObjexoomHUD`, `:325` `AdaptiveResolutionReadout`, `:432` `TouchControls`, `:442` `VirtualStick`, `:537` `FireButton`, `:575` `OverlayCard`, `:757` `HpPipRow`, `:813` `ClickToEngagePrompt`, plus 10 `CSSProperties` style constants at `:630-715`. Eight components and a style dictionary in one 868-LOC file.
+`app/views/HUD.tsx:42` `ObjexoomHUD`, `:325` `AdaptiveResolutionReadout`, `:432` `TouchControls`, `:442` `VirtualStick`, `:537` `FireButton`, `:575` `OverlayCard`, `:757` `HpPipRow`, `:813` `ClickToEngagePrompt`, plus 10 `CSSProperties` style constants at `:630-715`. Eight components and a style dictionary in one 868-LOC file.
 
 Fix: extract `src/hud/TouchControls.tsx` (VirtualStick + FireButton + TouchControls wrapper, ~200 LOC) and `src/hud/AdaptiveResolutionReadout.tsx` (~90 LOC). `ObjexoomHUD.tsx` shrinks to ~550 LOC of actual HUD layout.
 
-### F11. `src/ObjexoomHUD.tsx:430-540` inline-styles repeat the same panel chrome — LOW — duplication
+### F11. `app/views/HUD.tsx:430-540` inline-styles repeat the same panel chrome — LOW — duplication
 
 `hudLabelStyle:642`, `hudReadoutStyle:651`, `crosshairStyle:658`, `overlayStyle:681`, `cardStyle:694`, `overlayTitleStyle:703`, `weaponChipStyle:730`, `lowHealthWarningStyle:798` — each repeats `border: 1px solid <accent>`, `background: <bgPanelAlpha>`, `padding: ... 0.6em`, `font-family: monospace`. Pull into a single `panelChrome()` helper that takes a variant (e.g. `"card" | "label" | "warning"`).
 
@@ -116,9 +116,9 @@ Fix: either (a) export the gate predicate from `enemyTickLoop.ts` and import it 
 
 ### F15. `src/turtle.ts:1` + `src/refLevel.ts:1` are reference-clone bridges that ship dead code paths — LOW — dead-code
 
-`src/refLevel.ts:17` imports `decodeRefLevel, levelBounds, RefLevelIndex` from `turtle.ts`. Production callers of `refLevel.ts` (`src/refLevel.ts` basename grep, non-test): only **1** match. `turtle.ts` non-test callers: **2** (`refLevel.ts` and `RefLevelMap.tsx`). The whole ref-clone parity surface was finished per the operating mandate ("100% reached"). Audit whether `RefLevelMap.tsx` is reachable from the running game or only from a debug overlay; if the latter, gate behind `?objexoomDebug` and drop the bundle weight.
+`src/refLevel.ts:17` imports `decodeRefLevel, levelBounds, RefLevelIndex` from `turtle.ts`. Production callers of `refLevel.ts` (`src/world/refLevel.ts` basename grep, non-test): only **1** match. `turtle.ts` non-test callers: **2** (`refLevel.ts` and `RefLevelMap.tsx`). The whole ref-clone parity surface was finished per the operating mandate ("100% reached"). Audit whether `RefLevelMap.tsx` is reachable from the running game or only from a debug overlay; if the latter, gate behind `?objexoomDebug` and drop the bundle weight.
 
-Check: `grep -rn 'RefLevelMap' src/ObjexoomShell.tsx src/ObjexoomScene.tsx` to confirm reachability before pruning.
+Check: `grep -rn 'RefLevelMap' app/views/Shell.tsx app/views/Scene.tsx` to confirm reachability before pruning.
 
 ---
 
@@ -133,8 +133,8 @@ Check: `grep -rn 'RefLevelMap' src/ObjexoomShell.tsx src/ObjexoomScene.tsx` to c
 
 ## 3. Dead code / orphaned modules
 
-- **`src/turtle.ts:1` + `src/refLevel.ts:1` + `src/RefLevelMap.tsx`** — ref-clone parity bridge. 2 non-test importers of `turtle`, 1 of `refLevel`. PARITY phase is closed per `CLAUDE.md`. Confirm `RefLevelMap` is still mounted in `ObjexoomShell` (`grep -rn 'RefLevelMap' src/`); if not, the module + its two tests can land in a single `chore: drop ref-clone bridge` commit.
-- **`src/scene/hooks/timeScaleBus.ts:1`** — `createTimeScaleBus`. Imported only at `src/ObjexoomScene.tsx:91`. Used at `:373, 688` (reserve calls). One consumer. Acceptable as a small factory but reconsider if no second consumer arrives by Phase 22.
+- **`src/turtle.ts:1` + `src/refLevel.ts:1` + `app/components/RefLevelMap.tsx`** — ref-clone parity bridge. 2 non-test importers of `turtle`, 1 of `refLevel`. PARITY phase is closed per `CLAUDE.md`. Confirm `RefLevelMap` is still mounted in `ObjexoomShell` (`grep -rn 'RefLevelMap' src/`); if not, the module + its two tests can land in a single `chore: drop ref-clone bridge` commit.
+- **`src/scene/hooks/timeScaleBus.ts:1`** — `createTimeScaleBus`. Imported only at `app/views/Scene.tsx:91`. Used at `:373, 688` (reserve calls). One consumer. Acceptable as a small factory but reconsider if no second consumer arrives by Phase 22.
 - **No orphaned tests detected.** All `src/__tests__/unit/*.test.ts` files (51 suites) reference at least one production import.
 - **No exported-but-unimported symbol scan was performed** — flag for a follow-up `ts-prune` run; tooling needed.
 
@@ -149,7 +149,7 @@ Check: `grep -rn 'RefLevelMap' src/ObjexoomShell.tsx src/ObjexoomScene.tsx` to c
 
 **No `@ts-ignore`, `@ts-expect-error`, or `@ts-nocheck` anywhere in `src/`.** The TS strictness posture is clean.
 
-The only other `as any`-shaped escapes are `as unknown as { __objexoom?: unknown }` in `src/__tests__/browser/ObjexoomShell.browser.test.tsx:38` (acceptable — `window` augmentation for a test-only debug hook) and one in `src/ObjexoomShell.tsx` (worth a follow-up grep but out of the 2 bare `as any` hits).
+The only other `as any`-shaped escapes are `as unknown as { __objexoom?: unknown }` in `src/__tests__/browser/ObjexoomShell.browser.test.tsx:38` (acceptable — `window` augmentation for a test-only debug hook) and one in `app/views/Shell.tsx` (worth a follow-up grep but out of the 2 bare `as any` hits).
 
 ---
 
@@ -194,15 +194,15 @@ From `expect-counts-per-test`:
 
 ```
 1174  src/engine.ts                            <-- F4
-1129  src/ObjexoomShell.tsx                    <-- F2
-1046  src/ObjexoomScene.tsx                    <-- F3
- 868  src/ObjexoomHUD.tsx                      <-- F10
- 793  src/ObjexoomLanding.tsx
+1129  app/views/Shell.tsx                    <-- F2
+1046  app/views/Scene.tsx                    <-- F3
+ 868  app/views/HUD.tsx                      <-- F10
+ 793  app/views/Landing.tsx
  734  src/sfx.ts
  641  src/__tests__/unit/objexoom-engine.test.ts (mirror of F4 — splits along the same lines)
  385  src/models.ts
  311  src/scene/hooks/fireResolution.ts        <-- F8 (also F6 rename)
- 308  src/PlayerController.tsx
+ 308  app/components/PlayerController.tsx
  301  src/events.ts
  298  src/scene/effects/ParticleBurstField.tsx <-- F8 decorative
  276  src/scene/entities/PickupMesh.tsx
@@ -211,7 +211,7 @@ From `expect-counts-per-test`:
  257  src/scene/hooks/enemyTickLoop.ts         <-- F6 rename
 ```
 
-`src/lighting/archetypePalette.ts` at 212 LOC is config-table per the brief and is **not** flagged.
+`src/scene/lighting/archetypePalette.ts` at 212 LOC is config-table per the brief and is **not** flagged.
 
 Files ≥ 600 LOC: 6 (engine, Shell, Scene, HUD, Landing, sfx). Of these:
 - engine, Shell, Scene, HUD — multi-subsystem, flag (F2/F3/F4/F10).
