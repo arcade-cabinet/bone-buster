@@ -2,7 +2,7 @@
  * COV13 step-2 — kitchen scatter contract.
  */
 
-import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 import { KITCHEN_PROPS } from "@world/kitchen";
 import { spawnKitchen } from "@world/scatter/kitchenScatter";
@@ -18,7 +18,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 }
 
 // Many sectors so the 20% sector probability has room to fire.
-function libraryMap(seed: number): ObjexoomSectorMap {
+function libraryMap(seed: number): BoneBusterSectorMap {
 	const sectors = [];
 	// Library archetype = seed % 5 === 4 — use seed = 4, 9, 14, …
 	for (let i = 0; i < 20; i += 1) {
@@ -55,7 +55,7 @@ describe("COV13 step-2 — spawnKitchen archetype gating", () => {
 	});
 
 	it("returns [] for grid maps", () => {
-		const grid = { ...libraryMap(4), kind: "grid" } as unknown as ObjexoomSectorMap;
+		const grid = { ...libraryMap(4), kind: "grid" } as unknown as BoneBusterSectorMap;
 		expect(spawnKitchen(grid)).toEqual([]);
 	});
 

@@ -84,11 +84,11 @@ export type Room = Readonly<{
 }>;
 
 /**
- * Shared metadata that exists on every Objexoom map regardless of how it
+ * Shared metadata that exists on every Bone Buster map regardless of how it
  * was authored. Both the procedural grid and the polygonal-sector
  * representation embed this.
  */
-export type ObjexoomMapBase = Readonly<{
+export type BoneBusterMapBase = Readonly<{
 	seed: number;
 	/**
 	 * CONV3 — denormalized archetype dispatch. Populated once at map
@@ -109,7 +109,7 @@ export type ObjexoomMapBase = Readonly<{
 	exitPosition: Vec2;
 }>;
 
-export type ObjexoomGridMap = ObjexoomMapBase &
+export type BoneBusterGridMap = BoneBusterMapBase &
 	Readonly<{
 		kind: "grid";
 		width: number;
@@ -125,7 +125,7 @@ export type ObjexoomGridMap = ObjexoomMapBase &
  * derived from the sector edges that don't share both endpoints with a
  * neighboring sector at the same heights.
  */
-export type ObjexoomSectorMap = ObjexoomMapBase &
+export type BoneBusterSectorMap = BoneBusterMapBase &
 	Readonly<{
 		kind: "sectors";
 		sectors: readonly MapSector[];
@@ -174,11 +174,11 @@ export type MapSector = Readonly<{
 	isWater?: boolean;
 }>;
 
-export type BoneBusterMap = ObjexoomGridMap | ObjexoomSectorMap;
+export type BoneBusterMap = BoneBusterGridMap | BoneBusterSectorMap;
 
-export const isGridMap = (m: BoneBusterMap): m is ObjexoomGridMap => m.kind === "grid";
+export const isGridMap = (m: BoneBusterMap): m is BoneBusterGridMap => m.kind === "grid";
 
-export const isSectorMap = (m: BoneBusterMap): m is ObjexoomSectorMap => m.kind === "sectors";
+export const isSectorMap = (m: BoneBusterMap): m is BoneBusterSectorMap => m.kind === "sectors";
 
 export type Vec2 = Readonly<{ x: number; y: number }>;
 
@@ -289,7 +289,7 @@ function roomsIntersect(a: Room, b: Room, padding: number) {
 	);
 }
 
-export function generateMap(seed: number, shape?: GenerateMapShape): ObjexoomGridMap {
+export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterGridMap {
 	const rand = mulberry32(seed);
 	const width = MAP_WIDTH;
 	const height = MAP_HEIGHT;
@@ -516,7 +516,7 @@ export function worldToGrid(pos: Vec2): { gx: number; gy: number } {
 	};
 }
 
-export function cellAt(gx: number, gy: number, map: ObjexoomGridMap): Cell | "outOfBounds" {
+export function cellAt(gx: number, gy: number, map: BoneBusterGridMap): Cell | "outOfBounds" {
 	if (!inBounds(gx, gy, map.width, map.height)) return "outOfBounds";
 	return map.cells[gy][gx];
 }
@@ -534,7 +534,7 @@ export function isLava(cell: Cell | "outOfBounds") {
 
 export function resolveCollision(
 	desired: Vec2,
-	map: ObjexoomGridMap,
+	map: BoneBusterGridMap,
 	doorOpen: boolean,
 	radius: number = PLAYER_RADIUS,
 ): Vec2 {
@@ -589,7 +589,7 @@ export function resolveCollision(
 export function castRay(
 	origin: Vec2,
 	dir: Vec2,
-	map: ObjexoomGridMap,
+	map: BoneBusterGridMap,
 	doorOpen: boolean,
 	maxDist: number = PISTOL_MAX_RANGE,
 ): { dist: number; hit: { gx: number; gy: number } | null } {
@@ -626,7 +626,12 @@ export function castRay(
 	return { dist: maxDist, hit: null };
 }
 
-export function hasLineOfSight(a: Vec2, b: Vec2, map: ObjexoomGridMap, doorOpen: boolean): boolean {
+export function hasLineOfSight(
+	a: Vec2,
+	b: Vec2,
+	map: BoneBusterGridMap,
+	doorOpen: boolean,
+): boolean {
 	const dx = b.x - a.x;
 	const dy = b.y - a.y;
 	const len = Math.hypot(dx, dy);
@@ -956,7 +961,7 @@ export function stepEnemyBullet(
 }
 
 // ──────────────────────────────────────────────────────────────
-// Sector-map primitives (used by ObjexoomSectorMap)
+// Sector-map primitives (used by BoneBusterSectorMap)
 // ──────────────────────────────────────────────────────────────
 
 /**
@@ -994,7 +999,7 @@ export type SectorCache = { last: MapSector | null };
 export const newSectorCache = (): SectorCache => ({ last: null });
 
 export function getSectorAtPoint(
-	map: ObjexoomSectorMap,
+	map: BoneBusterSectorMap,
 	point: Vec2,
 	cache?: SectorCache,
 ): MapSector | null {
@@ -1011,7 +1016,11 @@ export function getSectorAtPoint(
 	return null;
 }
 
-export function getFloorHeightAt(map: ObjexoomSectorMap, point: Vec2, cache?: SectorCache): number {
+export function getFloorHeightAt(
+	map: BoneBusterSectorMap,
+	point: Vec2,
+	cache?: SectorCache,
+): number {
 	const sector = getSectorAtPoint(map, point, cache);
 	return sector ? sector.floorHeight : -100;
 }
@@ -1031,7 +1040,7 @@ export function isInWaterAt(map: BoneBusterMap, point: Vec2, cache?: SectorCache
 }
 
 export function getCeilingHeightAt(
-	map: ObjexoomSectorMap,
+	map: BoneBusterSectorMap,
 	point: Vec2,
 	cache?: SectorCache,
 ): number {
@@ -1091,7 +1100,7 @@ export function rayHitsSegment(origin: Vec2, dir: Vec2, p1: Vec2, p2: Vec2): num
 export function castRaySectors(
 	origin: Vec2,
 	dir: Vec2,
-	map: ObjexoomSectorMap,
+	map: BoneBusterSectorMap,
 	maxDist: number = PISTOL_MAX_RANGE,
 ): {
 	dist: number;
@@ -1117,7 +1126,7 @@ export function castRaySectors(
 	return { dist: bestDist, hit: bestHit };
 }
 
-export function hasLineOfSightSectors(a: Vec2, b: Vec2, map: ObjexoomSectorMap): boolean {
+export function hasLineOfSightSectors(a: Vec2, b: Vec2, map: BoneBusterSectorMap): boolean {
 	const dx = b.x - a.x;
 	const dy = b.y - a.y;
 	const len = Math.hypot(dx, dy);
@@ -1149,7 +1158,7 @@ export function edgeKey(a: Vec2, b: Vec2): string {
  *
  * Returns a Set of edge keys that should NOT block movement.
  */
-export function computePortalEdges(map: ObjexoomSectorMap): Set<string> {
+export function computePortalEdges(map: BoneBusterSectorMap): Set<string> {
 	const owners = new Map<string, MapSector[]>();
 	for (const sector of map.sectors) {
 		const verts = sector.vertices;
@@ -1182,7 +1191,11 @@ export function computePortalEdges(map: ObjexoomSectorMap): Set<string> {
  * height read as lava in the reference. Returns true if the actor stands
  * on lava.
  */
-export function isOnLavaSector(map: ObjexoomSectorMap, point: Vec2, cache?: SectorCache): boolean {
+export function isOnLavaSector(
+	map: BoneBusterSectorMap,
+	point: Vec2,
+	cache?: SectorCache,
+): boolean {
 	const sector = getSectorAtPoint(map, point, cache);
 	return sector ? sector.floorHeight < 0 : false;
 }
@@ -1211,7 +1224,7 @@ function closestPointOnSegment(p: Vec2, a: Vec2, b: Vec2): Vec2 {
  */
 export function resolveCollisionSectors(
 	desired: Vec2,
-	map: ObjexoomSectorMap,
+	map: BoneBusterSectorMap,
 	portals: Set<string>,
 	radius: number = PLAYER_RADIUS,
 ): Vec2 {

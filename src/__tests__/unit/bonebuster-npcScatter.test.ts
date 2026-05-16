@@ -2,7 +2,7 @@
  * COV14 step-2 — ambient NPC scatter contract.
  */
 
-import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 import { spawnNpcs } from "@world/scatter/npcScatter";
 import { describe, expect, it } from "vitest";
@@ -17,7 +17,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 }
 
 // Library archetype = seed % 5 === 4.
-function libraryMap(seed: number): ObjexoomSectorMap {
+function libraryMap(seed: number): BoneBusterSectorMap {
 	const sectors = [];
 	for (let i = 0; i < 20; i += 1) {
 		sectors.push({
@@ -48,7 +48,7 @@ describe("COV14 step-2 — spawnNpcs archetype gating", () => {
 	});
 
 	it("returns [] for grid maps", () => {
-		const grid = { ...libraryMap(4), kind: "grid" } as unknown as ObjexoomSectorMap;
+		const grid = { ...libraryMap(4), kind: "grid" } as unknown as BoneBusterSectorMap;
 		expect(spawnNpcs(grid)).toEqual([]);
 	});
 

@@ -22,7 +22,7 @@
  *   https://mugen87.github.io/yuka/examples/
  */
 
-import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
 import * as Yuka from "yuka";
 
 // Singleton — there's exactly one OBJEXOOM scene at a time so a
@@ -188,7 +188,7 @@ export function yukaAvoidObstacles(
  * Reference: yuka examples at
  *   yuka/examples/navigation/navmesh/index.html
  */
-export type ObjexoomNavmesh = Readonly<{
+export type BoneBusterNavmesh = Readonly<{
 	regions: ReadonlyArray<{
 		id: number;
 		vertices: ReadonlyArray<Vec2>;
@@ -197,7 +197,7 @@ export type ObjexoomNavmesh = Readonly<{
 	bounds: { minX: number; minY: number; maxX: number; maxY: number };
 }>;
 
-export function buildNavmeshFromSectors(map: ObjexoomSectorMap): ObjexoomNavmesh {
+export function buildNavmeshFromSectors(map: BoneBusterSectorMap): BoneBusterNavmesh {
 	const regions = map.sectors.map((sector) => ({
 		id: sector.id,
 		vertices: sector.vertices.map((v) => ({ x: v.x, y: v.y })),

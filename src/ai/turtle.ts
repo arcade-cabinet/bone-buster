@@ -19,7 +19,7 @@
  * recover world units.
  *
  * This is a faithful structural port. We don't load these maps yet — the
- * Objexoom shell still uses the procedural grid generator — but exporting a
+ * Bone Buster shell still uses the procedural grid generator — but exporting a
  * working decoder unblocks the level-progression layer.
  */
 

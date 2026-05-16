@@ -246,7 +246,7 @@ export interface BossDefeatedEvent {
 	enemyId: number;
 }
 
-export type ObjexoomEvent =
+export type BoneBusterEvent =
 	| BurstEvent
 	| BodyPartsEvent
 	| ShellEjectEvent
@@ -271,16 +271,16 @@ export type ObjexoomEvent =
 	| BossSpottedEvent
 	| BossDefeatedEvent;
 
-export type ObjexoomEventType = ObjexoomEvent["type"];
+export type BoneBusterEventType = BoneBusterEvent["type"];
 
 /** Resolves an event-type literal to its full payload shape. */
-export type EventOf<K extends ObjexoomEventType> = Extract<ObjexoomEvent, { type: K }>;
+export type EventOf<K extends BoneBusterEventType> = Extract<BoneBusterEvent, { type: K }>;
 
 /** The `detail` shape that travels on a CustomEvent (everything except `type`). */
-type DetailOf<E extends ObjexoomEvent> = Omit<E, "type">;
+type DetailOf<E extends BoneBusterEvent> = Omit<E, "type">;
 
 /**
- * Dispatch a typed Objexoom event. Wraps the existing
+ * Dispatch a typed Bone Buster event. Wraps the existing
  * `window.dispatchEvent(new CustomEvent(...))` pattern so the migration
  * is a pure call-site swap.
  *
@@ -288,7 +288,7 @@ type DetailOf<E extends ObjexoomEvent> = Omit<E, "type">;
  * consumers see today (`event.detail.x`, `event.detail.kind`, etc) —
  * `type` is encoded in the event name, not duplicated in the detail.
  */
-export function dispatch<E extends ObjexoomEvent>(event: E): void {
+export function dispatch<E extends BoneBusterEvent>(event: E): void {
 	const { type, ...detail } = event;
 	const eventName = `objexoom:${type}`;
 	const customEvent = new CustomEvent(eventName, { detail });
@@ -296,7 +296,7 @@ export function dispatch<E extends ObjexoomEvent>(event: E): void {
 }
 
 /**
- * Add a typed listener for one Objexoom event channel. The handler
+ * Add a typed listener for one Bone Buster event channel. The handler
  * receives the full event (type + detail merged) so the union narrows
  * naturally inside the body.
  *
@@ -307,7 +307,7 @@ export function dispatch<E extends ObjexoomEvent>(event: E): void {
  *     // e is BurstEvent — e.kind narrows to BurstKind, etc.
  *   }), []);
  */
-export function addBoneBusterListener<K extends ObjexoomEventType>(
+export function addBoneBusterListener<K extends BoneBusterEventType>(
 	type: K,
 	handler: (event: EventOf<K>) => void,
 ): () => void {

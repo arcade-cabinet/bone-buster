@@ -2,13 +2,13 @@
  * COV2 step-2 — anchor-piece scatter contract.
  */
 
-import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
 import { LARGE_PROPS } from "@world/largeProps";
 import { loadRefLevel } from "@world/refLevel";
 import { blockerCirclesOf, spawnLargeProps } from "@world/scatter/largePropScatter";
 import { describe, expect, it } from "vitest";
 
-function reseed(map: ObjexoomSectorMap, seed: number): ObjexoomSectorMap {
+function reseed(map: BoneBusterSectorMap, seed: number): BoneBusterSectorMap {
 	return { ...map, seed };
 }
 
@@ -21,7 +21,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 	];
 }
 
-const SECTOR_FIXTURE: ObjexoomSectorMap = {
+const SECTOR_FIXTURE: BoneBusterSectorMap = {
 	kind: "sectors",
 	seed: 0,
 	archetype: "corridor",

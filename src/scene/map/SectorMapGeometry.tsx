@@ -1,4 +1,4 @@
-import { computePortalEdges, edgeKey, type ObjexoomSectorMap } from "@engine/engine";
+import { type BoneBusterSectorMap, computePortalEdges, edgeKey } from "@engine/engine";
 import { useGLTF } from "@react-three/drei";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
@@ -11,7 +11,7 @@ import { SkeletonUtils } from "three-stdlib";
 import { WaterSurface } from "./WaterSurface";
 
 /**
- * Renders an ObjexoomSectorMap (decoded reference level) as r3f
+ * Renders a BoneBusterSectorMap (decoded reference level) as r3f
  * geometry. Each MapSector becomes a flat floor + ceiling shape plus
  * wall quads along every edge. Portal de-duping (skipping interior
  * edges shared with neighbors at the same height) is handled
@@ -34,7 +34,7 @@ import { WaterSurface } from "./WaterSurface";
  * remain open. Collision still keys off the sector polygon vertices
  * (handled in `resolveCollisionSectors`); the GLBs are visual only.
  */
-export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
+export function SectorMapGeometry({ map }: { map: BoneBusterSectorMap }) {
 	const useModularFloor = map.useModularFloor === true;
 	const useModularWalls = map.useModularWalls === true;
 	const archetype = useMemo<PropArchetype>(() => pickArchetype(map), [map]);

@@ -2,7 +2,7 @@
  * COV8 step-2 — trap scatter + tick-damage contract.
  */
 
-import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
 import {
 	disarmSector,
 	spawnTraps,
@@ -22,7 +22,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 	];
 }
 
-const SECTOR_FIXTURE: ObjexoomSectorMap = {
+const SECTOR_FIXTURE: BoneBusterSectorMap = {
 	kind: "sectors",
 	seed: 1, // % 5 = 1 → arena (heavier trap density)
 	archetype: "arena",
@@ -40,7 +40,7 @@ const SECTOR_FIXTURE: ObjexoomSectorMap = {
 	bounds: { minX: -10, minY: -10, maxX: 40, maxY: 40 },
 };
 
-function reseed(seed: number): ObjexoomSectorMap {
+function reseed(seed: number): BoneBusterSectorMap {
 	return { ...SECTOR_FIXTURE, seed };
 }
 
@@ -58,8 +58,8 @@ describe("COV8 step-2 — spawnTraps determinism", () => {
 	});
 
 	it("returns [] for grid maps", () => {
-		const grid = { ...SECTOR_FIXTURE, kind: "grid" } as unknown as ObjexoomSectorMap;
-		expect(spawnTraps(grid as unknown as ObjexoomSectorMap)).toEqual([]);
+		const grid = { ...SECTOR_FIXTURE, kind: "grid" } as unknown as BoneBusterSectorMap;
+		expect(spawnTraps(grid)).toEqual([]);
 	});
 
 	it("places at least one trap on arena-archetype maps (heavy density)", () => {

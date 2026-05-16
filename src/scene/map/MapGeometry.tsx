@@ -1,4 +1,4 @@
-import type { ObjexoomGridMap } from "@engine/engine";
+import type { BoneBusterGridMap } from "@engine/engine";
 import { useGLTF, useTexture } from "@react-three/drei";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { TILE } from "@shared/constants";
@@ -14,7 +14,7 @@ import { WALL_HEIGHT } from "../constants";
 import { LockedDoor } from "./LockedDoor";
 
 /**
- * Renders an ObjexoomGridMap as floor + ceiling + wall slabs + lava
+ * Renders a BoneBusterGridMap as floor + ceiling + wall slabs + lava
  * tiles. COV3 step-5: wall cells are rendered as cloned modular GLBs
  * keyed to the map's archetype (via `pickArchetype(map)`), replacing
  * the procedural `<boxGeometry>` cubes. Each wall cell still
@@ -107,7 +107,7 @@ function TexturedFloorInner({
 	);
 }
 
-export function MapGeometry({ map, doorOpen }: { map: ObjexoomGridMap; doorOpen: boolean }) {
+export function MapGeometry({ map, doorOpen }: { map: BoneBusterGridMap; doorOpen: boolean }) {
 	const archetype = useMemo<PropArchetype>(() => pickArchetype(map), [map]);
 	const palette = useMemo(() => getArchetypeLightPalette(archetype), [archetype]);
 	const walls = useMemo(() => {

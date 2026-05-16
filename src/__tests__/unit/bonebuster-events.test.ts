@@ -9,10 +9,10 @@
 
 import {
 	addBoneBusterListener,
+	type BoneBusterEvent,
 	type BurstEvent,
 	dispatch,
 	type FpsUpdateEvent,
-	type ObjexoomEvent,
 } from "@engine/events";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -98,7 +98,7 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 			detail = (e as CustomEvent).detail;
 		};
 		window.addEventListener("objexoom:shellEject", adapter);
-		const evt: ObjexoomEvent = {
+		const evt: BoneBusterEvent = {
 			type: "shellEject",
 			x: 1,
 			y: 2,
