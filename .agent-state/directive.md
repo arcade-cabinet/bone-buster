@@ -33,8 +33,6 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 
 ### IDENTITY — gameplay-design depth
 
-- [ ] **D1** — locked-weapon HUD as status indicator. PRD §D1.
-- [ ] **D2** — weapon-ammo pickups in every procedural map. PRD §D2.
 - [ ] **D3** — weapon-acquired HUD beat. PRD §D3.
 - [ ] **D4** — enemy rename (skeleton→rattler, wraith→phaser, imp→bouncer). PRD §D4.
 - [ ] **D5** — promote enemy variants + 12 new extracts → 24 first-class kinds. PRD §D5. (Depends IF5/IF6 — shipped.)
