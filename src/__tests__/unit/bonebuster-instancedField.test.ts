@@ -1,18 +1,21 @@
 /**
- * CORRIDOR / A1 + A2 — InstancedField + EphemeralPool factory contracts.
+ * CORRIDOR / A1 — InstancedField factory contract.
  *
  * The render path can't be exercised in unit-mode (no WebGL), so
  * these tests pin the pure-fn surface:
  *   - composeInstanceMatrix produces the expected (position, yaw,
  *     scale) world transform.
- *   - composeExpiredMatrix produces a det=0 matrix so the GPU
- *     skips the slot.
- *   - allocSlot reclaims expired slots, extends the pool when no
- *     expired slots, returns -1 when full.
+ *
+ * A2 (EphemeralPool) was shipped speculatively in the corridor
+ * step-1 commit but had zero production callers + the slot model
+ * doesn't fit the per-frame physics + per-mesh independent-opacity
+ * shape of the actual ephemeral fields (ShellEject / BodyPart /
+ * Bullet / ParticleBurst). It was deleted per the simplifier review
+ * + the memory note `ephemeral-pool-not-instancing.md`. When a real
+ * ephemeral migration needs pooling, the right design is an
+ * InstancedBufferAttribute shader path — not this slot abstraction.
  */
 
-import type { EphemeralPoolSlot } from "@scene/render/EphemeralPool";
-import { allocSlot, composeExpiredMatrix } from "@scene/render/EphemeralPool";
 import { composeInstanceMatrix } from "@scene/render/InstancedField";
 import { describe, expect, it } from "vitest";
 
@@ -53,39 +56,5 @@ describe("A1 — composeInstanceMatrix", () => {
 		// 0 to 1.
 		expect(elements[0]).toBeCloseTo(0, 5);
 		expect(elements[2]).toBeCloseTo(-1, 5); // three.js sign convention
-	});
-});
-
-describe("A2 — composeExpiredMatrix", () => {
-	it("produces a zero-scale matrix (det = 0 → GPU skips)", () => {
-		const m = composeExpiredMatrix();
-		// determinant of a scale-0 matrix is 0; three.js's determinant()
-		// returns the geometric determinant.
-		expect(m.determinant()).toBeCloseTo(0);
-	});
-});
-
-describe("A2 — allocSlot lifecycle", () => {
-	function slot(id: number, expired: boolean): EphemeralPoolSlot {
-		return { id, position: { x: 0, y: 0 }, yaw: 0, expired };
-	}
-
-	it("returns the first expired slot's index when any expired exist", () => {
-		const slots = [slot(0, false), slot(1, true), slot(2, false)];
-		expect(allocSlot(slots, 8)).toBe(1);
-	});
-
-	it("returns the length (extension) when no expired and pool not full", () => {
-		const slots = [slot(0, false), slot(1, false)];
-		expect(allocSlot(slots, 8)).toBe(2);
-	});
-
-	it("returns -1 when pool is full and no expired slots", () => {
-		const slots = [slot(0, false), slot(1, false), slot(2, false)];
-		expect(allocSlot(slots, 3)).toBe(-1);
-	});
-
-	it("returns 0 for an empty pool with capacity", () => {
-		expect(allocSlot([], 8)).toBe(0);
 	});
 });

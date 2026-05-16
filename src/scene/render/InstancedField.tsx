@@ -2,34 +2,36 @@
  * ARCHETYPE INTERLEAVE A1 — generic instanced-mesh scatter factory.
  *
  * Replaces the per-instance `<group><primitive>` pattern used by
- * DebrisField / LampField / KitchenField / etc. with a single
- * `<instancedMesh>` per kind. Each instance's world transform is
- * written via setMatrixAt so the GPU draws N instances in 1 draw
- * call instead of N draw calls.
+ * DebrisField / KitchenField / etc. with a single `<instancedMesh>`
+ * per kind. Each instance's world transform is written via
+ * setMatrixAt so the GPU draws N instances in 1 draw call instead
+ * of N draw calls.
  *
  * Two component forms keep the rules-of-hooks clean:
  *
  *   InstancedField — caller passes (geometry, material). Use for
- *     procedural sources (BodyPart / Shell / Bullet ephemeral
- *     components have module-scope shared geometry).
+ *     procedural sources.
  *
  *   InstancedGltfField — caller passes (url). Use for GLB-backed
- *     scatter (debris, lamps, props). Wraps useGLTF + the first-Mesh
- *     extractor and feeds the resolved (geometry, material) into
- *     InstancedField underneath.
- *
- * Step-1 in this commit:
- *   - factories exist + are unit-tested for the instance-transform
- *     math (matrix composition per instance is the surface that
- *     can silently regress).
- *   - Migration of existing Field / Pool components to use these
- *     factories is step-2.
+ *     scatter (debris, kitchen props, etc). Wraps useGLTF + the
+ *     first-Mesh extractor and feeds the resolved (geometry, material)
+ *     into InstancedField underneath.
  */
 
 import { useGLTF } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
 import type { BufferGeometry, InstancedMesh, Material, Mesh, Object3D } from "three";
 import { Matrix4, Quaternion, Vector3 } from "three";
+
+// QW3-shaped module-scope scratch — reused across all composeInstanceMatrix
+// calls in this module. Three.js's `InstancedMesh.setMatrixAt(i, m)` copies
+// `m` into its own internal buffer, so the caller can safely mutate one
+// shared Matrix4 per render pass.
+const SCRATCH_MATRIX = /*@__PURE__*/ new Matrix4();
+const SCRATCH_POSITION = /*@__PURE__*/ new Vector3();
+const SCRATCH_QUAT = /*@__PURE__*/ new Quaternion();
+const SCRATCH_SCALE = /*@__PURE__*/ new Vector3();
+const Y_AXIS = /*@__PURE__*/ new Vector3(0, 1, 0);
 
 export type InstancedFieldInstance = Readonly<{
 	id: number;
@@ -57,18 +59,18 @@ export type InstancedGltfFieldProps = Readonly<{
 }>;
 
 /**
- * Compose a world-space Matrix4 for one instance.
- * Exported for unit testing — the matrix math is the
- * regression-prone surface of A1.
+ * Compose a world-space Matrix4 for one instance, into the shared
+ * SCRATCH_MATRIX. Caller MUST consume the matrix immediately (e.g.
+ * `im.setMatrixAt(i, composeInstanceMatrix(inst))`) since the next
+ * call overwrites it. Exported for unit testing.
  */
 export function composeInstanceMatrix(inst: InstancedFieldInstance): Matrix4 {
-	const m = new Matrix4();
-	const position = new Vector3(inst.position.x, 0, inst.position.y);
-	const quat = new Quaternion();
-	quat.setFromAxisAngle(new Vector3(0, 1, 0), inst.yaw);
-	const scale = new Vector3(inst.scale ?? 1, inst.scale ?? 1, inst.scale ?? 1);
-	m.compose(position, quat, scale);
-	return m;
+	SCRATCH_POSITION.set(inst.position.x, 0, inst.position.y);
+	SCRATCH_QUAT.setFromAxisAngle(Y_AXIS, inst.yaw);
+	const s = inst.scale ?? 1;
+	SCRATCH_SCALE.set(s, s, s);
+	SCRATCH_MATRIX.compose(SCRATCH_POSITION, SCRATCH_QUAT, SCRATCH_SCALE);
+	return SCRATCH_MATRIX;
 }
 
 /**

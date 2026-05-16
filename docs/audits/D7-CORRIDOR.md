@@ -92,9 +92,23 @@ factory mounts are added to existing slot mounts.
 - [x] Ideas list captured (above). Items 1, 2, 5 parked; 3-4 noted
       for step-2 perf-baseline pass.
 - [x] InstancedField factory module shipped (commit a4daceb).
-- [x] EphemeralPool factory module shipped (commit a4daceb).
+- [x] ~~EphemeralPool factory module shipped (commit a4daceb).~~
+      **Deleted post-review**: zero production callers + slot model
+      wrong-fit for ephemeral physics (see Architectural decision
+      below + memory note `ephemeral-pool-not-instancing.md`).
+      Per the meta-rule "only build what the current step needs;
+      let the work surface the next step," the abstraction was
+      shipped speculatively. Both the simplifier and performance
+      reviewers flagged it on the post-PR review. The right design
+      for ephemeral pooling is an `InstancedBufferAttribute` shader
+      path — re-add when a real ephemeral migration justifies it.
 - [x] Factories split into procedural + GLB forms (commit ebe1706)
       to satisfy React rules-of-hooks (useGLTF must be unconditional).
+      Procedural form retained even though the only initial use
+      was the (now-deleted) EphemeralPool wrapper — InstancedField
+      with caller-provided geometry/material is still useful for
+      future procedural sources, and the split is what makes the
+      GLB wrapper's useGLTF call unconditional.
 - [x] Step-2a: DebrisField → InstancedGltfField (commit 288a7d3).
       Groups instances by url; one InstancedMesh per unique url,
       one draw call per group instead of N. 5 canonical + 10
