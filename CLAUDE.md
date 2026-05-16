@@ -40,7 +40,7 @@ DESIGN > ARCHITECTURE > DECISIONS > PRD > directive > ROADMAP.
 
 ## Notes
 
-- URL flags: `?debug` exposes `window.__bonebuster` for e2e + dev hooks; `?seed=N` pins the run seed; `?archetype=<name>` forces the seed to land on a chosen archetype (`corridor` / `arena` / `courtyard` / `sewer` / `library`). Stacks: seed read first, archetype override applied on top via `applyArchetypeOverride`.
+- URL flags: `?bonebusterDebug` exposes `window.__bonebuster` for e2e + dev hooks; `?bonebusterSeed=N` pins the run seed; `?bonebusterArchetype=<name>` forces the seed to land on a chosen archetype (`corridor` / `arena` / `courtyard` / `sewer` / `library`). Legacy `?objexoomDebug` / `?objexoomSeed` / `?objexoomArchetype` aliases still accepted (R8b shim). Stacks: seed read first, archetype override applied on top via `applyArchetypeOverride`.
 - Screenshot tests (`tests/e2e/screenshots.spec.ts`) use a custom `chromium.launch({ args: [...] })` path with `--use-angle=gl` and CDP `Page.captureScreenshot`. Default headless SwiftShader deadlocks on the shadow-map composite — never revert this fix.
 - Source asset pipeline: FBX/zips under `references/` (gitignored, local-only) get converted to GLBs under `public/assets/models/{enemies,weapons,props}/` via `pnpm assets:fbx-to-glb`. The GLBs ARE tracked. Every asset URL routes through the `A()` helper so the BASE_URL prefix resolves correctly in dev, gh-pages, and Capacitor file:// origins.
 - itch.io asset pipeline: `pnpm itch:fetch` downloads allow-listed packs to `raw-assets/archives/`, extracts to `raw-assets/extracted/`, then the fbx-to-glb pass converts into `references/_extracted/`. Production assets are hand-promoted into `public/assets/models/` per-archetype.
