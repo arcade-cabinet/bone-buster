@@ -1,5 +1,6 @@
 import path from "node:path";
 import react from "@vitejs/plugin-react";
+import vike from "vike/plugin";
 import { defineConfig } from "vite";
 
 /**
@@ -49,7 +50,7 @@ const base = normalizeBasePath(process.env.VITE_BASE_PATH);
 export default defineConfig(({ mode }) => ({
 	base,
 	cacheDir: ".vite",
-	plugins: [react()],
+	plugins: [react(), vike()],
 	build: {
 		target: "es2022",
 		// QW7 / SECURITY #1 — gh-pages builds drop sourcemaps entirely so
