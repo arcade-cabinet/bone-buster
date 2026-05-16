@@ -788,7 +788,7 @@ export function castRayAny(
 // just describes the actor shape so unit tests can reason about it.
 // Y5 — yuka-backed projectile step. Imported as a value (only used by
 // stepEnemyBullet) so engine.ts itself stays free of yuka imports.
-import { yukaProjectileStep } from "../yukaIntegration";
+import { yukaProjectileStep } from "@ai/yukaIntegration";
 
 export const ENEMY_BULLET_SPEED = 1.4 * TILE; // ≈ 1 cell / second
 // L1 — damage values rescaled for the 0-9 HP scale. Imp bullets land

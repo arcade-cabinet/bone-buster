@@ -28,6 +28,8 @@
  *   dt                   — clamped delta seconds for the tick
  */
 
+import { tickEnemyFsm } from "@ai/enemyAi";
+import { removeYukaEntity } from "@ai/yukaIntegration";
 import {
 	type CollisionContext,
 	type Enemy,
@@ -45,11 +47,9 @@ import {
 } from "@shared/constants";
 import type * as THREE from "three";
 import type * as Yuka from "yuka";
-import { tickEnemyFsm } from "../../enemyAi";
 import type { GameRef } from "../../ObjexoomShell";
 import type { ObjexoomSettings } from "../../settings";
 import { panForPosition, playAggroAlert, playHurt } from "../../sfx";
-import { removeYukaEntity } from "../../yukaIntegration";
 
 // CollisionContext is a private export of engine.ts; if not exported, we
 // fall back to the structural type the helpers consume. The Scene

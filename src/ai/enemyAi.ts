@@ -14,15 +14,15 @@
  * the player from picking off patrolling enemies one-by-one.
  */
 
-import type { CollisionContext, Enemy, EnemyFsmState, ObjexoomMap, Vec2 } from "@engine/engine";
-import { hasLineOfSightAny, resolveCollisionAny } from "@engine/engine";
 // Y1/Y3/Y8 — yuka-backed step math. The hand-rolled FSM stays
 // (it's the "thin compat shim" Y8 calls out); the per-frame patrol +
 // chase displacement now flows through `yukaStepToward` / `yukaWanderTarget`
 // so the migration toward yuka.WanderBehavior / SeekBehavior has a
 // landing spot. Tests are unaffected because the return shape is
 // identical.
-import { yukaAvoidObstacles, yukaStepToward, yukaWanderTarget } from "./yukaIntegration";
+import { yukaAvoidObstacles, yukaStepToward, yukaWanderTarget } from "@ai/yukaIntegration";
+import type { CollisionContext, Enemy, EnemyFsmState, ObjexoomMap, Vec2 } from "@engine/engine";
+import { hasLineOfSightAny, resolveCollisionAny } from "@engine/engine";
 
 export const GETHELP_RADIUS = 6.5;
 export const LOS_LOST_MS = 2_500;

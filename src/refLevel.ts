@@ -12,10 +12,10 @@
  *   9 = ManyEnemies (squad spawn — emits one wraith + one skeleton at the position)
  */
 
+import { decodeRefLevel, levelBounds, type RefLevelIndex } from "@ai/turtle";
 import type { EnemySpawn, MapSector, ObjexoomSectorMap, PickupSpawn, Vec2 } from "@engine/engine";
 import { ARCHETYPE_NAMES } from "./archetype";
 import type { Difficulty } from "./settings";
-import { decodeRefLevel, levelBounds, type RefLevelIndex } from "./turtle";
 
 const REF_TO_RUNTIME_SCALE = 0.25;
 

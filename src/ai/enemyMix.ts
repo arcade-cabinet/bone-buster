@@ -24,7 +24,7 @@
 
 import type { EnemyKind, EnemySpawn } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
-import type { PropArchetype } from "./scatter/propPool";
+import type { PropArchetype } from "../scatter/propPool";
 
 /** `[skeleton, wraith, imp]` — relative weights for the kind picker. */
 export type EnemyMixWeights = readonly [number, number, number];

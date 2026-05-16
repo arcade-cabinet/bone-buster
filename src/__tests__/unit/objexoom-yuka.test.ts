@@ -1,15 +1,16 @@
 // Y4/Y5/Y6 — pure helpers in yukaIntegration.ts that don't touch the
 // yuka entity manager. EntityManager + GameEntity interaction is
 // covered by the e2e gate (Y10).
-import { describe, expect, it } from "vitest";
-import { loadRefLevel } from "@/refLevel";
+
 import {
 	buildNavmeshFromSectors,
 	yukaAvoidObstacles,
 	yukaProjectileStep,
 	yukaStepToward,
 	yukaWanderTarget,
-} from "@/yukaIntegration";
+} from "@ai/yukaIntegration";
+import { describe, expect, it } from "vitest";
+import { loadRefLevel } from "@/refLevel";
 
 describe("yukaStepToward (Y1/Y3)", () => {
 	it("returns origin unchanged when from === to", () => {

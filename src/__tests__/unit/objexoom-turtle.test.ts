@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import {
 	decodeLevel,
 	decodeRefLevel,
@@ -6,7 +5,8 @@ import {
 	listRefLevels,
 	REF_LEVEL_COUNT,
 	type RefLevelIndex,
-} from "@/turtle";
+} from "@ai/turtle";
+import { describe, expect, it } from "vitest";
 
 describe("objexoom turtle-graphics decoder", () => {
 	it("exposes the original five reference levels", () => {

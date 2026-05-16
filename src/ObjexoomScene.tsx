@@ -1,3 +1,5 @@
+import { remapEnemyMix } from "@ai/enemyMix";
+import { clearYuka, makeYukaEntityAt, removeYukaEntity, tickYuka } from "@ai/yukaIntegration";
 import {
 	computePortalEdges,
 	ENEMY_BULLET_DAMAGE,
@@ -21,7 +23,6 @@ import * as THREE from "three";
 import type * as Yuka from "yuka";
 import { pickArchetype } from "./archetype";
 import { type Barrel, resolveExplosion, spawnBarrels } from "./barrels";
-import { remapEnemyMix } from "./enemyMix";
 import { type LampInstance, spawnLamps } from "./lampScatter";
 import { getArchetypeLightPalette } from "./lighting/archetypePalette";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
@@ -103,7 +104,6 @@ import {
 	setAmbientPhase,
 	stopAmbient,
 } from "./sfx";
-import { clearYuka, makeYukaEntityAt, removeYukaEntity, tickYuka } from "./yukaIntegration";
 
 type SceneProps = Readonly<{
 	map: ObjexoomMap;
