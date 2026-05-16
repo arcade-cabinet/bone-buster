@@ -22,11 +22,9 @@
 Mandate: drain everything — directive, PRD §Parked, residual perf wins surfaced by the Lighthouse gate now in CI. Each lane ships as its own squash-merged PR.
 
 ### Lane A — Perf follow-up (Vike/Lighthouse-adjacent)
-- [ ] PA1 Split `vendor-misc` chunk (currently 1.7MB / 524KB gzip in `dist/client/assets/chunks/chunk-Ks4ok9G-.js`) — identify the biggest contributors, give them their own `vendor-*` chunks in `vite.config.ts` manualChunks, verify Lighthouse perf-score holds or improves.
-- [ ] PA2 Title-screen preload — `<link rel="preload">` the critical Bungee/Space-Grotesk woff2s used by the prerender skeleton + warm a Howler instance for the title ambient so the brand identity (visual + audio) lands together. No Lighthouse delta expected; perceptual win.
+(empty — PA1 vendor-split + PA2 title-preload shipped via PR #66 using Rolldown's `advancedChunks.groups` API + Vike's `injectFilter` for font auto-preload suppression.)
 
 ### Lane B — PRD §Parked drain
-- [ ] PB1 Type sweep: `Objexoom*Map` → `BoneBuster*Map` in `src/engine/engine.ts` + 17 dependent files. Mechanical (find/replace + `pnpm lint:fix`). Lowest blast radius — do first to clear the namespace.
 - [ ] PB2 Per-variant kill-popup names — e.g. "You busted a Plaguebeak (Stained-Cassock variant)". Surface: kill-confirmation UI; data: per-enemy variant tag already on spawn record. Small UX slice.
 - [ ] PB3 InstancedField migration — PropField + LargePropField + TrapField + NpcField + NatureField → InstancedGltfField, ~150 fewer arena draw calls per the PR #62 perf reviewer. Per-field notes in PRD §Parked: LampField needs split (per-lamp pointLight children); NpcField NOT a candidate (per-instance animation mixer); NatureField needs Mega_Nature.glb split into per-plant GLBs first. Use-case-enumeration pass required before opening code.
 - [ ] PB4 Slasher melee weapons — chainsaw (loud-attract), meat-hook (pull), axe (heavy-slow) as distinct damage-profile variants. Gameplay-design slice.
