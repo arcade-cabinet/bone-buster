@@ -144,7 +144,7 @@ jobs:
         # The `android` job already produced + uploaded
         # `app-debug-apk`. Downloading saves the ~3-5min of repeating
         # the build, sync, and gradle steps here.
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: app-debug-apk
           path: android/app/build/outputs/apk/debug/
