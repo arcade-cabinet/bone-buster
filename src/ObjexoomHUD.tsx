@@ -101,7 +101,7 @@ export function ObjexoomHUD({
 						data-testid="objexoom-level"
 						style={{
 							fontFamily: FONT_FAMILY.display,
-							fontSize: 13,
+							fontSize: "var(--obx-hud-fs-readout, 13px)",
 							fontWeight: FONT_WEIGHT.regular,
 							letterSpacing: LETTER_SPACING.hudLabel,
 							color: ROLE.accentPrimary,
@@ -138,7 +138,9 @@ export function ObjexoomHUD({
 					data-testid="objexoom-kills"
 					style={{
 						fontFamily: FONT_FAMILY.display,
-						fontSize: 24,
+						// BC6 — clamp(18px, 2.4vmin, 24px) — the kill count
+						// stays at display-size, biggest readout besides ammo.
+						fontSize: "var(--obx-hud-fs-display, 24px)",
 						fontWeight: FONT_WEIGHT.regular,
 						letterSpacing: LETTER_SPACING.display,
 					}}
@@ -155,7 +157,7 @@ export function ObjexoomHUD({
 						style={{
 							marginTop: 4,
 							fontFamily: FONT_FAMILY.display,
-							fontSize: 14,
+							fontSize: "var(--obx-hud-fs-readout, 14px)",
 							fontWeight: FONT_WEIGHT.regular,
 							letterSpacing: LETTER_SPACING.display,
 							color: ROLE.actionKey,
@@ -174,7 +176,7 @@ export function ObjexoomHUD({
 						style={{
 							marginTop: 4,
 							fontFamily: FONT_FAMILY.display,
-							fontSize: 14,
+							fontSize: "var(--obx-hud-fs-readout, 14px)",
 							fontWeight: FONT_WEIGHT.regular,
 							letterSpacing: LETTER_SPACING.display,
 							color: ROLE.actionKey,
@@ -191,7 +193,7 @@ export function ObjexoomHUD({
 					data-testid="objexoom-key"
 					style={{
 						marginTop: 6,
-						fontSize: 11,
+						fontSize: "var(--obx-hud-fs-label, 11px)",
 						letterSpacing: LETTER_SPACING.hudLabel,
 						color: state.hasKey ? ROLE.actionKey : ROLE.textPrimary,
 					}}
@@ -238,7 +240,10 @@ export function ObjexoomHUD({
 							aria-label={`Select ${spec.label}`}
 							aria-pressed={active}
 						>
-							<span style={{ fontSize: 10, opacity: 0.7 }}>{spec.hudHotkey}</span> {spec.label}
+							<span style={{ fontSize: "var(--obx-hud-fs-label, 10px)", opacity: 0.7 }}>
+								{spec.hudHotkey}
+							</span>{" "}
+							{spec.label}
 						</button>
 					);
 				})}
@@ -257,7 +262,9 @@ export function ObjexoomHUD({
 					borderRadius: 12,
 					fontFamily: FONT_FAMILY.display,
 					fontWeight: FONT_WEIGHT.regular,
-					fontSize: 22,
+					// BC6 — clamp(18px, 2.4vmin, 24px) — the big ammo readout
+					// stays the biggest HUD number even on small viewports
+					fontSize: "var(--obx-hud-fs-display, 22px)",
 					letterSpacing: LETTER_SPACING.display,
 					color: currentSpec.muzzleColor,
 				}}
@@ -384,7 +391,8 @@ function AdaptiveResolutionReadout() {
 				left: "calc(12px + var(--obx-safe-left, 0px))",
 				bottom: "calc(12px + var(--obx-safe-bottom, 0px))",
 				fontFamily: FONT_FAMILY.body,
-				fontSize: 11,
+				// BC6 — clamp(10px, 1.2vmin, 13px) declared in app/tokens.css
+				fontSize: "var(--obx-hud-fs-hint, 11px)",
 				letterSpacing: LETTER_SPACING.hudLabel,
 				color: textColor,
 				background: `${OBJEXOOM_PALETTE.ink}cc`,
@@ -648,7 +656,8 @@ const cornerStyle = (corner: "top-left" | "top-right"): CSSProperties => ({
 
 const hudLabelStyle: CSSProperties = {
 	fontFamily: FONT_FAMILY.body,
-	fontSize: 10,
+	// BC6 — clamp(9px, 1.05vmin, 11px) declared in app/tokens.css
+	fontSize: "var(--obx-hud-fs-label, 10px)",
 	fontWeight: FONT_WEIGHT.semibold,
 	letterSpacing: LETTER_SPACING.hudLabel,
 	opacity: 0.8,
@@ -657,7 +666,8 @@ const hudLabelStyle: CSSProperties = {
 
 const hudReadoutStyle: CSSProperties = {
 	fontFamily: FONT_FAMILY.display,
-	fontSize: 13,
+	// BC6 — clamp(12px, 1.45vmin, 15px) declared in app/tokens.css
+	fontSize: "var(--obx-hud-fs-readout, 13px)",
 	marginTop: 4,
 	letterSpacing: LETTER_SPACING.display,
 };
@@ -679,7 +689,8 @@ const hintStyle: CSSProperties = {
 	bottom: "calc(18px + var(--obx-safe-bottom, 0px))",
 	left: "50%",
 	transform: "translateX(-50%)",
-	fontSize: 11,
+	// BC6 — clamp(10px, 1.2vmin, 13px) declared in app/tokens.css
+	fontSize: "var(--obx-hud-fs-hint, 11px)",
 	letterSpacing: LETTER_SPACING.hudLabel,
 	opacity: 0.6,
 	whiteSpace: "nowrap",
@@ -739,7 +750,10 @@ function weaponChipStyle(active: boolean, owned: boolean, accent: string): CSSPr
 		padding: "6px 10px",
 		borderRadius: 10,
 		fontFamily: FONT_FAMILY.body,
-		fontSize: 11,
+		// BC6 — clamp(9px, 1.05vmin, 11px) — weapon-chip text stays a
+		// notch smaller than the corner readouts so the strip is the
+		// quieter element of the bottom band.
+		fontSize: "var(--obx-hud-fs-label, 11px)",
 		fontWeight: FONT_WEIGHT.semibold,
 		letterSpacing: LETTER_SPACING.hudChip,
 		border: active ? `1px solid ${accent}` : "1px solid transparent",

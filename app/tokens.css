@@ -104,6 +104,21 @@
 	--obx-safe-right: env(safe-area-inset-right, 0px);
 	--obx-safe-bottom: env(safe-area-inset-bottom, 0px);
 	--obx-safe-left: env(safe-area-inset-left, 0px);
+
+	/* BC6 — responsive HUD typography. `clamp(min, preferred, max)`
+	   anchors HUD font sizes to a percentage of the viewport's
+	   smaller dimension so a 320px phone still reads as well as a
+	   4K monitor. The four sizes mirror the spec's HUD type ramp:
+	     - hud-label    9–11px : tiny chip labels (HP / AMMO / FPS)
+	     - hud-readout 12–15px : chip value text + weapon row
+	     - hud-display 18–24px : ammo big-number readout
+	     - hud-hint    10–13px : single-line bottom hint + tickers
+	   Choosing `vmin` over `vw` keeps the type from blowing up on
+	   tall foldables in portrait — the smaller dimension wins. */
+	--obx-hud-fs-label: clamp(9px, 1.05vmin, 11px);
+	--obx-hud-fs-readout: clamp(12px, 1.45vmin, 15px);
+	--obx-hud-fs-display: clamp(18px, 2.4vmin, 24px);
+	--obx-hud-fs-hint: clamp(10px, 1.2vmin, 13px);
 }
 
 @media (prefers-reduced-motion: reduce) {

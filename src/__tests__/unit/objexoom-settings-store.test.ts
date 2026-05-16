@@ -37,18 +37,16 @@ describe("STO1a — validateSettings", () => {
 		expect(validateSettings({ ...DEFAULT_SETTINGS, touchControls: "auto" }).touchControls).toBe(
 			"auto",
 		);
-		expect(validateSettings({ ...DEFAULT_SETTINGS, touchControls: "on" }).touchControls).toBe(
-			"on",
-		);
+		expect(validateSettings({ ...DEFAULT_SETTINGS, touchControls: "on" }).touchControls).toBe("on");
 		expect(validateSettings({ ...DEFAULT_SETTINGS, touchControls: "off" }).touchControls).toBe(
 			"off",
 		);
 	});
 
 	it("BC5 — falls back to default when touchControls is unknown", () => {
-		expect(
-			validateSettings({ ...DEFAULT_SETTINGS, touchControls: "haptic" }).touchControls,
-		).toBe(DEFAULT_SETTINGS.touchControls);
+		expect(validateSettings({ ...DEFAULT_SETTINGS, touchControls: "haptic" }).touchControls).toBe(
+			DEFAULT_SETTINGS.touchControls,
+		);
 		expect(validateSettings({ ...DEFAULT_SETTINGS, touchControls: 42 }).touchControls).toBe(
 			DEFAULT_SETTINGS.touchControls,
 		);
