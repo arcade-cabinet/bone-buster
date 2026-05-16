@@ -35,7 +35,7 @@
 - [x] **R2** — Bone palette swap. PRD §R2.
 - [x] **R3** — Landing redesign with SVG + framer-motion. PRD §R3.
 - [x] **R4** — animated scuff shader. PRD §R4.
-- [ ] **R5** — Radix card-menu. PRD §R5.
+- [x] **R5** — Radix card-menu. PRD §R5.
 - [ ] **R6** — audio logo sting. PRD §R6.
 - [ ] **R7** — HUD palette + type refresh. PRD §R7.
 - [ ] **R8** — source-string `OBJEXOOM`→`BONE BUSTER` sweep. PRD §R8.

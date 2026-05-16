@@ -503,12 +503,19 @@ function MenuItem({
 	onClick: () => void;
 	primary?: boolean;
 }) {
+	// R5 — ticket-stub card. -2° tilt, framer-motion spring lift on
+	// hover, shadow expansion. Keyboard nav preserved (native <button>
+	// semantics; whileFocus mirrors whileHover so Tab+Enter feels the
+	// same as mouseover+click).
 	return (
 		<motion.button
 			type="button"
 			onClick={onClick}
-			whileHover={{ x: 4 }}
-			whileTap={{ x: 8 }}
+			whileHover={{ rotate: 0, y: -2, scale: 1.02 }}
+			whileFocus={{ rotate: 0, y: -2, scale: 1.02 }}
+			whileTap={{ rotate: -2, y: 0, scale: 0.99 }}
+			initial={{ rotate: -2 }}
+			transition={{ type: "spring", stiffness: 360, damping: 22 }}
 			style={menuItemStyle(primary)}
 		>
 			<span style={menuItemArrowStyle(primary)}>›</span>
@@ -607,21 +614,30 @@ const paneGridStyle: CSSProperties = {
 };
 
 function menuItemStyle(primary?: boolean): CSSProperties {
+	// R5 — ticket-stub card. The framer-motion `initial={{rotate:-2}}`
+	// + spring hover-lift live on the <motion.button> wrapper; the
+	// static appearance below is the resting card surface.
 	return {
 		display: "flex",
 		alignItems: "center",
-		gap: 12,
-		padding: "12px 16px",
-		background: "transparent",
-		border: "none",
-		color: primary ? ROLE.actionKey : ROLE.textPrimary,
-		fontFamily: FONT_FAMILY.display,
+		gap: 14,
+		padding: "14px 22px 14px 18px",
+		background: primary ? ROLE.bgPanelAlpha : ROLE.bgPanel,
+		border: `1px solid ${primary ? ROLE.accent.primary : ROLE.surface.elevated}`,
+		boxShadow: primary
+			? `0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 ${ROLE.brand.bone3}33`
+			: `0 4px 12px rgba(0,0,0,0.35), inset 0 1px 0 ${ROLE.brand.bone3}22`,
+		color: primary ? ROLE.accent.primary : ROLE.text.primary,
+		fontFamily: TYPE.display,
 		fontWeight: FONT_WEIGHT.regular,
 		fontSize: 22,
 		letterSpacing: LETTER_SPACING.display,
 		cursor: "pointer",
 		textAlign: "left",
-		borderRadius: 4,
+		borderRadius: 6,
+		// Ticket-stub notch on the leading edge.
+		clipPath:
+			"polygon(0 8px, 8px 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 14px 100%, 0 calc(100% - 14px))",
 	};
 }
 
