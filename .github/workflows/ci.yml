@@ -4,6 +4,10 @@ on:
   pull_request:
   push:
     branches: [main]
+    # T5 — tag pushes trigger CI so the `mobile-perf` job's tag
+    # gate (refs/tags/v*) actually has a chance to fire on
+    # release-please tags.
+    tags: ['v*']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -103,3 +107,118 @@ jobs:
         with:
           name: app-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
+
+  # T5 — mobile perf gate. Boots a Pixel 5a-class AVD, installs the
+  # debug APK from the `android` job, launches the Capacitor WebView,
+  # forwards its DevTools port, and runs the OBS3 perf probe through
+  # the in-emulator WebView. Asserts minFps >= 30 per archetype.
+  #
+  # Gated on the `mobile-perf` PR label OR release tags so the
+  # 10-15min emulator boot doesn't slow every PR. To run on a PR,
+  # add the `mobile-perf` label.
+  mobile-perf:
+    if: |
+      github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') ||
+      contains(github.event.pull_request.labels.*.name, 'mobile-perf')
+    runs-on: ubuntu-latest
+    needs: android
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with: { version: 10.2.0 }
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '21' }
+      - uses: android-actions/setup-android@v4
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright Chromium (CDP client only — no browser launch)
+        # `--with-deps` mirrors the `perf` job above. CDP-only usage
+        # still needs Playwright's system deps installed on the runner
+        # for the chromium browser-launcher fallback paths it loads.
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Download debug APK from android job
+        # The `android` job already produced + uploaded
+        # `app-debug-apk`. Downloading saves the ~3-5min of repeating
+        # the build, sync, and gradle steps here.
+        uses: actions/download-artifact@v7
+        with:
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/
+      - name: Enable KVM (faster emulator boot)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run mobile perf probe in Pixel 5a AVD
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          ram-size: 4096M
+          heap-size: 1024M
+          disable-animations: true
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            # Install the APK built upstream.
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            # Launch the activity. The package + activity match the
+            # Capacitor scaffolding (com.objexiv.objexoom/.MainActivity).
+            adb shell am start -n com.objexiv.objexoom/.MainActivity
+            # Wait for the WebView to be live + remote-debugging socket
+            # to be available. Capacitor enables WebView.setWebContentsDebuggingEnabled
+            # in debug builds automatically.
+            sleep 15
+            # Find the WebView's abstract-socket name. Format is
+            # `webview_devtools_remote_<pid>`. We pin this to OUR
+            # app's PID rather than picking the first socket the
+            # grep returns — a fresh emulator can have multiple
+            # processes (system WebView updater, etc) listening on
+            # similar sockets, and attaching to the wrong one
+            # turns the perf gate into noise.
+            APP_PID=$(adb shell pidof -s com.objexiv.objexoom | tr -d '\r')
+            if [ -z "$APP_PID" ]; then
+              echo "T5 — com.objexiv.objexoom process not running"
+              adb logcat -d -t 200 chromium:I '*:S'
+              exit 1
+            fi
+            WV_SOCKET="webview_devtools_remote_${APP_PID}"
+            if ! adb shell cat /proc/net/unix | grep -q "@${WV_SOCKET}$"; then
+              echo "T5 — expected socket @${WV_SOCKET} not found"
+              adb logcat -d -t 200 chromium:I '*:S'
+              exit 1
+            fi
+            echo "T5 — forwarding tcp:9222 to $WV_SOCKET"
+            adb forward tcp:9222 localabstract:$WV_SOCKET
+            # Probe the CDP root endpoint to confirm. Hard-fail
+            # if 20 attempts don't get a response — otherwise the
+            # downstream `pnpm test:perf:mobile` would fail with
+            # an opaque "connection refused" further along.
+            CDP_LIVE=0
+            for i in {1..20}; do
+              if curl -s http://localhost:9222/json/version | grep -q "Browser"; then
+                echo "T5 — CDP endpoint live after ${i}s"
+                CDP_LIVE=1
+                break
+              fi
+              sleep 1
+            done
+            if [ "$CDP_LIVE" -ne 1 ]; then
+              echo "T5 — CDP endpoint never responded on tcp:9222"
+              adb logcat -d -t 200 chromium:I '*:S'
+              exit 1
+            fi
+            # Run the mobile perf probe through the CDP-connected WebView.
+            pnpm test:perf:mobile
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: mobile-perf-snapshots
+          path: test-results/perf-snapshots-mobile/
