@@ -33,7 +33,6 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 
 ### IDENTITY — gameplay-design depth
 
-- [ ] **D5** — promote enemy variants + 12 new extracts → 24 first-class kinds. PRD §D5. (Depends IF5/IF6 — shipped.)
 - [ ] **D6** — weapon vs enemy vulnerability tags. PRD §D6.
 - [ ] **D8** — alliterative level-name generator. PRD §D8.
 - [ ] **D9** — `references/` weapon promotions. PRD §D9.
