@@ -1,31 +1,43 @@
 import { useGLTF } from "@react-three/drei";
+import { InstancedGltfField } from "@scene/render/InstancedField";
 import { KITCHEN_PROPS } from "@world/kitchen";
 import type { KitchenInstance } from "@world/scatter/kitchenScatter";
 import { useMemo } from "react";
-import { SkeletonUtils } from "three-stdlib";
 
 /**
  * COV13 step-2 — kitchen-prop scatter renderer (library archetype only).
- * One cloned GLB per KitchenInstance, positioned + yawed per scatter.
- * Mirrors PropField / DebrisField conventions.
+ *
+ * A1-library migration: groups instances by `url` and renders each
+ * group through InstancedGltfField — one InstancedMesh per url,
+ * one draw call per group. Same shape as the corridor slice's
+ * DebrisField migration.
+ *
+ * Per-map kitchen density is low (~6 instances max across the
+ * 20% sector opt-in × max 3 per sector × ~10 sectors); 16
+ * per-url cap is comfortable.
  */
+const MAX_PER_URL = 16;
+
 export function KitchenField({ props }: { props: readonly KitchenInstance[] }) {
+	const groups = useMemo(() => {
+		const byUrl = new Map<string, KitchenInstance[]>();
+		for (const inst of props) {
+			let bucket = byUrl.get(inst.url);
+			if (!bucket) {
+				bucket = [];
+				byUrl.set(inst.url, bucket);
+			}
+			bucket.push(inst);
+		}
+		return Array.from(byUrl.entries());
+	}, [props]);
+
 	return (
 		<>
-			{props.map((inst) => (
-				<KitchenMesh key={inst.id} inst={inst} />
+			{groups.map(([url, instances]) => (
+				<InstancedGltfField key={url} url={url} instances={instances} maxInstances={MAX_PER_URL} />
 			))}
 		</>
-	);
-}
-
-function KitchenMesh({ inst }: { inst: KitchenInstance }) {
-	const gltf = useGLTF(inst.url);
-	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
-	return (
-		<group position={[inst.position.x, 0, inst.position.y]} rotation={[0, inst.yaw, 0]}>
-			<primitive object={cloned} />
-		</group>
 	);
 }
 
