@@ -16,7 +16,7 @@
 		"prebuild": "node scripts/prepare-web-wasm.mjs",
 		"dev": "vite",
 		"build": "vite build && node scripts/copy-public-assets.mjs",
-		"build:pages": "vite build --mode github-pages && node scripts/copy-public-assets.mjs",
+		"build:pages": "PAGES_BUILD=1 vite build && node scripts/copy-public-assets.mjs",
 		"build:native": "vite build && node scripts/copy-public-assets.mjs && cap sync",
 		"assets:report": "node scripts/copy-public-assets.mjs",
 		"preview": "vite preview",

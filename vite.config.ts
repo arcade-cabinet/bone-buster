@@ -51,7 +51,12 @@ function normalizeBasePath(value?: string): string {
 
 const base = normalizeBasePath(process.env.VITE_BASE_PATH);
 
-export default defineConfig(({ mode }) => ({
+// Post-Vike: `vite build --mode github-pages` is rejected by Vike's CAC
+// parser, so the "drop sourcemaps for pages deploys" gate moved from
+// `mode` to an env var. CI sets PAGES_BUILD=1 alongside VITE_BASE_PATH.
+const isPagesBuild = process.env.PAGES_BUILD === "1";
+
+export default defineConfig(() => ({
 	base,
 	cacheDir: ".vite",
 	plugins: [react(), vike()],
@@ -68,7 +73,7 @@ export default defineConfig(({ mode }) => ({
 		// `node_modules/.pnpm/<pkg>@<ver>_<deps>/...` dependency-version
 		// fingerprint. Native (Capacitor) builds + dev keep sourcemaps —
 		// the APK is local-only and dev sourcemaps are dev-only.
-		sourcemap: mode !== "github-pages",
+		sourcemap: !isPagesBuild,
 		chunkSizeWarningLimit: 1800,
 		rollupOptions: {
 			output: {

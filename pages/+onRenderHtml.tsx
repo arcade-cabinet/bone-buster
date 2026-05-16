@@ -37,6 +37,7 @@
  * of drifting from a hardcoded literal.
  */
 
+import { A } from "@assets/assetUrl";
 import { dangerouslySkipEscape, escapeInject } from "vike/server";
 import type { OnRenderHtmlAsync } from "vike/types";
 
@@ -101,19 +102,23 @@ const skeletonBody = (version: string) =>
 type AppConfig = { title?: string; description?: string };
 
 // Vike's dev SSR pipeline injects an inline `<script>` for HMR + the
-// pageContext hydration handoff. Prod (the prerendered static bundle)
-// emits no inline scripts at all, so we keep the tight `script-src 'self'`
-// lockdown there. Dev opens the door with `'unsafe-inline'` only when
-// `import.meta.env.DEV` is true, scoped to the dev process.
+// pageContext hydration handoff and opens a websocket for HMR pushes.
+// Prod (the prerendered static bundle) emits no inline scripts at all
+// and never reaches for HMR, so we keep the tight production CSP exactly
+// what it was pre-Vike. Dev opens the door with `'unsafe-inline'` +
+// `ws:`/`wss:` only when `import.meta.env.DEV` is true.
 const DEV_SCRIPT_SRC = "'self' 'wasm-unsafe-eval' 'unsafe-inline' 'unsafe-eval'";
 const PROD_SCRIPT_SRC = "'self' 'wasm-unsafe-eval'";
+const DEV_CONNECT_SRC = "'self' blob: data: ws: wss:";
+const PROD_CONNECT_SRC = "'self' blob: data:";
 
 const onRenderHtml: OnRenderHtmlAsync = async (pageContext) => {
 	const config = pageContext.config as AppConfig;
 	const title = config.title ?? "Bone Buster";
 	const description = config.description ?? "Bone Buster";
 	const scriptSrc = import.meta.env.DEV ? DEV_SCRIPT_SRC : PROD_SCRIPT_SRC;
-	const csp = `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' blob: data: ws: wss:; object-src 'none'; base-uri 'none'; frame-ancestors 'none';`;
+	const connectSrc = import.meta.env.DEV ? DEV_CONNECT_SRC : PROD_CONNECT_SRC;
+	const csp = `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src ${connectSrc}; object-src 'none'; base-uri 'none'; frame-ancestors 'none';`;
 
 	return escapeInject`<!DOCTYPE html>
 <html lang="en">
@@ -124,11 +129,11 @@ const onRenderHtml: OnRenderHtmlAsync = async (pageContext) => {
 		<meta http-equiv="Content-Security-Policy" content="${csp}" />
 		<title>${title}</title>
 		<meta name="description" content="${description}" />
-		<link rel="manifest" href="./manifest.webmanifest" />
-		<link rel="icon" href="./favicon.ico" sizes="32x32" />
-		<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
-		<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
-		<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+		<link rel="manifest" href="${A("manifest.webmanifest")}" />
+		<link rel="icon" href="${A("favicon.ico")}" sizes="32x32" />
+		<link rel="icon" type="image/png" sizes="32x32" href="${A("favicon-32.png")}" />
+		<link rel="icon" type="image/png" sizes="192x192" href="${A("icons/icon-192.png")}" />
+		<link rel="apple-touch-icon" sizes="180x180" href="${A("apple-touch-icon.png")}" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
