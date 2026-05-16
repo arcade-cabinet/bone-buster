@@ -25,7 +25,7 @@ export function HudKey3D({ hasKey, flashUntil }: { hasKey: boolean; flashUntil: 
 	if (!hasKey) return null;
 	return (
 		<div
-			data-testid="objexoom-hud-key-3d"
+			data-testid="bonebuster-hud-key-3d"
 			style={{
 				position: "absolute",
 				top: 8,

@@ -1,7 +1,7 @@
 /**
  * PT2 — per-archetype playtest capture. Drives the game into each of
  * the 5 archetypes (corridor / arena / courtyard / sewer / library)
- * via `?objexoomArchetype=...`, starts the game (which engages
+ * via `?bonebusterArchetype=...`, starts the game (which engages
  * pointer-lock-less via PT1A's debug bypass), grants flashlight +
  * weapons via collectAllPickups, and captures a clean in-game pose
  * at 1440×900 per archetype.
@@ -56,13 +56,16 @@ for (const archetype of ARCHETYPES) {
 	const page = await ctx.newPage();
 	page.on("pageerror", (err) => console.log(`  pageerror[${archetype}]: ${err.message}`));
 	try {
-		await page.goto(`${BASE}/?objexoomDebug&objexoomSeed=12345&objexoomArchetype=${archetype}`, {
-			waitUntil: "domcontentloaded",
-		});
-		await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
-		await page.evaluate(() => window.__objexoom.start());
-		await page.locator("[data-testid='objexoom-hp']").waitFor({ timeout: 8000 });
-		await page.evaluate(() => window.__objexoom.collectAllPickups());
+		await page.goto(
+			`${BASE}/?bonebusterDebug&bonebusterSeed=12345&bonebusterArchetype=${archetype}`,
+			{
+				waitUntil: "domcontentloaded",
+			},
+		);
+		await page.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 8000 });
+		await page.evaluate(() => window.__bonebuster.start());
+		await page.locator("[data-testid='bonebuster-hp']").waitFor({ timeout: 8000 });
+		await page.evaluate(() => window.__bonebuster.collectAllPickups());
 		await page.waitForTimeout(800);
 		await captureCDP(page, `${OUT}/${archetype}.png`);
 	} catch (err) {

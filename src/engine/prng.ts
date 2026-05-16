@@ -10,7 +10,7 @@
  *
  * Canonical-byte-stability of the seed-0 corridor screenshots depends
  * on this exact bit-for-bit implementation staying constant. The
- * snapshot test in `objexoom-prng.test.ts` pins the first 10 outputs
+ * snapshot test in `bonebuster-prng.test.ts` pins the first 10 outputs
  * for each (seed, tag) pair used in production.
  */
 

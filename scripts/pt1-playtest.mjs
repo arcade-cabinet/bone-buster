@@ -1,6 +1,6 @@
 /**
  * PT1 — playtest beat capture. Drives the game through a scripted
- * sequence via the `__objexoom` debug hooks + Playwright. Writes
+ * sequence via the `__bonebuster` debug hooks + Playwright. Writes
  * screenshots at each beat to test-results/pt1-playtest/.
  */
 
@@ -29,24 +29,24 @@ const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
 const page = await ctx.newPage();
 
 console.log("PT1.1 — landing page");
-await page.goto(`${BASE}/?objexoomDebug&objexoomSeed=12345`, { waitUntil: "domcontentloaded" });
+await page.goto(`${BASE}/?bonebusterDebug&bonebusterSeed=12345`, { waitUntil: "domcontentloaded" });
 await page.waitForTimeout(800);
 await captureCDP(page, `${OUT}/01-landing.png`);
 
 console.log("PT1.2 — engage + initial in-game pose (flashlight off)");
-await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 5000 });
-await page.evaluate(() => window.__objexoom.start());
-await page.locator("[data-testid='objexoom-hp']").waitFor();
+await page.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 5000 });
+await page.evaluate(() => window.__bonebuster.start());
+await page.locator("[data-testid='bonebuster-hp']").waitFor();
 await page.waitForTimeout(600);
 await captureCDP(page, `${OUT}/02-ingame-spawn.png`);
 
 console.log("PT1.3 — collect flashlight + pickups, screenshot lit scene");
-await page.evaluate(() => window.__objexoom.collectAllPickups());
+await page.evaluate(() => window.__bonebuster.collectAllPickups());
 await page.waitForTimeout(700);
 await captureCDP(page, `${OUT}/03-ingame-flashlight.png`);
 
 console.log("PT1.4 — fire current weapon");
-await page.evaluate(() => window.__objexoom.fire());
+await page.evaluate(() => window.__bonebuster.fire());
 await page.waitForTimeout(220);
 await captureCDP(page, `${OUT}/04-fire.png`);
 
@@ -57,7 +57,7 @@ console.log("PT1.5 — kill all enemies (death gibs + score)");
 // lands directly inside the flashlight cone. Enemy spawn coords
 // are state.enemySpawns[i].position (nested), not state.enemySpawns[i].
 await page.evaluate(() => {
-	const hooks = window.__objexoom;
+	const hooks = window.__bonebuster;
 	const state = hooks.getState();
 	const spawns = state.enemySpawns ?? [];
 	const player = state.playerSpawn ?? { x: 4, y: 4 };
@@ -86,7 +86,7 @@ await page.evaluate(() => {
 	hooks.teleport(vx, vy, yaw);
 });
 await page.waitForTimeout(400);
-await page.evaluate(() => window.__objexoom.killAllEnemies());
+await page.evaluate(() => window.__bonebuster.killAllEnemies());
 // Hitstop pauses sim for 80ms (POL12) / 150ms boss; lighting
 // updates can hesitate during that window. 300ms catches burst at
 // peak (POL16 lifetime is 600ms) with sim fully running and
@@ -95,7 +95,7 @@ await page.waitForTimeout(300);
 await captureCDP(page, `${OUT}/05-killall-debris.png`);
 
 console.log("PT1.6 — collect key + capture POL22 ceremony");
-await page.evaluate(() => window.__objexoom.collectKey());
+await page.evaluate(() => window.__bonebuster.collectKey());
 await page.waitForTimeout(220);
 await captureCDP(page, `${OUT}/06-key-acquired.png`);
 await page.waitForTimeout(900);
@@ -103,7 +103,7 @@ await captureCDP(page, `${OUT}/07-key-aftermath.png`);
 
 console.log("PT1.7 — trigger win → going_back phase");
 await page.evaluate(() => {
-	const hooks = window.__objexoom;
+	const hooks = window.__bonebuster;
 	const state = hooks.getState();
 	const spawn = state.playerSpawn ?? { x: 4, y: 4 };
 	const exit = state.exitPosition ?? { x: 12, y: 12 };
@@ -125,7 +125,7 @@ console.log("PT1.8 — clear remaining levels → mission complete");
 const start = Date.now();
 while (Date.now() - start < 12000) {
 	const s = await page.evaluate(() => {
-		const hooks = window.__objexoom;
+		const hooks = window.__bonebuster;
 		const st = hooks.getState();
 		if (st.status === "playing" && st.phase === "going_back") {
 			const spawn = st.playerSpawn ?? { x: 4, y: 4 };

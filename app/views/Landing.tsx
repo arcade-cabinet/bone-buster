@@ -261,7 +261,7 @@ function BestRunChip() {
 			? ` · ${best.totalSecrets} SECRET${best.totalSecrets === 1 ? "" : "S"}`
 			: "";
 	return (
-		<div data-testid="objexoom-best-run-chip" style={bestRunChipStyle}>
+		<div data-testid="bonebuster-best-run-chip" style={bestRunChipStyle}>
 			<div style={bestRunPrimaryRowStyle}>
 				<span style={{ opacity: 0.7 }}>BEST RUN</span>
 				<span style={{ opacity: 0.4, margin: "0 8px" }}>·</span>
@@ -400,11 +400,11 @@ function OptionsPane({
 			<div style={paneHeadingStyle}>OPTIONS</div>
 
 			<div style={optionRowStyle}>
-				<label htmlFor="objexoom-sound" style={optionLabelStyle}>
+				<label htmlFor="bonebuster-sound" style={optionLabelStyle}>
 					SOUND
 				</label>
 				<button
-					id="objexoom-sound"
+					id="bonebuster-sound"
 					type="button"
 					onClick={() => onChange({ soundEnabled: !settings.soundEnabled })}
 					style={toggleStyle(settings.soundEnabled)}
@@ -415,11 +415,11 @@ function OptionsPane({
 			</div>
 
 			<div style={optionRowStyle}>
-				<label htmlFor="objexoom-mouse" style={optionLabelStyle}>
+				<label htmlFor="bonebuster-mouse" style={optionLabelStyle}>
 					MOUSE SENSITIVITY
 				</label>
 				<input
-					id="objexoom-mouse"
+					id="bonebuster-mouse"
 					type="range"
 					min={0.5}
 					max={2.5}
@@ -432,11 +432,11 @@ function OptionsPane({
 			</div>
 
 			<div style={optionRowStyle}>
-				<label htmlFor="objexoom-touch" style={optionLabelStyle}>
+				<label htmlFor="bonebuster-touch" style={optionLabelStyle}>
 					TOUCH-LOOK SENSITIVITY
 				</label>
 				<input
-					id="objexoom-touch"
+					id="bonebuster-touch"
 					type="range"
 					min={0.5}
 					max={4}
@@ -832,7 +832,7 @@ function MusicLoadIndicator() {
 	}, []);
 	const ready = progress.loaded === progress.total;
 	return (
-		<span data-testid="objexoom-music-progress" style={{ opacity: ready ? 0.5 : 0.85 }}>
+		<span data-testid="bonebuster-music-progress" style={{ opacity: ready ? 0.5 : 0.85 }}>
 			{ready
 				? `AUDIO READY (${progress.total}/${progress.total})`
 				: `AUDIO ${progress.loaded}/${progress.total}`}

@@ -2,7 +2,7 @@
  * PT8 — per-difficulty playtest capture pass.
  *
  * Drives the game at each of the 5 difficulties via
- * `__objexoom.setDifficulty()` (POL31 debug hook) and captures 3
+ * `__bonebuster.setDifficulty()` (POL31 debug hook) and captures 3
  * beats per difficulty:
  *
  *   01-landing    — landing menu before NEW GAME (validates the chip
@@ -69,10 +69,10 @@ for (const difficulty of DIFFICULTIES) {
 	});
 
 	console.log(`PT8 — capturing ${difficulty}`);
-	await page.goto("http://localhost:5191/?objexoomDebug&objexoomSeed=12345", {
+	await page.goto("http://localhost:5191/?bonebusterDebug&bonebusterSeed=12345", {
 		waitUntil: "domcontentloaded",
 	});
-	await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
+	await page.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 8000 });
 	// Wait one tick for the async settings hydration to settle BEFORE
 	// applying the per-test override — otherwise the hydration race
 	// can clobber our setDifficulty() call.
@@ -82,18 +82,18 @@ for (const difficulty of DIFFICULTIES) {
 	// the poll the start() call races the setSettings flush and the
 	// run boots with the OLD difficulty's tuning.
 	await page.evaluate(async (diff) => {
-		const before = window.__objexoom.getSettings().difficulty;
-		window.__objexoom.setDifficulty(diff);
+		const before = window.__bonebuster.getSettings().difficulty;
+		window.__bonebuster.setDifficulty(diff);
 		const start = performance.now();
 		while (performance.now() - start < 3000) {
-			const current = window.__objexoom.getSettings().difficulty;
+			const current = window.__bonebuster.getSettings().difficulty;
 			if (current === diff) {
 				await new Promise((r) => setTimeout(r, 50));
 				return;
 			}
 			await new Promise((r) => setTimeout(r, 20));
 		}
-		const after = window.__objexoom.getSettings().difficulty;
+		const after = window.__bonebuster.getSettings().difficulty;
 		throw new Error(
 			`setDifficulty(${diff}) did not propagate within 3s; before=${before} after=${after}`,
 		);
@@ -107,8 +107,8 @@ for (const difficulty of DIFFICULTIES) {
 	// in-game HUD (HP bar at full, KILLS 0/N where N varies by
 	// enemyCountMultiplier — this is the actual difficulty-feel
 	// signal the playtest pass cares about).
-	await page.evaluate(() => window.__objexoom.start());
-	await page.locator("[data-testid='objexoom-hp']").waitFor();
+	await page.evaluate(() => window.__bonebuster.start());
+	await page.locator("[data-testid='bonebuster-hp']").waitFor();
 	await page.waitForTimeout(2400);
 	await captureCDP(page, `${OUT}/${difficulty}-02-ingame.png`);
 
@@ -118,7 +118,7 @@ for (const difficulty of DIFFICULTIES) {
 	// cluster centroid before triggering kills so the bursts land in
 	// frame.
 	await page.evaluate(async () => {
-		const s = window.__objexoom.getState();
+		const s = window.__bonebuster.getState();
 		if (s.enemySpawns?.length > 0) {
 			// Approach the nearest enemy along the player→enemy vector,
 			// stop 3 tiles back, rotate camera to face them.
@@ -134,11 +134,11 @@ for (const difficulty of DIFFICULTIES) {
 				const px = target.x - ux * standoff;
 				const py = target.y - uy * standoff;
 				const yaw = Math.atan2(ux, uy);
-				window.__objexoom.teleport(px, py, yaw);
+				window.__bonebuster.teleport(px, py, yaw);
 			}
 		}
-		window.__objexoom.collectAllPickups();
-		window.__objexoom.killAllEnemies();
+		window.__bonebuster.collectAllPickups();
+		window.__bonebuster.killAllEnemies();
 	});
 	await page.waitForTimeout(900); // past POL12 hitstop + POL16 burst peak
 	await captureCDP(page, `${OUT}/${difficulty}-03-mid-run.png`);

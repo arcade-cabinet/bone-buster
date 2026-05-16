@@ -16,7 +16,7 @@
  *       jump         space press          (PlayerController internal)
  *       look         pointer-lock delta   (PlayerController internal)
  *       move         WASD bitmask         (PlayerController internal)
- *   - debug-hook surface — gated by ?objexoomDebug; one-to-many is fine
+ *   - debug-hook surface — gated by ?bonebusterDebug; one-to-many is fine
  *       debugKillAll          insta-kill all enemies
  *       debugCollectPickups   collect all pickups
  *   - Shell↔Scene channels — known parent; ARCH1b moves these to direct ref

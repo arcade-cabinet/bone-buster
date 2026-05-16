@@ -33,12 +33,7 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 
 ### REBRAND — remaining items
 
-- [x] **R5b** — responsive landing stack for portrait + foldable viewports. Wordmark fills band on both 880×2100 and 2200×1400; tagline + menu legible.
-- [x] **R6** — logo sting via Howler + OGG sample (re-scoped from Tone.js). PRD §R6.
-- [x] **R7** — HUD palette + type refresh. PRD §R7.
-- [x] **R8** — identifier + user-string sweep (`Objexoom*` types/components → `BoneBuster*`, HTML title, ARIA labels). PRD §R8.
-- [x] **R8b** — storage key + URL param shim. `bonebuster.settings` migrates from `objexoom.settings` on first load. URL params accept `bonebuster{Seed,Archetype,Debug}` AND legacy `objexoom*` (new wins). SQLite DB name preserved (rename would orphan run history).
-- [ ] **R9** — Capacitor + Android namespace rename. PRD §R9.
+- [x] **R9** — Capacitor + Android namespace rename to `com.bonebuster.app` (capacitor.config.ts, android namespace + applicationId + MainActivity package path + strings.xml + CI adb commands). Also swept `__objexoom*` window globals + `objexoom-*` test-ids + 80 `objexoom-*` test filenames to `bonebuster*`. URL params modernized to canonical `bonebuster{Seed,Archetype,Debug}` in code/tests (Shell.tsx shim still accepts legacy). App label OBJEXOOM → Bone Buster.
 - [ ] **R10** — release-please `package-name` rename. PRD §R10.
 
 ### IDENTITY — gameplay-design depth

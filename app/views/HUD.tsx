@@ -99,7 +99,7 @@ export function BoneBusterHUD({
 				    estate) to keep the HP pip row + warning legible. */}
 				{!touchMode && (
 					<div
-						data-testid="objexoom-level"
+						data-testid="bonebuster-level"
 						style={{
 							fontFamily: FONT_FAMILY.display,
 							fontSize: "var(--obx-hud-fs-readout, 13px)",
@@ -119,7 +119,7 @@ export function BoneBusterHUD({
 				    amber-emissive square; lit pips track hp 1:1. Below 3 pips
 				    we surface a LOW HEALTH warning in red. */}
 				<HpPipRow hp={Math.max(0, state.hp)} maxHp={state.maxHp} />
-				<div data-testid="objexoom-hp" style={hudReadoutStyle}>
+				<div data-testid="bonebuster-hp" style={hudReadoutStyle}>
 					{Math.max(0, state.hp)} / {state.maxHp}
 				</div>
 				{state.hp > 0 && state.hp <= 3 && (
@@ -136,7 +136,7 @@ export function BoneBusterHUD({
 			<div style={cornerStyle("top-right")}>
 				<div style={hudLabelStyle}>KILLS</div>
 				<motion.div
-					data-testid="objexoom-kills"
+					data-testid="bonebuster-kills"
 					style={{
 						fontFamily: FONT_FAMILY.display,
 						// BC6 — clamp(18px, 2.4vmin, 24px) — the kill count
@@ -154,7 +154,7 @@ export function BoneBusterHUD({
 				</motion.div>
 				{state.score > 0 && (
 					<motion.div
-						data-testid="objexoom-score"
+						data-testid="bonebuster-score"
 						style={{
 							marginTop: 4,
 							fontFamily: FONT_FAMILY.display,
@@ -173,7 +173,7 @@ export function BoneBusterHUD({
 				)}
 				{state.run.runTotalSecrets > 0 && (
 					<motion.div
-						data-testid="objexoom-secrets"
+						data-testid="bonebuster-secrets"
 						style={{
 							marginTop: 4,
 							fontFamily: FONT_FAMILY.display,
@@ -191,7 +191,7 @@ export function BoneBusterHUD({
 					</motion.div>
 				)}
 				<div
-					data-testid="objexoom-key"
+					data-testid="bonebuster-key"
 					style={{
 						marginTop: 6,
 						fontSize: "var(--obx-hud-fs-label, 11px)",
@@ -322,7 +322,7 @@ export function BoneBusterHUD({
 	);
 }
 
-// E12/PA16 — only mounts when ?objexoomDebug is in the URL. Listens to
+// E12/PA16 — only mounts when ?bonebusterDebug is in the URL. Listens to
 // the `objexoom:fpsUpdate` event dispatched from inside the Canvas and
 // renders a tiny FPS + DPR readout in the bottom-left corner.
 // OBS2 — perf budget thresholds. If draw-calls or triangles
@@ -345,7 +345,7 @@ function AdaptiveResolutionReadout() {
 	const [enabled] = useState(
 		() =>
 			typeof window !== "undefined" &&
-			new URLSearchParams(window.location.search).has("objexoomDebug"),
+			new URLSearchParams(window.location.search).has("bonebusterDebug"),
 	);
 
 	useEffect(() => {
@@ -386,7 +386,7 @@ function AdaptiveResolutionReadout() {
 	const textColor = overBudget ? "#fca5a5" : ROLE.accentPrimary;
 	return (
 		<div
-			data-testid="objexoom-fps-readout"
+			data-testid="bonebuster-fps-readout"
 			style={{
 				position: "absolute",
 				left: "calc(12px + var(--obx-safe-left, 0px))",
@@ -785,7 +785,7 @@ function HpPipRow({ hp, maxHp }: { hp: number; maxHp: number }) {
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: custom pip-based HP display, not a native meter
 		<div
-			data-testid="objexoom-hp-pips"
+			data-testid="bonebuster-hp-pips"
 			role="meter"
 			aria-valuenow={hp}
 			aria-valuemax={maxHp}
@@ -850,18 +850,18 @@ function ClickToEngagePrompt() {
 			window.clearInterval(id);
 		};
 	}, []);
-	// PT1A — debug/playtest runs (`?objexoomDebug`) drive the game via
-	// `window.__objexoom.*` and can't acquire pointer-lock without a real
+	// PT1A — debug/playtest runs (`?bonebusterDebug`) drive the game via
+	// `window.__bonebuster.*` and can't acquire pointer-lock without a real
 	// user gesture. The prompt is for human players; debug runs already
 	// drive input through the hook contract, so hide the overlay so
 	// scripted screenshot captures see the real gameplay framing.
 	const debug =
 		typeof window !== "undefined" &&
-		new URL(window.location.href).searchParams.has("objexoomDebug");
+		new URL(window.location.href).searchParams.has("bonebusterDebug");
 	if (locked || debug) return null;
 	return (
 		<div
-			data-testid="objexoom-click-to-engage"
+			data-testid="bonebuster-click-to-engage"
 			style={{
 				position: "absolute",
 				inset: 0,

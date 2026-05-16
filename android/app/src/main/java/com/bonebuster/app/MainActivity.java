@@ -1,4 +1,4 @@
-package com.objexiv.objexoom;
+package com.bonebuster.app;
 
 import com.getcapacitor.BridgeActivity;
 

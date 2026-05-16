@@ -57,7 +57,7 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
       - name: Start vite dev server
-        # OBS4 fix — perf script reads `window.__objexoom` which is
+        # OBS4 fix — perf script reads `window.__bonebuster` which is
         # dead-code-eliminated in production builds (debugHooksEnabled()
         # returns false). Vite's dev server keeps the debug bundle, so
         # `pnpm dev` is the right backing server even though preview
@@ -170,8 +170,8 @@ jobs:
             # Install the APK built upstream.
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
             # Launch the activity. The package + activity match the
-            # Capacitor scaffolding (com.objexiv.objexoom/.MainActivity).
-            adb shell am start -n com.objexiv.objexoom/.MainActivity
+            # Capacitor scaffolding (com.bonebuster.app/.MainActivity).
+            adb shell am start -n com.bonebuster.app/.MainActivity
             # Wait for the WebView to be live + remote-debugging socket
             # to be available. Capacitor enables WebView.setWebContentsDebuggingEnabled
             # in debug builds automatically.
@@ -183,9 +183,9 @@ jobs:
             # processes (system WebView updater, etc) listening on
             # similar sockets, and attaching to the wrong one
             # turns the perf gate into noise.
-            APP_PID=$(adb shell pidof -s com.objexiv.objexoom | tr -d '\r')
+            APP_PID=$(adb shell pidof -s com.bonebuster.app | tr -d '\r')
             if [ -z "$APP_PID" ]; then
-              echo "T5 — com.objexiv.objexoom process not running"
+              echo "T5 — com.bonebuster.app process not running"
               adb logcat -d -t 200 chromium:I '*:S'
               exit 1
             fi

@@ -94,18 +94,18 @@ async function snapshotArchetype(archetype) {
 	const page = await ctx.newPage();
 
 	// Pin to the archetype via the INF3 URL override + a deterministic seed.
-	const url = `${PREVIEW_HOST}/?objexoomDebug&objexoomSeed=12345&objexoomArchetype=${archetype}`;
+	const url = `${PREVIEW_HOST}/?bonebusterDebug&bonebusterSeed=12345&bonebusterArchetype=${archetype}`;
 	await page.goto(url, { waitUntil: "domcontentloaded" });
-	await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
+	await page.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 8000 });
 
 	// Boot the run.
-	await page.evaluate(() => window.__objexoom.start());
-	await page.locator("[data-testid='objexoom-hp']").waitFor();
+	await page.evaluate(() => window.__bonebuster.start());
+	await page.locator("[data-testid='bonebuster-hp']").waitFor();
 
 	// Frame the densest enemy cluster (PT1C trick) so the scene's
 	// worst-case render is what we sample.
 	await page.evaluate(() => {
-		const s = window.__objexoom.getState();
+		const s = window.__bonebuster.getState();
 		if (s.enemySpawns?.length > 0) {
 			const player = s.playerSpawn;
 			const target = s.enemySpawns[0].position;
@@ -119,7 +119,7 @@ async function snapshotArchetype(archetype) {
 				const px = target.x - ux * standoff;
 				const py = target.y - uy * standoff;
 				const yaw = Math.atan2(ux, uy);
-				window.__objexoom.teleport(px, py, yaw);
+				window.__bonebuster.teleport(px, py, yaw);
 			}
 		}
 	});

@@ -1,5 +1,5 @@
 /**
- * INF3 — `?objexoomArchetype` URL override invariants.
+ * INF3 — `?bonebusterArchetype` URL override invariants.
  * Pins the seed-rewrite so pickArchetype lands on the requested name
  * regardless of the input seed.
  */

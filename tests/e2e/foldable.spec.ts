@@ -99,7 +99,7 @@ test.describe("BC7 — foldable smoke", () => {
 					? testInfo.project.use.baseURL
 					: "http://localhost:5191";
 			await withFoldable(baseURL, viewport, async (page) => {
-				await page.goto("/?objexoomDebug&objexoomSeed=12345", {
+				await page.goto("/?bonebusterDebug&bonebusterSeed=12345", {
 					waitUntil: "domcontentloaded",
 				});
 				const wordmark = page.getByRole("img", { name: /Bone Buster/i });

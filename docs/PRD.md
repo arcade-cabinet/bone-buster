@@ -175,7 +175,7 @@ unblocks every downstream content lane (D5/D7/D9/A11).
 ### R8 — Source-string sweep
 
 - **Surfaces:** every `src/**`, `tests/**`, `docs/**`, `.github/**`, `package.json`, `capacitor.config.ts`.
-- **Acceptance:** No `objexoom` / `Objexoom` / `OBJEXOOM` literals outside changelog appendices and intentional historical references. Unit tests pin the post-rebrand contract. The URL flag `?objexoomDebug` becomes `?debug`, the window global `__objexoom` becomes `__bonebuster`, and every e2e spec is updated alongside. The Capacitor `appId` and Java package path rename live separately under R9 (Capacitor + Android namespace).
+- **Acceptance:** No `objexoom` / `Objexoom` / `OBJEXOOM` literals outside changelog appendices and intentional historical references. Unit tests pin the post-rebrand contract. The URL flag `?bonebusterDebug` becomes `?debug`, the window global `__bonebuster` becomes `__bonebuster`, and every e2e spec is updated alongside. The Capacitor `appId` and Java package path rename live separately under R9 (Capacitor + Android namespace).
 
 ### R9 — Capacitor + Android namespace rename
 

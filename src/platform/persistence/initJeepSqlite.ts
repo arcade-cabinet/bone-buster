@@ -17,7 +17,7 @@
  * means the native plugin handles persistence and the jeep-sqlite
  * shim is irrelevant.
  *
- * Failure mode: any step throwing leaves the global `__objexoomJeepSqliteReady`
+ * Failure mode: any step throwing leaves the global `__bonebusterJeepSqliteReady`
  * flag as `false`. Consumers (`createDatabase`) read the flag and fall
  * back to `InMemoryDatabase` so the game still boots — the only loss
  * is run-history persistence on web until the next page reload.
@@ -28,7 +28,7 @@ import { CapacitorSQLite } from "@capacitor-community/sqlite";
 
 declare global {
 	interface Window {
-		__objexoomJeepSqliteReady?: boolean;
+		__bonebusterJeepSqliteReady?: boolean;
 	}
 }
 
@@ -46,7 +46,7 @@ export function ensureJeepSqliteReady(): Promise<boolean> {
 		// Skip on native — the native plugin owns persistence.
 		const platform = Capacitor.getPlatform();
 		if (platform !== "web") {
-			window.__objexoomJeepSqliteReady = true;
+			window.__bonebusterJeepSqliteReady = true;
 			return true;
 		}
 		try {
@@ -74,11 +74,11 @@ export function ensureJeepSqliteReady(): Promise<boolean> {
 			// internal IndexedDB bridge before initWebStore runs.
 			await customElements.whenDefined("jeep-sqlite");
 			await CapacitorSQLite.initWebStore();
-			window.__objexoomJeepSqliteReady = true;
+			window.__bonebusterJeepSqliteReady = true;
 			return true;
 		} catch (err) {
 			console.warn("[STO1b] jeep-sqlite init failed; falling back to in-memory:", err);
-			window.__objexoomJeepSqliteReady = false;
+			window.__bonebusterJeepSqliteReady = false;
 			return false;
 		}
 	})();
@@ -92,5 +92,5 @@ export function ensureJeepSqliteReady(): Promise<boolean> {
  */
 export function isJeepSqliteReady(): boolean {
 	if (typeof window === "undefined") return false;
-	return Boolean(window.__objexoomJeepSqliteReady);
+	return Boolean(window.__bonebusterJeepSqliteReady);
 }

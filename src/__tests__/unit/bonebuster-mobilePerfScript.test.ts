@@ -54,7 +54,7 @@ describe("T5 — obs3-perf-snapshot-mobile.mjs source pin", () => {
 	});
 
 	it("uses the same PT1C teleport pose as the desktop OBS3 probe (worst-case framing)", () => {
-		expect(source).toMatch(/__objexoom\.teleport/);
+		expect(source).toMatch(/__bonebuster\.teleport/);
 		expect(source).toMatch(/standoff\s*=\s*4/);
 	});
 });

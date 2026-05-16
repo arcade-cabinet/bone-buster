@@ -248,7 +248,7 @@ function debugHooksEnabled(): boolean {
 
 declare global {
 	interface Window {
-		__objexoom?: {
+		__bonebuster?: {
 			getState: () => unknown;
 			start: () => void;
 			teleport: (x: number, y: number, yawRad?: number) => void;
@@ -273,7 +273,7 @@ declare global {
 
 export function BoneBusterShell() {
 	const [seed, setSeed] = useState(readSeedFromUrl);
-	// INF3 — when `?objexoomArchetype` is present, switch the level to
+	// INF3 — when `?bonebusterArchetype` is present, switch the level to
 	// procedural so the seed rewrite (and thus the archetype pick)
 	// actually drives map generation. Without this override the default
 	// `level: 1` would load the baked refLevel 0 (corridor) and the
@@ -297,7 +297,7 @@ export function BoneBusterShell() {
 	}, []);
 
 	// STO1a — async-hydrate persisted settings on mount. The override
-	// for `?objexoomArchetype` still wins (URL flag → procedural) so
+	// for `?bonebusterArchetype` still wins (URL flag → procedural) so
 	// the test/debug harness can short-circuit the persisted value
 	// without first clearing storage. If no blob exists, the loaded
 	// value equals DEFAULT_SETTINGS and the setSettings call is a
@@ -311,7 +311,7 @@ export function BoneBusterShell() {
 			// install). In that case the initial DEFAULT_SETTINGS state
 			// is already correct — skip the setSettings call so we
 			// don't clobber any code-side `setSettings` that landed
-			// during the async window (e.g. `__objexoom.setDifficulty`
+			// during the async window (e.g. `__bonebuster.setDifficulty`
 			// called from a playtest script BEFORE this load resolved).
 			if (persisted !== null) {
 				const archetypeOverride = readArchetypeFromUrl();
@@ -506,7 +506,10 @@ export function BoneBusterShell() {
 		document.exitPointerLock?.();
 		try {
 			const url = new URL(window.location.href);
-			url.searchParams.delete("objexoom");
+			// Clear the seed param (+ its legacy alias) so the post-quit
+			// landing page doesn't replay the just-finished run on reload.
+			url.searchParams.delete("bonebusterSeed");
+			url.searchParams.delete("objexoomSeed");
 			window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
 			window.location.reload();
 		} catch {
@@ -675,7 +678,7 @@ export function BoneBusterShell() {
 		return () => window.clearTimeout(timer);
 	}, [state.status, state.run.runLevelsCleared, settings.level]);
 
-	// Debug hooks for headed e2e tests. Only attached when ?objexoomDebug is
+	// Debug hooks for headed e2e tests. Only attached when ?bonebusterDebug is
 	// present AND not in production. The contract is the only stable way to
 	// drive the game from Playwright — pointer-lock + canvas-keyed input are
 	// hostile to scripted automation.
@@ -696,7 +699,7 @@ export function BoneBusterShell() {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: gameRef is a stable useRef from useGameRef; .current is intentionally read at debug-call time, never as a dependency
 	useEffect(() => {
 		if (!debugHooksEnabled()) return;
-		window.__objexoom = {
+		window.__bonebuster = {
 			getState: () => {
 				const s = stateRef.current;
 				const m = mapRef.current;
@@ -763,7 +766,7 @@ export function BoneBusterShell() {
 			getSettings: () => settingsRef.current,
 		};
 		return () => {
-			delete window.__objexoom;
+			delete window.__bonebuster;
 		};
 	}, []);
 
@@ -831,7 +834,7 @@ export function BoneBusterShell() {
 
 	return (
 		<div
-			data-testid="objexoom-shell"
+			data-testid="bonebuster-shell"
 			role="dialog"
 			aria-label="Bone Buster"
 			style={{
@@ -964,7 +967,7 @@ function FadeOverlay({ trigger }: { trigger: FadeTrigger }) {
 	const transition = reduced ? { duration: 0.2 } : { duration: 0.6, times: [0, 0.33, 1] };
 	return (
 		<motion.div
-			data-testid="objexoom-fade-overlay"
+			data-testid="bonebuster-fade-overlay"
 			data-fade-kind={trigger.kind}
 			initial={{ opacity: 0 }}
 			animate={animate}

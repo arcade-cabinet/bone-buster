@@ -36,18 +36,18 @@ const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
 const page = await ctx.newPage();
 page.on("pageerror", (err) => console.log(`  pageerror: ${err.message}`));
 
-await page.goto(`${BASE}/?objexoomDebug&objexoomSeed=12345`, {
+await page.goto(`${BASE}/?bonebusterDebug&bonebusterSeed=12345`, {
 	waitUntil: "domcontentloaded",
 });
-await page.waitForFunction(() => Boolean(window.__objexoom), { timeout: 8000 });
-await page.evaluate(() => window.__objexoom.start());
-await page.locator("[data-testid='objexoom-hp']").waitFor();
-await page.evaluate(() => window.__objexoom.collectAllPickups());
-await page.evaluate(() => window.__objexoom.selectWeapon("flamethrower"));
+await page.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 8000 });
+await page.evaluate(() => window.__bonebuster.start());
+await page.locator("[data-testid='bonebuster-hp']").waitFor();
+await page.evaluate(() => window.__bonebuster.collectAllPickups());
+await page.evaluate(() => window.__bonebuster.selectWeapon("flamethrower"));
 await page.waitForTimeout(300);
 
 console.log("PT5.1 — fire flamethrower (frame 1: 60ms post-trigger, core stream)");
-await page.evaluate(() => window.__objexoom.fire());
+await page.evaluate(() => window.__bonebuster.fire());
 await page.waitForTimeout(60);
 await captureCDP(page, `${OUT}/01-flame-core.png`);
 
@@ -55,11 +55,11 @@ await page.waitForTimeout(160); // total 220ms
 console.log("PT5.2 — frame 2: 220ms post-trigger, tail visible");
 await captureCDP(page, `${OUT}/02-flame-tail.png`);
 
-await page.evaluate(() => window.__objexoom.fire());
+await page.evaluate(() => window.__bonebuster.fire());
 await page.waitForTimeout(60);
-await page.evaluate(() => window.__objexoom.fire());
+await page.evaluate(() => window.__bonebuster.fire());
 await page.waitForTimeout(60);
-await page.evaluate(() => window.__objexoom.fire());
+await page.evaluate(() => window.__bonebuster.fire());
 await page.waitForTimeout(60);
 console.log("PT5.3 — frame 3: sustained stream after 3 trigger pulls");
 await captureCDP(page, `${OUT}/03-flame-sustained.png`);

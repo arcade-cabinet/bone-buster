@@ -117,7 +117,7 @@ Full doc: [`docs/TESTING.md`](./docs/TESTING.md).
 - **Browser (`pnpm test:browser`)** — Vitest in real Chromium. Empty
   for now; first standalone smoke tests queued.
 - **E2E (`pnpm test:e2e`)** — Playwright driving the actual built
-  game via `?objexoomDebug` hooks (URL flag renamed to `?debug`
+  game via `?bonebusterDebug` hooks (URL flag renamed to `?debug`
   by PRD §R8 source-string sweep). Includes the 5 canonical
   screenshot poses.
 
@@ -129,8 +129,8 @@ Vite dev pinned to **5191**, preview to **8191**, with
 
 ## Debug-hook contract
 
-When `?objexoomDebug` is in the URL (renamed to `?debug` by
-PRD §R8), `window.__objexoom` exposes (renamed to
+When `?bonebusterDebug` is in the URL (renamed to `?debug` by
+PRD §R8), `window.__bonebuster` exposes (renamed to
 `window.__bonebuster` by PRD §R8):
 
 ```ts

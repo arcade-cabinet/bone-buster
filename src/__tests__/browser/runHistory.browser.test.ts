@@ -36,7 +36,7 @@ describe("runHistory (browser-mode, InMemory backing)", () => {
 		// Force the readiness flag off so createDatabase returns
 		// InMemoryDatabase — see the module docstring.
 		if (typeof window !== "undefined") {
-			window.__objexoomJeepSqliteReady = false;
+			window.__bonebusterJeepSqliteReady = false;
 		}
 	});
 

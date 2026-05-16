@@ -12,7 +12,7 @@
  *    tokens reach the DOM)
  *  - Menu items addressable by role
  *  - Debug-hook gate honored:
- *      no `?objexoomDebug` → no window.__objexoom
+ *      no `?bonebusterDebug` → no window.__bonebuster
  *      with the param      → full hook surface
  *
  * The 3D scene is mounted but offscreen-rendered; we don't assert on
@@ -38,7 +38,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	setSearchParams("");
-	delete (window as unknown as { __objexoom?: unknown }).__objexoom;
+	delete (window as unknown as { __bonebuster?: unknown }).__bonebuster;
 });
 
 describe("BoneBusterShell — landing surface", () => {
@@ -58,20 +58,20 @@ describe("BoneBusterShell — landing surface", () => {
 		expect(screen.getByRole("button", { name: /QUIT/ })).toBeDefined();
 	});
 
-	it("does NOT expose window.__objexoom without the debug query param", async () => {
+	it("does NOT expose window.__bonebuster without the debug query param", async () => {
 		render(<BoneBusterShell />);
 		await screen.findByRole("img", { name: /Bone Buster/i });
-		expect((window as unknown as { __objexoom?: unknown }).__objexoom).toBeUndefined();
+		expect((window as unknown as { __bonebuster?: unknown }).__bonebuster).toBeUndefined();
 	});
 
-	it("exposes the full debug-hook surface when ?objexoomDebug is set", async () => {
-		setSearchParams("?objexoomDebug");
+	it("exposes the full debug-hook surface when ?bonebusterDebug is set", async () => {
+		setSearchParams("?bonebusterDebug");
 		render(<BoneBusterShell />);
 		await screen.findByRole("img", { name: /Bone Buster/i });
 
 		const hooks = (
 			window as unknown as {
-				__objexoom?: {
+				__bonebuster?: {
 					getState: () => unknown;
 					start: () => void;
 					teleport: (x: number, y: number, yawRad?: number) => void;
@@ -85,7 +85,7 @@ describe("BoneBusterShell — landing surface", () => {
 					forceMissionComplete: () => void;
 				};
 			}
-		).__objexoom;
+		).__bonebuster;
 
 		expect(hooks).toBeDefined();
 		expect(typeof hooks?.getState).toBe("function");
