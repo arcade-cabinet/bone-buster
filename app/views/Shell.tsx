@@ -187,11 +187,16 @@ function readSeedFromUrl(): number {
 	return applyArchetypeOverride(base, readArchetypeFromUrl());
 }
 
+// R8b — URL parameter migration. The post-rebrand canonical names
+// are `bonebusterSeed` / `bonebusterArchetype` / `bonebusterDebug`;
+// the legacy `objexoom*` names are accepted as fallbacks so existing
+// bookmarks + e2e harness URLs keep working. New param wins when
+// both are present.
 function readBaseSeedFromUrl(): number {
 	if (typeof window === "undefined") return Date.now() & 0xffffffff;
 	try {
 		const url = new URL(window.location.href);
-		const raw = url.searchParams.get("objexoomSeed");
+		const raw = url.searchParams.get("bonebusterSeed") ?? url.searchParams.get("objexoomSeed");
 		if (raw && /^[0-9]+$/.test(raw)) {
 			return Number.parseInt(raw, 10) & 0xffffffff;
 		}
@@ -205,7 +210,7 @@ function readArchetypeFromUrl(): string | null {
 	if (typeof window === "undefined") return null;
 	try {
 		const url = new URL(window.location.href);
-		return url.searchParams.get("objexoomArchetype");
+		return url.searchParams.get("bonebusterArchetype") ?? url.searchParams.get("objexoomArchetype");
 	} catch {
 		return null;
 	}
@@ -232,7 +237,10 @@ function debugHooksEnabled(): boolean {
 	if (typeof window === "undefined") return false;
 	if (process.env.NODE_ENV === "production") return false;
 	try {
-		return new URL(window.location.href).searchParams.has("objexoomDebug");
+		const params = new URL(window.location.href).searchParams;
+		// R8b — accept either name; bonebusterDebug is the canonical
+		// post-rebrand spelling, objexoomDebug is the legacy alias.
+		return params.has("bonebusterDebug") || params.has("objexoomDebug");
 	} catch {
 		return false;
 	}

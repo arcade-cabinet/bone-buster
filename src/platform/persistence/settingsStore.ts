@@ -30,7 +30,13 @@ import {
 	type TouchControlMode,
 } from "@store/settings";
 
-const SETTINGS_KEY = "objexoom.settings";
+// R8b — storage key migration. The new canonical key is
+// `bonebuster.settings`; the old `objexoom.settings` key is read on
+// load when the new one is absent and the value is one-shot
+// migrated to the new slot. Existing player saves survive the
+// rebrand without re-entering OPTIONS.
+const SETTINGS_KEY = "bonebuster.settings";
+const LEGACY_SETTINGS_KEY = "objexoom.settings";
 
 const DIFFICULTY_KEYS = Object.keys(DIFFICULTY_LABEL) as readonly Difficulty[];
 const LEVEL_KEYS = Object.keys(LEVEL_LABEL) as readonly string[];
@@ -115,8 +121,15 @@ export function validateSettings(raw: unknown): BoneBusterSettings {
  */
 export async function loadSettings(): Promise<BoneBusterSettings | null> {
 	const raw = await readJsonPref<unknown>(SETTINGS_KEY);
-	if (raw === null) return null;
-	return validateSettings(raw);
+	if (raw !== null) return validateSettings(raw);
+	// R8b — fall back to the legacy `objexoom.settings` key for
+	// existing installs. On hit, migrate by writing the validated
+	// blob to the canonical key so future loads skip the lookup.
+	const legacy = await readJsonPref<unknown>(LEGACY_SETTINGS_KEY);
+	if (legacy === null) return null;
+	const migrated = validateSettings(legacy);
+	await writeJsonPref(SETTINGS_KEY, migrated);
+	return migrated;
 }
 
 /**

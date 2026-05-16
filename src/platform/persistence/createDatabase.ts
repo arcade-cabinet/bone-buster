@@ -19,6 +19,12 @@ import type { DatabaseAdapter } from "@platform/persistence/database";
 import { InMemoryDatabase } from "@platform/persistence/database";
 import { isJeepSqliteReady } from "@platform/persistence/initJeepSqlite";
 
+// R8b — DB name preserved as "objexoom" intentionally. Renaming
+// would orphan every existing player's run history (no easy in-app
+// migration path from `objexoom.db` to `bonebuster.db` — would need
+// SQL copy at boot). The name is opaque to the player; only a
+// CapacitorSQLite inspector would surface it. Trade lineage cost
+// for save-data preservation.
 export async function createDatabase(dbName = "objexoom"): Promise<DatabaseAdapter> {
 	const canUseCapacitorSqlite =
 		typeof window !== "undefined" && (Capacitor.getPlatform() !== "web" || isJeepSqliteReady());
