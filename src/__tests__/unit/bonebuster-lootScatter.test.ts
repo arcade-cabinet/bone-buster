@@ -2,7 +2,7 @@
  * COV12 step-2 — loot scatter contract.
  */
 
-import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
 import { lootPickupSpawn, pickLootSpawn } from "@world/scatter/lootScatter";
 import { describe, expect, it } from "vitest";
 
@@ -15,7 +15,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 	];
 }
 
-const SECTOR_FIXTURE: ObjexoomSectorMap = {
+const SECTOR_FIXTURE: BoneBusterSectorMap = {
 	kind: "sectors",
 	seed: 0,
 	archetype: "corridor",
@@ -33,13 +33,13 @@ const SECTOR_FIXTURE: ObjexoomSectorMap = {
 	bounds: { minX: -10, minY: -10, maxX: 70, maxY: 70 },
 };
 
-function reseed(seed: number): ObjexoomSectorMap {
+function reseed(seed: number): BoneBusterSectorMap {
 	return { ...SECTOR_FIXTURE, seed };
 }
 
 describe("COV12 step-2 — pickLootSpawn", () => {
 	it("returns null for grid maps", () => {
-		const grid = { ...SECTOR_FIXTURE, kind: "grid" } as unknown as ObjexoomSectorMap;
+		const grid = { ...SECTOR_FIXTURE, kind: "grid" } as unknown as BoneBusterSectorMap;
 		expect(pickLootSpawn(grid)).toBeNull();
 	});
 
@@ -81,7 +81,7 @@ describe("COV12 step-2 — lootPickupSpawn", () => {
 	});
 
 	it("returns null for grid maps", () => {
-		const grid = { ...SECTOR_FIXTURE, kind: "grid" } as unknown as ObjexoomSectorMap;
+		const grid = { ...SECTOR_FIXTURE, kind: "grid" } as unknown as BoneBusterSectorMap;
 		expect(lootPickupSpawn(grid)).toBeNull();
 	});
 });

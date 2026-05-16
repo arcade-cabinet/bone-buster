@@ -8,7 +8,7 @@
  * slice.
  */
 
-import type { BoneBusterMap, ObjexoomGridMap } from "@engine/engine";
+import type { BoneBusterGridMap, BoneBusterMap } from "@engine/engine";
 import {
 	countLampVariants,
 	LAMP_VARIANTS_OFF,
@@ -20,7 +20,7 @@ import {
 import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
 
-function makeGridMap(): ObjexoomGridMap {
+function makeGridMap(): BoneBusterGridMap {
 	return {
 		kind: "grid",
 		seed: 1,
@@ -35,7 +35,7 @@ function makeGridMap(): ObjexoomGridMap {
 		pickupSpawns: [],
 		keyPosition: { x: 0, y: 0 },
 		exitPosition: { x: 0, y: 0 },
-	} as unknown as ObjexoomGridMap;
+	} as unknown as BoneBusterGridMap;
 }
 
 describe("COV1 — lamp variant URL pool", () => {

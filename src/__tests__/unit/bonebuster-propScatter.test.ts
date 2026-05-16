@@ -10,13 +10,13 @@
  *  - Every prop is in the matching archetype bucket.
  */
 
-import type { BoneBusterMap, ObjexoomGridMap } from "@engine/engine";
+import type { BoneBusterGridMap, BoneBusterMap } from "@engine/engine";
 import { loadRefLevel } from "@world/refLevel";
 import { POOLS, type PropArchetype } from "@world/scatter/propPool";
 import { PROPS_PER_SECTOR_MAX, spawnProps } from "@world/scatter/propScatter";
 import { describe, expect, it } from "vitest";
 
-function makeGridMap(): ObjexoomGridMap {
+function makeGridMap(): BoneBusterGridMap {
 	return {
 		kind: "grid",
 		seed: 1,
@@ -31,7 +31,7 @@ function makeGridMap(): ObjexoomGridMap {
 		pickupSpawns: [],
 		keyPosition: { x: 0, y: 0 },
 		exitPosition: { x: 0, y: 0 },
-	} as unknown as ObjexoomGridMap;
+	} as unknown as BoneBusterGridMap;
 }
 
 describe("E3 — sector prop scatter", () => {

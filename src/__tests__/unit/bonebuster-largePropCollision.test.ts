@@ -3,11 +3,11 @@
  * Pins resolveCollisionAny's blocker-pushout behavior.
  */
 
-import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
 import { resolveCollisionAny } from "@engine/engine";
 import { describe, expect, it } from "vitest";
 
-const farSector: ObjexoomSectorMap = {
+const farSector: BoneBusterSectorMap = {
 	kind: "sectors",
 	seed: 0,
 	archetype: "corridor",

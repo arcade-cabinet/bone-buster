@@ -10,12 +10,12 @@
  *  - WATER_SPEED_MULTIPLIER is in a sensible range.
  */
 
-import type { BoneBusterMap, ObjexoomGridMap } from "@engine/engine";
+import type { BoneBusterGridMap, BoneBusterMap } from "@engine/engine";
 import { isInWaterAt, polygonContains, WATER_SPEED_MULTIPLIER } from "@engine/engine";
 import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
 
-function makeGridMap(): ObjexoomGridMap {
+function makeGridMap(): BoneBusterGridMap {
 	return {
 		kind: "grid",
 		seed: 1,
@@ -30,7 +30,7 @@ function makeGridMap(): ObjexoomGridMap {
 		pickupSpawns: [],
 		keyPosition: { x: 0, y: 0 },
 		exitPosition: { x: 0, y: 0 },
-	} as unknown as ObjexoomGridMap;
+	} as unknown as BoneBusterGridMap;
 }
 
 function centroid(verts: readonly { x: number; y: number }[]): { x: number; y: number } {

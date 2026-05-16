@@ -1,6 +1,6 @@
 /**
  * Bridges the turtle-graphics decoder (turtle.ts) and the runtime
- * ObjexoomSectorMap shape that the engine consumes. Reference class
+ * BoneBusterSectorMap shape that the engine consumes. Reference class
  * indices come from `all_objects` in game.js:
  *
  *   2 = Enemy (rattler in our register)
@@ -13,7 +13,7 @@
  */
 
 import { decodeRefLevel, levelBounds, type RefLevelIndex } from "@ai/turtle";
-import type { EnemySpawn, MapSector, ObjexoomSectorMap, PickupSpawn, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, EnemySpawn, MapSector, PickupSpawn, Vec2 } from "@engine/engine";
 import type { Difficulty } from "@store/settings";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 
@@ -49,7 +49,7 @@ function polygonCentroid(verts: readonly Vec2[]): Vec2 {
 export function loadRefLevel(
 	index: RefLevelIndex,
 	difficulty: Difficulty = "hurtMePlenty",
-): ObjexoomSectorMap {
+): BoneBusterSectorMap {
 	const decoded = decodeRefLevel(index);
 	const bb = levelBounds(decoded);
 	const difficultyIdx = DIFFICULTY_INDEX[difficulty];

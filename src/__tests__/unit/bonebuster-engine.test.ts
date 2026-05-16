@@ -1,4 +1,6 @@
 import {
+	type BoneBusterGridMap,
+	type BoneBusterSectorMap,
 	castRay,
 	castRaySectors,
 	cellAt,
@@ -14,8 +16,6 @@ import {
 	isBlocking,
 	type MapSector,
 	newSectorCache,
-	type ObjexoomGridMap,
-	type ObjexoomSectorMap,
 	polygonContains,
 	rayHitsSegment,
 	resolveCollision,
@@ -222,7 +222,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 				ceilingHeight: 6,
 			},
 		];
-		const sectorMap: ObjexoomSectorMap = {
+		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
 			seed: 0,
 			archetype: "corridor",
@@ -250,7 +250,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 				ceilingHeight: 6,
 			},
 		];
-		const sectorMap: ObjexoomSectorMap = {
+		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
 			seed: 0,
 			archetype: "corridor",
@@ -290,7 +290,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 	});
 
 	it("castRaySectors: hits the nearest sector edge in front", () => {
-		const sectorMap: ObjexoomSectorMap = {
+		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
 			seed: 0,
 			archetype: "corridor",
@@ -309,7 +309,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 	});
 
 	it("castRaySectors: returns maxDist + null when nothing in front", () => {
-		const sectorMap: ObjexoomSectorMap = {
+		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
 			seed: 0,
 			archetype: "corridor",
@@ -335,7 +335,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 	});
 
 	it("hasLineOfSightSectors: same sector → has LOS; through-wall → no LOS", () => {
-		const sectorMap: ObjexoomSectorMap = {
+		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
 			seed: 0,
 			archetype: "corridor",
@@ -367,7 +367,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 	});
 
 	it("computePortalEdges: shared edges with matching heights are portals", () => {
-		const sectorMap: ObjexoomSectorMap = {
+		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
 			seed: 0,
 			archetype: "corridor",
@@ -409,7 +409,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 	});
 
 	it("computePortalEdges: differing floor heights leave the shared edge as wall", () => {
-		const sectorMap: ObjexoomSectorMap = {
+		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
 			seed: 0,
 			archetype: "corridor",
@@ -450,7 +450,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 	});
 
 	it("resolveCollisionSectors: pushes out of a wall it has clipped into", () => {
-		const sectorMap: ObjexoomSectorMap = {
+		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
 			seed: 0,
 			archetype: "corridor",
@@ -482,7 +482,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 	});
 
 	it("resolveCollisionSectors: portal edge does not block", () => {
-		const sectorMap: ObjexoomSectorMap = {
+		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
 			seed: 0,
 			archetype: "corridor",
@@ -534,7 +534,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 				ceilingHeight: 18,
 			},
 		];
-		const sectorMap: ObjexoomSectorMap = {
+		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
 			seed: 0,
 			archetype: "corridor",
@@ -559,7 +559,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 // floor = lava), and H9 (goal hue index derivation). Components H6/H7/H8
 // are rendering-side and covered by browser/e2e tests.
 describe("objexoom engine — Section H (jump/fall/lava/heights)", () => {
-	const sectorMap: ObjexoomSectorMap = {
+	const sectorMap: BoneBusterSectorMap = {
 		kind: "sectors",
 		seed: 0,
 		archetype: "corridor",
@@ -587,7 +587,7 @@ describe("objexoom engine — Section H (jump/fall/lava/heights)", () => {
 		bounds: { minX: -10, minY: -10, maxX: 30, maxY: 10 },
 	};
 
-	const gridMap: ObjexoomGridMap = generateMap(SEED);
+	const gridMap: BoneBusterGridMap = generateMap(SEED);
 
 	it("H2: getFloorHeightAtAny returns sector floor on sector maps", () => {
 		expect(getFloorHeightAtAny(sectorMap, { x: 0, y: 0 })).toBe(1.5);

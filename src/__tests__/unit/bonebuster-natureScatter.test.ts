@@ -2,7 +2,7 @@
  * COV11 step-2 — courtyard-archetype nature scatter contract.
  */
 
-import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 import { spawnNature } from "@world/scatter/natureScatter";
 import { describe, expect, it } from "vitest";
@@ -19,7 +19,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 // Courtyard archetype = seed % 5 === 2. Post-CONV3 the archetype is a
 // stored field on the map; we derive it from seed here to preserve the
 // original test semantics (seed 0 → corridor, seed 2 → courtyard).
-function courtyardMap(seed: number): ObjexoomSectorMap {
+function courtyardMap(seed: number): BoneBusterSectorMap {
 	const sectors = [];
 	for (let i = 0; i < 5; i += 1) {
 		sectors.push({
@@ -51,7 +51,7 @@ describe("COV11 step-2 — spawnNature archetype gating", () => {
 	});
 
 	it("returns [] for grid maps", () => {
-		const grid = { ...courtyardMap(2), kind: "grid" } as unknown as ObjexoomSectorMap;
+		const grid = { ...courtyardMap(2), kind: "grid" } as unknown as BoneBusterSectorMap;
 		expect(spawnNature(grid)).toEqual([]);
 	});
 
