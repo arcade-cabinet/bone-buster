@@ -262,8 +262,17 @@ export function WeaponViewmodel({
 	);
 }
 
-// Preload weapon GLBs so the very first swap doesn't stutter.
-for (const m of Object.values(WEAPON_MODELS)) useGLTF.preload(m.url);
-// COV9 — preload every melee skin variant too so per-seed swaps
-// don't stall the BLADE viewmodel on level-change.
-for (const url of MELEE_SKIN_URLS) useGLTF.preload(url);
+// A4 — preload functions split per tier. Called by
+// `src/preload.ts`'s tier orchestrator at the appropriate
+// lifecycle moment (tier 1 = app boot, tier 2 = map mount,
+// tier 3 = post-first-frame). Module-scope IIFEs were removed
+// so importing this file no longer fires GLB downloads.
+export function preloadWeapons(): void {
+	for (const m of Object.values(WEAPON_MODELS)) useGLTF.preload(m.url);
+}
+// COV9 — every melee skin variant is preloaded so per-seed swaps
+// don't stall the BLADE viewmodel on level-change. The BLADE is
+// a tier-3 weapon (rare pickup) so this is fine to defer.
+export function preloadMeleeSkins(): void {
+	for (const url of MELEE_SKIN_URLS) useGLTF.preload(url);
+}

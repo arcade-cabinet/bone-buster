@@ -34,4 +34,8 @@ function LargePropMesh({ inst }: { inst: LargePropInstance }) {
 	);
 }
 
-for (const def of LARGE_PROPS) useGLTF.preload(def.url);
+// A4 — tier 2 (map-mount). Large props are anchor pieces — 1-2
+// per sector, immediately visible on map mount.
+export function preloadLargeProps(): void {
+	for (const def of LARGE_PROPS) useGLTF.preload(def.url);
+}

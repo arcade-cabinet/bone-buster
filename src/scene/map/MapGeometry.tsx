@@ -218,6 +218,9 @@ function GridWall({
 	);
 }
 
-for (const url of ALL_WALL_URLS) {
-	useGLTF.preload(url);
+// A4 — tier 2 (map-mount). Walls are needed for the first frame.
+export function preloadWalls(): void {
+	for (const url of ALL_WALL_URLS) {
+		useGLTF.preload(url);
+	}
 }

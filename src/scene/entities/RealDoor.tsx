@@ -100,5 +100,8 @@ export function RealDoor({
 	);
 }
 
-// Preload every door GLB so the very first refLevel mount doesn't stutter.
-for (const url of DOOR_VARIANTS) useGLTF.preload(url);
+// A4 — tier 2 (map-mount). Every door GLB is preloaded so the
+// very first refLevel mount doesn't stutter.
+export function preloadDoors(): void {
+	for (const url of DOOR_VARIANTS) useGLTF.preload(url);
+}

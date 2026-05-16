@@ -35,4 +35,7 @@ function NatureMesh({ inst }: { inst: NatureInstance }) {
 	);
 }
 
-useGLTF.preload(NATURE_MEGA_PACK_URL);
+// A4 — tier 3 (deferred). Nature scatter is courtyard-archetype only.
+export function preloadNature(): void {
+	useGLTF.preload(NATURE_MEGA_PACK_URL);
+}

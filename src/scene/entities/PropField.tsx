@@ -42,10 +42,13 @@ function PropMesh({ inst }: { inst: PropInstance }) {
 	);
 }
 
-// Preload every prop URL on module evaluation so the first sector
-// doesn't stall the render loop. ALL_PROPS pulls from PROP_CATALOGUE
-// (the 30-entry master list); per-archetype buckets reference subsets
-// of the same prop instances so preloading the master covers them.
-for (const prop of ALL_PROPS) {
-	useGLTF.preload(prop.url);
+// A4 — tier 2 (map-mount). Preload every prop URL so the first
+// sector doesn't stall. ALL_PROPS pulls from PROP_CATALOGUE
+// (the 30-entry master list); per-archetype buckets reference
+// subsets of the same prop instances so preloading the master
+// covers them.
+export function preloadProps(): void {
+	for (const prop of ALL_PROPS) {
+		useGLTF.preload(prop.url);
+	}
 }

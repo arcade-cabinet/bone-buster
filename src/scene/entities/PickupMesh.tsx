@@ -273,4 +273,8 @@ function LootPickupMesh({ lootKind }: { lootKind: LootKind }) {
 	);
 }
 
-for (const url of LOOT_URL_LIST) useGLTF.preload(url);
+// A4 — tier 2 (map-mount). Loot pickup is 1 per map, placed at
+// the far-centroid — visible by the time the player explores.
+export function preloadLootPickups(): void {
+	for (const url of LOOT_URL_LIST) useGLTF.preload(url);
+}

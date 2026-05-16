@@ -25,6 +25,7 @@ import { type LampInstance, spawnLamps } from "./lampScatter";
 import { getArchetypeLightPalette } from "./lighting/archetypePalette";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
+import { preloadTier2MapMount, preloadTier3Deferred } from "./preload";
 import { type DebrisInstance, spawnDebris } from "./scatter/debrisScatter";
 import { type DecalInstance, spawnDecals } from "./scatter/decalScatter";
 import { type FloorTileInstance, spawnFloorTiles } from "./scatter/floorTiles";
@@ -278,6 +279,22 @@ export function ObjexoomScene({
 	useEffect(() => {
 		phaseRef.current = phase;
 	}, [phase]);
+
+	// A4 — tiered preload entry point. Tier 2 (everything needed
+	// for the first frame: walls + roster + props + ...) fires
+	// synchronously on mount. Tier 3 (decals + debris + nature +
+	// kitchen + npcs + traps + wrecks) is deferred via
+	// `setTimeout(0)` so it lands after the first paint instead of
+	// contending with map-mount fetches.
+	// useGLTF.preload dedupes internally so repeated mounts (e.g.
+	// per-level scene re-keys) are no-ops.
+	useEffect(() => {
+		preloadTier2MapMount();
+		const handle = setTimeout(() => {
+			preloadTier3Deferred();
+		}, 0);
+		return () => clearTimeout(handle);
+	}, []);
 
 	// I11 — muzzle-flash light. Fires on every shot at the weapon's
 	// barrel tip (PA-MOD7 / D11) in the weapon's muzzleColor; intensity

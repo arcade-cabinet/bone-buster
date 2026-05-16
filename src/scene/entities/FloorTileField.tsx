@@ -41,7 +41,10 @@ function FloorTileMesh({ tile }: { tile: FloorTileInstance }) {
 	);
 }
 
-// Preload all 4 variants so the first sector doesn't stall.
-for (const url of FLOOR_TILE_VARIANTS) {
-	useGLTF.preload(url);
+// A4 — tier 2 (map-mount). All 4 variants so the first sector
+// doesn't stall.
+export function preloadFloorTiles(): void {
+	for (const url of FLOOR_TILE_VARIANTS) {
+		useGLTF.preload(url);
+	}
 }
