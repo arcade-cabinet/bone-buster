@@ -20,7 +20,6 @@ import {
 	play as howlerPlay,
 	resetForTesting as howlerResetForTesting,
 	setMuted as howlerSetMuted,
-	stop as howlerStop,
 	setHowlerSeed,
 	setVolumeDb,
 } from "@audio/howlerBus";
@@ -286,56 +285,45 @@ export function panForPosition(
 }
 
 // === MUSIC ============================================================
+//
+// A11e — music lifecycle moved to src/audio/musicGraph.ts. Re-exports
+// preserve the same public API so existing app/views/ consumers
+// don't change.
 
-let activeMusicMood: MusicMood = "exploration";
-let activeMusicSlug: string | null = null;
-const musicTracksLoaded = 6;
+import {
+	getMusicLoadProgress as getMusicLoadProgressImpl,
+	resetMusicStateForTesting as resetMusicStateImpl,
+	setMusicIntensityForDifficulty as setMusicIntensityImpl,
+	setMusicMood as setMusicMoodImpl,
+	startMusic as startMusicImpl,
+	stopMusic as stopMusicImpl,
+} from "@audio/musicGraph";
 
-const MOOD_TO_MUSIC: Record<MusicMood, string> = {
-	exploration: "music/corridor/loop",
-	combat: "music/arena/loop",
-	going_back: "music/boss/loop",
-};
+export { getMusicStateForTesting, MUSIC_INTENSITY_DB } from "@audio/musicGraph";
 
 export function startMusic() {
 	if (muted()) return;
-	const slug = MOOD_TO_MUSIC[activeMusicMood];
-	if (slug === activeMusicSlug) return;
-	if (activeMusicSlug) howlerStop(activeMusicSlug);
-	howlerPlay(slug);
-	activeMusicSlug = slug;
+	startMusicImpl();
 }
 
 export function stopMusic() {
-	if (activeMusicSlug) {
-		howlerStop(activeMusicSlug);
-		activeMusicSlug = null;
-	}
+	stopMusicImpl();
 }
 
 export function setMusicMood(mood: MusicMood) {
-	activeMusicMood = mood;
-	if (activeMusicSlug) startMusic();
+	// The legacy sfx.ts MusicMood type was "exploration" | "combat" |
+	// "going_back". The new musicGraph adds "boss" as a 4th option;
+	// existing callers only ever pass the original three, but the
+	// new type is a superset so the call is type-compatible.
+	setMusicMoodImpl(mood);
 }
 
-export const MUSIC_INTENSITY_DB: Record<string, number> = {
-	tooYoung: -3,
-	notTooRough: -1.5,
-	hurtMePlenty: 0,
-	ultraViolence: 1.5,
-	nightmare: 3,
-};
-
 export function setMusicIntensityForDifficulty(difficulty: string): void {
-	const delta = MUSIC_INTENSITY_DB[difficulty] ?? 0;
-	if (activeMusicSlug) {
-		const baseDb = -32;
-		setVolumeDb(activeMusicSlug, baseDb + delta);
-	}
+	setMusicIntensityImpl(difficulty);
 }
 
 export function getMusicLoadProgress(): { loaded: number; total: number } {
-	return { loaded: musicTracksLoaded, total: 6 };
+	return getMusicLoadProgressImpl();
 }
 
 // === TEST HELPERS =====================================================
@@ -358,7 +346,6 @@ export function setSoundEnabled(enabled: boolean): void {
 export function resetSfxForTesting(): void {
 	howlerResetForTesting();
 	resetAmbientStateImpl();
-	activeMusicSlug = null;
-	activeMusicMood = "exploration";
+	resetMusicStateImpl();
 	initialized = false;
 }

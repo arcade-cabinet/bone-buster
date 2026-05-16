@@ -37,7 +37,7 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 - [x] **A11b** — `public/assets/audio/` layout + tracked files. PRD §A11b.
 - [x] **A11c** — Howler.js swap + sprite registry, remove Tone.js procedural surface. PRD §A11c.
 - [x] **A11d** — per-archetype ambient. PRD §A11d.
-- [ ] **A11e** — music graph integration. PRD §A11e.
+- [x] **A11e** — music graph integration. PRD §A11e.
 - [ ] **A11f** — `scripts/verify-runtime-audio.mjs`. PRD §A11f.
 
 ### REBRAND — remaining items

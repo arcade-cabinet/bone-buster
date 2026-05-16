@@ -57,10 +57,15 @@ describe("objexoom sfx — panForPosition", () => {
 	});
 });
 
-describe("objexoom sfx — K6 music load progress", () => {
-	it("returns a {loaded, total} pair with total=6", () => {
+describe("K6 music load progress", () => {
+	// A11c+A11e — pre-swap the procedural music had 6 voice cascade
+	// loops (total=6). Post-swap the music graph has 4 sampled beds:
+	// corridor / arena / boss / library. The total is the manifest
+	// count; loaded ramps to 1 only after the first startMusic call
+	// (Howler decodes lazily on play).
+	it("returns a {loaded, total} pair with total=4", () => {
 		const p = getMusicLoadProgress();
-		expect(p.total).toBe(6);
+		expect(p.total).toBe(4);
 		expect(p.loaded).toBeGreaterThanOrEqual(0);
 		expect(p.loaded).toBeLessThanOrEqual(p.total);
 	});
