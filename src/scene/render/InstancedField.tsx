@@ -59,6 +59,32 @@ export type InstancedGltfFieldProps = Readonly<{
 }>;
 
 /**
+ * PB3 — group an array of items by url for InstancedMultiGltfField
+ * mounting. Shared by every scatter field that uses a per-instance
+ * `{ url, ... }` shape (PropField, LargePropField, DebrisField).
+ *
+ * Returns array of `[url, items]` entries (insertion-order preserved).
+ * Use inside `useMemo` keyed on the items array so React re-renders
+ * don't rebuild the groups on every parent tick.
+ */
+export function groupByUrl<T>(
+	items: readonly T[],
+	urlOf: (item: T) => string,
+): Array<[string, T[]]> {
+	const byUrl = new Map<string, T[]>();
+	for (const item of items) {
+		const url = urlOf(item);
+		let bucket = byUrl.get(url);
+		if (!bucket) {
+			bucket = [];
+			byUrl.set(url, bucket);
+		}
+		bucket.push(item);
+	}
+	return Array.from(byUrl.entries());
+}
+
+/**
  * Compose a world-space Matrix4 for one instance, into the shared
  * SCRATCH_MATRIX. Caller MUST consume the matrix immediately (e.g.
  * `im.setMatrixAt(i, composeInstanceMatrix(inst))`) since the next
@@ -112,18 +138,21 @@ export function findAllMeshes(scene: Object3D): Array<{
 	// have done this, but a re-traversal after any in-place transforms
 	// would break otherwise.
 	scene.updateMatrixWorld(true);
-	scene.traverse((child) => {
+	// scene-inverse is constant for the whole GLB — compute once outside
+	// the traversal instead of inverting per sub-mesh.
+	const sceneInverse = new Matrix4().copy(scene.matrixWorld).invert();
+	// `traverseVisible` (not `traverse`) so meshes hidden by the GLB's
+	// own `visible: false` flags stay hidden — matches the prior
+	// `SkeletonUtils.clone(scene)` + `<primitive>` path which preserved
+	// the visibility tree. Some GLBs ship LOD placeholders or
+	// gameplay-toggled meshes off by default.
+	scene.traverseVisible((child) => {
 		if ((child as Mesh).isMesh) {
 			const mesh = child as Mesh;
 			// Capture the mesh-relative-to-scene transform. The InstancedMesh
 			// will apply the instance transform on top so the final world
 			// position = instanceMatrix × localMatrix × vertex.
-			const localMatrix = new Matrix4().copy(mesh.matrixWorld);
-			// Subtract the scene's own world matrix so localMatrix is
-			// purely the mesh's offset within the GLB. (scene.matrixWorld
-			// is usually identity for freshly-loaded GLBs but be defensive.)
-			const sceneInverse = new Matrix4().copy(scene.matrixWorld).invert();
-			localMatrix.premultiply(sceneInverse);
+			const localMatrix = new Matrix4().copy(mesh.matrixWorld).premultiply(sceneInverse);
 			out.push({
 				geometry: mesh.geometry,
 				material: mesh.material as Material | readonly Material[],
@@ -159,6 +188,10 @@ export function InstancedField({
 	return (
 		<instancedMesh
 			ref={meshRef}
+			// three's InstancedMesh accepts `Material | Material[]` at
+			// runtime, but r3f's `<instancedMesh args>` typing exposes
+			// only the single-material variant. The cast bridges that
+			// gap; the runtime behaviour is correct for both.
 			args={[geometry, material as Material, maxInstances]}
 			castShadow
 			receiveShadow
@@ -271,6 +304,10 @@ function InstancedMultiSubmesh({
 	return (
 		<instancedMesh
 			ref={meshRef}
+			// three's InstancedMesh accepts `Material | Material[]` at
+			// runtime, but r3f's `<instancedMesh args>` typing exposes
+			// only the single-material variant. The cast bridges that
+			// gap; the runtime behaviour is correct for both.
 			args={[geometry, material as Material, maxInstances]}
 			castShadow
 			receiveShadow

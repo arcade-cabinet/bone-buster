@@ -19,14 +19,19 @@ import {
 
 function makeScene(): Group {
 	// Build a fake GLB scene: a parent group at origin holding two
-	// sub-meshes — one offset +1 on X, one offset +2 on Y.
+	// sub-meshes — one offset +1 on X, one offset +2 on Y. Named so the
+	// traversal-order tests can assert identity instead of just geometry
+	// type — both meshes are PlaneGeometry, so without distinct names a
+	// regression that returned subB first would silently pass.
 	const scene = new Group();
 	scene.name = "scene-root";
 
 	const subA = new Mesh(new PlaneGeometry(1, 1), new MeshStandardMaterial());
+	subA.name = "subA";
 	subA.position.set(1, 0, 0);
 
 	const subB = new Mesh(new PlaneGeometry(1, 1), new MeshStandardMaterial());
+	subB.name = "subB";
 	subB.position.set(0, 2, 0);
 
 	scene.add(subA, subB);
@@ -44,7 +49,10 @@ describe("PB3 findFirstMesh / findAllMeshes", () => {
 		const first = findFirstMesh(scene);
 		expect(first).not.toBeNull();
 		// Children are traversed in insertion order — subA is first.
-		expect(first?.geometry).toBeInstanceOf(PlaneGeometry);
+		// Assert by name (not geometry type) since both sub-meshes are
+		// PlaneGeometry — a regression that returned subB first would
+		// otherwise silently pass.
+		expect(first?.name).toBe("subA");
 	});
 
 	it("findAllMeshes returns every Mesh in traversal order", () => {
@@ -93,5 +101,46 @@ describe("PB3 findFirstMesh / findAllMeshes", () => {
 		expect(worldA.x).toBeCloseTo(11, 5);
 		expect(worldA.y).toBeCloseTo(0, 5);
 		expect(worldA.z).toBeCloseTo(20, 5);
+	});
+
+	it("composing instance × local respects yaw rotation order", () => {
+		// Yaw-only test: at yaw 0 with translation-only locals, instance×local
+		// and local×instance produce the same result — so the yaw=0 test
+		// above can't catch a `premultiply`/order-swap regression. Use a
+		// 90° yaw so the order matters: the sub-mesh's local +1 X offset
+		// should rotate into the instance's local frame, landing at
+		// world (instance.x + 0, instance.y, instance.z - 1) for subA.
+		const scene = makeScene();
+		const all = findAllMeshes(scene);
+
+		const composed = new Matrix4().copy(
+			composeInstanceMatrix({ id: 0, position: { x: 10, y: 20 }, yaw: Math.PI / 2 }),
+		);
+		composed.multiply(all[0].localMatrix);
+		const worldA = new Vector3().setFromMatrixPosition(composed);
+
+		// Three.js rotates around +Y (Y_AXIS in InstancedField). With yaw
+		// = π/2, the local +X axis maps to world −Z. subA local is (+1, 0, 0),
+		// so the rotated offset is (0, 0, −1); add instance position
+		// (10, 0, 20) → world (10, 0, 19).
+		expect(worldA.x).toBeCloseTo(10, 5);
+		expect(worldA.y).toBeCloseTo(0, 5);
+		expect(worldA.z).toBeCloseTo(19, 5);
+
+		// Sanity: reversed order (local × instance) would give a different
+		// answer. If someone swaps `composed.multiply(local)` to
+		// `composed.premultiply(local)`, this assertion would catch it
+		// because premultiply effectively does local × instance.
+		const reversed = new Matrix4()
+			.copy(all[0].localMatrix)
+			.multiply(composeInstanceMatrix({ id: 0, position: { x: 10, y: 20 }, yaw: Math.PI / 2 }));
+		const worldReversed = new Vector3().setFromMatrixPosition(reversed);
+		// Reversed: instance position rotates around origin instead. The
+		// concrete numbers don't matter — we only need to prove the two
+		// orders DON'T match, so a regression that swaps them would fail
+		// the canonical assertion above.
+		const dx = worldReversed.x - worldA.x;
+		const dz = worldReversed.z - worldA.z;
+		expect(Math.hypot(dx, dz)).toBeGreaterThan(1);
 	});
 });

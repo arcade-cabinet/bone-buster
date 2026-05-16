@@ -1,5 +1,5 @@
 import { useGLTF } from "@react-three/drei";
-import { InstancedMultiGltfField } from "@scene/render/InstancedField";
+import { groupByUrl, InstancedMultiGltfField } from "@scene/render/InstancedField";
 import { LARGE_PROPS } from "@world/largeProps";
 import type { LargePropInstance } from "@world/scatter/largePropScatter";
 import { useMemo } from "react";
@@ -21,18 +21,7 @@ import { useMemo } from "react";
 const MAX_PER_URL = 16;
 
 export function LargePropField({ props }: { props: readonly LargePropInstance[] }) {
-	const groups = useMemo(() => {
-		const byUrl = new Map<string, LargePropInstance[]>();
-		for (const inst of props) {
-			let bucket = byUrl.get(inst.def.url);
-			if (!bucket) {
-				bucket = [];
-				byUrl.set(inst.def.url, bucket);
-			}
-			bucket.push(inst);
-		}
-		return Array.from(byUrl.entries());
-	}, [props]);
+	const groups = useMemo(() => groupByUrl(props, (inst) => inst.def.url), [props]);
 
 	return (
 		<>
