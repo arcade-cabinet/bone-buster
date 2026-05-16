@@ -246,6 +246,19 @@ export interface BossDefeatedEvent {
 	enemyId: number;
 }
 
+/**
+ * PB2 — non-boss kill notification. Fires once per enemy whose HP
+ * crosses ≤0, carrying the kind so the HUD's KillBanner can render
+ * "BUSTED A <KIND>" with a brief overlay. Boss kills keep their own
+ * dedicated `bossDefeated` event + banner; this stays separate so
+ * a "BUSTED A BIGHOSS" banner doesn't collide with "✦ BOSS DEFEATED".
+ */
+export interface EnemyKilledEvent {
+	type: "enemyKilled";
+	enemyId: number;
+	kind: string;
+}
+
 export type BoneBusterEvent =
 	| BurstEvent
 	| BodyPartsEvent
@@ -269,7 +282,8 @@ export type BoneBusterEvent =
 	| PickupCollectedEvent
 	| WeaponAcquiredEvent
 	| BossSpottedEvent
-	| BossDefeatedEvent;
+	| BossDefeatedEvent
+	| EnemyKilledEvent;
 
 export type BoneBusterEventType = BoneBusterEvent["type"];
 

@@ -3,6 +3,7 @@ import { BossBanner } from "@views/hudOverlays/BossBanner";
 import { DifficultyChip } from "@views/hudOverlays/DifficultyChip";
 import { GoingBackOverlay } from "@views/hudOverlays/GoingBackOverlay";
 import { KeyPickupCeremony } from "@views/hudOverlays/KeyPickupCeremony";
+import { KillBanner } from "@views/hudOverlays/KillBanner";
 import { MissionCompleteCeremony } from "@views/hudOverlays/MissionCompleteCeremony";
 import { PauseOverlay } from "@views/hudOverlays/PauseOverlay";
 import { PickupChip } from "@views/hudOverlays/PickupChip";
@@ -25,6 +26,7 @@ import type { GameState, LevelPhase } from "@views/Shell";
  *   - DifficultyChip           (prop:  runId advances)           POL31
  *   - PauseOverlay             (state: status === "paused")      POL34
  *   - BossBanner               (event: bossSpotted/bossDefeated) POL36
+ *   - KillBanner                (event: enemyKilled, non-boss)   PB2
  */
 export function HUDOverlays({
 	phase,
@@ -58,6 +60,7 @@ export function HUDOverlays({
 			/>
 			<MissionCompleteCeremony state={state} onReturnToMenu={onReturnToMenu} />
 			<BossBanner />
+			<KillBanner />
 		</>
 	);
 }
