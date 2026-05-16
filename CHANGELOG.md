@@ -9,6 +9,13 @@ domain: history
 
 All notable changes to this project will be documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Conventional Commits](https://www.conventionalcommits.org).
 
+## [0.4.1](https://github.com/arcade-cabinet/bone-buster/compare/v0.4.0...v0.4.1) (2026-05-16)
+
+
+### Performance Improvements
+
+* **prerender:** adopt Vike + wire Lighthouse CI gate ([#64](https://github.com/arcade-cabinet/bone-buster/issues/64)) ([b5cf7d2](https://github.com/arcade-cabinet/bone-buster/commit/b5cf7d2f3a16500f9af1d92f32235f510679519b))
+
 ## [0.4.0](https://github.com/arcade-cabinet/bone-buster/compare/v0.3.0...v0.4.0) (2026-05-16)
 
 
