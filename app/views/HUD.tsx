@@ -749,7 +749,11 @@ function ctaButton(bg: string, primary: boolean): CSSProperties {
 	};
 }
 
-function weaponChipStyle(active: boolean, owned: boolean, accent: string): CSSProperties {
+export function weaponChipStyle(
+	active: boolean,
+	owned: boolean,
+	accent: string,
+): CSSProperties {
 	return {
 		padding: "6px 10px",
 		borderRadius: 10,
