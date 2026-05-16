@@ -1,44 +1,56 @@
 import { useGLTF } from "@react-three/drei";
+import { InstancedMultiGltfField } from "@scene/render/InstancedField";
 import { ALL_PROPS } from "@world/scatter/propPool";
 import type { PropInstance } from "@world/scatter/propScatter";
 import { useMemo } from "react";
-import { SkeletonUtils } from "three-stdlib";
 
 /**
- * E3 — renders the per-map decorative prop scatter. Each PropInstance
- * gets a cloned mesh at its world position with a deterministic yaw.
+ * E3 — renders the per-map decorative prop scatter.
  *
- * The clone-per-instance pattern matches LampField / BarrelField /
- * EnemyMesh: drei's `useGLTF` returns a shared scene graph that
- * mutations would leak across consumers; `SkeletonUtils.clone` gives
- * each mount its own traversable tree even though these meshes don't
- * have skeletons (it handles plain meshes too and is consistent with
- * the rest of the renderer).
+ * PB3 — migrated from one cloned `<primitive>` per instance to grouped
+ * InstancedMultiGltfField (one InstancedMesh per sub-mesh per url, N
+ * instances drawn in 1 GPU call each via setMatrixAt). Multi-mesh GLBs
+ * (cages, RVs, loot props with 21-27 sub-meshes) preserve their per-
+ * sub-mesh local transforms inside the instance via
+ * `instance × localMatrix × vertex` composition.
  *
- * Step-1 slice: props render as static set-dressing. The `blocking`
- * flag is plumbed through PropInstance.prop but the collision wiring
- * is not yet in this step — `spawnProps` chooses positions that
- * respect the 4-tile spawn/exit/key skip-radius so blocking props
- * don't strand the player. E3 step-2 will register blocking props
- * with the existing sector collision list.
+ * Previously: 1 draw call per (instance × sub-mesh). E.g. loot/Books.glb
+ * has 27 sub-meshes — at 5 placements that's 135 draw calls. Now: 27
+ * draw calls regardless of placement count.
+ *
+ * Step-1 slice: props still render as static set-dressing. The
+ * `blocking` flag on prop.blocking is plumbed but collision wiring
+ * happens via `spawnProps` choosing positions that respect the
+ * 4-tile spawn/exit/key skip-radius; per-instance collider registration
+ * isn't in this step.
  */
+const MAX_PER_URL = 64;
+
 export function PropField({ props }: { props: readonly PropInstance[] }) {
+	const groups = useMemo(() => {
+		const byUrl = new Map<string, PropInstance[]>();
+		for (const inst of props) {
+			let bucket = byUrl.get(inst.prop.url);
+			if (!bucket) {
+				bucket = [];
+				byUrl.set(inst.prop.url, bucket);
+			}
+			bucket.push(inst);
+		}
+		return Array.from(byUrl.entries());
+	}, [props]);
+
 	return (
 		<>
-			{props.map((inst) => (
-				<PropMesh key={inst.id} inst={inst} />
+			{groups.map(([url, instances]) => (
+				<InstancedMultiGltfField
+					key={url}
+					url={url}
+					instances={instances}
+					maxInstances={MAX_PER_URL}
+				/>
 			))}
 		</>
-	);
-}
-
-function PropMesh({ inst }: { inst: PropInstance }) {
-	const gltf = useGLTF(inst.prop.url);
-	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
-	return (
-		<group position={[inst.position.x, 0, inst.position.y]} rotation={[0, inst.yaw, 0]}>
-			<primitive object={cloned} />
-		</group>
 	);
 }
 

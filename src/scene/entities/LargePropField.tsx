@@ -1,36 +1,50 @@
 import { useGLTF } from "@react-three/drei";
+import { InstancedMultiGltfField } from "@scene/render/InstancedField";
 import { LARGE_PROPS } from "@world/largeProps";
 import type { LargePropInstance } from "@world/scatter/largePropScatter";
 import { useMemo } from "react";
-import { SkeletonUtils } from "three-stdlib";
 
 /**
  * COV2 step-2 — anchor-piece scatter renderer.
  *
- * One cloned GLB per LargePropInstance, positioned and yawed per the
- * scatter's per-map deterministic layout. Mirrors PropField / DebrisField
- * shape (SkeletonUtils.clone per mount; primitive-wrapped under a group).
+ * PB3 — migrated from one cloned `<primitive>` per instance to grouped
+ * InstancedMultiGltfField. Some large-prop GLBs are multi-mesh (cages,
+ * RVs); the multi variant preserves per-sub-mesh local transforms
+ * inside each instance.
  *
  * Blocking entries push the player out via collision; that wiring is
- * fed from BoneBusterScene via the CollisionContext blocker list.
+ * still fed from BoneBusterScene via the CollisionContext blocker list
+ * — InstancedMesh has no per-instance scene-graph identity, but the
+ * collider list is computed independently from the LargePropInstance
+ * array anyway, so this change doesn't affect collision.
  */
+const MAX_PER_URL = 16;
+
 export function LargePropField({ props }: { props: readonly LargePropInstance[] }) {
+	const groups = useMemo(() => {
+		const byUrl = new Map<string, LargePropInstance[]>();
+		for (const inst of props) {
+			let bucket = byUrl.get(inst.def.url);
+			if (!bucket) {
+				bucket = [];
+				byUrl.set(inst.def.url, bucket);
+			}
+			bucket.push(inst);
+		}
+		return Array.from(byUrl.entries());
+	}, [props]);
+
 	return (
 		<>
-			{props.map((inst) => (
-				<LargePropMesh key={inst.id} inst={inst} />
+			{groups.map(([url, instances]) => (
+				<InstancedMultiGltfField
+					key={url}
+					url={url}
+					instances={instances}
+					maxInstances={MAX_PER_URL}
+				/>
 			))}
 		</>
-	);
-}
-
-function LargePropMesh({ inst }: { inst: LargePropInstance }) {
-	const gltf = useGLTF(inst.def.url);
-	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
-	return (
-		<group position={[inst.position.x, 0, inst.position.y]} rotation={[0, inst.yaw, 0]}>
-			<primitive object={cloned} />
-		</group>
 	);
 }
 

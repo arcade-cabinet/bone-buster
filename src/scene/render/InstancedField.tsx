@@ -88,6 +88,53 @@ export function findFirstMesh(scene: Object3D): Mesh | null {
 }
 
 /**
+ * PB3 — collect every Mesh inside a loaded GLB scene with the local
+ * matrix it carries in world-space relative to the scene root. Lets
+ * `InstancedMultiGltfField` render multi-mesh props (cages, RVs, loot
+ * GLBs with 27+ baked sub-meshes) as one InstancedMesh per sub-mesh
+ * while preserving the original mesh-to-mesh spatial relationships.
+ *
+ * Returns array of `{ geometry, material, localMatrix }`. Empty array
+ * means the GLB has no meshes — caller can fall back to non-instanced
+ * rendering.
+ */
+export function findAllMeshes(scene: Object3D): Array<{
+	geometry: BufferGeometry;
+	material: Material | readonly Material[];
+	localMatrix: Matrix4;
+}> {
+	const out: Array<{
+		geometry: BufferGeometry;
+		material: Material | readonly Material[];
+		localMatrix: Matrix4;
+	}> = [];
+	// Ensure world matrices are up to date — the GLB loader should
+	// have done this, but a re-traversal after any in-place transforms
+	// would break otherwise.
+	scene.updateMatrixWorld(true);
+	scene.traverse((child) => {
+		if ((child as Mesh).isMesh) {
+			const mesh = child as Mesh;
+			// Capture the mesh-relative-to-scene transform. The InstancedMesh
+			// will apply the instance transform on top so the final world
+			// position = instanceMatrix × localMatrix × vertex.
+			const localMatrix = new Matrix4().copy(mesh.matrixWorld);
+			// Subtract the scene's own world matrix so localMatrix is
+			// purely the mesh's offset within the GLB. (scene.matrixWorld
+			// is usually identity for freshly-loaded GLBs but be defensive.)
+			const sceneInverse = new Matrix4().copy(scene.matrixWorld).invert();
+			localMatrix.premultiply(sceneInverse);
+			out.push({
+				geometry: mesh.geometry,
+				material: mesh.material as Material | readonly Material[],
+				localMatrix,
+			});
+		}
+	});
+	return out;
+}
+
+/**
  * (geometry, material) form. Use for procedural sources.
  */
 export function InstancedField({
@@ -123,6 +170,10 @@ export function InstancedField({
  * GLB-source convenience wrapper. Loads the GLB, pulls its first
  * Mesh, and feeds the resolved (geometry, material) into
  * InstancedField. Returns null when the GLB has no mesh.
+ *
+ * PB3 — for SINGLE-mesh GLBs only. Multi-mesh GLBs (cages, RVs, loot,
+ * Mega_Nature.glb, etc) silently lose every mesh except the first
+ * here — use `InstancedMultiGltfField` instead.
  */
 export function InstancedGltfField({
 	url,
@@ -138,6 +189,91 @@ export function InstancedGltfField({
 			material={sourceMesh.material as Material | readonly Material[]}
 			instances={instances}
 			maxInstances={maxInstances}
+		/>
+	);
+}
+
+/**
+ * PB3 — multi-mesh GLB instancing.
+ *
+ * For each sub-mesh inside the GLB, emits one InstancedMesh whose
+ * per-instance matrix is the composition of the instance transform
+ * (position + yaw + scale, same as `InstancedField`) and the sub-mesh's
+ * own local-relative-to-scene transform. The result on screen matches
+ * what the previous `SkeletonUtils.clone(scene)` + `<primitive>` path
+ * produced — every sub-mesh ends up at its correct world position
+ * relative to the instance root — but each sub-mesh is now batched
+ * across all instances in a single draw call.
+ *
+ * For a 27-mesh `loot/Books.glb` placed at 5 sectors, this drops the
+ * draw call count from 27×5 = 135 to 27 (one InstancedMesh per sub-mesh,
+ * each batching 5 instances).
+ */
+export function InstancedMultiGltfField({
+	url,
+	instances,
+	maxInstances = 256,
+}: InstancedGltfFieldProps) {
+	const gltf = useGLTF(url);
+	const submeshes = useMemo(() => findAllMeshes(gltf.scene), [gltf.scene]);
+	if (submeshes.length === 0) return null;
+	return (
+		<>
+			{submeshes.map((sub, i) => (
+				<InstancedMultiSubmesh
+					// biome-ignore lint/suspicious/noArrayIndexKey: `i` is stable per-GLB — submeshes derive from the loader's scene-graph traversal order, which is fixed by the GLB file structure. The array never reorders or shrinks across renders.
+					key={i}
+					geometry={sub.geometry}
+					material={sub.material}
+					localMatrix={sub.localMatrix}
+					instances={instances}
+					maxInstances={maxInstances}
+				/>
+			))}
+		</>
+	);
+}
+
+function InstancedMultiSubmesh({
+	geometry,
+	material,
+	localMatrix,
+	instances,
+	maxInstances,
+}: {
+	geometry: BufferGeometry;
+	material: Material | readonly Material[];
+	localMatrix: Matrix4;
+	instances: readonly InstancedFieldInstance[];
+	maxInstances: number;
+}) {
+	const meshRef = useRef<InstancedMesh | null>(null);
+
+	useEffect(() => {
+		const im = meshRef.current;
+		if (!im) return;
+		const cap = Math.min(instances.length, maxInstances);
+		for (let i = 0; i < cap; i += 1) {
+			// Multiply local sub-mesh transform on the RIGHT of the
+			// instance transform so the final composition is
+			// `instance × local × vertex`. composeInstanceMatrix writes
+			// into SCRATCH_MATRIX in place; we then post-multiply
+			// localMatrix to add the sub-mesh offset before InstancedMesh
+			// copies the matrix into its internal buffer.
+			composeInstanceMatrix(instances[i]);
+			SCRATCH_MATRIX.multiply(localMatrix);
+			im.setMatrixAt(i, SCRATCH_MATRIX);
+		}
+		im.count = cap;
+		im.instanceMatrix.needsUpdate = true;
+	}, [instances, maxInstances, localMatrix]);
+
+	return (
+		<instancedMesh
+			ref={meshRef}
+			args={[geometry, material as Material, maxInstances]}
+			castShadow
+			receiveShadow
 		/>
 	);
 }
