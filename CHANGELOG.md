@@ -9,6 +9,26 @@ domain: history
 
 All notable changes to this project will be documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Conventional Commits](https://www.conventionalcommits.org).
 
+## [0.4.0](https://github.com/objexiv/objexoom/compare/v0.3.0...v0.4.0) (2026-05-16)
+
+
+### Features
+
+* Phase 21 A6 archetype registry + T8 assetUrl unit test ([#50](https://github.com/objexiv/objexoom/issues/50)) ([5624666](https://github.com/objexiv/objexoom/commit/5624666fca939c4e7a320360849a355a847d4329))
+
+
+### Bug Fixes
+
+* **ci:** start vite dev server before OBS4 perf snapshot step ([#48](https://github.com/objexiv/objexoom/issues/48)) ([09cec9a](https://github.com/objexiv/objexoom/commit/09cec9ad49bcd0cc27dc44324d5cebbe1ab81637))
+
+
+### Performance Improvements
+
+* **audio:** A5 — defer music synth init off the start-game critical path ([#55](https://github.com/objexiv/objexoom/issues/55)) ([e0ac608](https://github.com/objexiv/objexoom/commit/e0ac608059d454285a4a38deae61262585519ad3))
+* **loader:** A4 — tiered asset preload (defer ~90MB off the landing screen) ([#57](https://github.com/objexiv/objexoom/issues/57)) ([80f4a28](https://github.com/objexiv/objexoom/commit/80f4a28d1ff91d965b336a363421a478ec3ea7a3))
+* Phase 21 QW2 + QW3 + QW4 + QW5 + QW6 batch ([#46](https://github.com/objexiv/objexoom/issues/46)) ([008e285](https://github.com/objexiv/objexoom/commit/008e285fbb17a6ea4c8b265efba8c3234d75f79f))
+* **render:** A3 — selective postprocess chain (drop Bloom under load) ([#56](https://github.com/objexiv/objexoom/issues/56)) ([dd98b16](https://github.com/objexiv/objexoom/commit/dd98b1677de86d1c609fc15fc91b3124cb1624d0))
+
 ## [0.3.0](https://github.com/objexiv/objexoom/compare/v0.2.2...v0.3.0) (2026-05-15)
 
 
