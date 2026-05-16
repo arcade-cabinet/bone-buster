@@ -209,107 +209,34 @@ export function resetPortalSwell(): void {
 }
 
 // === AMBIENT ==========================================================
+//
+// A11d — ambient bed lifecycle moved to src/audio/ambientGraph.ts.
+// The graph owns cross-fade transitions between archetypes + the
+// +6dB going-back swell. sfx.ts wraps with the muted() guard so the
+// pre-init state continues to no-op.
 
-export type AmbientArchetype = "corridor" | "arena" | "courtyard" | "sewer" | "library";
+import {
+	resetAmbientStateForTesting as resetAmbientStateImpl,
+	startAmbient as startAmbientImpl,
+	stopAmbient as stopAmbientImpl,
+} from "@audio/ambientGraph";
 
-const ARCHETYPE_TO_AMBIENT: Record<AmbientArchetype, string> = {
-	corridor: "ambient/corridor/bed",
-	arena: "ambient/arena/bed",
-	// Courtyard borrows the arena bed (outdoor wind); a bespoke
-	// courtyard bed is a future A11d refinement.
-	courtyard: "ambient/arena/bed",
-	sewer: "ambient/sewer/bed",
-	library: "ambient/library/bed",
-};
-
-let activeAmbientSlug: string | null = null;
-let activeArchetype: AmbientArchetype = "corridor";
-let activePhase: "out" | "going_back" = "out";
+export {
+	type AmbientArchetype,
+	type AmbientPhase,
+	getAmbientStateForTesting,
+	resetAmbientStateForTesting,
+	setAmbientArchetype,
+	setAmbientPhase,
+} from "@audio/ambientGraph";
 
 export function startAmbient() {
 	if (muted()) return;
-	const slug = ARCHETYPE_TO_AMBIENT[activeArchetype];
-	if (slug === activeAmbientSlug) return;
-	if (activeAmbientSlug) howlerStop(activeAmbientSlug);
-	howlerPlay(slug);
-	activeAmbientSlug = slug;
+	startAmbientImpl();
 }
 
 export function stopAmbient() {
-	if (activeAmbientSlug) {
-		howlerStop(activeAmbientSlug);
-		activeAmbientSlug = null;
-	}
-}
-
-export function setAmbientArchetype(archetype: AmbientArchetype) {
-	activeArchetype = archetype;
-	if (activeAmbientSlug) {
-		startAmbient();
-	}
-}
-
-export function setAmbientPhase(phase: "out" | "going_back") {
-	activePhase = phase;
-	// Going-back ducks the ambient bed a few dB so the klaxon cuts
-	// through. AUD1 musicVoice band stays within bounds.
-	if (activeAmbientSlug) {
-		const baseDb = phase === "going_back" ? -36 : -32;
-		setVolumeDb(activeAmbientSlug, baseDb);
-	}
-}
-
-// A11c — base volume per archetype after the Howler swap. Each value
-// sits inside SFX_BANDS.ambient (-34..-26). The values are
-// audibly-tuned so the loudest archetype (corridor — industrial hum)
-// is -32 and the quietest (library — silent room) is -34.
-const ARCHETYPE_BASE_DB: Record<AmbientArchetype, number> = {
-	corridor: -32,
-	arena: -30,
-	courtyard: -30,
-	sewer: -28,
-	library: -34,
-};
-
-// E11 — going_back boost lands at +6dB above the base bed so the
-// klaxon doesn't drown out the urgency. The pre-swap value was also
-// +6dB; preserved 1:1.
-const GOING_BACK_BOOST_DB = 6;
-
-export function getAmbientStateForTesting(): {
-	archetype: AmbientArchetype;
-	phase: "out" | "going_back";
-	activeSlug: string | null;
-	resolvedVolumeDb: number;
-	resolvedPitch: string;
-} {
-	const baseDb = ARCHETYPE_BASE_DB[activeArchetype];
-	const resolvedVolumeDb = activePhase === "going_back" ? baseDb + GOING_BACK_BOOST_DB : baseDb;
-	// E11 — per-archetype pitch label. After the Howler swap there's
-	// no per-archetype tone — but the label is preserved as a
-	// human-readable archetype-identifier the legacy AUD1 tests pin.
-	// The labels match the pre-swap base notes so the test still asserts
-	// "distinct per archetype".
-	const PITCH_LABEL: Record<AmbientArchetype, string> = {
-		corridor: "E1",
-		arena: "G1",
-		courtyard: "C2",
-		sewer: "A0",
-		library: "D2",
-	};
-	return {
-		archetype: activeArchetype,
-		phase: activePhase,
-		activeSlug: activeAmbientSlug,
-		resolvedVolumeDb,
-		resolvedPitch: PITCH_LABEL[activeArchetype],
-	};
-}
-
-export function resetAmbientStateForTesting() {
-	activeAmbientSlug = null;
-	activeArchetype = "corridor";
-	activePhase = "out";
+	stopAmbientImpl();
 }
 
 // === ENEMY + COMBAT STINGS ============================================
@@ -430,7 +357,7 @@ export function setSoundEnabled(enabled: boolean): void {
 
 export function resetSfxForTesting(): void {
 	howlerResetForTesting();
-	resetAmbientStateForTesting();
+	resetAmbientStateImpl();
 	activeMusicSlug = null;
 	activeMusicMood = "exploration";
 	initialized = false;

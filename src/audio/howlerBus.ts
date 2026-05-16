@@ -250,6 +250,69 @@ export function stop(slug: string): void {
 }
 
 /**
+ * Fade a looping slug from its current volume to a target volume
+ * (in dB) over `durationMs` milliseconds. Howler's fade() works in
+ * linear gain; we convert via dbToLinear() at both ends. Used by
+ * ambientGraph for the corridor → arena → courtyard cross-fade
+ * during archetype transitions, and by setAmbientPhase for the
+ * +6dB going_back swell.
+ *
+ * Returns true if the fade was scheduled, false if the slug isn't
+ * an active loop (nothing to fade).
+ */
+export function fadeTo(slug: string, targetDb: number, durationMs: number): boolean {
+	const h = HOWL_POOL.get(slug);
+	if (!h) return false;
+	const currentLinear = h.volume();
+	const targetLinear = dbToLinear(targetDb);
+	if (durationMs <= 0) {
+		h.volume(targetLinear);
+		return true;
+	}
+	// `fade(from, to, duration)` — Howler accepts seconds OR ms; the
+	// docs say ms but the implementation honors either. We pass ms
+	// explicitly to match the doc.
+	h.fade(currentLinear, targetLinear, durationMs);
+	return true;
+}
+
+/**
+ * Cross-fade between two looping slugs. Starts the new slug at
+ * silent (-60dB), fades it up to its baseline; simultaneously fades
+ * the old slug to silent then stops it. Used by ambientGraph when
+ * the player crosses an archetype boundary.
+ */
+export function crossfade(
+	fromSlug: string | null,
+	toSlug: string,
+	targetDb: number,
+	durationMs: number,
+): void {
+	if (fromSlug === toSlug) return;
+	// Start the new slug at silent so the fade-in is audible.
+	if (!HOWL_POOL.has(toSlug)) {
+		// Bootstrap a Howl at the slug's baseline; we'll override
+		// volume to -60dB immediately for the fade-in.
+		play(toSlug);
+	}
+	const newH = HOWL_POOL.get(toSlug);
+	if (newH) {
+		newH.volume(dbToLinear(-60));
+		if (!newH.playing()) newH.play();
+		newH.fade(dbToLinear(-60), dbToLinear(targetDb), durationMs);
+	}
+	if (fromSlug && fromSlug !== toSlug) {
+		const oldH = HOWL_POOL.get(fromSlug);
+		if (oldH) {
+			oldH.fade(oldH.volume(), dbToLinear(-60), durationMs);
+			// Stop the old loop after the fade completes so it doesn't
+			// keep ticking the AudioContext at zero gain.
+			setTimeout(() => oldH.stop(), durationMs + 50);
+		}
+	}
+}
+
+/**
  * Adjust the volume of a looping slug at runtime (e.g. portal-swell
  * distance falloff). Volume is in dB relative to the slug's
  * SLUG_VOLUME_DB baseline.
