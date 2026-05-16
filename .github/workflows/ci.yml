@@ -41,6 +41,35 @@ jobs:
       - name: Build
         run: pnpm build
 
+  # Lighthouse — Core Web Vitals gate on the prerendered bundle.
+  # Runs three Lighthouse passes against the static `dist/client/` build
+  # (no dev server needed; LHCI serves it) and asserts the Vike prerender
+  # is hitting the FCP/LCP/TBT/CLS budgets we set after baseline-ing the
+  # post-Vike build locally. Reports upload to temporary-public-storage so
+  # PR reviewers get a clickable HTML report URL in the job log.
+  lighthouse:
+    runs-on: ubuntu-latest
+    needs: verify
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with: { version: 10.2.0 }
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm build
+      - name: Lighthouse CI
+        run: pnpm lighthouse
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+
   # OBS4 — per-archetype perf-budget regression gate. Runs `pnpm test:perf`
   # (scripts/obs3-perf-snapshot.mjs) for each of the 5 archetypes,
   # comparing peak draw-calls + triangles against the tracked baselines
@@ -71,7 +100,11 @@ jobs:
         # would be smaller. Pinned to port 5191 to match the local
         # workflow; perf script defaults to that URL.
         run: |
-          pnpm dev --host 0.0.0.0 &
+          # `server.host: true` is set in vite.config.ts so we don't need
+          # `--host 0.0.0.0` on the CLI. Post-Vike, the vike plugin
+          # routes the vite CLI through Vike's CAC parser, which rejects
+          # the unknown `--host` flag.
+          pnpm dev &
           for i in {1..60}; do
             if curl -s -o /dev/null -w "%{http_code}" http://localhost:5191 | grep -q 200; then
               echo "dev server up on :5191"

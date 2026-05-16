@@ -1,6 +1,11 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import react from "@vitejs/plugin-react";
+import vike from "vike/plugin";
 import { defineConfig } from "vite";
+
+const PKG_VERSION = JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf8"))
+	.version as string;
 
 /**
  * Bone Buster Vite config (PRD §BC1). Aligned with the canonical
@@ -46,10 +51,21 @@ function normalizeBasePath(value?: string): string {
 
 const base = normalizeBasePath(process.env.VITE_BASE_PATH);
 
-export default defineConfig(({ mode }) => ({
+// Post-Vike: `vite build --mode github-pages` is rejected by Vike's CAC
+// parser, so the "drop sourcemaps for pages deploys" gate moved from
+// `mode` to an env var. CI sets PAGES_BUILD=1 alongside VITE_BASE_PATH.
+const isPagesBuild = process.env.PAGES_BUILD === "1";
+
+export default defineConfig(() => ({
 	base,
 	cacheDir: ".vite",
-	plugins: [react()],
+	plugins: [react(), vike()],
+	define: {
+		// Surfaced to client + prerender hooks so the version chip in the
+		// landing skeleton stays in sync with release-please bumps instead
+		// of drifting from a hardcoded literal.
+		__BONEBUSTER_VERSION__: JSON.stringify(PKG_VERSION),
+	},
 	build: {
 		target: "es2022",
 		// QW7 / SECURITY #1 — gh-pages builds drop sourcemaps entirely so
@@ -57,7 +73,7 @@ export default defineConfig(({ mode }) => ({
 		// `node_modules/.pnpm/<pkg>@<ver>_<deps>/...` dependency-version
 		// fingerprint. Native (Capacitor) builds + dev keep sourcemaps —
 		// the APK is local-only and dev sourcemaps are dev-only.
-		sourcemap: mode !== "github-pages",
+		sourcemap: !isPagesBuild,
 		chunkSizeWarningLimit: 1800,
 		rollupOptions: {
 			output: {
@@ -140,12 +156,17 @@ export default defineConfig(({ mode }) => ({
 			"@atoms": path.resolve(__dirname, "app/atoms"),
 			"@hooks": path.resolve(__dirname, "app/hooks"),
 			"@styles": path.resolve(__dirname, "app/styles"),
-			// Dedupe-targets — pinned to the hoisted copy so r3f's
-			// instanceof checks don't trip on parallel React copies.
-			react: path.resolve(__dirname, "node_modules/react"),
-			"react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+			// Subpath alias kept — the addons mapping has no analogue in
+			// dedupe + we do want all `three/addons` imports to land in
+			// the official examples dir.
 			"three/addons": path.resolve(__dirname, "node_modules/three/examples/jsm"),
-			three: path.resolve(__dirname, "node_modules/three"),
+			// Note: we used to alias react/react-dom/three to their
+			// node_modules package roots, but that forced Vite to load
+			// CommonJS index.js files directly — which Vike's SSR
+			// module-runner can't evaluate (it ESM-only and chokes on
+			// the bare `module.exports = ...`). `dedupe` below already
+			// gives us the "single hoisted copy" guarantee r3f needs
+			// for its instanceof checks.
 		},
 		dedupe: ["react", "react-dom", "three"],
 	},

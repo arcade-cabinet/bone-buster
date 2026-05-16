@@ -21,7 +21,11 @@ const root = resolve(import.meta.dirname, "..");
 // output (e.g. for `pnpm build:pages` which writes to a base-prefixed
 // dist path).
 const dirArg = process.argv.find((a) => a.startsWith("--dir="));
-const defaultDir = join(root, "dist", "assets");
+// Post-Vike: Vite outputs to `dist/client/` (Vike splits browser +
+// SSR bundles), so the default report target moved from
+// `dist/assets/` to `dist/client/assets/`. Pre-Vike build invocations
+// can override with `--dir=...`.
+const defaultDir = join(root, "dist", "client", "assets");
 const target = dirArg ? resolve(root, dirArg.slice("--dir=".length)) : defaultDir;
 
 function formatBytes(n) {

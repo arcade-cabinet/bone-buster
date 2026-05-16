@@ -3,7 +3,10 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
 	appId: "com.bonebuster.app",
 	appName: "Bone Buster",
-	webDir: "dist",
+	// Post-Vike: the build splits into dist/client/ (browser bundle +
+	// prerendered index.html) and dist/server/ (SSR/prerender entry).
+	// Capacitor wraps the client bundle, so point webDir at dist/client.
+	webDir: "dist/client",
 	server: {
 		androidScheme: "https",
 	},
