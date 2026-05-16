@@ -43,6 +43,7 @@
 		"test:e2e:screenshots": "playwright test tests/e2e/screenshots.spec.ts --workers=1",
 		"test:e2e:archetype-screenshots": "playwright test tests/e2e/archetypeScreenshots.spec.ts --workers=1",
 		"test:perf": "node scripts/obs3-perf-snapshot.mjs",
+		"test:perf:mobile": "node scripts/obs3-perf-snapshot-mobile.mjs",
 		"assets:fbx-to-glb": "node scripts/convert-fbx.mjs",
 		"assets:pwa-icons": "node scripts/generate-pwa-icons.mjs",
 		"assets:publish-screenshots": "bash scripts/publish-screenshots.sh",
