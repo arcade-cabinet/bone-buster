@@ -6,8 +6,8 @@ import type { PropArchetype } from "@world/scatter/propPool";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
-const COLOR_WRAITH = new THREE.Color(BONE_BUSTER_PALETTE.enemyWraithSoul).getHex();
-const COLOR_IMP = new THREE.Color(BONE_BUSTER_PALETTE.enemyImpMagma).getHex();
+const COLOR_PHASER = new THREE.Color(BONE_BUSTER_PALETTE.enemyWraithSoul).getHex();
+const COLOR_BOUNCER = new THREE.Color(BONE_BUSTER_PALETTE.enemyImpMagma).getHex();
 const COLOR_BONE = new THREE.Color(BONE_BUSTER_PALETTE.enemyBone).getHex();
 
 type BodyShard = {
@@ -80,9 +80,9 @@ function timingsFor(ttlMs: number): { motion: number; settleEnd: number; ttl: nu
  *
  * Shard color tracks the killed enemy's kind:
  *
- *   skeleton → bone white
- *   imp      → blood red
- *   wraith   → violet
+ *   rattler → bone white
+ *   bouncer      → blood red
+ *   phaser   → violet
  *
  * Mesh pool is capped at `MAX_BODY_SHARDS`.
  */
@@ -105,7 +105,11 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 		return addBoneBusterListener("bodyParts", (detail) => {
 			const count = 4 + ((Math.random() * 3) | 0); // 4-6
 			const baseColor =
-				detail.kind === "wraith" ? COLOR_WRAITH : detail.kind === "imp" ? COLOR_IMP : COLOR_BONE;
+				detail.kind === "phaser"
+					? COLOR_PHASER
+					: detail.kind === "bouncer"
+						? COLOR_BOUNCER
+						: COLOR_BONE;
 			const now = performance.now();
 			for (let i = 0; i < count; i += 1) {
 				const theta = Math.random() * Math.PI * 2;
@@ -208,7 +212,7 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 			// POL40 — render the rest-decal once settled. Flat dark
 			// circle just above the floor (y=0.02 to avoid z-fighting
 			// with the floor plane). Shares the shard's color but
-			// pushed toward dark/red emissive so blood/imp gibs read
+			// pushed toward dark/red emissive so blood/bouncer gibs read
 			// as splatter while bone shards leave a faint mark.
 			if (shard.settledAt !== null && groupRef.current) {
 				let decal = decalMeshes.current.get(shard.id);

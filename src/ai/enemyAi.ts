@@ -29,28 +29,28 @@ export const LOS_LOST_MS = 2_500;
 export const SHOOT_COOLDOWN_MS = 2_000;
 export const SHOOT_RANGE = 8;
 export const PATROL_SPEED = 0.4;
-export const CHASE_SPEED_SKELETON = 1.1;
-export const CHASE_SPEED_WRAITH = 1.5;
-export const CHASE_SPEED_IMP = 0.9;
+export const CHASE_SPEED_RATTLER = 1.1;
+export const CHASE_SPEED_PHASER = 1.5;
+export const CHASE_SPEED_BOUNCER = 0.9;
 
 // Y2 — per-kind wander tuning. Skeletons wander tight, imps moderate,
 // wraiths sweep wide. Bearing jitter per second adds organic drift
 // (mirrors yuka.WanderBehavior's jitter parameter).
 export const WANDER_RADIUS: Record<Enemy["kind"], number> = {
-	skeleton: 0.7,
-	imp: 1.0,
-	wraith: 1.8,
+	rattler: 0.7,
+	bouncer: 1.0,
+	phaser: 1.8,
 };
 export const WANDER_JITTER_RAD_PER_SEC: Record<Enemy["kind"], number> = {
-	skeleton: 0.4,
-	imp: 0.6,
-	wraith: 0.9,
+	rattler: 0.4,
+	bouncer: 0.6,
+	phaser: 0.9,
 };
 
-// Y3 — imp Pursuit lead. Imps anticipate the player's position by
+// Y3 — bouncer Pursuit lead. Imps anticipate the player's position by
 // projecting along the player's recent velocity. Lead time scales
 // with distance / chase speed so longer-range shots lead more.
-export const IMP_LEAD_FACTOR = 0.35;
+export const BOUNCER_LEAD_FACTOR = 0.35;
 
 export type FsmTickInput = Readonly<{
 	enemy: Enemy;
@@ -89,11 +89,11 @@ export function tickEnemyFsm(input: FsmTickInput): FsmTickOutput {
 	const lastSeenAt = sees ? now : input.lastSeenAt;
 
 	const chaseSpeed =
-		enemy.kind === "wraith"
-			? CHASE_SPEED_WRAITH
-			: enemy.kind === "imp"
-				? CHASE_SPEED_IMP
-				: CHASE_SPEED_SKELETON;
+		enemy.kind === "phaser"
+			? CHASE_SPEED_PHASER
+			: enemy.kind === "bouncer"
+				? CHASE_SPEED_BOUNCER
+				: CHASE_SPEED_RATTLER;
 
 	// State 0 — patrol.
 	if (enemy.fsmState === 0) {
@@ -151,7 +151,7 @@ export function tickEnemyFsm(input: FsmTickInput): FsmTickOutput {
 			};
 		}
 		// Can we shoot? wraiths + imps shoot; skeletons don't.
-		const canShoot = enemy.kind !== "skeleton";
+		const canShoot = enemy.kind !== "rattler";
 		if (canShoot && sees && dist <= SHOOT_RANGE && now - enemy.lastShotAt > SHOOT_COOLDOWN_MS) {
 			return {
 				nextState: 3,
@@ -163,23 +163,23 @@ export function tickEnemyFsm(input: FsmTickInput): FsmTickOutput {
 		}
 		// Y3 — chase step. Skeletons + wraiths Seek the player's current
 		// position. Imps use Pursuit: project the player's recent velocity
-		// forward by IMP_LEAD_FACTOR × (dist / chaseSpeed) seconds so the
-		// imp anticipates where the player will be when it arrives.
+		// forward by BOUNCER_LEAD_FACTOR × (dist / chaseSpeed) seconds so the
+		// bouncer anticipates where the player will be when it arrives.
 		//
-		// Y4 — ground-bound enemies (skeleton, imp) deflect around walls
+		// Y4 — ground-bound enemies (rattler, bouncer) deflect around walls
 		// via yukaAvoidObstacles. Wraiths skip it (they no-clip, per I3).
 		// The Scene still applies the actual collision resolver after the
 		// FSM returns.
 		if (dist > 1e-3) {
 			let chaseTarget = input.player;
-			if (enemy.kind === "imp" && input.playerVelocity) {
-				const leadTime = IMP_LEAD_FACTOR * (dist / chaseSpeed);
+			if (enemy.kind === "bouncer" && input.playerVelocity) {
+				const leadTime = BOUNCER_LEAD_FACTOR * (dist / chaseSpeed);
 				chaseTarget = {
 					x: input.player.x + input.playerVelocity.x * leadTime,
 					y: input.player.y + input.playerVelocity.y * leadTime,
 				};
 			}
-			if (enemy.kind !== "wraith") {
+			if (enemy.kind !== "phaser") {
 				chaseTarget = yukaAvoidObstacles(
 					enemy.position,
 					chaseTarget,

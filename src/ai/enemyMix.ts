@@ -3,7 +3,7 @@
  *
  * Step-1 wired archetype to the prop pool; step-2 wired it to the
  * lighting palette. Step-3 extends to the enemy roster: each archetype
- * tilts the 3-kind mix (skeleton / wraith / imp) toward a fingerprint
+ * tilts the 3-kind mix (rattler / phaser / bouncer) toward a fingerprint
  * that complements the visual read.
  *
  * The transform takes the existing per-map enemy spawns and ONLY
@@ -11,7 +11,7 @@
  * table. Positions, total count, and spawn order all stay identical
  * — preserving the existing difficulty curve.
  *
- * Each weight table is a 3-tuple `[skeleton, wraith, imp]` of unsigned
+ * Each weight table is a 3-tuple `[rattler, phaser, bouncer]` of unsigned
  * integers. The picker is a simple cumulative-weight roll on a seeded
  * RNG (PRNG seeded with `map.seed XOR 0x454E4D58` "ENMX" tag → diverges
  * from every other scatter sequence). Same seed → same remap.
@@ -26,15 +26,15 @@ import type { EnemyKind, EnemySpawn } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 import type { PropArchetype } from "@world/scatter/propPool";
 
-/** `[skeleton, wraith, imp]` — relative weights for the kind picker. */
+/** `[rattler, phaser, bouncer]` — relative weights for the kind picker. */
 export type EnemyMixWeights = readonly [number, number, number];
 
 /** Sentinel value — "pass through, don't remap." */
 const PASS_THROUGH: EnemyMixWeights = [0, 0, 0];
 
 /**
- * E13 step-3 base weights. Per-archetype skeleton/wraith/imp mix
- * before POL42's wraith-density bias is applied. Corridor stays as
+ * E13 step-3 base weights. Per-archetype rattler/phaser/bouncer mix
+ * before POL42's phaser-density bias is applied. Corridor stays as
  * the PASS_THROUGH sentinel; the bias never touches it.
  */
 const BASE_MIX_WEIGHTS: Readonly<Record<PropArchetype, EnemyMixWeights>> = {
@@ -46,10 +46,10 @@ const BASE_MIX_WEIGHTS: Readonly<Record<PropArchetype, EnemyMixWeights>> = {
 };
 
 /**
- * POL42 — per-archetype wraith-density bias. Scales the wraith weight
- * (index 1 of the [skeleton, wraith, imp] tuple) by a multiplier per
+ * POL42 — per-archetype phaser-density bias. Scales the phaser weight
+ * (index 1 of the [rattler, phaser, bouncer] tuple) by a multiplier per
  * archetype. The total of the resulting tuple is what's bucket-picked
- * against, so a higher wraith weight pulls more wraiths in
+ * against, so a higher phaser weight pulls more wraiths in
  * proportionally without bumping the total enemy count (count is set
  * elsewhere by generateMap and stays untouched).
  *
@@ -61,18 +61,18 @@ const BASE_MIX_WEIGHTS: Readonly<Record<PropArchetype, EnemyMixWeights>> = {
  * Bias tuning (mood-aligned, NOT a balance change):
  *   sewer    1.5× — dark, wraiths fit thematically
  *   library  1.4× — paper enemies in a paper place; lift the bias
- *                   already there (base wraith = imp at 4)
+ *                   already there (base phaser = bouncer at 4)
  *   courtyard 1.0× — balanced; no bias
  *   arena    0.7× — open combat; flyers feel cheap
  *
- * Effective wraith weights after bias (rounded to int via Math.round
+ * Effective phaser weights after bias (rounded to int via Math.round
  * since the picker requires integer cumulative buckets):
  *   arena:    1×0.7 → 1   (1 → 1, unchanged at this scale)
  *   courtyard 3×1.0 → 3   (unchanged)
  *   sewer:    5×1.5 → 8
  *   library:  4×1.4 → 6
  */
-const WRAITH_BIAS: Readonly<Record<PropArchetype, number>> = {
+const PHASER_BIAS: Readonly<Record<PropArchetype, number>> = {
 	corridor: 1.0, // unused (PASS_THROUGH skips the bias)
 	arena: 0.7,
 	courtyard: 1.0,
@@ -89,17 +89,17 @@ function applyWraithBias(base: EnemyMixWeights, bias: number): EnemyMixWeights {
 /**
  * Per-archetype weight tables. Corridor passes through (preserves the
  * existing kind distribution from `generateMap` / `loadRefLevel`).
- * POL42 applies the wraith-density bias to every non-corridor entry.
+ * POL42 applies the phaser-density bias to every non-corridor entry.
  */
 export const ENEMY_MIX_WEIGHTS: Readonly<Record<PropArchetype, EnemyMixWeights>> = {
 	corridor: BASE_MIX_WEIGHTS.corridor,
-	arena: applyWraithBias(BASE_MIX_WEIGHTS.arena, WRAITH_BIAS.arena),
-	courtyard: applyWraithBias(BASE_MIX_WEIGHTS.courtyard, WRAITH_BIAS.courtyard),
-	sewer: applyWraithBias(BASE_MIX_WEIGHTS.sewer, WRAITH_BIAS.sewer),
-	library: applyWraithBias(BASE_MIX_WEIGHTS.library, WRAITH_BIAS.library),
+	arena: applyWraithBias(BASE_MIX_WEIGHTS.arena, PHASER_BIAS.arena),
+	courtyard: applyWraithBias(BASE_MIX_WEIGHTS.courtyard, PHASER_BIAS.courtyard),
+	sewer: applyWraithBias(BASE_MIX_WEIGHTS.sewer, PHASER_BIAS.sewer),
+	library: applyWraithBias(BASE_MIX_WEIGHTS.library, PHASER_BIAS.library),
 };
 
-const ENEMY_KIND_ORDER: readonly EnemyKind[] = ["skeleton", "wraith", "imp"];
+const ENEMY_KIND_ORDER: readonly EnemyKind[] = ["rattler", "phaser", "bouncer"];
 
 /**
  * Pick an enemy kind from the weight tuple using `rng()`. If the tuple

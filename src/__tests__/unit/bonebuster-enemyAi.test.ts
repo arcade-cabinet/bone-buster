@@ -1,6 +1,6 @@
 import {
+	BOUNCER_LEAD_FACTOR,
 	GETHELP_RADIUS,
-	IMP_LEAD_FACTOR,
 	LOS_LOST_MS,
 	SHOOT_COOLDOWN_MS,
 	SHOOT_RANGE,
@@ -15,7 +15,7 @@ import { describe, expect, it } from "vitest";
 function makeEnemy(partial: Partial<Enemy> = {}): Enemy {
 	return {
 		id: 0,
-		kind: "wraith",
+		kind: "phaser",
 		position: { x: 5, y: 5 },
 		hp: 10,
 		maxHp: 10,
@@ -105,7 +105,7 @@ describe("objexoom enemyAi FSM (C3)", () => {
 		const enemy = makeEnemy({
 			fsmState: 1,
 			position: { x: 5, y: 5 },
-			kind: "wraith",
+			kind: "phaser",
 			lastShotAt: 0,
 		});
 		const out = tickEnemyFsm({
@@ -137,10 +137,10 @@ describe("objexoom enemyAi FSM (C3)", () => {
 		expect(out.fireBullet).toBe(true);
 	});
 
-	it("skeleton kind never enters state 3 (no ranged attack)", () => {
+	it("rattler kind never enters state 3 (no ranged attack)", () => {
 		const enemy = makeEnemy({
 			fsmState: 1,
-			kind: "skeleton",
+			kind: "rattler",
 			position: { x: 5, y: 5 },
 			lastShotAt: 0,
 		});
@@ -158,10 +158,10 @@ describe("objexoom enemyAi FSM (C3)", () => {
 		expect(out.fireBullet).toBe(false);
 	});
 
-	it("imp kind shoots like wraith", () => {
+	it("bouncer kind shoots like phaser", () => {
 		const enemy = makeEnemy({
 			fsmState: 1,
-			kind: "imp",
+			kind: "bouncer",
 			position: { x: 5, y: 5 },
 			lastShotAt: 0,
 		});
@@ -185,16 +185,16 @@ describe("objexoom enemyAi FSM (C3)", () => {
 	});
 
 	// Y2 — per-kind wander tuning. Skeletons drift tight, wraiths sweep wide.
-	it("Y2: skeleton wander is tighter than imp than wraith", () => {
-		expect(WANDER_RADIUS.skeleton).toBeLessThan(WANDER_RADIUS.imp);
-		expect(WANDER_RADIUS.imp).toBeLessThan(WANDER_RADIUS.wraith);
-		expect(WANDER_JITTER_RAD_PER_SEC.skeleton).toBeLessThan(WANDER_JITTER_RAD_PER_SEC.wraith);
+	it("Y2: rattler wander is tighter than bouncer than phaser", () => {
+		expect(WANDER_RADIUS.rattler).toBeLessThan(WANDER_RADIUS.bouncer);
+		expect(WANDER_RADIUS.bouncer).toBeLessThan(WANDER_RADIUS.phaser);
+		expect(WANDER_JITTER_RAD_PER_SEC.rattler).toBeLessThan(WANDER_JITTER_RAD_PER_SEC.phaser);
 	});
 
 	it("Y2: patrol jitters the bearing every frame (mutates enemy.patrolBearing)", () => {
 		const enemy = makeEnemy({
 			fsmState: 0,
-			kind: "wraith",
+			kind: "phaser",
 			position: { x: 1.5, y: 1.5 },
 			patrolBearing: 1.0,
 		});
@@ -213,12 +213,12 @@ describe("objexoom enemyAi FSM (C3)", () => {
 		expect(enemy.patrolBearing).not.toBe(before);
 	});
 
-	// Y3 — imp Pursuit. Lead-target only applies when kind=imp AND
-	// playerVelocity is supplied. Skeleton + wraith chase the raw position.
-	it("Y3: imp chase respects playerVelocity (lead-target)", () => {
+	// Y3 — bouncer Pursuit. Lead-target only applies when kind=bouncer AND
+	// playerVelocity is supplied. Rattler + phaser chase the raw position.
+	it("Y3: bouncer chase respects playerVelocity (lead-target)", () => {
 		const enemy = makeEnemy({
 			fsmState: 1,
-			kind: "imp",
+			kind: "bouncer",
 			// Far enough that we won't trip the shoot transition.
 			position: { x: 1, y: 1 },
 			lastShotAt: Number.POSITIVE_INFINITY, // never ready to shoot
@@ -255,10 +255,10 @@ describe("objexoom enemyAi FSM (C3)", () => {
 		}
 	});
 
-	it("Y3: skeleton ignores playerVelocity (no Pursuit)", () => {
+	it("Y3: rattler ignores playerVelocity (no Pursuit)", () => {
 		const enemy = makeEnemy({
 			fsmState: 1,
-			kind: "skeleton",
+			kind: "rattler",
 			position: { x: 1, y: 1 },
 		});
 		const player = { x: 5, y: 1 };
@@ -283,11 +283,11 @@ describe("objexoom enemyAi FSM (C3)", () => {
 			lastSeenAt: 0,
 			playerVelocity: { x: 50, y: 0 },
 		});
-		// Identical for non-imp kinds.
+		// Identical for non-bouncer kinds.
 		expect(outWithVel.moveTarget?.x).toBeCloseTo(outNoLead.moveTarget?.x ?? 0, 5);
 	});
 
-	it("Y3: IMP_LEAD_FACTOR is positive", () => {
-		expect(IMP_LEAD_FACTOR).toBeGreaterThan(0);
+	it("Y3: BOUNCER_LEAD_FACTOR is positive", () => {
+		expect(BOUNCER_LEAD_FACTOR).toBeGreaterThan(0);
 	});
 });

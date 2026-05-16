@@ -1,17 +1,17 @@
 import { mulberry32 } from "@engine/prng";
-import { PISTOL_MAX_RANGE, PLAYER_RADIUS, SKELETON_HP, TILE } from "@shared/constants";
+import { PISTOL_MAX_RANGE, PLAYER_RADIUS, RATTLER_HP, TILE } from "@shared/constants";
 import type { PropArchetype } from "@world/scatter/propPool";
 
 export type Cell = "empty" | "wall" | "door" | "spawn" | "exit" | "key" | "lava";
 
 // Reference enemy roster (game.js → all_objects):
-//   skeleton  = closest analogue to the reference's vanilla `Enemy` —
+//   rattler  = closest analogue to the reference's vanilla `Enemy` —
 //               ground unit, melee on contact, dies cleanly.
-//   wraith    = reference `FlyingEnemy` — no-clip movement, weaker but
+//   phaser    = reference `FlyingEnemy` — no-clip movement, weaker but
 //               harder to corner; shoots EnemyBullets at the player.
-//   imp       = reference `Enemy` variant with explode-on-death — bursts
-//               into 3-5 BodyPart particles. Higher HP than skeleton.
-export type EnemyKind = "skeleton" | "wraith" | "imp";
+//   bouncer       = reference `Enemy` variant with explode-on-death — bursts
+//               into 3-5 BodyPart particles. Higher HP than rattler.
+export type EnemyKind = "rattler" | "phaser" | "bouncer";
 
 export type EnemySpawn = Readonly<{
 	kind: EnemyKind;
@@ -397,7 +397,7 @@ export function generateMap(seed: number, shape?: GenerateMapShape): ObjexoomGri
 		Math.max(4, Math.round(baseEnemyCount * ARCHETYPE_ENEMY_MULTIPLIER[archetypeIdx])),
 	);
 	const enemySpawns: EnemySpawn[] = enemyCandidates.slice(0, totalEnemies).map((position, idx) => ({
-		kind: idx % 3 === 2 ? "wraith" : "skeleton",
+		kind: idx % 3 === 2 ? "phaser" : "rattler",
 		position,
 	}));
 
@@ -630,12 +630,12 @@ export type Enemy = {
 
 function enemyBaseHp(kind: EnemyKind): number {
 	switch (kind) {
-		case "wraith":
-			return Math.floor(SKELETON_HP * 0.7);
-		case "imp":
-			return Math.floor(SKELETON_HP * 1.5);
+		case "phaser":
+			return Math.floor(RATTLER_HP * 0.7);
+		case "bouncer":
+			return Math.floor(RATTLER_HP * 1.5);
 		default:
-			return SKELETON_HP;
+			return RATTLER_HP;
 	}
 }
 
@@ -823,8 +823,8 @@ export function castRayAny(
 import { yukaProjectileStep } from "@ai/yukaIntegration";
 
 export const ENEMY_BULLET_SPEED = 1.4 * TILE; // ≈ 1 cell / second
-// L1 — damage values rescaled for the 0-9 HP scale. Imp bullets land
-// for 1 hp on Hurt Me Plenty; wraith bullets pile up over time.
+// L1 — damage values rescaled for the 0-9 HP scale. Bouncer bullets land
+// for 1 hp on Hurt Me Plenty; phaser bullets pile up over time.
 export const ENEMY_BULLET_DAMAGE = 1;
 export const ENEMY_BULLET_TTL_MS = 8_000;
 export const ENEMY_BULLET_RADIUS = 0.4;

@@ -339,7 +339,7 @@ export function BoneBusterScene({
 	// remount), so a 2nd visit to the same map fires the banner fresh.
 	const bossSpottedFiredRef = useRef<Set<number>>(new Set());
 
-	// Y3 — player velocity for imp Pursuit lead-target. Computed from the
+	// Y3 — player velocity for bouncer Pursuit lead-target. Computed from the
 	// previous frame's XZ position. Stored as a ref so it survives across
 	// frames without triggering re-renders.
 	const prevPlayerPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -470,7 +470,7 @@ export function BoneBusterScene({
 		const py = camera.position.z;
 
 		// Y3 — derive player XZ velocity from prev-frame position. Smooth
-		// against a tiny floor so a stationary player gives the imp a
+		// against a tiny floor so a stationary player gives the bouncer a
 		// zero-lead (i.e. it just Seeks the current position).
 		if (prevPlayerPosRef.current && dt > 1e-6) {
 			playerVelocityRef.current = {
@@ -686,7 +686,7 @@ export function BoneBusterScene({
 					type: "burst",
 					x: enemy.position.x,
 					y: enemy.position.y,
-					kind: enemy.kind === "imp" ? "explode" : "damage",
+					kind: enemy.kind === "bouncer" ? "explode" : "damage",
 				});
 				dispatch({
 					type: "bodyParts",
@@ -702,7 +702,7 @@ export function BoneBusterScene({
 				// standard 80ms, scale 0.05 — the most-pinched scale wins).
 				const hitstopMs = bossKillsThisTick > 0 ? 150 : 80;
 				timeScaleBusRef.current.reserve("hitstop", 0.05, performance.now() + hitstopMs);
-				// POL10-v2 boss death + skeleton death audio.
+				// POL10-v2 boss death + rattler death audio.
 				playSkeletonDeath();
 				if (bossKillsThisTick > 0) playBossDeath();
 				if (settings.soundEnabled) playBoom();

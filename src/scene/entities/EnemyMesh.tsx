@@ -32,14 +32,14 @@ export function EnemyMesh({
 	// using its id. Same id => same skin every spawn.
 	const skin = useMemo(() => pickEnemySkin(enemy.kind, enemy.id), [enemy.kind, enemy.id]);
 	const gltf = useGLTF(skin.url);
-	// SkeletonUtils.clone keeps the skinned-mesh/skeleton bindings sane
+	// SkeletonUtils.clone keeps the skinned-mesh/rattler bindings sane
 	// across multiple instances — a plain .clone() shares skeletons and
 	// every instance animates in lockstep.
 	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
 
 	// POL29 — boss-tier enemies get a permanent emissive blood-red rim
 	// so the bigger silhouette ALSO reads as visually distinct at low
-	// light, not just "skeleton scaled up". Mutate the cloned material
+	// light, not just "rattler scaled up". Mutate the cloned material
 	// once (per instance, not per frame) — POL19 hit-flash already
 	// owns per-frame material mutation via the EnemyHitFlash slot, so
 	// the static rim doesn't interfere.
@@ -104,7 +104,7 @@ export function EnemyMesh({
 		const t = performance.now() / 1000;
 		const bobY = hasNamedAnims ? 0 : Math.sin(t * 2.2 + bobPhase) * 0.06;
 
-		const targetY = skin.floorOffset + bobY + (enemy.kind === "wraith" ? 1.2 : 0);
+		const targetY = skin.floorOffset + bobY + (enemy.kind === "phaser" ? 1.2 : 0);
 		group.position.set(enemy.position.x, targetY, enemy.position.y);
 
 		const dx = enemy.position.x - lastPosRef.current.x;

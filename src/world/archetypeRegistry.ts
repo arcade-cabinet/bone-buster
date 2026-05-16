@@ -62,7 +62,7 @@ export const ARCHETYPE_AXES: readonly ArchetypeAxis[] = [
 		axisName: "enemy mix",
 		module: "src/ai/enemyMix.ts",
 		axisDescription:
-			"BASE_MIX_WEIGHTS + WRAITH_BIAS (POL42) — per-archetype skeleton/wraith/imp distribution.",
+			"BASE_MIX_WEIGHTS + PHASER_BIAS (POL42) — per-archetype rattler/phaser/bouncer distribution.",
 	},
 	{
 		axisName: "prop pool",

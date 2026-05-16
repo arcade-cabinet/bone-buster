@@ -297,8 +297,8 @@ export const BONE_BUSTER_PALETTE = {
 	portalRose: "#f43f5e", // ExitPortal hue variant
 	// Enemy/event body-part + burst colors (DS.7 follow-up — promoted
 	// from raw hex in ParticleBurstField / BodyPartField / ShellEjectField).
-	enemyWraithSoul: SCALE.violet[400], // wraith hit burst + body parts
-	enemyImpMagma: SCALE.blood[400], // imp hit + player-hit burst
+	enemyWraithSoul: SCALE.violet[400], // phaser hit burst + body parts
+	enemyImpMagma: SCALE.blood[400], // bouncer hit + player-hit burst
 	actionPickupGlow: SCALE.amber[400], // pickup burst + explosion amber
 	shellBrass: SCALE.amber[600], // chaingun shell mesh body
 	shellBrassDeep: "#92400e", // chaingun shell mesh emissive (SCALE.amber[700])

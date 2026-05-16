@@ -14,7 +14,7 @@
  *   - Per pellet: cast ray, find nearest enemy in cone, prefer barrel
  *     if closer; on barrel hit → damage + burst → explode if HP<=0.
  *     On enemy hit → damage + burst → on death: mesh.visible=false,
- *     imp-explode burst, body-parts spawn, kill counter increment.
+ *     bouncer-explode burst, body-parts spawn, kill counter increment.
  *   - On any kill this shot: gameRef.current.onKill x N, death sfx,
  *     subtle boom if sound enabled.
  *   - Returns nothing; mutates refs and the wider event bus.
@@ -278,7 +278,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 				bestEnemy.dead = true;
 				killsThisShot += 1;
 				// POL10 — track boss kills in this shot so we can layer the
-				// boss-down sting on top of the standard skeleton-death cue.
+				// boss-down sting on top of the standard rattler-death cue.
 				if (bestEnemy.tier === "boss") {
 					bossKillsThisShot += 1;
 					// POL36 — boss-defeated banner. Per-enemy dispatch (not
@@ -289,7 +289,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 				}
 				const mesh = enemyMeshesRef.current.get(bestEnemy.id);
 				if (mesh) mesh.visible = false;
-				if (bestEnemy.kind === "imp") {
+				if (bestEnemy.kind === "bouncer") {
 					dispatch({
 						type: "burst",
 						x: bestEnemy.position.x,

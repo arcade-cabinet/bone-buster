@@ -39,6 +39,10 @@ describe("itch.io pack-category inference (IF1)", () => {
 		["Slasher Weapon Pack Release", "weapons"],
 		["Stylized Guns 3D Models PRO", "weapons"],
 		["Chibi Character Set", "characters"],
+		// D4 — title kept as upstream "Skeleton Knight" (the itch.io pack
+		// name); the inferCategory matcher in scripts/fetch-itch.mjs
+		// keys off external pack titles, not our internal EnemyKind
+		// (which is now "rattler").
 		["Skeleton Knight", "characters"],
 		["Tileset: Forest Edge", "2d"],
 		["PSX-RV-Camper-Vans", "psx"], // psx wins over vehicles

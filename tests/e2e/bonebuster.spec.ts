@@ -107,7 +107,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			);
 		});
 
-		// Wait up to 20s for HP to drop. Skeleton cooldown is 900ms so one hit
+		// Wait up to 20s for HP to drop. Rattler cooldown is 900ms so one hit
 		// should land within ~2s once LOS settles — but headed Chromium with
 		// postprocessing pegged can stretch that significantly.
 		await expect

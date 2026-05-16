@@ -62,20 +62,20 @@ export type EnemyModel = {
 };
 
 /**
- * Skeleton (Fantasy/PSX Dungeon Skeleton Warrior):
+ * Rattler (Fantasy/PSX Dungeon Rattler Warrior):
  *   anims: A-Pose, A-Pose.001, Death_1, Death_2, Hit_1, Hit_2,
  *          Idle_1, Idle_1_break, Idle_2, Roar,
  *          Sword_attack_1, Sword_attack_2, Sword_attack_3_combo,
  *          Unarmed_attack_1, Unarmmed_Attack_2, Walk_1, Walk_2
  *
- * Imp (Fantasy/Knight):
+ * Bouncer (Fantasy/Knight):
  *   anims: Attack_1, Attack_2, Attack_3, Combat_Bkwd_Step,
  *          Combat_Fwd_Step, Combat_Idle, Combat_Left_Step,
  *          Combat_Right_Step, Death_1, Death_2, Death_3,
  *          Hit_Back, Hit_Blocked, Hit_front, Idle_1, Idle_2,
  *          Run, T_Pose, Walk
  *
- * Wraith (Fantasy/Bat):
+ * Phaser (Fantasy/Bat):
  *   anims: Bat_attack, Bat_Death, Bat_Dodge, Bat_Hit,
  *          Bat_Idle, Bat_Sleep, Bat_Sleep_to_idle
  */
@@ -90,8 +90,11 @@ const NO_ANIMS: EnemyAnimSet = {
 	death: "",
 };
 
-const SKELETON_SKINS: EnemySkin[] = [
+const RATTLER_SKINS: EnemySkin[] = [
 	{
+		// D4 — runtime EnemyKind renamed to "rattler" but the on-disk
+		// GLB filename stays as "skeleton.glb" (no asset-pipeline rename
+		// in this slice; the GLB is the same upstream Quaternius pack).
 		url: A("/assets/models/enemies/skeleton.glb"),
 		heightTiles: 1.6,
 		yawOffsetRad: 0,
@@ -136,8 +139,9 @@ const SKELETON_SKINS: EnemySkin[] = [
 	},
 ];
 
-const IMP_SKINS: EnemySkin[] = [
+const BOUNCER_SKINS: EnemySkin[] = [
 	{
+		// D4 — runtime EnemyKind renamed to "bouncer"; disk GLB stays "imp.glb".
 		url: A("/assets/models/enemies/imp.glb"),
 		heightTiles: 1.7,
 		yawOffsetRad: 0,
@@ -206,8 +210,9 @@ const IMP_SKINS: EnemySkin[] = [
 	},
 ];
 
-const WRAITH_SKINS: EnemySkin[] = [
+const PHASER_SKINS: EnemySkin[] = [
 	{
+		// D4 — runtime EnemyKind renamed to "phaser"; disk GLB stays "wraith.glb".
 		url: A("/assets/models/enemies/wraith.glb"),
 		// Bat is tiny; render larger so it reads at gameplay scale.
 		heightTiles: 1.1,
@@ -222,7 +227,7 @@ const WRAITH_SKINS: EnemySkin[] = [
 		},
 	},
 	{
-		// Alien invader — tall thin silhouette, floats well as a wraith.
+		// Alien invader — tall thin silhouette, floats well as a phaser.
 		url: A("/assets/models/enemies/horror/alien.glb"),
 		heightTiles: 1.6,
 		yawOffsetRad: 0,
@@ -232,9 +237,9 @@ const WRAITH_SKINS: EnemySkin[] = [
 ];
 
 export const ENEMY_MODELS: Record<EnemyKind, EnemyModel> = {
-	skeleton: { ...SKELETON_SKINS[0], roster: SKELETON_SKINS },
-	imp: { ...IMP_SKINS[0], roster: IMP_SKINS },
-	wraith: { ...WRAITH_SKINS[0], roster: WRAITH_SKINS },
+	rattler: { ...RATTLER_SKINS[0], roster: RATTLER_SKINS },
+	bouncer: { ...BOUNCER_SKINS[0], roster: BOUNCER_SKINS },
+	phaser: { ...PHASER_SKINS[0], roster: PHASER_SKINS },
 };
 
 export type WeaponModel = {

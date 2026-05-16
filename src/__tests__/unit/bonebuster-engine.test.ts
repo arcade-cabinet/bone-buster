@@ -59,12 +59,12 @@ describe("objexoom engine — map generation", () => {
 		}
 	});
 
-	it("includes a mix of skeleton and wraith enemy kinds when there are enough enemies", () => {
+	it("includes a mix of rattler and phaser enemy kinds when there are enough enemies", () => {
 		const map = generateMap(SEED);
 		const kinds = new Set(map.enemySpawns.map((e) => e.kind));
-		expect(kinds.has("skeleton")).toBe(true);
+		expect(kinds.has("rattler")).toBe(true);
 		if (map.enemySpawns.length >= 3) {
-			expect(kinds.has("wraith")).toBe(true);
+			expect(kinds.has("phaser")).toBe(true);
 		}
 	});
 

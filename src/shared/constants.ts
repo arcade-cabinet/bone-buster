@@ -10,12 +10,12 @@ export const PLAYER_MOVE_SPEED = 5.5;
 export const PLAYER_TURN_SENSITIVITY = 0.002;
 
 // L1 — enemy HP stays on its own scale; damage values to the player
-// are rescaled to fit 0-9 (skeleton melee = 2 hp on Hurt Me Plenty).
-export const SKELETON_HP = 40;
-export const SKELETON_DAMAGE = 2;
-export const SKELETON_ATTACK_RANGE = TILE * 1.1;
-export const SKELETON_MOVE_SPEED = 1.8;
-export const SKELETON_ATTACK_COOLDOWN_MS = 900;
+// are rescaled to fit 0-9 (rattler melee = 2 hp on Hurt Me Plenty).
+export const RATTLER_HP = 40;
+export const RATTLER_DAMAGE = 2;
+export const RATTLER_ATTACK_RANGE = TILE * 1.1;
+export const RATTLER_MOVE_SPEED = 1.8;
+export const RATTLER_ATTACK_COOLDOWN_MS = 900;
 
 export const PISTOL_DAMAGE = 25;
 export const PISTOL_COOLDOWN_MS = 250;

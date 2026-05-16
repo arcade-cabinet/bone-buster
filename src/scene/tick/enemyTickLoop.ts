@@ -42,9 +42,9 @@ import {
 } from "@engine/engine";
 import { dispatch } from "@engine/events";
 import {
-	SKELETON_ATTACK_COOLDOWN_MS,
-	SKELETON_ATTACK_RANGE,
-	SKELETON_DAMAGE,
+	RATTLER_ATTACK_COOLDOWN_MS,
+	RATTLER_ATTACK_RANGE,
+	RATTLER_DAMAGE,
 } from "@shared/constants";
 import type { BoneBusterSettings } from "@store/settings";
 import type { GameRef } from "@views/Shell";
@@ -146,7 +146,7 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 		const distToPlayer = Math.hypot(dxp, dyp);
 		if (distToPlayer === 0) continue;
 
-		const wraith = enemy.kind === "wraith";
+		const phaser = enemy.kind === "phaser";
 		const lastSeen = lastSeenRef.current.get(enemy.id) ?? -Infinity;
 		const prevState = enemy.fsmState;
 		const out = tickEnemyFsm({
@@ -204,7 +204,7 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 					y: enemy.position.y + (moveTarget.y - enemy.position.y) * STAGGER_SPEED_FACTOR,
 				};
 			}
-			enemy.position = wraith
+			enemy.position = phaser
 				? moveTarget
 				: resolveCollisionAny(moveTarget, map, collisionCtxRef.current, 0.5);
 		}
@@ -216,13 +216,13 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 			enemy.lastShotAt = now;
 		}
 
-		// Skeleton melee — short-range contact damage (legacy path; skeletons
+		// Rattler melee — short-range contact damage (legacy path; skeletons
 		// don't shoot, so they need a close-quarters threat). Imps and wraiths
 		// rely on ranged.
 		if (
-			enemy.kind === "skeleton" &&
-			distToPlayer < SKELETON_ATTACK_RANGE &&
-			now - enemy.lastAttackAt > SKELETON_ATTACK_COOLDOWN_MS
+			enemy.kind === "rattler" &&
+			distToPlayer < RATTLER_ATTACK_RANGE &&
+			now - enemy.lastAttackAt > RATTLER_ATTACK_COOLDOWN_MS
 		) {
 			const sees = hasLineOfSightAny(
 				enemy.position,
@@ -232,7 +232,7 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 			);
 			if (sees) {
 				enemy.lastAttackAt = now;
-				gameRef.current.onHit(SKELETON_DAMAGE);
+				gameRef.current.onHit(RATTLER_DAMAGE);
 				playHurt();
 			}
 		}

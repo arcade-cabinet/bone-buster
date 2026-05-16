@@ -3,13 +3,13 @@
  * ObjexoomSectorMap shape that the engine consumes. Reference class
  * indices come from `all_objects` in game.js:
  *
- *   2 = Enemy (skeleton in our register)
- *   3 = FlyingEnemy (wraith)
+ *   2 = Enemy (rattler in our register)
+ *   3 = FlyingEnemy (phaser)
  *   4 = Health pickup
  *   5 = Goal (exit portal)
  *   6 = LockedDoor (we materialize the key on its position)
  *   7 = Flashlight (we treat as the key for now — same pickup mechanic)
- *   9 = ManyEnemies (squad spawn — emits one wraith + one skeleton at the position)
+ *   9 = ManyEnemies (squad spawn — emits one phaser + one rattler at the position)
  */
 
 import { decodeRefLevel, levelBounds, type RefLevelIndex } from "@ai/turtle";
@@ -85,10 +85,10 @@ export function loadRefLevel(
 				playerSpawn = pos;
 				break;
 			case 2:
-				enemySpawns.push({ kind: "skeleton", position: pos });
+				enemySpawns.push({ kind: "rattler", position: pos });
 				break;
 			case 3:
-				enemySpawns.push({ kind: "wraith", position: pos });
+				enemySpawns.push({ kind: "phaser", position: pos });
 				break;
 			case 4:
 				pickupSpawns.push({ kind: "health", position: pos });
@@ -110,7 +110,7 @@ export function loadRefLevel(
 				//   total = DIFFICULTY*5 + 5 + count*π | 0
 				// where DIFFICULTY is the 0-4 index, `count` is the seen-count
 				// of class-9 markers so far on this level, and `|0` floors.
-				// Mix is skeleton + wraith, alternating starting with skeleton,
+				// Mix is rattler + phaser, alternating starting with rattler,
 				// scattered in a small circle around the marker so they don't
 				// telefrag each other.
 				const total = (difficultyIdx * 5 + 5 + manyEnemiesCount * Math.PI) | 0;
@@ -123,7 +123,7 @@ export function loadRefLevel(
 						y: pos.y + Math.sin(theta) * r,
 					};
 					enemySpawns.push({
-						kind: i % 2 === 0 ? "skeleton" : "wraith",
+						kind: i % 2 === 0 ? "rattler" : "phaser",
 						position: spreadPos,
 					});
 				}
@@ -186,7 +186,7 @@ export function loadRefLevel(
 			const dy = c.y - playerSpawn.y;
 			if (Math.hypot(dx, dy) < 2) continue;
 			enemySpawns.push({
-				kind: enemySpawns.length % 3 === 2 ? "wraith" : "skeleton",
+				kind: enemySpawns.length % 3 === 2 ? "phaser" : "rattler",
 				position: c,
 			});
 			if (enemySpawns.length >= 4) break;
