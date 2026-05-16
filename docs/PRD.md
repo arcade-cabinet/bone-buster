@@ -444,6 +444,7 @@ into a lane only when an item up-prioritizes them.
 - Per-enemy-variant flavor names in kill-confirmation popup ("You busted a Plaguebeak (Stained-Cassock variant)").
 - Bespoke commissioned logo — current SVG re-letter with Bungee/Inline/Shade is good enough for ship.
 - Slasher melee weapons as distinct damage-profile variants (chainsaw: loud-attract; meat-hook: pull; axe: heavy-slow).
+- **A1 next-slice: migrate PropField + LargePropField + TrapField + NpcField + NatureField to InstancedGltfField.** Per-perf-reviewer finding #3 on overhaul-slice PR #62 — collectively ~150 fewer arena draw calls. Per-field architectural notes: LampField needs splitting (per-lamp pointLight children); NpcField NOT a candidate (per-instance animation mixer with phase offset, per D7-LIBRARY); NatureField needs Mega_Nature.glb split into per-plant GLBs first (per D7-COURTYARD). Re-open as its own perf slice with a use-case-enumeration pass.
 
 ---
 
