@@ -4,6 +4,10 @@ on:
   pull_request:
   push:
     branches: [main]
+    # T5 — tag pushes trigger CI so the `mobile-perf` job's tag
+    # gate (refs/tags/v*) actually has a chance to fire on
+    # release-please tags.
+    tags: ['v*']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
