@@ -1,9 +1,9 @@
 import { useAnimations, useGLTF } from "@react-three/drei";
+import { NPC_URL_LIST, NPC_URLS } from "@world/npcs";
+import type { NpcInstance } from "@world/scatter/npcScatter";
 import { useEffect, useMemo, useRef } from "react";
 import type { Group } from "three";
 import { SkeletonUtils } from "three-stdlib";
-import { NPC_URL_LIST, NPC_URLS } from "../../npcs";
-import type { NpcInstance } from "../../scatter/npcScatter";
 
 /**
  * COV14 step-2 — ambient NPC scatter renderer (library archetype).

@@ -5,8 +5,8 @@
  */
 
 import type { ObjexoomMap } from "@engine/engine";
+import { ARCHETYPE_NAMES, pickArchetype } from "@world/archetype";
 import { describe, expect, it } from "vitest";
-import { ARCHETYPE_NAMES, pickArchetype } from "../../archetype";
 import { applyArchetypeOverride } from "../../ObjexoomShell";
 
 function fakeMap(seed: number): ObjexoomMap {

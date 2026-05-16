@@ -8,8 +8,8 @@
 
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { ARCHETYPE_AXES, getAxisModules } from "@world/archetypeRegistry";
 import { describe, expect, it } from "vitest";
-import { ARCHETYPE_AXES, getAxisModules } from "../../archetypeRegistry";
 
 describe("A6 — archetype registry", () => {
 	it("ships at least 10 archetype axes (ARCHITECTURE audit §2.4 minimum)", () => {

@@ -29,29 +29,22 @@ import { addObjexoomListener, dispatch } from "@engine/events";
 import { useFrame, useThree } from "@react-three/fiber";
 import { PLAYER_HEIGHT, TILE } from "@shared/constants";
 import type { WeaponId } from "@shared/weapons";
-import type { RefObject } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import * as THREE from "three";
-import type * as Yuka from "yuka";
-import { pickArchetype } from "./archetype";
-import { type Barrel, resolveExplosion, spawnBarrels } from "./barrels";
-import { type LampInstance, spawnLamps } from "./lampScatter";
-import { getArchetypeLightPalette } from "./lighting/archetypePalette";
-import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
-import { PlayerController } from "./PlayerController";
-import { type DebrisInstance, spawnDebris } from "./scatter/debrisScatter";
-import { type DecalInstance, spawnDecals } from "./scatter/decalScatter";
-import { type FloorTileInstance, spawnFloorTiles } from "./scatter/floorTiles";
-import { type KitchenInstance, spawnKitchen } from "./scatter/kitchenScatter";
+import { pickArchetype } from "@world/archetype";
+import { type Barrel, resolveExplosion, spawnBarrels } from "@world/barrels";
+import { type LampInstance, spawnLamps } from "@world/lampScatter";
+import { type DebrisInstance, spawnDebris } from "@world/scatter/debrisScatter";
+import { type DecalInstance, spawnDecals } from "@world/scatter/decalScatter";
+import { type FloorTileInstance, spawnFloorTiles } from "@world/scatter/floorTiles";
+import { type KitchenInstance, spawnKitchen } from "@world/scatter/kitchenScatter";
 import {
 	blockerCirclesOf,
 	type LargePropInstance,
 	spawnLargeProps,
-} from "./scatter/largePropScatter";
-import { lootPickupSpawn } from "./scatter/lootScatter";
-import { type NatureInstance, spawnNature } from "./scatter/natureScatter";
-import { type NpcInstance, spawnNpcs } from "./scatter/npcScatter";
-import { type PropInstance, spawnProps } from "./scatter/propScatter";
+} from "@world/scatter/largePropScatter";
+import { lootPickupSpawn } from "@world/scatter/lootScatter";
+import { type NatureInstance, spawnNature } from "@world/scatter/natureScatter";
+import { type NpcInstance, spawnNpcs } from "@world/scatter/npcScatter";
+import { type PropInstance, spawnProps } from "@world/scatter/propScatter";
 import {
 	disarmSector,
 	spawnTraps,
@@ -62,7 +55,15 @@ import {
 	type TrapInstance,
 	trapAt,
 	triggerAt,
-} from "./scatter/trapScatter";
+} from "@world/scatter/trapScatter";
+import { type Secret, spawnSecrets } from "@world/secrets";
+import type { RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
+import type * as Yuka from "yuka";
+import { getArchetypeLightPalette } from "./lighting/archetypePalette";
+import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
+import { PlayerController } from "./PlayerController";
 import {
 	AdaptiveResolution,
 	BarrelMesh,
@@ -102,7 +103,6 @@ import {
 import { tickEnemyLoop } from "./scene/tick/enemyTickLoop";
 import { resolveFire } from "./scene/tick/fireResolution";
 import { createTimeScaleBus } from "./scene/tick/timeScaleBus";
-import { type Secret, spawnSecrets } from "./secrets";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 
 type SceneProps = Readonly<{

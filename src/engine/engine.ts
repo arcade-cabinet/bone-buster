@@ -1,6 +1,6 @@
 import { mulberry32 } from "@engine/prng";
 import { PISTOL_MAX_RANGE, PLAYER_RADIUS, SKELETON_HP, TILE } from "@shared/constants";
-import type { PropArchetype } from "../scatter/propPool";
+import type { PropArchetype } from "@world/scatter/propPool";
 
 export type Cell = "empty" | "wall" | "door" | "spawn" | "exit" | "key" | "lava";
 
@@ -105,7 +105,7 @@ export type ObjexoomSectorMap = ObjexoomMapBase &
 		 * can scatter several per level without re-shaping the map.
 		 * Grid maps don't carry secrets in this slice.
 		 */
-		secrets?: readonly import("../secrets").SecretSpec[];
+		secrets?: readonly import("@world/secrets").SecretSpec[];
 		/**
 		 * COV3 step-1 — when true, SectorMapGeometry OMITS the procedural
 		 * floor shape and FloorTileField renders modular asphalt tiles

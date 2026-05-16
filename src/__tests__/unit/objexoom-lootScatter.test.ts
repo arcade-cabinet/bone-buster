@@ -3,8 +3,8 @@
  */
 
 import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import { lootPickupSpawn, pickLootSpawn } from "@world/scatter/lootScatter";
 import { describe, expect, it } from "vitest";
-import { lootPickupSpawn, pickLootSpawn } from "../../scatter/lootScatter";
 
 function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 	return [

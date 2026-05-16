@@ -1,45 +1,43 @@
 /**
- * COV14 step-2 — ambient NPC scatter (library archetype only).
+ * COV11 step-2 — courtyard-archetype nature scatter.
  *
- * "Library is inhabited by quiet researchers" read. NPCs are pure
- * set-dressing — they have NO AI, NO line-of-sight, NO attack, and
- * cannot damage or be damaged by the player. They share asset format
- * with enemies (rigged chibis from the COV14 pool) but live on a
- * separate runtime track so the enemy-tick loop never sees them.
+ * The COV11 step-1 pool is a single aggregate GLB (`Mega_Nature.glb`)
+ * containing many bushes/trees/grass-tufts. Rather than extracting
+ * individual sub-meshes (fragile — depends on the GLB's internal
+ * node naming), this scatter places multiple SCALED-DOWN clones of
+ * the full aggregate. Each clone shows ~4-6 nature items from the
+ * aggregate, and varying yaw + scale per instance keeps them from
+ * reading as obvious copy-pastes.
  *
- * Why a sibling system instead of extending `EnemyKind`:
- * extending EnemyKind would ripple through enemyAi.ts, EnemyMesh.tsx,
- * sfx panForEnemy, the hit-pulse path, and the boss-pick logic. NPCs
- * are passive geometry; treating them as enemies would force every
- * AI consumer to skip them with `if (kind !== "npc")` guards.
+ * Fires only on courtyard-archetype maps (PRD §COV11 calls it out
+ * as the outdoor archetype). 4-8 instances per sector — denser
+ * than other scatters because the read is "outside, foliage
+ * everywhere," not "set-dressing."
  *
- * Fires only when `pickArchetype(map) === "library"`. 0-2 NPCs per
- * library sector. Each instance's NpcKind is picked deterministically
- * per `(sectorId, slotIndex)` so two NPCs in the same sector show
- * different chibis.
- *
- * PRNG seed: `map.seed XOR 0x4E504353` ("NPCS" tag) — diverges from
+ * PRNG seed: `map.seed XOR 0x4E415455` ("NATU" tag) — diverges from
  * every other scatter sequence.
  */
 
 import type { ObjexoomMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
-import { pickArchetype } from "../archetype";
-import { type NpcKind, pickNpcKind } from "../npcs";
+import { pickArchetype } from "@world/archetype";
 
-const PER_SECTOR_MIN = 0;
-const PER_SECTOR_MAX = 2;
-const SKIP_RADIUS = 4;
-const MIN_INSTANCE_SPACING = 2.5;
+const INSTANCES_PER_SECTOR_MIN = 4;
+const INSTANCES_PER_SECTOR_MAX = 8;
+const SKIP_RADIUS = 3;
+const MIN_INSTANCE_SPACING = 1.5;
 const MAX_SAMPLE_ATTEMPTS = 12;
 const ID_STRIDE = 100;
+/** Scale range applied to each clone so they don't read as identical. */
+const SCALE_MIN = 0.15;
+const SCALE_MAX = 0.32;
 
-export interface NpcInstance {
+export interface NatureInstance {
 	readonly id: number;
 	readonly position: Vec2;
 	readonly yaw: number;
-	readonly kind: NpcKind;
+	readonly scale: number;
 }
 
 function bboxOf(verts: readonly Vec2[]): {
@@ -69,21 +67,22 @@ function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean 
 }
 
 /**
- * Deterministic per-map NPC scatter. Returns [] on non-library archetypes
- * and on grid maps.
+ * Deterministic per-map nature scatter. Returns [] for non-courtyard
+ * archetypes and for grid maps. Same `map.seed` → byte-identical layout.
  */
-export function spawnNpcs(map: ObjexoomMap): NpcInstance[] {
+export function spawnNature(map: ObjexoomMap): NatureInstance[] {
 	if (map.kind !== "sectors") return [];
-	if (pickArchetype(map) !== "library") return [];
-	const out: NpcInstance[] = [];
-	const rng = mulberry32((map.seed >>> 0) ^ 0x4e504353);
+	if (pickArchetype(map) !== "courtyard") return [];
+	const out: NatureInstance[] = [];
+	const rng = mulberry32((map.seed >>> 0) ^ 0x4e415455);
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 
 	for (const sector of map.sectors) {
 		if (sector.vertices.length < 3) continue;
 		const { minX, maxX, minY, maxY } = bboxOf(sector.vertices);
-		const target = PER_SECTOR_MIN + Math.floor(rng() * (PER_SECTOR_MAX - PER_SECTOR_MIN + 1));
-		if (target === 0) continue;
+		const target =
+			INSTANCES_PER_SECTOR_MIN +
+			Math.floor(rng() * (INSTANCES_PER_SECTOR_MAX - INSTANCES_PER_SECTOR_MIN + 1));
 
 		const placed: Vec2[] = [];
 		for (let i = 0; i < target; i += 1) {
@@ -101,12 +100,11 @@ export function spawnNpcs(map: ObjexoomMap): NpcInstance[] {
 			}
 			if (accepted === null) continue;
 			placed.push(accepted);
-			const slotIdx = placed.length - 1;
 			out.push({
-				id: sector.id * ID_STRIDE + slotIdx,
+				id: sector.id * ID_STRIDE + placed.length - 1,
 				position: accepted,
 				yaw: rng() * Math.PI * 2,
-				kind: pickNpcKind((map.seed >>> 0) ^ ((sector.id + 1) * 7919 + slotIdx)),
+				scale: SCALE_MIN + rng() * (SCALE_MAX - SCALE_MIN),
 			});
 		}
 	}

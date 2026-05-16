@@ -11,10 +11,10 @@
  */
 
 import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
+import { loadRefLevel } from "@world/refLevel";
+import { POOLS, type PropArchetype } from "@world/scatter/propPool";
+import { PROPS_PER_SECTOR_MAX, spawnProps } from "@world/scatter/propScatter";
 import { describe, expect, it } from "vitest";
-import { loadRefLevel } from "../../refLevel";
-import { POOLS, type PropArchetype } from "../../scatter/propPool";
-import { PROPS_PER_SECTOR_MAX, spawnProps } from "../../scatter/propScatter";
 
 function makeGridMap(): ObjexoomGridMap {
 	return {

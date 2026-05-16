@@ -1,15 +1,15 @@
 import type { ObjexoomGridMap } from "@engine/engine";
 import { useGLTF, useTexture } from "@react-three/drei";
 import { TILE } from "@shared/constants";
+import { pickArchetype } from "@world/archetype";
+import { FLOOR_TEXTURES } from "@world/floorTextures";
+import type { PropArchetype } from "@world/scatter/propPool";
+import { ALL_WALL_URLS, pickWallUrl } from "@world/structures";
 import { Suspense, useMemo } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
-import { pickArchetype } from "../../archetype";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
-import { FLOOR_TEXTURES } from "../../floorTextures";
 import { getArchetypeLightPalette } from "../../lighting/archetypePalette";
-import type { PropArchetype } from "../../scatter/propPool";
-import { ALL_WALL_URLS, pickWallUrl } from "../../structures";
 import { WALL_HEIGHT } from "../constants";
 import { LockedDoor } from "./LockedDoor";
 

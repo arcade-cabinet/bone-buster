@@ -1,7 +1,7 @@
 import { useGLTF } from "@react-three/drei";
+import { pickVehicleUrl, VEHICLE_VARIANTS } from "@world/vehicles";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import { pickVehicleUrl, VEHICLE_VARIANTS } from "../../vehicles";
 
 /**
  * COV10 step-2 — courtyard-archetype RV wreck.

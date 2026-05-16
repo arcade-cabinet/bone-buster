@@ -2,8 +2,8 @@
  * COV9 step-1 — melee skin roster contract.
  */
 
+import { MELEE_SKIN_URLS, pickMeleeSkin } from "@world/meleeSkins";
 import { describe, expect, it } from "vitest";
-import { MELEE_SKIN_URLS, pickMeleeSkin } from "../../meleeSkins";
 
 describe("COV9 — melee skin roster", () => {
 	it("ships ≥4 skins (PRD: machete/katana/cleaver/bat baseline)", () => {

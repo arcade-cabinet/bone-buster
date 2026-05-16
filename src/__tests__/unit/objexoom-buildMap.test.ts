@@ -1,6 +1,6 @@
 import { isGridMap, isSectorMap } from "@engine/engine";
+import { buildMap } from "@world/buildMap";
 import { describe, expect, it } from "vitest";
-import { buildMap } from "@/buildMap";
 import type { LevelChoice } from "@/settings";
 
 describe("objexoom buildMap (A6)", () => {

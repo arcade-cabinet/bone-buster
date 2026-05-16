@@ -3,7 +3,6 @@
  */
 
 import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
-import { describe, expect, it } from "vitest";
 import {
 	disarmSector,
 	spawnTraps,
@@ -11,7 +10,8 @@ import {
 	TRIGGER_OVERLAP_RADIUS,
 	trapAt,
 	triggerAt,
-} from "../../scatter/trapScatter";
+} from "@world/scatter/trapScatter";
+import { describe, expect, it } from "vitest";
 
 function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 	return [

@@ -21,10 +21,10 @@
 import type { ObjexoomMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
-import { pickArchetype } from "../archetype";
-import type { LargePropDef } from "../largeProps";
-import { LARGE_PROPS, pickLargePropDef } from "../largeProps";
-import type { PropArchetype } from "./propPool";
+import { pickArchetype } from "@world/archetype";
+import type { LargePropDef } from "@world/largeProps";
+import { LARGE_PROPS, pickLargePropDef } from "@world/largeProps";
+import type { PropArchetype } from "@world/scatter/propPool";
 
 const SKIP_RADIUS = 5;
 const MIN_LARGE_SPACING = 2.5;

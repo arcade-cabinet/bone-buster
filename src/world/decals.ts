@@ -12,7 +12,7 @@
  */
 
 import { A } from "@assets/assetUrl";
-import type { PropArchetype } from "./scatter/propPool";
+import type { PropArchetype } from "@world/scatter/propPool";
 
 /** Graffiti decals — informal wall tags, sewer / corridor friendly. */
 export const DECAL_VARIANTS_GRAFFITI: readonly string[] = [

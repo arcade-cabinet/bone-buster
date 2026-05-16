@@ -16,8 +16,8 @@ import {
 	pickBossSpawnIndex,
 	spawnEnemies,
 } from "@engine/engine";
+import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
-import { loadRefLevel } from "../../refLevel";
 
 describe("E2 — boss spawn selection", () => {
 	it("pickBossSpawnIndex returns the spawn farthest from playerSpawn", () => {

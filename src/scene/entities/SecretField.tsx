@@ -1,10 +1,10 @@
 import { playDoor, playDoorTick } from "@audio/sfx";
 import { addObjexoomListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
+import type { Secret } from "@world/secrets";
 import { useEffect, useRef, useState } from "react";
 import type * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
-import type { Secret } from "../../secrets";
 
 /**
  * E6 — renders all secret switch decals + the wall blocks they lift.

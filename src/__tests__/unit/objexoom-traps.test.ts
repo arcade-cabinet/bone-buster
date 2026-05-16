@@ -2,8 +2,8 @@
  * COV8 step-1 — trap pool contract.
  */
 
+import { pickTrapDef, TRAPS, type TrapKind, trapsByKind } from "@world/traps";
 import { describe, expect, it } from "vitest";
-import { pickTrapDef, TRAPS, type TrapKind, trapsByKind } from "../../traps";
 
 describe("COV8 — trap pool", () => {
 	it("ships ≥6 traps (PRD acceptance: spike + blade + lever coverage)", () => {

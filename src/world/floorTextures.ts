@@ -26,7 +26,7 @@
  */
 
 import { A } from "@assets/assetUrl";
-import type { PropArchetype } from "./scatter/propPool";
+import type { PropArchetype } from "@world/scatter/propPool";
 
 export interface FloorTextureSet {
 	color: string;

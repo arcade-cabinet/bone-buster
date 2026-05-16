@@ -2,8 +2,8 @@
  * COV11 step-1 — nature pack contract.
  */
 
+import { NATURE_MEGA_PACK_URL } from "@world/nature";
 import { describe, expect, it } from "vitest";
-import { NATURE_MEGA_PACK_URL } from "../../nature";
 
 describe("COV11 — nature mega pack", () => {
 	it("URL resolves to /assets/models/props/nature/Mega_Nature.glb", () => {

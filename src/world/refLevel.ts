@@ -14,8 +14,8 @@
 
 import { decodeRefLevel, levelBounds, type RefLevelIndex } from "@ai/turtle";
 import type { EnemySpawn, MapSector, ObjexoomSectorMap, PickupSpawn, Vec2 } from "@engine/engine";
-import { ARCHETYPE_NAMES } from "./archetype";
-import type { Difficulty } from "./settings";
+import { ARCHETYPE_NAMES } from "@world/archetype";
+import type { Difficulty } from "../settings";
 
 const REF_TO_RUNTIME_SCALE = 0.25;
 
@@ -208,7 +208,7 @@ export function loadRefLevel(
 	const cy = (scaledBounds.minY + scaledBounds.maxY) * 0.5;
 	const width = scaledBounds.maxX - scaledBounds.minX;
 	const switchOffset = Math.min(2.5, width * 0.18);
-	const secrets: import("./secrets").SecretSpec[] = [
+	const secrets: import("@world/secrets").SecretSpec[] = [
 		{
 			id: index * 100 + 1,
 			switchPosition: { x: cx + switchOffset, y: cy },

@@ -14,9 +14,9 @@
  */
 
 import type { MapSector, ObjexoomMap, Vec2 } from "@engine/engine";
-import { pickArchetype } from "../archetype";
-import { pickDecalUrlByArchetype } from "../decals";
-import type { PropArchetype } from "./propPool";
+import { pickArchetype } from "@world/archetype";
+import { pickDecalUrlByArchetype } from "@world/decals";
+import type { PropArchetype } from "@world/scatter/propPool";
 
 const WALL_OFFSET = 0.05;
 

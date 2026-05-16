@@ -3,9 +3,9 @@
  */
 
 import { generateMap } from "@engine/engine";
+import { ARCHETYPE_NAMES } from "@world/archetype";
+import { ARCHETYPE_MAP_SHAPES, getArchetypeMapShape } from "@world/archetypeMapShape";
 import { describe, expect, it } from "vitest";
-import { ARCHETYPE_NAMES } from "../../archetype";
-import { ARCHETYPE_MAP_SHAPES, getArchetypeMapShape } from "../../archetypeMapShape";
 
 describe("E13 step-5 — archetype map shapes", () => {
 	it("ships an entry for every archetype", () => {

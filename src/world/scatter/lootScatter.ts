@@ -18,7 +18,7 @@
 
 import type { ObjexoomMap, PickupSpawn, Vec2 } from "@engine/engine";
 import { isSectorMap } from "@engine/engine";
-import { type LootKind, pickLootKind } from "../loot";
+import { type LootKind, pickLootKind } from "@world/loot";
 
 export interface LootSpawn {
 	readonly position: Vec2;

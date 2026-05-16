@@ -2,8 +2,8 @@
  * COV13 step-1 — kitchen prop pool contract.
  */
 
+import { KITCHEN_PROPS, pickKitchenProp } from "@world/kitchen";
 import { describe, expect, it } from "vitest";
-import { KITCHEN_PROPS, pickKitchenProp } from "../../kitchen";
 
 describe("COV13 — kitchen prop pool", () => {
 	it("ships ≥6 kitchen props (enough for a sector-scatter pool)", () => {

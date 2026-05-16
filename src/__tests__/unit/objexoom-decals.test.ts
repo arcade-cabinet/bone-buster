@@ -8,13 +8,13 @@
  *  - Graffiti + poster pools are disjoint and combine into ALL.
  */
 
-import { describe, expect, it } from "vitest";
 import {
 	DECAL_VARIANTS_ALL,
 	DECAL_VARIANTS_GRAFFITI,
 	DECAL_VARIANTS_POSTER,
 	pickDecalUrl,
-} from "../../decals";
+} from "@world/decals";
+import { describe, expect, it } from "vitest";
 
 describe("COV6 — decal pool", () => {
 	it("ships ≥12 decals total (4 graffiti + 8 poster from the pack)", () => {

@@ -11,9 +11,9 @@
 
 import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
+import { loadRefLevel } from "@world/refLevel";
+import { FLOOR_TILE_VARIANTS, floorTileUrlFor, spawnFloorTiles } from "@world/scatter/floorTiles";
 import { describe, expect, it } from "vitest";
-import { loadRefLevel } from "../../refLevel";
-import { FLOOR_TILE_VARIANTS, floorTileUrlFor, spawnFloorTiles } from "../../scatter/floorTiles";
 
 function makeGridMap(): ObjexoomGridMap {
 	return {

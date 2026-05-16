@@ -9,8 +9,8 @@ import {
 	yukaStepToward,
 	yukaWanderTarget,
 } from "@ai/yukaIntegration";
+import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
-import { loadRefLevel } from "@/refLevel";
 
 describe("yukaStepToward (Y1/Y3)", () => {
 	it("returns origin unchanged when from === to", () => {

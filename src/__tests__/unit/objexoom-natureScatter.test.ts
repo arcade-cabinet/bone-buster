@@ -3,9 +3,9 @@
  */
 
 import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import { ARCHETYPE_NAMES } from "@world/archetype";
+import { spawnNature } from "@world/scatter/natureScatter";
 import { describe, expect, it } from "vitest";
-import { ARCHETYPE_NAMES } from "../../archetype";
-import { spawnNature } from "../../scatter/natureScatter";
 
 function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 	return [

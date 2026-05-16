@@ -2,8 +2,8 @@
  * COV14 step-1 — NPC chibi pool contract.
  */
 
+import { NPC_URL_LIST, NPC_URLS, type NpcKind, pickNpcKind } from "@world/npcs";
 import { describe, expect, it } from "vitest";
-import { NPC_URL_LIST, NPC_URLS, type NpcKind, pickNpcKind } from "../../npcs";
 
 describe("COV14 — NPC chibi pool", () => {
 	it("ships ≥6 NPC kinds", () => {

@@ -1,10 +1,10 @@
 import { addObjexoomListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
+import type { PropArchetype } from "@world/scatter/propPool";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import { getArchetypeLightPalette } from "../../lighting/archetypePalette";
-import type { PropArchetype } from "../../scatter/propPool";
 
 const COLOR_WRAITH = new THREE.Color(OBJEXOOM_PALETTE.enemyWraithSoul).getHex();
 const COLOR_IMP = new THREE.Color(OBJEXOOM_PALETTE.enemyImpMagma).getHex();

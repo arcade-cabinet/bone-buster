@@ -3,10 +3,10 @@
  */
 
 import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import { ARCHETYPE_NAMES } from "@world/archetype";
+import { KITCHEN_PROPS } from "@world/kitchen";
+import { spawnKitchen } from "@world/scatter/kitchenScatter";
 import { describe, expect, it } from "vitest";
-import { ARCHETYPE_NAMES } from "../../archetype";
-import { KITCHEN_PROPS } from "../../kitchen";
-import { spawnKitchen } from "../../scatter/kitchenScatter";
 
 function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 	return [

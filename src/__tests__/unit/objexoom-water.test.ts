@@ -12,8 +12,8 @@
 
 import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
 import { isInWaterAt, polygonContains, WATER_SPEED_MULTIPLIER } from "@engine/engine";
+import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
-import { loadRefLevel } from "../../refLevel";
 
 function makeGridMap(): ObjexoomGridMap {
 	return {

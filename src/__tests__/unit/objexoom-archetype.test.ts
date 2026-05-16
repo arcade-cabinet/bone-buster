@@ -9,9 +9,9 @@
  *  - `pickArchetype(map)` returns `map.archetype`
  */
 
+import { ARCHETYPE_NAMES, pickArchetype } from "@world/archetype";
+import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
-import { ARCHETYPE_NAMES, pickArchetype } from "../../archetype";
-import { loadRefLevel } from "../../refLevel";
 
 describe("E13 — archetype pick", () => {
 	it("ships exactly 5 archetypes in canonical order", () => {

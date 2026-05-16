@@ -20,8 +20,8 @@
 
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { LOOT_BONUSES } from "@world/loot";
 import { describe, expect, it } from "vitest";
-import { LOOT_BONUSES } from "../../loot";
 
 describe("T1 — POL1 score wiring", () => {
 	it("LOOT_BONUSES.treasureScore is exactly +50", () => {

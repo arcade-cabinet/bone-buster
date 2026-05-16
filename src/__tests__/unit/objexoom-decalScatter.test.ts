@@ -2,10 +2,10 @@
  * COV6 step-2 — wall-face decal scatter contract.
  */
 
+import { DECAL_VARIANTS_ALL } from "@world/decals";
+import { loadRefLevel } from "@world/refLevel";
+import { spawnDecals } from "@world/scatter/decalScatter";
 import { describe, expect, it } from "vitest";
-import { DECAL_VARIANTS_ALL } from "../../decals";
-import { loadRefLevel } from "../../refLevel";
-import { spawnDecals } from "../../scatter/decalScatter";
 
 describe("COV6 step-2 — wall-face decal scatter", () => {
 	it("scatters decals on a multi-sector ref level", () => {

@@ -3,10 +3,10 @@
  */
 
 import type { ObjexoomSectorMap, Vec2 } from "@engine/engine";
+import { LARGE_PROPS } from "@world/largeProps";
+import { loadRefLevel } from "@world/refLevel";
+import { blockerCirclesOf, spawnLargeProps } from "@world/scatter/largePropScatter";
 import { describe, expect, it } from "vitest";
-import { LARGE_PROPS } from "../../largeProps";
-import { loadRefLevel } from "../../refLevel";
-import { blockerCirclesOf, spawnLargeProps } from "../../scatter/largePropScatter";
 
 function reseed(map: ObjexoomSectorMap, seed: number): ObjexoomSectorMap {
 	return { ...map, seed };

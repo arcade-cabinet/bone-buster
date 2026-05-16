@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
+import { NATURE_MEGA_PACK_URL } from "@world/nature";
+import type { NatureInstance } from "@world/scatter/natureScatter";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import { NATURE_MEGA_PACK_URL } from "../../nature";
-import type { NatureInstance } from "../../scatter/natureScatter";
 
 /**
  * COV11 step-2 — courtyard-archetype nature scatter renderer.

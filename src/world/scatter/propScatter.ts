@@ -27,8 +27,8 @@
 import type { ObjexoomMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
-import type { PropArchetype, PropDef } from "./propPool";
-import { POOLS } from "./propPool";
+import type { PropArchetype, PropDef } from "@world/scatter/propPool";
+import { POOLS } from "@world/scatter/propPool";
 
 const SKIP_RADIUS = 4;
 const MIN_PROP_SPACING = 1.4;

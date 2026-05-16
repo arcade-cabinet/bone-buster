@@ -9,8 +9,8 @@
  *  - Negative seeds handled safely.
  */
 
+import { DOOR_VARIANTS, pickDoorUrl } from "@world/doors";
 import { describe, expect, it } from "vitest";
-import { DOOR_VARIANTS, pickDoorUrl } from "../../doors";
 
 describe("COV7 — door variant pool", () => {
 	it("ships ≥3 door variants (PRD acceptance criterion)", () => {

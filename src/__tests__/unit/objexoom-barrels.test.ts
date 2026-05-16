@@ -12,7 +12,6 @@
  */
 
 import type { ObjexoomMap } from "@engine/engine";
-import { describe, expect, it } from "vitest";
 import {
 	BARREL_AOE_DAMAGE,
 	BARREL_AOE_RADIUS,
@@ -22,7 +21,8 @@ import {
 	pickRayBarrel,
 	resolveExplosion,
 	spawnBarrels,
-} from "../../barrels";
+} from "@world/barrels";
+import { describe, expect, it } from "vitest";
 
 function makeMap(pickupCount: number, seed = 1): ObjexoomMap {
 	return {

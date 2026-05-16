@@ -26,8 +26,8 @@ import { playFlashlightClick, playHitSting, playPickup, playPlayerDeath } from "
 import type { PickupKind } from "@engine/engine";
 import { dispatch } from "@engine/events";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
+import { LOOT_BONUSES, pickLootKind } from "@world/loot";
 import { useRef } from "react";
-import { LOOT_BONUSES, pickLootKind } from "../../loot";
 import type { FadeKind, GameRef, GameState } from "../../ObjexoomShell";
 import { GOING_BACK_BUDGET_MS } from "../../ObjexoomShell";
 import { advanceLevel, runStatsReducer } from "../../runStats";

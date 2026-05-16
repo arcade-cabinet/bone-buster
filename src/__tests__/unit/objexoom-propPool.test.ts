@@ -9,8 +9,8 @@
  *  - Blocking flag is a boolean per entry.
  */
 
+import { ALL_PROPS, POOLS, PROP_ARCHETYPES, PROP_CATALOGUE } from "@world/scatter/propPool";
 import { describe, expect, it } from "vitest";
-import { ALL_PROPS, POOLS, PROP_ARCHETYPES, PROP_CATALOGUE } from "../../scatter/propPool";
 
 describe("COV4 — prop catalogue", () => {
 	it("ships exactly 30 unique props (≥10 satisfies acceptance; pinned to catch accidental deletions)", () => {

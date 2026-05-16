@@ -20,7 +20,7 @@
  */
 
 import { A } from "@assets/assetUrl";
-import type { PropArchetype } from "./scatter/propPool";
+import type { PropArchetype } from "@world/scatter/propPool";
 
 /**
  * Corridor pool — frozen step-2 contract. **Do not reorder.**

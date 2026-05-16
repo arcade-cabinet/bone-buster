@@ -9,7 +9,6 @@
  */
 
 import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
-import { describe, expect, it } from "vitest";
 import {
 	countLampVariants,
 	LAMP_VARIANTS_OFF,
@@ -17,8 +16,9 @@ import {
 	lampUrlFor,
 	MAX_LIT_LAMPS,
 	spawnLamps,
-} from "../../lampScatter";
-import { loadRefLevel } from "../../refLevel";
+} from "@world/lampScatter";
+import { loadRefLevel } from "@world/refLevel";
+import { describe, expect, it } from "vitest";
 
 function makeGridMap(): ObjexoomGridMap {
 	return {

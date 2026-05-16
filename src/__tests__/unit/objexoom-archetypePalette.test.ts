@@ -2,8 +2,8 @@
  * E13 step-2 — per-archetype lighting palette contract.
  */
 
+import { ARCHETYPE_NAMES } from "@world/archetype";
 import { describe, expect, it } from "vitest";
-import { ARCHETYPE_NAMES } from "../../archetype";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import {
 	ARCHETYPE_LIGHT_PALETTES,

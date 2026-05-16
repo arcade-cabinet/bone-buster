@@ -1,8 +1,8 @@
 import { generateMap, type ObjexoomMap } from "@engine/engine";
-import { ARCHETYPE_NAMES } from "./archetype";
-import { getArchetypeMapShape } from "./archetypeMapShape";
-import { loadRefLevel } from "./refLevel";
-import type { Difficulty, LevelChoice } from "./settings";
+import { ARCHETYPE_NAMES } from "@world/archetype";
+import { getArchetypeMapShape } from "@world/archetypeMapShape";
+import { loadRefLevel } from "@world/refLevel";
+import type { Difficulty, LevelChoice } from "../settings";
 
 /**
  * Builds the active map from settings. "procedural" yields a seeded

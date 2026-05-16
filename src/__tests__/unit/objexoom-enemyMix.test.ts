@@ -4,8 +4,8 @@
 
 import { ENEMY_MIX_WEIGHTS, remapEnemyMix } from "@ai/enemyMix";
 import type { EnemyKind, EnemySpawn } from "@engine/engine";
+import { ARCHETYPE_NAMES } from "@world/archetype";
 import { describe, expect, it } from "vitest";
-import { ARCHETYPE_NAMES } from "../../archetype";
 
 function makeSpawns(count: number, kind: EnemyKind = "skeleton"): EnemySpawn[] {
 	return Array.from({ length: count }, (_, i) => ({

@@ -2,8 +2,8 @@
  * COV2 step-1 — large-prop variant pool contract.
  */
 
+import { LARGE_PROPS, pickLargePropDef } from "@world/largeProps";
 import { describe, expect, it } from "vitest";
-import { LARGE_PROPS, pickLargePropDef } from "../../largeProps";
 
 describe("COV2 — large-prop pool", () => {
 	it("ships ≥6 large-prop variants (PRD acceptance)", () => {

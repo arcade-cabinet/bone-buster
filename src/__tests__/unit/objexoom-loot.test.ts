@@ -2,8 +2,8 @@
  * COV12 step-1 — fantasy loot pool contract.
  */
 
+import { LOOT_URL_LIST, LOOT_URLS, type LootKind, pickLootKind } from "@world/loot";
 import { describe, expect, it } from "vitest";
-import { LOOT_URL_LIST, LOOT_URLS, type LootKind, pickLootKind } from "../../loot";
 
 describe("COV12 — fantasy loot pool", () => {
 	it("ships 3 loot kinds (bottles/books/treasure)", () => {

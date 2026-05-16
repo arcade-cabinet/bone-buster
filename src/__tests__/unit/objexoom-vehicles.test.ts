@@ -2,8 +2,8 @@
  * COV10 step-1 — vehicle wreck pool contract.
  */
 
+import { pickVehicleUrl, VEHICLE_VARIANTS } from "@world/vehicles";
 import { describe, expect, it } from "vitest";
-import { pickVehicleUrl, VEHICLE_VARIANTS } from "../../vehicles";
 
 describe("COV10 — vehicle wreck pool", () => {
 	it("ships ≥1 vehicle variant (PRD: 'at least one wrecked-vehicle prop')", () => {

@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
+import { KITCHEN_PROPS } from "@world/kitchen";
+import type { KitchenInstance } from "@world/scatter/kitchenScatter";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import { KITCHEN_PROPS } from "../../kitchen";
-import type { KitchenInstance } from "../../scatter/kitchenScatter";
 
 /**
  * COV13 step-2 — kitchen-prop scatter renderer (library archetype only).

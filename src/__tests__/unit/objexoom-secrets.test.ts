@@ -7,9 +7,9 @@
  * contract plus the triggered-becomes-inert invariant.
  */
 
+import { loadRefLevel } from "@world/refLevel";
+import { pickRaySwitch, type Secret, type SecretSpec, spawnSecrets } from "@world/secrets";
 import { describe, expect, it } from "vitest";
-import { loadRefLevel } from "../../refLevel";
-import { pickRaySwitch, type Secret, type SecretSpec, spawnSecrets } from "../../secrets";
 
 function makeSecret(over: Partial<SecretSpec> = {}): Secret {
 	const spec: SecretSpec = {

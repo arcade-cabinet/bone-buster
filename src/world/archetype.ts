@@ -10,7 +10,7 @@
  */
 
 import type { ObjexoomMap } from "@engine/engine";
-import type { PropArchetype } from "./scatter/propPool";
+import type { PropArchetype } from "@world/scatter/propPool";
 
 /**
  * Canonical archetype order. The index of an archetype here IS its

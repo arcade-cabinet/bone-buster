@@ -3,9 +3,9 @@
  */
 
 import { polygonContains } from "@engine/engine";
+import { loadRefLevel } from "@world/refLevel";
+import { DEBRIS_VARIANTS, spawnDebris } from "@world/scatter/debrisScatter";
 import { describe, expect, it } from "vitest";
-import { loadRefLevel } from "../../refLevel";
-import { DEBRIS_VARIANTS, spawnDebris } from "../../scatter/debrisScatter";
 
 describe("COV5 step-2 — sector-body debris scatter", () => {
 	it("scatters debris on a multi-sector ref level", () => {

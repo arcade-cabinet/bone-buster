@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
+import { LARGE_PROPS } from "@world/largeProps";
+import type { LargePropInstance } from "@world/scatter/largePropScatter";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import { LARGE_PROPS } from "../../largeProps";
-import type { LargePropInstance } from "../../scatter/largePropScatter";
 
 /**
  * COV2 step-2 — anchor-piece scatter renderer.

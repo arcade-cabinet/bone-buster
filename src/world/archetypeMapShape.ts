@@ -22,7 +22,7 @@
  * `generateMap`, so their shape is untouched.
  */
 
-import type { PropArchetype } from "./scatter/propPool";
+import type { PropArchetype } from "@world/scatter/propPool";
 
 export interface ArchetypeMapShape {
 	readonly minRoom: number;

@@ -1,7 +1,7 @@
 import type { RefLevelIndex } from "@ai/turtle";
 import { getSectorAtPoint, isSectorMap } from "@engine/engine";
+import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
-import { loadRefLevel } from "@/refLevel";
 
 describe("objexoom refLevel loader", () => {
 	for (let i = 0; i < 5; i += 1) {

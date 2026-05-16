@@ -2,9 +2,9 @@
  * COV3 step-2 + step-4 — modular wall pool contract.
  */
 
+import { ARCHETYPE_NAMES } from "@world/archetype";
+import { ALL_WALL_URLS, pickWallUrl, WALL_VARIANTS, WALLS_BY_ARCHETYPE } from "@world/structures";
 import { describe, expect, it } from "vitest";
-import { ARCHETYPE_NAMES } from "../../archetype";
-import { ALL_WALL_URLS, pickWallUrl, WALL_VARIANTS, WALLS_BY_ARCHETYPE } from "../../structures";
 
 describe("COV3 step-2 — wall variant pool (corridor / legacy export)", () => {
 	it("ships at least 4 wall variants", () => {

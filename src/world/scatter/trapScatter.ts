@@ -21,9 +21,9 @@
 import type { ObjexoomMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
-import { pickArchetype } from "../archetype";
-import { TRAPS, type TrapDef, type TrapKind } from "../traps";
-import type { PropArchetype } from "./propPool";
+import { pickArchetype } from "@world/archetype";
+import type { PropArchetype } from "@world/scatter/propPool";
+import { TRAPS, type TrapDef, type TrapKind } from "@world/traps";
 
 const SKIP_RADIUS = 3;
 const MIN_TRAP_SPACING = 2.0;

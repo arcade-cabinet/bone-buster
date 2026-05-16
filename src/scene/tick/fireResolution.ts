@@ -35,10 +35,10 @@ import { castRayAny, type Enemy, type ObjexoomMap } from "@engine/engine";
 import { dispatch } from "@engine/events";
 import { TILE } from "@shared/constants";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
+import { type Barrel, pickRayBarrel } from "@world/barrels";
+import { pickRaySwitch, type Secret } from "@world/secrets";
 import * as THREE from "three";
-import { type Barrel, pickRayBarrel } from "../../barrels";
 import type { GameRef, WeaponState } from "../../ObjexoomShell";
-import { pickRaySwitch, type Secret } from "../../secrets";
 import type { ObjexoomSettings } from "../../settings";
 
 // QW1 — module-scope scratch vectors. Reused across every shot to

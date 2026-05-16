@@ -22,7 +22,7 @@
  *    corridor is locked; new archetypes can take any shape.
  */
 
-import type { PropArchetype } from "./scatter/propPool";
+import type { PropArchetype } from "@world/scatter/propPool";
 
 /**
  * One entry per known archetype axis. `axisName` is the conceptual
@@ -44,7 +44,7 @@ export type ArchetypeAxis = Readonly<{
 export const ARCHETYPE_AXES: readonly ArchetypeAxis[] = [
 	{
 		axisName: "map shape",
-		module: "src/archetypeMapShape.ts",
+		module: "src/world/archetypeMapShape.ts",
 		axisDescription:
 			"Sector density + size range per archetype — drives generateMap's pre-build shape.",
 	},
@@ -55,7 +55,7 @@ export const ARCHETYPE_AXES: readonly ArchetypeAxis[] = [
 	},
 	{
 		axisName: "structures (wall pool)",
-		module: "src/structures.ts",
+		module: "src/world/structures.ts",
 		axisDescription: "WALLS_BY_ARCHETYPE — modular wall GLB pool used by SectorMapGeometry.",
 	},
 	{
@@ -66,59 +66,59 @@ export const ARCHETYPE_AXES: readonly ArchetypeAxis[] = [
 	},
 	{
 		axisName: "prop pool",
-		module: "src/scatter/propPool.ts",
+		module: "src/world/scatter/propPool.ts",
 		axisDescription: "POOLS — per-archetype prop GLB catalog consumed by propScatter.",
 	},
 	{
 		axisName: "prop density",
-		module: "src/scatter/propScatter.ts",
+		module: "src/world/scatter/propScatter.ts",
 		axisDescription: "DENSITY_BY_ARCHETYPE — [min, max] props/sector per archetype.",
 	},
 	{
 		axisName: "decal scatter density",
-		module: "src/scatter/decalScatter.ts",
+		module: "src/world/scatter/decalScatter.ts",
 		axisDescription: "Density multiplier per archetype for floor decals.",
 	},
 	{
 		axisName: "decals variant pool",
-		module: "src/decals.ts",
+		module: "src/world/decals.ts",
 		axisDescription: "DECALS_BY_ARCHETYPE — decal-URL pool per archetype.",
 	},
 	{
 		axisName: "floor textures",
-		module: "src/floorTextures.ts",
+		module: "src/world/floorTextures.ts",
 		axisDescription:
 			"FLOOR_TEXTURES — PBR texture set per archetype (partial — corridor falls through to default).",
 	},
 	{
 		axisName: "debris scatter density",
-		module: "src/scatter/debrisScatter.ts",
+		module: "src/world/scatter/debrisScatter.ts",
 		axisDescription: "[min, max] debris instances/sector per archetype.",
 	},
 	{
 		axisName: "large-prop scatter density",
-		module: "src/scatter/largePropScatter.ts",
+		module: "src/world/scatter/largePropScatter.ts",
 		axisDescription: "[min, max] large props/sector per archetype.",
 	},
 	{
 		axisName: "trap scatter density",
-		module: "src/scatter/trapScatter.ts",
+		module: "src/world/scatter/trapScatter.ts",
 		axisDescription: "[min, max] traps/sector per archetype.",
 	},
 	{
 		axisName: "kitchen scatter gate",
-		module: "src/scatter/kitchenScatter.ts",
+		module: "src/world/scatter/kitchenScatter.ts",
 		axisDescription:
 			"Library-only opt-in (other archetypes return []); KITCHEN_SECTOR_PROBABILITY constant.",
 	},
 	{
 		axisName: "nature scatter gate",
-		module: "src/scatter/natureScatter.ts",
+		module: "src/world/scatter/natureScatter.ts",
 		axisDescription: "Courtyard-only opt-in; [min, max] mega-pack natures/sector.",
 	},
 	{
 		axisName: "npc scatter gate",
-		module: "src/scatter/npcScatter.ts",
+		module: "src/world/scatter/npcScatter.ts",
 		axisDescription: "Library-only opt-in; [min, max] static NPCs/sector.",
 	},
 	{

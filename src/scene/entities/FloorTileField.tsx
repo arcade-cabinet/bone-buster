@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
+import type { FloorTileInstance } from "@world/scatter/floorTiles";
+import { FLOOR_TILE_VARIANTS, floorTileUrlFor } from "@world/scatter/floorTiles";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import type { FloorTileInstance } from "../../scatter/floorTiles";
-import { FLOOR_TILE_VARIANTS, floorTileUrlFor } from "../../scatter/floorTiles";
 
 /**
  * COV3 step-1 — renders the per-map modular asphalt floor tile

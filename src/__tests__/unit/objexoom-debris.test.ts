@@ -2,8 +2,8 @@
  * COV5 step-1 — debris variant pool contract.
  */
 
+import { DEBRIS_VARIANTS, pickDebrisUrl } from "@world/debris";
 import { describe, expect, it } from "vitest";
-import { DEBRIS_VARIANTS, pickDebrisUrl } from "../../debris";
 
 describe("COV5 — debris pool", () => {
 	it("ships ≥5 debris variants (PRD acceptance)", () => {

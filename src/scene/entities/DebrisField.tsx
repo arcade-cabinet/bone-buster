@@ -1,8 +1,8 @@
 import { useGLTF } from "@react-three/drei";
+import { DEBRIS_VARIANTS } from "@world/debris";
+import type { DebrisInstance } from "@world/scatter/debrisScatter";
 import { useMemo } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import { DEBRIS_VARIANTS } from "../../debris";
-import type { DebrisInstance } from "../../scatter/debrisScatter";
 
 /**
  * COV5 step-2 — renders the per-map debris scatter. One cloned mesh

@@ -18,8 +18,8 @@
 import type { ObjexoomMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
-import { pickArchetype } from "../archetype";
-import { KITCHEN_PROPS } from "../kitchen";
+import { pickArchetype } from "@world/archetype";
+import { KITCHEN_PROPS } from "@world/kitchen";
 
 const KITCHEN_SECTOR_PROBABILITY = 0.2;
 const PROPS_PER_SECTOR_MIN = 1;
