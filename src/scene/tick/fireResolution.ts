@@ -33,6 +33,7 @@ import {
 import type { CollisionContext } from "@engine/engine";
 import { type BoneBusterMap, castRayAny, type Enemy } from "@engine/engine";
 import { dispatch } from "@engine/events";
+import { applyVulnerabilityMultiplier } from "@engine/vulnerability";
 import { TILE } from "@shared/constants";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import type { BoneBusterSettings } from "@store/settings";
@@ -245,7 +246,11 @@ export function resolveFire(ctx: FireResolutionContext): void {
 			continue;
 		}
 		if (bestEnemy) {
-			bestEnemy.hp -= spec.damage;
+			// D6 — apply per-kind vulnerability multiplier. Matching
+			// (kind, weapon) yields 1.5×; every other combo yields 1.0×
+			// so the base spec.damage is the floor.
+			const vulnMultiplier = applyVulnerabilityMultiplier(bestEnemy.kind, weapon);
+			bestEnemy.hp -= spec.damage * vulnMultiplier;
 			// POL19 — non-killing-hit stagger window. Only set when the
 			// hit doesn't kill (the kill path uses POL12 hitstop + body-
 			// parts spawn instead — a dead enemy doesn't flinch). Bosses
