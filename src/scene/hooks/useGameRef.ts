@@ -46,6 +46,11 @@ const AMMO_INCREMENT: Record<
 	health: "health",
 	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
 	shotgunAmmo: { weapon: "shotgun", amount: WEAPONS.shotgun.pickupAmmo },
+	// D2 — flamethrowerAmmo on-collect credits the weapon's pickupAmmo
+	// to the flamethrower slot. If the player doesn't own the flamethrower
+	// yet, the ammo accumulates so picking up the weapon later starts
+	// hot — same behavior as chaingun + shotgun ammo pre-pickup.
+	flamethrowerAmmo: { weapon: "flamethrower", amount: WEAPONS.flamethrower.pickupAmmo },
 	flashlight: "flashlight",
 	loot: "loot",
 };

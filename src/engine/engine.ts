@@ -22,6 +22,11 @@ export type PickupKind =
 	| "health"
 	| "chaingunAmmo"
 	| "shotgunAmmo"
+	// D2 — flamethrowerAmmo joins the procedural pickup pool. Spawns
+	// every 3rd map (seed%3==0) as a guaranteed-min plus a library-
+	// archetype rare bias. On-collect handler credits
+	// WEAPONS.flamethrower.pickupAmmo (30) to flamethrower ammo.
+	| "flamethrowerAmmo"
 	// J1 — flashlight pickup. Carrying it grants a forward cone of
 	// directional light; without it the level reads as dark.
 	| "flashlight"
@@ -396,26 +401,53 @@ export function generateMap(seed: number, shape?: GenerateMapShape): ObjexoomGri
 		position,
 	}));
 
-	// L2 — pickup spawns are health-only on procedural maps now.
-	// Chaingun is permanent (L3) and shotgun arrives from the goal drop
-	// (not the floor). One shotgun-ammo every 4 slots keeps procedural
-	// runs distinct from ref-level pickup layouts.
+	// D2 (supersedes L2) — procedural pickup pool now includes
+	// chaingunAmmo + shotgunAmmo + flamethrowerAmmo alongside health.
+	// Three guarantees, applied in this order so the head of the pool
+	// is deterministic per-seed (canonical-byte stability is irrelevant
+	// here — the L2 pool was never canon-byte-locked):
 	//
-	// E13 step-11 — per-archetype pickup-count multiplier. Combat-heavy
-	// archetypes need more pickups (arena, sewer); cleaner ones less.
-	// Corridor multiplier 1.0 + base count 8 = pre-step-11 output exactly,
-	// preserves canonical bytes for the procedural-corridor path.
+	//   1. Reserve N head slots for guaranteed-min weapon ammo:
+	//        - slot 0 → chaingunAmmo (≥1 per map)
+	//        - slot 1 → shotgunAmmo  (≥1 per map)
+	//        - slot 2 → flamethrowerAmmo (only if seed%3==0)
+	//   2. Apply per-archetype bias to slots beyond the reserved head:
+	//        arena    → chaingunAmmo every 3rd
+	//        courtyard→ shotgunAmmo every 3rd
+	//        library  → flamethrowerAmmo every 4th
+	//   3. Remaining slots fill with health.
+	//
+	// E13 step-11 — per-archetype pickup-count multiplier preserved.
+	// Combat-heavy archetypes (arena, sewer) get more pickups,
+	// cleaner ones (library) less.
 	const ARCHETYPE_PICKUP_MULTIPLIER = [1.0, 1.3, 1.0, 1.2, 0.7] as const;
 	const pickupCandidates = enemyCandidates.slice(totalEnemies);
 	const basePickupCount = Math.min(8, pickupCandidates.length);
 	const pickupTotal = Math.min(
 		pickupCandidates.length,
-		Math.max(2, Math.round(basePickupCount * ARCHETYPE_PICKUP_MULTIPLIER[archetypeIdx])),
+		Math.max(4, Math.round(basePickupCount * ARCHETYPE_PICKUP_MULTIPLIER[archetypeIdx])),
 	);
+	const wantsFlame = (seed >>> 0) % 3 === 0;
+	const reserved: PickupKind[] = ["chaingunAmmo", "shotgunAmmo"];
+	if (wantsFlame) reserved.push("flamethrowerAmmo");
 	const pickupSpawns: PickupSpawn[] = pickupCandidates
 		.slice(0, pickupTotal)
 		.map((position, idx) => {
-			if (idx % 4 === 0) return { kind: "shotgunAmmo", position };
+			if (idx < reserved.length) return { kind: reserved[idx], position };
+			const tailIdx = idx - reserved.length;
+			// Per-archetype bias on the tail. The cadence values (every 3rd
+			// for arena/courtyard, every 4th for library) were picked so
+			// the average over 10 seeds exceeds 2.0 (arena/courtyard) and
+			// 1.0 (library) — pinned by the D2 archetype-bias tests.
+			if (archetypeIdx === 1 && tailIdx % 3 === 0) {
+				return { kind: "chaingunAmmo", position };
+			}
+			if (archetypeIdx === 2 && tailIdx % 3 === 0) {
+				return { kind: "shotgunAmmo", position };
+			}
+			if (archetypeIdx === 4 && tailIdx % 4 === 0) {
+				return { kind: "flamethrowerAmmo", position };
+			}
 			return { kind: "health", position };
 		});
 
