@@ -92,7 +92,7 @@ export default defineConfig(() => ({
 					groups: [
 						{
 							name: "vendor-three",
-							test: /[\\/]node_modules[\\/](\.pnpm[\\/])?(three(@[^\\/]+)?[\\/]node_modules[\\/])?three[\\/]/,
+							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?three[\\/]/,
 						},
 						{
 							name: "vendor-three-stdlib",
@@ -105,10 +105,6 @@ export default defineConfig(() => ({
 						{
 							name: "vendor-postprocessing",
 							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?(postprocessing|@react-three[\\/]postprocessing|n8ao)[\\/]/,
-						},
-						{
-							name: "vendor-troika",
-							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?troika-/,
 						},
 						{
 							name: "vendor-yuka",
@@ -135,8 +131,20 @@ export default defineConfig(() => ({
 							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?@capacitor[\\/]/,
 						},
 						{
+							// Catch-all for any dep not matched above. Empty in the
+							// current build but retained as a safety net so future
+							// deps don't accidentally land in the project entry chunk.
 							name: "vendor-misc",
 							test: /[\\/]node_modules[\\/]/,
+						},
+						{
+							// Project-internal sim/engine/scene chunks stay together
+							// so a single React Suspense boundary pulls them as one
+							// network request instead of waterfalling. Without this,
+							// Rolldown splinters game code across the entry chunk
+							// and any dynamic-import boundaries it discovers.
+							name: "game-engine",
+							test: /[\\/]src[\\/](engine|scene|buildMap|enemyAi|barrels|models|weapons)[\\/]/,
 						},
 					],
 				},
