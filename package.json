@@ -57,8 +57,9 @@
 		"assets:pwa-icons": "node scripts/generate-pwa-icons.mjs",
 		"assets:publish-screenshots": "bash scripts/publish-screenshots.sh",
 		"assets:verify-runtime": "node scripts/verify-runtime-assets.mjs",
+		"audio:verify-runtime": "node scripts/verify-runtime-audio.mjs",
 		"assets:prepare-wasm": "node scripts/prepare-web-wasm.mjs",
-		"verify": "pnpm check && pnpm lint && pnpm test && pnpm test:browser && pnpm assets:verify-runtime"
+		"verify": "pnpm check && pnpm lint && pnpm test && pnpm test:browser && pnpm assets:verify-runtime && pnpm audio:verify-runtime"
 	},
 	"dependencies": {
 		"@capacitor-community/sqlite": "^8.1.0",

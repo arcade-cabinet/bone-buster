@@ -111,11 +111,15 @@ const SLOT_FILES: Record<string, readonly string[]> = {
 	"weapon/weapon-empty": ["weapon/weapon-empty.ogg"],
 	"weapon/swap": ["weapon/swap.ogg"],
 	// player footsteps
+	// Variant pool size per surface reflects what actually shipped
+	// from the itch.io footsteps pack: gravel/metal had 3 hits,
+	// water had 2, concrete/wood had 4. Pool sizes are capped to
+	// the on-disk reality so verify-runtime-audio stays clean.
 	"player/footstep/concrete": [0, 1, 2, 3].map((i) => `player/footstep/concrete-${i}.ogg`),
 	"player/footstep/wood": [0, 1, 2, 3].map((i) => `player/footstep/wood-${i}.ogg`),
-	"player/footstep/gravel": [0, 1, 2, 3].map((i) => `player/footstep/gravel-${i}.ogg`),
-	"player/footstep/water": [0, 1, 2, 3].map((i) => `player/footstep/water-${i}.ogg`),
-	"player/footstep/metal": [0, 1, 2, 3].map((i) => `player/footstep/metal-${i}.ogg`),
+	"player/footstep/gravel": [0, 1, 2].map((i) => `player/footstep/gravel-${i}.ogg`),
+	"player/footstep/water": [0, 1].map((i) => `player/footstep/water-${i}.ogg`),
+	"player/footstep/metal": [0, 1, 2].map((i) => `player/footstep/metal-${i}.ogg`),
 	"player/jump": [0, 1].map((i) => `player/jump-${i}.ogg`),
 	"player/land": [0, 1].map((i) => `player/land-${i}.ogg`),
 	// pickups
