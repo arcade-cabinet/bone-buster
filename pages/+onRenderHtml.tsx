@@ -41,6 +41,18 @@ import { A } from "@assets/assetUrl";
 import { dangerouslySkipEscape, escapeInject } from "vike/server";
 import type { OnRenderHtmlAsync } from "vike/types";
 
+// PA2 — preload the woff2 subsets the prerender skeleton renders.
+// "BONE BUSTER" is plain latin so the browser only needs the latin
+// subset of Bungee 400. Space Grotesk 400/500 cover the tagline +
+// footer chips. With @fontsource's `font-display: swap`, the woff2
+// only fetches when CSS resolves + a glyph matches — these preload
+// hints start the fetch in parallel with the CSS download, so the
+// wordmark paints in its real face on the first frame instead of
+// flashing the system fallback first.
+import bungeeLatin400 from "@fontsource/bungee/files/bungee-latin-400-normal.woff2?url";
+import spaceGrotesk400 from "@fontsource/space-grotesk/files/space-grotesk-latin-400-normal.woff2?url";
+import spaceGrotesk500 from "@fontsource/space-grotesk/files/space-grotesk-latin-500-normal.woff2?url";
+
 declare const __BONEBUSTER_VERSION__: string;
 
 // PRERENDER-PALETTE-START
@@ -120,7 +132,7 @@ const onRenderHtml: OnRenderHtmlAsync = async (pageContext) => {
 	const connectSrc = import.meta.env.DEV ? DEV_CONNECT_SRC : PROD_CONNECT_SRC;
 	const csp = `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src ${connectSrc}; object-src 'none'; base-uri 'none'; frame-ancestors 'none';`;
 
-	return escapeInject`<!DOCTYPE html>
+	const documentHtml = escapeInject`<!DOCTYPE html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
@@ -134,6 +146,9 @@ const onRenderHtml: OnRenderHtmlAsync = async (pageContext) => {
 		<link rel="icon" type="image/png" sizes="32x32" href="${A("favicon-32.png")}" />
 		<link rel="icon" type="image/png" sizes="192x192" href="${A("icons/icon-192.png")}" />
 		<link rel="apple-touch-icon" sizes="180x180" href="${A("apple-touch-icon.png")}" />
+		<link rel="preload" as="font" type="font/woff2" crossorigin href="${bungeeLatin400}" />
+		<link rel="preload" as="font" type="font/woff2" crossorigin href="${spaceGrotesk400}" />
+		<link rel="preload" as="font" type="font/woff2" crossorigin href="${spaceGrotesk500}" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -145,6 +160,25 @@ const onRenderHtml: OnRenderHtmlAsync = async (pageContext) => {
 		<div id="page-view"></div>
 	</body>
 </html>`;
+
+	return {
+		documentHtml,
+		// Suppress Vike's auto-preload for font assets. With 12 fontsource
+		// CSS imports + per-subset (latin / latin-ext / vietnamese / etc)
+		// woff2 files, Vike preloads ~40 woff2s — ~150KB of network on
+		// first paint, most of which the unicode-range will never even
+		// resolve. We preload exactly the 3 woff2 subsets the prerender
+		// skeleton uses via the explicit `<link rel=preload>` tags above;
+		// fontsource's `font-display: swap` then handles the rest lazily
+		// as glyphs actually render.
+		injectFilter(assets) {
+			for (const asset of assets) {
+				if (asset.assetType === "font") {
+					asset.inject = false;
+				}
+			}
+		},
+	};
 };
 
 export default onRenderHtml;

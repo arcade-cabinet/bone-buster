@@ -77,58 +77,76 @@ export default defineConfig(() => ({
 		chunkSizeWarningLimit: 1800,
 		rollupOptions: {
 			output: {
-				manualChunks(id) {
-					if (id.includes("node_modules")) {
-						if (id.includes(`${path.sep}three${path.sep}`) || id.includes("three-stdlib")) {
-							return "vendor-three";
-						}
-						if (
-							id.includes(`${path.sep}react${path.sep}`) ||
-							id.includes(`${path.sep}react-dom${path.sep}`) ||
-							id.includes("scheduler")
-						) {
-							return "vendor-react";
-						}
-						if (id.includes("@react-three/fiber") || id.includes("@react-three/drei")) {
-							return "vendor-r3f";
-						}
-						if (id.includes("postprocessing") || id.includes("@react-three/postprocessing")) {
-							return "vendor-postprocessing";
-						}
-						if (id.includes(`${path.sep}howler${path.sep}`)) {
-							return "vendor-howler";
-						}
-						if (
-							id.includes("@capacitor-community/sqlite") ||
-							id.includes("jeep-sqlite") ||
-							id.includes("sql.js") ||
-							id.includes("@stencil") ||
-							id.includes("localforage")
-						) {
-							return "vendor-sqlite";
-						}
-						if (id.includes("@capacitor")) {
-							return "vendor-capacitor";
-						}
-						if (id.includes("framer-motion") || id.includes("motion-utils")) {
-							return "vendor-motion";
-						}
-						return "vendor-misc";
-					}
-					// Project-internal split: heavy sim/engine/scene chunks
-					// stay together so a single React Suspense boundary
-					// pulls them as one network request rather than waterfall.
-					if (
-						id.includes(`${path.sep}src${path.sep}engine`) ||
-						id.includes(`${path.sep}src${path.sep}scene`) ||
-						id.includes(`${path.sep}src${path.sep}buildMap`) ||
-						id.includes(`${path.sep}src${path.sep}enemyAi`) ||
-						id.includes(`${path.sep}src${path.sep}barrels`) ||
-						id.includes(`${path.sep}src${path.sep}models`) ||
-						id.includes(`${path.sep}src${path.sep}weapons`)
-					) {
-						return "game-engine";
-					}
+				chunkFileNames: "assets/chunks/[name]-[hash].js",
+				// Vite 8 ships Rolldown, whose chunk-merge heuristic collapses
+				// `manualChunks` returns back into the calling chunk whenever
+				// the split would be "wasted" (single consumer). The result
+				// was a 1.7MB monster `game-engine` chunk holding three +
+				// r3f + postprocessing + yuka + howler + n8ao + troika.
+				//
+				// `advancedChunks.groups` is Rolldown's first-class split API.
+				// Groups always materialise, regardless of consumer count, and
+				// each `test` regex independently captures matching module ids.
+				// The order matters: first matching group wins.
+				advancedChunks: {
+					groups: [
+						{
+							name: "vendor-three",
+							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?three[\\/]/,
+						},
+						{
+							name: "vendor-three-stdlib",
+							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?three-stdlib[\\/]/,
+						},
+						{
+							name: "vendor-r3f",
+							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?@react-three[\\/](fiber|drei)[\\/]/,
+						},
+						{
+							name: "vendor-postprocessing",
+							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?(postprocessing|@react-three[\\/]postprocessing|n8ao)[\\/]/,
+						},
+						{
+							name: "vendor-yuka",
+							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?yuka[\\/]/,
+						},
+						{
+							name: "vendor-howler",
+							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?howler[\\/]/,
+						},
+						{
+							name: "vendor-react",
+							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?(react|react-dom|scheduler)[\\/]/,
+						},
+						{
+							name: "vendor-motion",
+							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?(framer-motion|motion-dom|motion-utils)[\\/]/,
+						},
+						{
+							name: "vendor-sqlite",
+							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?(@capacitor-community[\\/]sqlite|jeep-sqlite|sql\.js|@stencil|localforage)[\\/]/,
+						},
+						{
+							name: "vendor-capacitor",
+							test: /[\\/]node_modules[\\/]([^\\/]+[\\/])?@capacitor[\\/]/,
+						},
+						{
+							// Catch-all for any dep not matched above. Empty in the
+							// current build but retained as a safety net so future
+							// deps don't accidentally land in the project entry chunk.
+							name: "vendor-misc",
+							test: /[\\/]node_modules[\\/]/,
+						},
+						{
+							// Project-internal sim/engine/scene chunks stay together
+							// so a single React Suspense boundary pulls them as one
+							// network request instead of waterfalling. Without this,
+							// Rolldown splinters game code across the entry chunk
+							// and any dynamic-import boundaries it discovers.
+							name: "game-engine",
+							test: /[\\/]src[\\/](engine|scene|buildMap|enemyAi|barrels|models|weapons)[\\/]/,
+						},
+					],
 				},
 			},
 		},
