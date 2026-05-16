@@ -134,7 +134,7 @@ unblocks every downstream content lane (D5/D7/D9/A11).
 ### R8 — Source-string sweep
 
 - **Surfaces:** every `src/**`, `tests/**`, `docs/**`, `.github/**`, `package.json`, `capacitor.config.ts`.
-- **Acceptance:** No `objexoom` / `Objexoom` / `OBJEXOOM` literals outside changelog appendices and intentional historical references. Unit tests pin the post-rebrand contract. `?objexoomDebug` URL flag is renamed (decision: keep it `?objexoomDebug` for back-compat in PR #60 doc-pass; D9 in this PRD covers the actual flag rename and updates every e2e test).
+- **Acceptance:** No `objexoom` / `Objexoom` / `OBJEXOOM` literals outside changelog appendices and intentional historical references. Unit tests pin the post-rebrand contract. The URL flag `?objexoomDebug` becomes `?debug`, the window global `__objexoom` becomes `__bonebuster`, and every e2e spec is updated alongside. The Capacitor `appId` and Java package path rename live separately under R9 (Capacitor + Android namespace).
 
 ### R9 — Capacitor + Android namespace rename
 
@@ -288,7 +288,7 @@ by stale `package.json` `homepage` field.
 ### BC3 — Pages base-path fix end-to-end
 
 - **Surfaces:** `vite.config.ts`, `.github/workflows/release.yml`, `package.json` `homepage`.
-- **Acceptance:** Three changes in one commit: (a) `vite.config.ts` reads `VITE_BASE_PATH`; (b) `release.yml` passes `VITE_BASE_PATH=/bone-buster/` to the `build:pages` step; (c) `package.json` `homepage = "https://arcade-cabinet.github.io/bone-buster/"`. Verification: tag a release, `release.yml` succeeds, fetch the Pages URL, `index.html` references `/bone-buster/assets/...`, every referenced asset URL returns 200 (verified via `mcp__chrome-devtools-mcp__list_network_requests`).
+- **Acceptance:** Three changes in one commit: (a) `vite.config.ts` reads `VITE_BASE_PATH`; (b) `release.yml` passes `VITE_BASE_PATH=/bone-buster/` to the `build:pages` step; (c) `package.json` `homepage = "https://arcade-cabinet.github.io/bone-buster/"`. Verification: tag a release, `release.yml` succeeds, fetch the Pages URL, `index.html` references `/bone-buster/assets/...`, and every asset URL in the deployed `index.html` returns HTTP 200 (curl or browser-network-inspect both fine).
 
 ### BC4 — Foldable viewport + safe-area CSS
 

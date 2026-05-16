@@ -64,13 +64,15 @@ Full diagram in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
   smoke test in `src/__tests__/browser/runHistory.browser.test.ts`.
 - **`src/yukaIntegration.ts`** — yuka EntityManager bridge: mirror
   sim positions, run steering, write back. Stateful, isolated.
-- **`src/BoneBusterScene.tsx`** — r3f scene tree orchestrator. Drives
+- **`src/ObjexoomScene.tsx`** — r3f scene tree orchestrator. Drives
   mesh transforms from refs, NOT React state. Hosts the fire-path,
   the per-frame AI tick, the barrel explosion queue (`explodeBarrelRef`
   late-bind pattern). At 868 LOC as of PR #12; ARCH2 extracts
-  `useFireResolution` + `useEnemyTickLoop` before E3.
-- **`src/BoneBusterShell.tsx`** — game lifecycle, level transitions,
+  `useFireResolution` + `useEnemyTickLoop` before E3. Renamed to
+  `BoneBusterScene.tsx` by PRD §R8 source-string sweep.
+- **`src/ObjexoomShell.tsx`** — game lifecycle, level transitions,
   debug-hook attach, run-history recording on terminal status.
+  Renamed to `BoneBusterShell.tsx` by PRD §R8 source-string sweep.
 - **`src/models.ts`** — pose + animation registry per
   enemy/weapon/prop. Per-kind skin roster, deterministic pick by id.
   URLs flow through `A()` (in `src/assetUrl.ts`) so `import.meta.env.BASE_URL`
@@ -79,8 +81,11 @@ Full diagram in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 ## Design tokens
 
 - `src/design-tokens/colors.ts` — `LINEAGE`, `SCALE`, semantic `ROLE`
-  layer, back-compat `OBJEXOOM_PALETTE` alias (renamed to
-  `BONE_BUSTER_PALETTE` by PRD §R8 source-string sweep).
+  layer, plus the new `BONE_PALETTE` (PRD §R2) and the
+  current-name `OBJEXOOM_PALETTE` flat-key export (used by the
+  3D scene materials surface; renamed to `BONE_BUSTER_PALETTE`
+  by PRD §R8 source-string sweep, kept as back-compat alias
+  after the sweep).
 - `src/design-tokens/typography.ts` — `FONT_FAMILY`, weights, spacing,
   sizes, line-heights.
 - `app/tokens.css` — `--obx-*` CSS mirror.
@@ -100,7 +105,8 @@ inline justification.
   `scripts/convert-fbx.mjs` to add new sources.
 - After regenerating, run `pnpm test:e2e:screenshots` to refresh the
   canonical poses. They land under
-  `test-results/bone-buster-screenshots/`.
+  `test-results/objexoom-screenshots/` (path renamed to
+  `bone-buster-screenshots/` by PRD §R8 source-string sweep).
 
 ## Test discipline
 
@@ -111,7 +117,8 @@ Full doc: [`docs/TESTING.md`](./docs/TESTING.md).
 - **Browser (`pnpm test:browser`)** — Vitest in real Chromium. Empty
   for now; first standalone smoke tests queued.
 - **E2E (`pnpm test:e2e`)** — Playwright driving the actual built
-  game via `?debug` hooks. Includes the 5 canonical
+  game via `?objexoomDebug` hooks (URL flag renamed to `?debug`
+  by PRD §R8 source-string sweep). Includes the 5 canonical
   screenshot poses.
 
 ## Ports
@@ -122,10 +129,12 @@ Vite dev pinned to **5191**, preview to **8191**, with
 
 ## Debug-hook contract
 
-When `?debug` is in the URL, `window.__bonebuster` exposes:
+When `?objexoomDebug` is in the URL (renamed to `?debug` by
+PRD §R8), `window.__objexoom` exposes (renamed to
+`window.__bonebuster` by PRD §R8):
 
 ```ts
-type BoneBusterDebugHooks = {
+type ObjexoomDebugHooks = {
   getState(): unknown;
   start(): void;
   teleport(x: number, y: number, yawRad?: number): void;

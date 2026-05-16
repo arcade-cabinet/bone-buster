@@ -14,8 +14,8 @@
 2. Read its PRD section for the acceptance bar.
 3. Implement, run `pnpm verify`, commit, dispatch reviewer trio locally.
 4. Fold reviewer findings into the next forward commit.
-5. Flip `[ ]` → `[x]` in the same commit; **delete the item from this file** in the next forward-going commit ([[prune-shipped-from-directive]]).
-6. Push + open one PR per coherent slice (lane completion or larger), not per commit ([[no-pr-per-commit]]).
+5. Flip `[ ]` → `[x]` in the same commit; **delete the item from this file** in the next forward-going commit (per the prune-shipped-from-directive rule).
+6. Push + open one PR per coherent slice (lane completion or larger), not per commit (per the no-pr-per-commit rule).
 
 ## Queue (topological order; lanes interleave per PRD sequencing rules)
 
@@ -33,7 +33,7 @@
 
 - [x] **R1** — self-hosted Bone Buster fonts via `@fontsource/*`. PRD §R1.
 - [x] **R2** — Bone palette swap. PRD §R2.
-- [ ] **R3** — Landing redesign with SVG + framer-motion. PRD §R3.
+- [x] **R3** — Landing redesign with SVG + framer-motion. PRD §R3.
 - [ ] **R4** — animated scuff shader. PRD §R4.
 - [ ] **R5** — Radix card-menu. PRD §R5.
 - [ ] **R6** — audio logo sting. PRD §R6.

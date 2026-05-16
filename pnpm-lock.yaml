@@ -69,6 +69,9 @@ importers:
         specifier: ^0.7.8
         version: 0.7.8
     devDependencies:
+      7zip-min:
+        specifier: ^3.0.1
+        version: 3.0.1
       '@biomejs/biome':
         specifier: ^2.4.10
         version: 2.4.15
@@ -123,6 +126,9 @@ importers:
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1
+      node-unrar-js:
+        specifier: ^2.0.2
+        version: 2.0.2
       tsx:
         specifier: ^4.22.0
         version: 4.22.0
@@ -137,6 +143,12 @@ importers:
         version: 4.1.6(@types/node@25.8.0)(@vitest/browser-playwright@4.1.6)(@vitest/coverage-v8@4.1.6)(jsdom@29.1.1)(vite@8.0.13(@types/node@25.8.0)(esbuild@0.28.0)(tsx@4.22.0))
 
 packages:
+
+  7zip-bin@5.1.1:
+    resolution: {integrity: sha512-sAP4LldeWNz0lNzmTird3uWfFDWWTeg6V/MsmyyLR9X1idwKBWIgt/ZvinqQldJm3LecKEs1emkbquO6PCiLVQ==}
+
+  7zip-min@3.0.1:
+    resolution: {integrity: sha512-WB4VCA/KSKzxhj+BAp8fI3ZYMMAftclkXlUTckuiDacsqyubQxxG3lGcpBcgzWWuJqnfQncEq1xrJpPLSxqsxw==}
 
   '@asamuzakjp/css-color@5.1.11':
     resolution: {integrity: sha512-KVw6qIiCTUQhByfTd78h2yD1/00waTmm9uy/R7Ck/ctUyAPj+AEDLkQIdJW0T8+qGgj3j5bpNKK7Q3G+LedJWg==}
@@ -1431,6 +1443,10 @@ packages:
     engines: {node: '>=16.0.0'}
     hasBin: true
 
+  node-unrar-js@2.0.2:
+    resolution: {integrity: sha512-hLNmoJzqaKJnod8yiTVGe9hnlNRHotUi0CreSv/8HtfRi/3JnRC8DvsmKfeGGguRjTEulhZK6zXX5PXoVuDZ2w==}
+    engines: {node: '>=10.0.0'}
+
   obug@2.1.1:
     resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
 
@@ -1993,6 +2009,12 @@ packages:
         optional: true
 
 snapshots:
+
+  7zip-bin@5.1.1: {}
+
+  7zip-min@3.0.1:
+    dependencies:
+      7zip-bin: 5.1.1
 
   '@asamuzakjp/css-color@5.1.11':
     dependencies:
@@ -3197,6 +3219,8 @@ snapshots:
       yauzl: 2.10.0
     transitivePeerDependencies:
       - supports-color
+
+  node-unrar-js@2.0.2: {}
 
   obug@2.1.1: {}
 

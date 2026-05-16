@@ -241,16 +241,33 @@ D7 discipline: per archetype, every asset audit produces TWO outputs — the slo
 
 ## Migration plan
 
-User instruction: **finish the rebrand in-place on the current repo, then mirror to the new home, then keep working LOCALLY at the OLD path** (GitHub redirects handle URL changes).
+**The remote rename has been completed (2026-05-15).** The repo
+now lives at `arcade-cabinet/bone-buster`; GitHub's git-protocol
+redirect routes the old `objexiv/objexoom` origin URL
+transparently. The local working tree stays at
+`~/src/objexiv/objexoom`; no `mv` is required and no
+`git remote set-url` is required.
 
-Steps:
-1. Land the entire overhaul backlog on the active feature branch in `objexiv/objexoom`.
-2. `gh repo create arcade-cabinet/bone-buster --public --description "Procedural arcade FPS. They had it coming."`
-3. `git push --mirror git@github.com:arcade-cabinet/bone-buster.git` — preserves every branch, tag, history.
-4. `git remote set-url origin git@github.com:arcade-cabinet/bone-buster.git` in the LOCAL clone at `~/src/objexiv/objexoom`. DO NOT `mv` the directory.
-5. OLD repo's GitHub Pages `index.html` redirects to `arcade-cabinet.github.io/bone-buster/` via `<meta http-equiv="refresh">`.
-6. OLD repo's README points at new home.
-7. 30-day grace; if traffic is quiet, `gh repo archive objexiv/objexoom`.
+Residual cleanup tracked in `docs/PRD.md` §MIGRATE:
+
+- **M4** — OLD repo's GitHub Pages `index.html` redirects to
+  `arcade-cabinet.github.io/bone-buster/` via
+  `<meta http-equiv="refresh">`; OLD README points at the new
+  home.
+- **M5** — 30-day traffic grace, then `gh repo archive
+  objexiv/objexoom` (redirect survives archival).
+
+Historical "what the migration originally entailed" (now done,
+preserved for audit):
+
+1. ~~Land the rebrand on the active feature branch in
+   `objexiv/objexoom`.~~ — done; the rebrand work then split
+   across PR #60 (docs) and the subsequent overhaul work.
+2. ~~`gh repo create arcade-cabinet/bone-buster --public`.~~ — done.
+3. ~~`git push --mirror` to preserve every branch/tag/history.~~ — done.
+4. ~~`git remote set-url origin …`.~~ — **not** done; GitHub's
+   redirect handles the old URL automatically, so the local
+   `origin` still points at the old name and works fine.
 
 ## Parked for after the overhaul drains
 

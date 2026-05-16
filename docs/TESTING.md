@@ -83,8 +83,16 @@ that URL. See [DECISIONS D9](./DECISIONS.md#d9).
 
 1. Identify the layer (unit / browser / e2e). If it touches three.js
    or the DOM, it's browser or e2e, not unit.
-2. Drop the file in the matching `__tests__` subdir using the existing
-   naming convention (`bone-buster-<module>.test.ts`).
+2. Drop the file in the matching `__tests__` subdir using the
+   existing naming convention. Unit tests follow
+   `objexoom-<module>.test.ts` today (e.g.
+   `objexoom-archetype.test.ts`); browser smoke tests follow
+   `<module>.browser.test.ts(x)` (e.g.
+   `runHistory.browser.test.ts`, `ObjexoomShell.browser.test.tsx`).
+   The PRD §R8 source-string sweep renames the unit-test prefix to
+   `bone-buster-<module>.test.ts`; new specs added before R8
+   ships should still use the `objexoom-*` prefix so the sweep can
+   migrate every spec in one mechanical pass.
 3. Run `pnpm test` (or `:browser` / `:e2e`) and confirm it passes.
 4. If it's a regression test for a bug fix, name the bug in the test
    description: `it("polygonContains handles horizontal edges (regression: lava floor false-negatives)", ...)`.

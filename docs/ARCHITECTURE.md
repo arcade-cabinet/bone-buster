@@ -91,7 +91,7 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 | Module | Owns |
 | --- | --- |
-| `src/design-tokens/colors.ts` | `LINEAGE`, `SCALE` (50–950 per axis), semantic `ROLE` layer, back-compat `BONE BUSTER_PALETTE` |
+| `src/design-tokens/colors.ts` | `LINEAGE`, `SCALE` (50–950 per axis), semantic `ROLE` layer + nested `ROLE.surface/text/accent/brand` (PRD §R2), `BONE_PALETTE` 14-anchor export, current-name `OBJEXOOM_PALETTE` flat-keys (renamed to `BONE_BUSTER_PALETTE` by R8) |
 | `src/design-tokens/typography.ts` | `FONT_FAMILY`, `FONT_WEIGHT`, `LETTER_SPACING`, `FONT_SIZE`, `LINE_HEIGHT` |
 | `src/design-tokens/spacing.ts` | Spacing scale |
 | `src/design-tokens/motion.ts` | Duration + easing tokens |
@@ -172,7 +172,8 @@ URL param — neither alone enables it.
   `import.meta.env.BASE_URL`. In dev/build the base is `/`; in
   gh-pages it's `/bone-buster/`. Both work identically downstream.
 - **No arcade-cabinet imports.** This is a standalone game. The commit-gate
-  rejects any `@arcade-cabinet/bone-buster or relative-up-to-arcade-cabinet import.
+  rejects any `@arcade-cabinet/bone-buster` import, or any relative import
+  that escapes upward into a sibling arcade-cabinet repo.
 - **Refs over state in the scene.** React re-renders inside `<Canvas>`
   are expensive. Game state that ticks every frame (positions,
   rotations, velocities, animation phase) lives in `useRef` and

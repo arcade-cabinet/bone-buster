@@ -85,7 +85,7 @@ All notable changes to this project will be documented in this file. The format 
   NIGHTMARE). Race-free prop-driven mount (not event-driven — the HUD
   subtree mounts AFTER the landing→game transition's AnimatePresence
   exit animation, so an event would fire before the listener
-  registered). New `__bone-buster.setDifficulty(Difficulty)` debug hook
+  registered). New `__bonebuster.setDifficulty(Difficulty)` debug hook
   lets playtest scripts drive the chip in each of the 5 palettes.
 - **POL32 — Main-menu best-run readout.** Landing-page BestRunChip
   enriched with the **time dimension**. New two-row format: primary
@@ -184,7 +184,7 @@ All notable changes to this project will be documented in this file. The format 
 - **E13 steps 6-15 Per-archetype identity tightening.** 10 distinct axes routed through `ArchetypeLightPalette` and per-archetype tables: prop density, debris density, decal density, decal pool, enemy count multiplier, pickup count multiplier, lamp-light color, hemisphere sky/ground, water tint, canvas background. Corridor preserves canonical literals on every axis so refLevel 0 byte-stability is intact.
 - **COV3 steps 2-8 Modular structures end-to-end.** Wall GLBs on every map (ref + procedural), per-archetype wall pools, per-archetype floor + ceiling tints on both sector and grid paths. 14 wall GLBs from PSX Mega Pack II Modular Structures (`hr_*`, `hs_*`, `rg_*`, `rtx_*`, `rx_*` families).
 - **`ScheduleWakeup`-at-end-of-turn forbidden in /loop dynamic mode.** Directive preamble + global memory rule. Stops the agent from politeness-disguised stops via the wakeup tool.
-- **DS.7 Design tokens in scene materials.** Zero literal hex codes remain in `src/scene/**/*.tsx`. Added 14 semantic anchors to `BONE BUSTER_PALETTE` covering wall variants, door colors, flashlight warmth, weapon untextured-fallback metals, ammo brass, treasure-chest woods, and ExitPortal hue variants. Brand-color tweaks now ripple to the 3D scene with a single edit to the design-tokens module.
+- **DS.7 Design tokens in scene materials.** Zero literal hex codes remain in `src/scene/**/*.tsx`. Added 14 semantic anchors to `OBJEXOOM_PALETTE` covering wall variants, door colors, flashlight warmth, weapon untextured-fallback metals, ammo brass, treasure-chest woods, and ExitPortal hue variants. Brand-color tweaks now ripple to the 3D scene with a single edit to the design-tokens module.
 - **PA9b Chaingun shell ejection.** Extended `ShellEjectField` to dispatch shells on chaingun fires (was shotgun-only). Chaingun shell renders at 0.6× scale with slightly reduced lateral/upward velocity; ~11/sec at the chaingun's 90ms cooldown. `MAX_SHELLS` raised 40 → 80 to handle the burst rate. Reference clone's behavior is now fully matched.
 - **E5 Destructible barrels with AoE damage.** Pure-sim core in `src/barrels.ts` (spawn, ray-test, AoE resolve). Fire-path prioritizes barrels over enemies when both are on the ray. Chain reactions via queue. 5-variant skin pool (4 metal weathering + 1 wooden) cycled by id. 14 new unit tests. ([688104d](https://github.com/arcade-cabinet/bone-buster/commit/688104d))
 - **3DPSX asset coverage maximization principle.** User directive 2026-05-14: "I want as much possible value from ALL the PSX assets — anything that makes sense in a level." STANDARDS.md, PRD.md, and the directive's COV1-COV14 queue encode the principle: every new feature uses a multi-variant pool, seeded by id.
@@ -194,7 +194,7 @@ All notable changes to this project will be documented in this file. The format 
 - **Asset infra.** `scripts/prepare-web-wasm.mjs` (postinstall + prebuild) and `scripts/verify-runtime-assets.mjs` (CI gate, 22 URLs / 8.01 MB total). ([81ed15d](https://github.com/arcade-cabinet/bone-buster/commit/81ed15d))
 - **`docs/PRD.md`** comprehensive remaining-work spec covering Phases 2-4 of the elevation roadmap plus B1.7/B2.1/B2.4/DS.7/AO.4-6/PA9b/PA-MOD7/INF2.
 
-### Changed
+### Parity milestone
 
 - **100% reference parity reached.** PARITY.md banner updated; only "partial → full" upgrade items remain (shell ejection on chaingun fires).
 - **Dropped arbitrary byte budgets from `verify-runtime-assets.mjs`.** The per-category limits (enemies 3MB, weapons 800KB, props 600KB) were quality-crippling — they forced the BLADE viewmodel and barrel.glb onto thinner variants when richer ones were available. The script still reports per-category totals; asset weight is a per-asset tuning decision, not a CI threshold. ([688104d](https://github.com/arcade-cabinet/bone-buster/commit/688104d))
