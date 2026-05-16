@@ -764,7 +764,16 @@ export function weaponChipStyle(
 		fontSize: "var(--obx-hud-fs-label, 11px)",
 		fontWeight: FONT_WEIGHT.semibold,
 		letterSpacing: LETTER_SPACING.hudChip,
-		border: active ? `1px solid ${accent}` : "1px solid transparent",
+		// D1 — locked chips render with no border at all (was
+		// `1px solid transparent`, which reserved layout space and
+		// signaled border-ness to a screen reader). Active chips keep
+		// the accent ring; owned-inactive chips keep a transparent
+		// ring so all owned slots align to the same metrics.
+		border: !owned
+			? "none"
+			: active
+				? `1px solid ${accent}`
+				: "1px solid transparent",
 		background: active
 			? `${accent}22`
 			: owned
@@ -775,7 +784,13 @@ export function weaponChipStyle(
 				: `${SCALE.parchment[50]}05`,
 		color: owned ? ROLE.textPrimary : ROLE.textMuted,
 		opacity: owned ? 1 : 0.5,
-		cursor: owned ? "pointer" : "not-allowed",
+		// D1 — locked chips read as status indicators, not as disabled
+		// controls. `not-allowed` was DOM-correct (the button IS
+		// disabled) but the visual treatment now says "you don't own
+		// this yet" rather than "you tried to click a dead control."
+		// DOOM's HUD weapon row uses this exact pattern — digits 2-7
+		// always visible, dim when un-owned.
+		cursor: owned ? "pointer" : "default",
 		pointerEvents: "auto",
 	};
 }
