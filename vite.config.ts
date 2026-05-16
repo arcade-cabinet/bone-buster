@@ -17,7 +17,7 @@ import { defineConfig } from "vite";
  *     (react + scheduler + react-dom), `vendor-postprocessing`
  *     (postprocessing + @react-three/postprocessing),
  *     `vendor-r3f` (@react-three/fiber, @react-three/drei),
- *     `vendor-tone` (tone — until AUDIO removes it), `vendor-sqlite`
+ *     `vendor-howler` (howler — A11c-onwards), `vendor-sqlite`
  *     (@capacitor-community/sqlite, jeep-sqlite, sql.js, @stencil/core
  *     family), and `vendor-misc` for everything else.
  *   - `resolve.alias` matches the post-RESTRUCTURE `app/` + `src/`
@@ -78,9 +78,6 @@ export default defineConfig(({ mode }) => ({
 						}
 						if (id.includes("postprocessing") || id.includes("@react-three/postprocessing")) {
 							return "vendor-postprocessing";
-						}
-						if (id.includes(`${path.sep}tone${path.sep}`)) {
-							return "vendor-tone";
 						}
 						if (id.includes(`${path.sep}howler${path.sep}`)) {
 							return "vendor-howler";
@@ -163,7 +160,7 @@ export default defineConfig(({ mode }) => ({
 			"@react-three/postprocessing",
 			"postprocessing",
 			"framer-motion",
-			"tone",
+			"howler",
 		],
 	},
 	server: {

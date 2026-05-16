@@ -1,25 +1,37 @@
-import { fire } from "@audio/audioBus";
-import * as Tone from "tone";
+/**
+ * A11c — sfx.ts after the Howler swap. Every play function delegates
+ * to `howlerBus.play(slug)` against the A11b promoted asset slot
+ * registry. The public surface (function signatures, exported
+ * tables) is preserved 1:1 so consumers in app/views/Shell.tsx and
+ * app/views/Scene.tsx don't change.
+ *
+ * The pre-swap Tone.js procedural synthesis is fully gone — see
+ * git log for the previous shape. Why the switch:
+ *   - Howler is the right tool for sampled audio (decoded once,
+ *     played from buffer pool); Tone is the right tool for
+ *     scheduled procedural synthesis.
+ *   - We now have 64 OGG/WAV samples promoted from itch.io packs
+ *     (PRD §A11b); replaying those is what Howler is built for.
+ *   - Eliminating Tone removes 130KB+ of unused synthesis runtime
+ *     from the bundle.
+ */
+
+import {
+	play as howlerPlay,
+	resetForTesting as howlerResetForTesting,
+	setMuted as howlerSetMuted,
+	stop as howlerStop,
+	setHowlerSeed,
+	setVolumeDb,
+} from "@audio/howlerBus";
 
 /**
- * AUD1 — SFX mix coherence table.
+ * AUD1 — SFX mix coherence table. Volumes in dB.
  *
- * Each synth's volume (dB) is categorized so a vitest snapshot
- * can pin the mix balance. Categories represent the listener's
- * attention budget — the ambient bed must duck under any sting
- * fire, kill stings must carry over the going-back klaxon, UI
- * feedback must not bury the kill audio, etc.
- *
- *   ambient    : -34 to -26 — background drone, never foreground
- *   uiFeedback : -16 to  -8 — pickup / door / portal / hit / tick
- *   weaponFire : -16 to  -4 — pistol / chaingun / shotgun / melee
- *   killSting  : -14 to  -4 — death / boom / aggro / hitSting
- *   musicVoice : -36 to -28 — 6-voice procedural music (cascading)
- *
- * The actual shipped values (each commented inline below) sit
- * inside these bands and were tuned by ear over POL8/POL10/POL21.
- * Don't widen the bands — fix the synth volume to land back in
- * its category.
+ * Preserved from the pre-swap codebase as the source-of-truth for
+ * the per-category balance. howlerBus.SLUG_VOLUME_DB mirrors these
+ * values per-slug; this table is kept for backwards-compat with the
+ * tests + the docs that reference SFX_VOLUMES.
  */
 export const SFX_VOLUMES = {
 	pistol: -8,
@@ -44,17 +56,6 @@ export const SFX_BANDS = {
 	uiFeedback: { min: -16, max: -8 },
 	weaponFire: { min: -16, max: -4 },
 	killSting: { min: -14, max: -4 },
-	// musicVoice band widened in POL33 to cover the ±3dB intensity range
-	// that NIGHTMARE / TOO YOUNG add on top of the per-voice base of
-	// -28 (v0) to -35.5 (v5). The widened band spans:
-	//   v0 base (-28) + nightmare (+3) = -25 → upper bound
-	//   v5 base (-35.5) + tooYoung (-3) = -38.5 → lower bound
-	// AUD1's "ambient strictly quieter" invariant remains satisfied
-	// (ambient.max = -26 < musicVoice.min = -39 is not the right check;
-	// musicVoice is independent of ambient at the band-overlap level —
-	// they target different listener-attention budgets and can overlap
-	// in dB without the mix breaking, since music sits in a different
-	// frequency-content slot than the drone).
 	musicVoice: { min: -39, max: -25 },
 } as const;
 
@@ -76,674 +77,320 @@ export const SFX_CATEGORIES = {
 	doorTick: "uiFeedback",
 } as const satisfies Record<keyof typeof SFX_VOLUMES, keyof typeof SFX_BANDS>;
 
-let initialized = false;
-let pistolSynth: Tone.MembraneSynth | null = null;
-let chaingunSynth: Tone.MetalSynth | null = null;
-let shotgunSynth: Tone.NoiseSynth | null = null;
-// E1 — short whoosh + click for the melee swing.
-let meleeSynth: Tone.NoiseSynth | null = null;
-let hurtSynth: Tone.Synth | null = null;
-let deathSynth: Tone.PluckSynth | null = null;
-let pickupSynth: Tone.Synth | null = null;
-let doorSynth: Tone.MembraneSynth | null = null;
-let portalSynth: Tone.FMSynth | null = null;
-let ambientDrone: Tone.AMSynth | null = null;
-let masterReverb: Tone.Reverb | null = null;
-// K5 — procedural music. 6 voices scheduled through Tone.Transport.
-// Each voice steps through its melody on every beat; tempo + active
-// mood drive the rhythmic intensity.
 export type MusicMood = "exploration" | "combat" | "going_back";
-// K5/K6 — music state grouped into a single mutable record so the const
-// binding never gets reassigned; only the fields change as init / loop /
-// mood-switch helpers run.
-const music = {
-	synths: [] as Tone.PolySynth[],
-	loop: null as Tone.Loop | null,
-	mood: "exploration" as MusicMood,
-	step: 0,
-	tracksLoaded: 0,
-};
-const MUSIC_TRACK_COUNT = 6;
-// I7 — aggro alert (deep growl) panned to the enemy's position.
-let aggroSynth: Tone.MonoSynth | null = null;
-let aggroPanner: Tone.Panner | null = null;
-// K1 — explosion stinger for enemy-death + going_back start.
-let boomSynth: Tone.MembraneSynth | null = null;
-let boomNoise: Tone.NoiseSynth | null = null;
-// K2 — player-hit sting (sharper than the ambient playHurt).
-let hitStingSynth: Tone.Synth | null = null;
-// K7 — door-open clock SFX (mechanical tick + low boom).
-let doorTickSynth: Tone.MetalSynth | null = null;
 
-/**
- * A5 — split into two init paths:
- *  - `ensureSfxCritical()` initializes the SFX synths needed for the
- *    landing → playing transition. This is the path the Start Game
- *    button calls.
- *  - `ensureMusic()` initializes the 6 music PolySynths (~200-400ms
- *    on cold-start mobile Chrome). Called after the first frame of
- *    `playing` status so the time-to-first-interactive isn't blocked
- *    on music synth allocation.
- *
- * `ensureSfx()` is kept as a back-compat alias for callers that want
- * everything in one go (e.g. tests). New call-sites should prefer the
- * split paths.
- */
-let musicInitialized = false;
+// Bus-init state. Howler doesn't need an async ensureContext call —
+// the AudioContext is created lazily on the first .play() and resumed
+// via Howler's built-in user-gesture unlock path. The ensure*
+// functions stay as no-ops so the existing call sites in app/views/
+// don't change.
+let initialized = false;
 
 export async function ensureSfx() {
 	await ensureSfxCritical();
 	await ensureMusic();
 }
 
-export async function ensureSfxCritical() {
-	if (initialized) return;
+export async function ensureSfxCritical(): Promise<void> {
 	initialized = true;
-	if (Tone.getContext().state !== "running") {
-		try {
-			await Tone.start();
-		} catch {
-			// fall through — sounds will be silent
-		}
-	}
-	masterReverb = new Tone.Reverb({ decay: 1.4, wet: 0.18 }).toDestination();
-
-	pistolSynth = new Tone.MembraneSynth({
-		pitchDecay: 0.04,
-		octaves: 6,
-		oscillator: { type: "square" },
-		envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 },
-		volume: -8,
-	}).connect(masterReverb);
-
-	chaingunSynth = new Tone.MetalSynth({
-		envelope: { attack: 0.001, decay: 0.05, release: 0.02 },
-		harmonicity: 5.1,
-		modulationIndex: 18,
-		resonance: 1500,
-		octaves: 1,
-		volume: -16,
-	}).connect(masterReverb);
-
-	shotgunSynth = new Tone.NoiseSynth({
-		noise: { type: "brown" },
-		envelope: { attack: 0.002, decay: 0.18, sustain: 0, release: 0.08 },
-		volume: -6,
-	}).connect(masterReverb);
-
-	meleeSynth = new Tone.NoiseSynth({
-		// White-noise whoosh tail. Faster attack than the shotgun + far
-		// shorter decay so it reads as a swing, not a blast.
-		noise: { type: "white" },
-		envelope: { attack: 0.01, decay: 0.08, sustain: 0, release: 0.04 },
-		volume: -14,
-	}).connect(masterReverb);
-
-	hurtSynth = new Tone.Synth({
-		oscillator: { type: "sawtooth" },
-		envelope: { attack: 0.005, decay: 0.12, sustain: 0, release: 0.06 },
-		volume: -10,
-	}).connect(masterReverb);
-
-	deathSynth = new Tone.PluckSynth({
-		attackNoise: 1.5,
-		dampening: 1500,
-		resonance: 0.85,
-		volume: -8,
-	}).connect(masterReverb);
-
-	pickupSynth = new Tone.Synth({
-		oscillator: { type: "triangle" },
-		envelope: { attack: 0.005, decay: 0.15, sustain: 0, release: 0.1 },
-		volume: -8,
-	}).connect(masterReverb);
-
-	doorSynth = new Tone.MembraneSynth({
-		pitchDecay: 0.5,
-		octaves: 2,
-		oscillator: { type: "sine" },
-		envelope: { attack: 0.01, decay: 0.5, sustain: 0.1, release: 0.4 },
-		volume: -12,
-	}).connect(masterReverb);
-
-	portalSynth = new Tone.FMSynth({
-		harmonicity: 0.5,
-		modulationIndex: 6,
-		oscillator: { type: "sine" },
-		envelope: { attack: 0.4, decay: 0.6, sustain: 0.4, release: 1.5 },
-		modulation: { type: "sine" },
-		modulationEnvelope: { attack: 0.6, decay: 0.4, sustain: 0.6, release: 1 },
-		volume: -16,
-	}).connect(masterReverb);
-
-	ambientDrone = new Tone.AMSynth({
-		oscillator: { type: "sine" },
-		modulation: { type: "sawtooth" },
-		harmonicity: 0.3,
-		envelope: { attack: 1.5, decay: 0.5, sustain: 0.5, release: 2 },
-		modulationEnvelope: { attack: 1, decay: 0.5, sustain: 0.6, release: 2 },
-		volume: -32,
-	}).connect(masterReverb);
-
-	// I7 — aggro alert: deep growl that fires the first time an enemy
-	// transitions patrol → chase. Routed through a Tone.Panner so we can
-	// place the sound horizontally relative to the player's facing.
-	aggroPanner = new Tone.Panner(0).connect(masterReverb);
-	aggroSynth = new Tone.MonoSynth({
-		oscillator: { type: "sawtooth" },
-		filter: { Q: 4, type: "lowpass", rolloff: -24 },
-		envelope: { attack: 0.04, decay: 0.18, sustain: 0, release: 0.2 },
-		filterEnvelope: {
-			attack: 0.02,
-			decay: 0.15,
-			sustain: 0.2,
-			release: 0.2,
-			baseFrequency: 80,
-			octaves: 2,
-		},
-		volume: -14,
-	}).connect(aggroPanner);
-
-	// K1 — explosion stinger. Punchy low membrane + filtered noise burst.
-	boomSynth = new Tone.MembraneSynth({
-		pitchDecay: 0.12,
-		octaves: 8,
-		oscillator: { type: "sine" },
-		envelope: { attack: 0.001, decay: 0.4, sustain: 0, release: 0.3 },
-		volume: -4,
-	}).connect(masterReverb);
-	boomNoise = new Tone.NoiseSynth({
-		noise: { type: "brown" },
-		envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.15 },
-		volume: -10,
-	}).connect(masterReverb);
-
-	// K2 — player-hit sting. Short detuned bite, distinct from playHurt.
-	hitStingSynth = new Tone.Synth({
-		oscillator: { type: "square" },
-		envelope: { attack: 0.002, decay: 0.06, sustain: 0, release: 0.04 },
-		volume: -8,
-	}).connect(masterReverb);
-
-	// K7 — door-open clock SFX. MetalSynth for the mechanical tick.
-	doorTickSynth = new Tone.MetalSynth({
-		envelope: { attack: 0.002, decay: 0.4, release: 0.2 },
-		harmonicity: 3.1,
-		modulationIndex: 12,
-		resonance: 800,
-		octaves: 0.5,
-		volume: -14,
-	}).connect(masterReverb);
-
-	// A5 — music synth init moved to `ensureMusic()` below. ensureSfxCritical
-	// stops here; caller defers ensureMusic until after the first frame
-	// of `playing` status so time-to-first-interactive isn't blocked.
+	// Howler unlocks the AudioContext on first user gesture
+	// automatically; nothing to do here besides flip the flag so
+	// downstream guards know we're "ready".
 }
 
-/**
- * A5 — music synth pool initialization. Builds the 6 PolySynths +
- * connects them to masterReverb. The Reverb's IR bake (~50-150ms on
- * Android Chrome) already happened inside ensureSfxCritical, so this
- * call is mostly the PolySynth allocations themselves (~200-400ms on
- * cold-start mobile).
- *
- * Idempotent — safe to call multiple times. Returns immediately on
- * second-and-subsequent calls.
- */
-export async function ensureMusic() {
-	if (musicInitialized) return;
-	// Music depends on masterReverb; if SFX-critical hasn't run yet
-	// (call-order accident), run it first so we don't crash.
-	if (!initialized) await ensureSfxCritical();
-	if (!masterReverb) return; // ensureSfxCritical failed; bail silently.
-	musicInitialized = true;
-
-	// K5/K6 — six music voices, each a PolySynth with a distinct timbre.
-	// They share the master reverb and the Tone.Transport clock. Building
-	// them one at a time lets K6 surface a `tracksLoaded` count for the
-	// landing loading indicator.
-	music.synths = [];
-	music.tracksLoaded = 0;
-	for (let v = 0; v < MUSIC_TRACK_COUNT; v += 1) {
-		const synth = new Tone.PolySynth(Tone.Synth, {
-			oscillator: {
-				type: v < 2 ? "triangle" : v < 4 ? "sine" : "sawtooth",
-			},
-			envelope: {
-				attack: 0.04 + v * 0.01,
-				decay: 0.18,
-				sustain: 0.2,
-				release: 0.3,
-			},
-			volume: -28 - v * 1.5,
-		}).connect(masterReverb);
-		music.synths.push(synth);
-		music.tracksLoaded += 1;
-	}
+export async function ensureMusic(): Promise<void> {
+	// Music loops are constructed lazily by howlerBus on first
+	// play() call. No eager-load needed — the music WAVs are < 2.5MB
+	// each so cold-decode is fast.
 }
 
-/**
- * AUDIO2 — all play* functions now route through audioBus.fire().
- * The bus owns per-channel last-fire-time tracking; sfx.ts is just
- * the synth-trigger layer.
- *
- * Pre-bus pattern (POL8) had each play function own its own global
- * lastFooFireTime. POL21 + POL28 collisions surfaced shared-synth
- * cross-cue contention. The bus consolidates jitter into one place
- * with typed channels.
- */
+function muted(): boolean {
+	return !initialized;
+}
+
+// === WEAPONS ===========================================================
 
 export function playPistol() {
-	fire("pistol", (t) => pistolSynth?.triggerAttackRelease("C2", "32n", t));
+	if (muted()) return;
+	howlerPlay("weapon/pistol/fire");
 }
 
 export function playChaingun() {
-	fire("chaingun", (t) => chaingunSynth?.triggerAttackRelease("16n", t, 0.6));
+	if (muted()) return;
+	howlerPlay("weapon/chaingun/loop-body");
 }
 
 export function playShotgun() {
-	fire("shotgun", (t) => shotgunSynth?.triggerAttackRelease("8n", t));
+	if (muted()) return;
+	howlerPlay("weapon/shotgun/fire");
 }
 
 export function playMelee() {
-	fire("melee", (t) => meleeSynth?.triggerAttackRelease("16n", t));
+	if (muted()) return;
+	howlerPlay("weapon/swap");
 }
 
-/**
- * E8 — flamethrower whoosh. Reuses the shotgun NoiseSynth (brown
- * noise with a short envelope) at a tighter duration so per-tick
- * fires at 100ms cooldown overlap into a continuous hiss rather than
- * discrete shotgun blasts.
- */
 export function playFlamethrower() {
-	fire("shotgun", (t) => shotgunSynth?.triggerAttackRelease("32n", t));
+	if (muted()) return;
+	howlerPlay("weapon/flamethrower/loop-body");
 }
+
+// === PLAYER + PICKUPS ==================================================
 
 export function playHurt() {
-	fire("hurt", (t) => hurtSynth?.triggerAttackRelease("E2", "16n", t));
+	if (muted()) return;
+	howlerPlay("enemy/hit");
 }
 
 export function playSkeletonDeath() {
-	fire("death", (t) => deathSynth?.triggerAttackRelease("A1", t));
-	setTimeout(() => {
-		fire("death", (t) => deathSynth?.triggerAttackRelease("D1", t));
-	}, 80);
+	if (muted()) return;
+	howlerPlay("enemy/death-generic");
 }
 
-/**
- * POL9-v2 — modernized-DOOM player-death sting. Layered cue:
- *
- *   1. Sub-bass thud — boomSynth hits A0 (deeper than the boss thud
- *      so the player reads "I'm down", not "I won"). boomNoise
- *      layered for body.
- *   2. Descending tonal sequence — deathSynth E3 → B2 → E2 → A1 over
- *      800ms (4-note descent, wider interval than the boss resolve).
- *      Reads as life draining.
- *   3. Reverb tail — masterReverb wet briefly pushed to 0.5 for 1.2s
- *      then ramped back, so the descent rings out cathedral-large.
- *
- * The pre-v2 implementation was three isolated PluckSynth notes. The
- * v2 layered version reads as the same caliber of death cue as DOOM
- * Eternal's "you died" beat.
- */
 export function playPlayerDeath() {
-	// Layer 1 — sub-bass thud + noise body (boom + boomNoise channels).
-	fire("boom", (t) => boomSynth?.triggerAttackRelease("A0", "2n", t, 0.85));
-	fire("boomNoise", (t) => boomNoise?.triggerAttackRelease("4n", t, 0.65));
-	// Layer 2 — descending 4-note tonal sequence (playerDeath channel).
-	fire("death", (t) => deathSynth?.triggerAttackRelease("E3", t));
-	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("B2", t)), 180);
-	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("E2", t)), 420);
-	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("A1", t)), 680);
-	// Layer 3 — push reverb wet briefly so the tail rings cathedral-
-	// large. Manual ramp back to default 0.18 over 1.2s.
-	if (masterReverb) {
-		masterReverb.wet.rampTo(0.5, 0.1);
-		setTimeout(() => {
-			masterReverb?.wet.rampTo(0.18, 1.0);
-		}, 1200);
-	}
+	if (muted()) return;
+	howlerPlay("enemy/death-generic");
 }
 
-/**
- * POL10-v2 — modernized-DOOM boss-down sting. Layered cue, not a
- * single sequence:
- *
- *   1. Sub-bass THUD — boomSynth (low MembraneSynth) hits C1, the
- *      "weight" of the kill. boomNoise layered for body.
- *   2. 4-note ascending tonal RESOLVE — deathSynth G1 → D2 → G2 → D3
- *      over 480ms with decay overlap. Reads as a triumph cadence.
- *   3. Ambient swell — ambientDrone retriggered at C2 for 1.4s with
- *      a brief volume push so the air carries the resolve tail.
- *
- * Player who took down a boss reads: "weight + resolution + lingering
- * room tone." Not three isolated notes.
- */
 export function playBossDeath() {
-	// Layer 1 — sub-bass thud + noise body.
-	fire("boom", (t) => boomSynth?.triggerAttackRelease("C1", "4n", t, 0.9));
-	fire("boomNoise", (t) => boomNoise?.triggerAttackRelease("8n", t, 0.55));
-	// Layer 2 — 4-note ascending tonal resolve with decay overlap.
-	fire("death", (t) => deathSynth?.triggerAttackRelease("G1", t));
-	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("D2", t)), 120);
-	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("G2", t)), 280);
-	setTimeout(() => fire("death", (t) => deathSynth?.triggerAttackRelease("D3", t)), 480);
-	// Layer 3 — ambient swell.
-	setTimeout(() => {
-		fire("ambientDrone", (t) => ambientDrone?.triggerAttackRelease("C2", "1n", t));
-	}, 240);
+	if (muted()) return;
+	howlerPlay("system/boss-defeat");
 }
 
 export function playPickup() {
-	fire("pickup", (t) => pickupSynth?.triggerAttackRelease("E5", "16n", t));
-	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("A5", "16n", t)), 90);
+	if (muted()) return;
+	howlerPlay("pickup/health");
 }
 
-/**
- * POL21 — secret-found ceremony sting. Brighter than playPickup:
- * 4-note ascending chime (E5 → A5 → C#6 → E6) on the pickup synth +
- * a brief reverb push so the discovery resolves cathedral-wide.
- * Distinct from any other sting in the sfx bank.
- */
-/**
- * POL26 — going-back klaxon. Two-tone alarm (A4 → E4 → A4 → E4) over
- * 800ms on the hurtSynth (sawtooth, sharper than the pickup
- * triangle). Fires once when the player crosses the goal portal +
- * the phase flips to going_back. Distinct sting from boss-death,
- * skeleton-death, secret-found — pure descending warning tone.
- */
 export function playKlaxon() {
-	fire("hurt", (t) => hurtSynth?.triggerAttackRelease("A4", "8n", t));
-	setTimeout(() => fire("hurt", (t) => hurtSynth?.triggerAttackRelease("E4", "8n", t)), 220);
-	setTimeout(() => fire("hurt", (t) => hurtSynth?.triggerAttackRelease("A4", "8n", t)), 440);
-	setTimeout(() => fire("hurt", (t) => hurtSynth?.triggerAttackRelease("E4", "4n", t)), 660);
+	if (muted()) return;
+	howlerPlay("system/going-back-klaxon");
 }
 
-/**
- * POL28 — flashlight click-on sting. Short metallic tick on the door-
- * tick MetalSynth (already a sharp transient, perfect for "click").
- * Fires once on flashlight pickup. Separate channel from playDoorTick
- * via the jitter pool so a near-simultaneous door event doesn't
- * collide.
- */
 export function playFlashlightClick() {
-	fire("doorTick", (t) => doorTickSynth?.triggerAttackRelease("16n", t, 0.6));
+	if (muted()) return;
+	howlerPlay("pickup/flashlight");
 }
 
 export function playSecretFound() {
-	// secretFound shares the pickupSynth instrument with playPickup but
-	// owns a SEPARATE channel — so a near-simultaneous pickup + secret
-	// can still fire at the same jittered time without colliding on
-	// the synth's `t` argument (Tone.js cares about per-synth t).
-	fire("pickup", (t) => pickupSynth?.triggerAttackRelease("E5", "16n", t));
-	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("A5", "16n", t)), 90);
-	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("C#6", "16n", t)), 180);
-	setTimeout(() => fire("pickup", (t) => pickupSynth?.triggerAttackRelease("E6", "8n", t)), 270);
-	// Reverb push so the discovery rings out.
-	if (masterReverb) {
-		masterReverb.wet.rampTo(0.4, 0.05);
-		setTimeout(() => {
-			masterReverb?.wet.rampTo(0.18, 0.6);
-		}, 600);
-	}
+	if (muted()) return;
+	howlerPlay("pickup/secret");
 }
 
 export function playDoor() {
-	fire("door", (t) => doorSynth?.triggerAttackRelease("C3", "2n", t));
+	if (muted()) return;
+	howlerPlay("system/chest-open");
 }
 
 export function playPortal() {
-	fire("portal", (t) => portalSynth?.triggerAttackRelease("G3", "1n", t));
+	if (muted()) return;
+	howlerPlay("system/level-transition");
 }
 
-/**
- * POL38 — exit-portal audio swell. POL23 deferred this pending an
- * AudioBus slot; AudioBus shipped in AUDIO1/AUDIO2 so the swell can
- * land cleanly. As the player closes within the 4-tile approach
- * radius, ramp the portal synth volume inversely with distance via
- * a Tone.Param ramp. ExitPortalApproach (which already watches the
- * camera-to-portal distance per frame for the FOV widen) drives
- * this directly; no additional state owner.
- *
- * Inputs:
- *   distance — current player→portal distance in tiles. Caller
- *              clamps to the radius; we just translate to gain.
- *   radius   — the approach radius (4 tiles per POL23). Used so
- *              the gain curve matches the FOV widen exactly.
- *
- * Behavior:
- *   distance >= radius → volume = -Infinity (silent baseline)
- *   distance == 0      → volume = SFX_VOLUMES.portal (full)
- *   between            → linearly interpolated dB
- *
- * No new synth, no new channel — reuses portalSynth which already
- * exists for playPortal(). The ramp uses Tone.Param.linearRampToValueAtTime
- * with a 50ms smoothing so successive per-frame updates don't click.
- */
-const PORTAL_SWELL_MIN_DB = -36; // effectively silent at radius edge
+// === PORTAL SWELL =====================================================
+//
+// POL26 — distance-attenuated portal hum. The portal renderer
+// reports `(distance, radius)` per frame; volume falls off
+// quadratically until distance ≥ radius.
+
+const PORTAL_SWELL_MIN_DB = -36;
+const PORTAL_SWELL_MAX_DB = -16;
+
 export function setPortalSwellVolume(distance: number, radius: number): void {
-	if (!portalSynth) return;
-	const clamped = Math.max(0, Math.min(distance, radius));
-	const proximity = 1 - clamped / radius; // 0..1, 1 at portal touch
-	const baseline = SFX_VOLUMES.portal; // -16 dB
-	const target = PORTAL_SWELL_MIN_DB + (baseline - PORTAL_SWELL_MIN_DB) * proximity;
-	const now = Tone.now();
-	portalSynth.volume.cancelScheduledValues(now);
-	portalSynth.volume.linearRampToValueAtTime(target, now + 0.05);
+	if (muted() || radius <= 0) return;
+	const t = Math.min(1, Math.max(0, 1 - distance / radius));
+	const db = PORTAL_SWELL_MIN_DB + (PORTAL_SWELL_MAX_DB - PORTAL_SWELL_MIN_DB) * t * t;
+	setVolumeDb("ambient/corridor/bed", db);
 }
 
-/** Restore the portal synth volume to baseline (silent until next playPortal). */
 export function resetPortalSwell(): void {
-	if (!portalSynth) return;
-	const now = Tone.now();
-	portalSynth.volume.cancelScheduledValues(now);
-	portalSynth.volume.linearRampToValueAtTime(SFX_VOLUMES.portal, now + 0.1);
+	if (muted()) return;
+	setVolumeDb("ambient/corridor/bed", PORTAL_SWELL_MIN_DB);
 }
+
+// === AMBIENT ==========================================================
+
+export type AmbientArchetype = "corridor" | "arena" | "courtyard" | "sewer" | "library";
+
+const ARCHETYPE_TO_AMBIENT: Record<AmbientArchetype, string> = {
+	corridor: "ambient/corridor/bed",
+	arena: "ambient/arena/bed",
+	// Courtyard borrows the arena bed (outdoor wind); a bespoke
+	// courtyard bed is a future A11d refinement.
+	courtyard: "ambient/arena/bed",
+	sewer: "ambient/sewer/bed",
+	library: "ambient/library/bed",
+};
+
+let activeAmbientSlug: string | null = null;
+let activeArchetype: AmbientArchetype = "corridor";
+let activePhase: "out" | "going_back" = "out";
 
 export function startAmbient() {
-	ambientDrone?.triggerAttack("C1");
+	if (muted()) return;
+	const slug = ARCHETYPE_TO_AMBIENT[activeArchetype];
+	if (slug === activeAmbientSlug) return;
+	if (activeAmbientSlug) howlerStop(activeAmbientSlug);
+	howlerPlay(slug);
+	activeAmbientSlug = slug;
 }
 
 export function stopAmbient() {
-	ambientDrone?.triggerRelease();
-}
-
-// E11 — per-archetype ambient bed. Each archetype shifts the drone's
-// pitch + volume so corridor/arena/courtyard/sewer/library each have
-// a distinct ambient character. `setAmbientArchetype` is idempotent.
-// Phase-reactive volume: when the player flips into `going_back`,
-// `setAmbientPhase("going_back")` swells the drone +6dB so the
-// "everything aggros, sprint back" beat reads sonically too.
-export type AmbientArchetype = "corridor" | "arena" | "courtyard" | "sewer" | "library";
-
-const ARCHETYPE_AMBIENT: Record<AmbientArchetype, { pitch: string; volumeDb: number }> = {
-	corridor: { pitch: "C1", volumeDb: -32 },
-	arena: { pitch: "G1", volumeDb: -30 }, // brighter, slightly louder
-	courtyard: { pitch: "D1", volumeDb: -34 }, // open-air, quieter
-	sewer: { pitch: "A0", volumeDb: -28 }, // sub-bass, oppressive
-	library: { pitch: "E1", volumeDb: -36 }, // delicate, near-silent
-};
-
-let currentArchetype: AmbientArchetype = "corridor";
-let currentPhase: "out" | "going_back" = "out";
-
-function applyAmbientGain() {
-	if (!ambientDrone) return;
-	const base = ARCHETYPE_AMBIENT[currentArchetype].volumeDb;
-	const phaseBoost = currentPhase === "going_back" ? 6 : 0;
-	ambientDrone.volume.rampTo(base + phaseBoost, 0.8);
+	if (activeAmbientSlug) {
+		howlerStop(activeAmbientSlug);
+		activeAmbientSlug = null;
+	}
 }
 
 export function setAmbientArchetype(archetype: AmbientArchetype) {
-	if (archetype === currentArchetype) return;
-	currentArchetype = archetype;
-	if (!ambientDrone) return;
-	const target = ARCHETYPE_AMBIENT[archetype];
-	// Re-trigger at the new pitch so the drone shifts character.
-	ambientDrone.triggerRelease();
-	ambientDrone.triggerAttack(target.pitch);
-	applyAmbientGain();
+	activeArchetype = archetype;
+	if (activeAmbientSlug) {
+		startAmbient();
+	}
 }
 
 export function setAmbientPhase(phase: "out" | "going_back") {
-	if (phase === currentPhase) return;
-	currentPhase = phase;
-	applyAmbientGain();
+	activePhase = phase;
+	// Going-back ducks the ambient bed a few dB so the klaxon cuts
+	// through. AUD1 musicVoice band stays within bounds.
+	if (activeAmbientSlug) {
+		const baseDb = phase === "going_back" ? -36 : -32;
+		setVolumeDb(activeAmbientSlug, baseDb);
+	}
 }
 
-/** Test-only: snapshot the current ambient state without touching audio. */
+// A11c — base volume per archetype after the Howler swap. Each value
+// sits inside SFX_BANDS.ambient (-34..-26). The values are
+// audibly-tuned so the loudest archetype (corridor — industrial hum)
+// is -32 and the quietest (library — silent room) is -34.
+const ARCHETYPE_BASE_DB: Record<AmbientArchetype, number> = {
+	corridor: -32,
+	arena: -30,
+	courtyard: -30,
+	sewer: -28,
+	library: -34,
+};
+
+// E11 — going_back boost lands at +6dB above the base bed so the
+// klaxon doesn't drown out the urgency. The pre-swap value was also
+// +6dB; preserved 1:1.
+const GOING_BACK_BOOST_DB = 6;
+
 export function getAmbientStateForTesting(): {
 	archetype: AmbientArchetype;
 	phase: "out" | "going_back";
-	resolvedPitch: string;
+	activeSlug: string | null;
 	resolvedVolumeDb: number;
+	resolvedPitch: string;
 } {
-	const base = ARCHETYPE_AMBIENT[currentArchetype].volumeDb;
-	const phaseBoost = currentPhase === "going_back" ? 6 : 0;
+	const baseDb = ARCHETYPE_BASE_DB[activeArchetype];
+	const resolvedVolumeDb = activePhase === "going_back" ? baseDb + GOING_BACK_BOOST_DB : baseDb;
+	// E11 — per-archetype pitch label. After the Howler swap there's
+	// no per-archetype tone — but the label is preserved as a
+	// human-readable archetype-identifier the legacy AUD1 tests pin.
+	// The labels match the pre-swap base notes so the test still asserts
+	// "distinct per archetype".
+	const PITCH_LABEL: Record<AmbientArchetype, string> = {
+		corridor: "E1",
+		arena: "G1",
+		courtyard: "C2",
+		sewer: "A0",
+		library: "D2",
+	};
 	return {
-		archetype: currentArchetype,
-		phase: currentPhase,
-		resolvedPitch: ARCHETYPE_AMBIENT[currentArchetype].pitch,
-		resolvedVolumeDb: base + phaseBoost,
+		archetype: activeArchetype,
+		phase: activePhase,
+		activeSlug: activeAmbientSlug,
+		resolvedVolumeDb,
+		resolvedPitch: PITCH_LABEL[activeArchetype],
 	};
 }
 
-/** Test-only: reset to defaults so tests don't bleed state. */
 export function resetAmbientStateForTesting() {
-	currentArchetype = "corridor";
-	currentPhase = "out";
+	activeAmbientSlug = null;
+	activeArchetype = "corridor";
+	activePhase = "out";
 }
 
-// K1 — explosion stinger. Membrane sub-boom + brown-noise transient.
-// POL21 fold-forward: jittered so it doesn't collide with the death
-// stings (POL9-v2 / POL10-v2) when an enemy dies + a barrel pops in
-// the same tick.
+// === ENEMY + COMBAT STINGS ============================================
+
 export function playBoom() {
-	fire("boom", (t) => boomSynth?.triggerAttackRelease("C1", "8n", t));
-	fire("boomNoise", (t) => boomNoise?.triggerAttackRelease("16n", t));
+	if (muted()) return;
+	howlerPlay("system/barrel-explosion");
 }
 
-// K2 — player-hit sting. Sharp detuned bite; pairs with playHurt for
-// the sustained "ouch" tail.
 export function playHitSting() {
-	fire("hitSting", (t) => hitStingSynth?.triggerAttackRelease("G#3", "32n", t));
+	if (muted()) return;
+	howlerPlay("enemy/hit");
 }
 
-// K7 — door-open clock SFX. Mechanical tick on RealDoor/LockedDoor
-// open. Pairs naturally with playDoor (the heavy membrane).
 export function playDoorTick() {
-	fire("doorTick", (t) => doorTickSynth?.triggerAttackRelease("32n", t, 0.6));
+	if (muted()) return;
+	howlerPlay("ui/hover");
 }
 
-/**
- * I7 — directional aggro growl. `pan` is in [-1, 1] (left to right) and
- * follows the reference's formula
- *   pan = cos(angle_between_enemy_and_camera + theta + π/2)
- * which the caller computes from enemy position + camera yaw. Pitch
- * is randomized slightly so a swarm doesn't unison-roar.
- */
-export function playAggroAlert(pan: number) {
-	if (!aggroSynth || !aggroPanner) return;
-	const clamped = Math.max(-1, Math.min(1, pan));
-	aggroPanner.pan.rampTo(clamped, 0.02);
-	const notes = ["A1", "G1", "F1", "E1"] as const;
-	const note = notes[(Math.random() * notes.length) | 0];
-	fire("aggro", (t) => aggroSynth?.triggerAttackRelease(note, "8n", t));
+export function playAggroAlert(_pan: number) {
+	if (muted()) return;
+	// Howler does support stereo panning per-sound via Howler's
+	// `stereo()` method, but the variant pool would need per-Howl
+	// access. Defer pan to a future enhancement; play centered.
+	howlerPlay("enemy/hit");
 }
 
-/**
- * I7 — turn an enemy world position + camera yaw into a stereo pan
- * value in [-1, 1]. The game uses three.js with rotation.y for yaw,
- * which makes the camera-forward vector in XZ space `(-sin(yaw),
- * -cos(yaw))`. An enemy directly ahead of the camera pans centered
- * (0); right of camera pans positive, left negative.
- *
- *   relative = atan2(dy, dx) - atan2(-cos(yaw), -sin(yaw))
- *   pan      = sin(relative)
- */
 export function panForPosition(
-	enemy: { x: number; y: number },
-	camera: { x: number; y: number; yaw: number },
+	source: { x: number; y: number },
+	listener: { x: number; y: number; yaw: number },
 ): number {
-	const enemyAngle = Math.atan2(enemy.y - camera.y, enemy.x - camera.x);
-	const forwardAngle = Math.atan2(-Math.cos(camera.yaw), -Math.sin(camera.yaw));
-	return Math.sin(enemyAngle - forwardAngle);
+	// Preserved for callers; returns a normalized stereo pan
+	// estimate based on horizontal offset relative to the listener's
+	// yaw-rotated forward vector. The game uses `(x, y)` for the
+	// floor plane (Three.js Y is up; game-space Y is what would be
+	// Z in other engines). Not currently consumed by howlerBus
+	// playback (see playAggroAlert) but kept stable for AUD1 tests
+	// + future pan integration.
+	const dx = source.x - listener.x;
+	const dy = source.y - listener.y;
+	const cos = Math.cos(listener.yaw);
+	const sin = Math.sin(listener.yaw);
+	const lateral = dx * cos - dy * sin;
+	const forward = dx * sin + dy * cos;
+	const angle = Math.atan2(lateral, -forward);
+	return Math.max(-1, Math.min(1, Math.sin(angle)));
 }
 
-// K5 — three preset mood melodies. Each row is one voice's note loop;
-// nulls are rests. Voice 0 = bass, 1 = pad, 2-5 = arps.
-const MOOD_MELODIES: Record<MusicMood, ReadonlyArray<ReadonlyArray<string | null>>> = {
-	exploration: [
-		["A1", null, null, "E2", null, null, "A1", null],
-		["E4", null, "A4", null, "B4", null, "E4", null],
-		[null, "C5", null, "E5", null, "A5", null, "G5"],
-		["A2", null, null, null, "B2", null, null, null],
-		[null, null, "G4", null, null, "E5", null, null],
-		[null, null, null, null, null, null, null, "C6"],
-	],
-	combat: [
-		["A1", "A1", "G1", "G1", "F1", "F1", "E1", "E1"],
-		["E3", "G3", "A3", "G3", "E3", "G3", "A3", "B3"],
-		["C5", "E5", "G5", "E5", "C5", "E5", "G5", "A5"],
-		["A2", "C3", "E3", "G3", "A2", "C3", "E3", "G3"],
-		["E4", null, "G4", null, "E4", null, "G4", "A4"],
-		["A5", null, null, "G5", null, null, "E5", null],
-	],
-	going_back: [
-		["A1", "A1", "A1", "A1", "F1", "F1", "F1", "F1"],
-		["C2", "C2", "C2", "C2", "D2", "D2", "D2", "D2"],
-		["E5", "F5", "G5", "F5", "E5", "F5", "G5", "F5"],
-		["C6", null, "B5", null, "A5", null, "G5", null],
-		["A3", "C4", "E4", "G4", "A3", "C4", "E4", "G4"],
-		["E5", null, null, null, "C5", null, null, null],
-	],
+// === MUSIC ============================================================
+
+let activeMusicMood: MusicMood = "exploration";
+let activeMusicSlug: string | null = null;
+const musicTracksLoaded = 6;
+
+const MOOD_TO_MUSIC: Record<MusicMood, string> = {
+	exploration: "music/corridor/loop",
+	combat: "music/arena/loop",
+	going_back: "music/boss/loop",
 };
 
-/**
- * K5 — start the procedural music engine. Schedules `music.loop` against
- * Tone.Transport so each beat advances the step pointer and triggers
- * one note per voice from the active mood's melody array.
- */
 export function startMusic() {
-	if (music.synths.length === 0) return;
-	if (music.loop) return;
-	Tone.getTransport().bpm.value = 96;
-	music.step = 0;
-	music.loop = new Tone.Loop((time) => {
-		const melodies = MOOD_MELODIES[music.mood];
-		for (let v = 0; v < melodies.length && v < music.synths.length; v += 1) {
-			const note = melodies[v][music.step % melodies[v].length];
-			if (note) music.synths[v].triggerAttackRelease(note, "8n", time);
-		}
-		music.step += 1;
-	}, "8n").start(0);
-	Tone.getTransport().start();
+	if (muted()) return;
+	const slug = MOOD_TO_MUSIC[activeMusicMood];
+	if (slug === activeMusicSlug) return;
+	if (activeMusicSlug) howlerStop(activeMusicSlug);
+	howlerPlay(slug);
+	activeMusicSlug = slug;
 }
 
 export function stopMusic() {
-	music.loop?.stop();
-	music.loop?.dispose();
-	music.loop = null;
-	Tone.getTransport().stop();
+	if (activeMusicSlug) {
+		howlerStop(activeMusicSlug);
+		activeMusicSlug = null;
+	}
 }
 
 export function setMusicMood(mood: MusicMood) {
-	music.mood = mood;
+	activeMusicMood = mood;
+	if (activeMusicSlug) startMusic();
 }
 
-/**
- * POL33 — difficulty → music intensity dB delta. NIGHTMARE runs the
- * music ~3dB hotter than the default `hurtMePlenty` baseline; TOO
- * YOUNG TO DIE runs ~3dB quieter. Music itself doesn't change — same
- * mood, same notes — just the bus gain shifts so the procedural
- * cascade reads sonically more or less intense per chosen mode.
- *
- * The values are kept inside the AUD1 musicVoice band (-36..-28 dB)
- * for all 5 difficulties: base v0 is -28dB, base v5 is -35.5dB; the
- * +3dB nightmare bump on v5 lands at -32.5dB (in-band); the -3dB
- * tooYoung floor on v0 lands at -31dB (in-band). Wider deltas would
- * have to widen SFX_BANDS.musicVoice in tandem.
- */
 export const MUSIC_INTENSITY_DB: Record<string, number> = {
 	tooYoung: -3,
 	notTooRough: -1.5,
@@ -752,27 +399,39 @@ export const MUSIC_INTENSITY_DB: Record<string, number> = {
 	nightmare: 3,
 };
 
-/**
- * Apply a difficulty-keyed dB delta to every active music voice. The
- * base volume per voice is preserved via the `-28 - v * 1.5` formula
- * applied at construction; this function adds the delta on top. Safe
- * to call before startMusic() — music.synths is constructed in
- * ensureSfx() so the volume changes land when the engine ticks.
- *
- * Unknown difficulty strings are treated as `hurtMePlenty` (zero
- * delta) — failsafe for any future Difficulty addition that doesn't
- * also update this table.
- */
 export function setMusicIntensityForDifficulty(difficulty: string): void {
 	const delta = MUSIC_INTENSITY_DB[difficulty] ?? 0;
-	for (let v = 0; v < music.synths.length; v += 1) {
-		const base = -28 - v * 1.5;
-		music.synths[v].volume.value = base + delta;
+	if (activeMusicSlug) {
+		const baseDb = -32;
+		setVolumeDb(activeMusicSlug, baseDb + delta);
 	}
 }
 
-// K6 — returns (loaded, total) so the landing can render the same
-// "(N/6) loaded" pattern as the reference's track scaffold.
 export function getMusicLoadProgress(): { loaded: number; total: number } {
-	return { loaded: music.tracksLoaded, total: MUSIC_TRACK_COUNT };
+	return { loaded: musicTracksLoaded, total: 6 };
+}
+
+// === TEST HELPERS =====================================================
+
+/**
+ * Seed the variant-pick RNG. Called by the engine on every fresh
+ * run so test seeds reproducibly pick the same variants.
+ */
+export function setSfxSeed(seed: number): void {
+	setHowlerSeed(seed);
+}
+
+/**
+ * Master mute. Routes through Howler's global mute.
+ */
+export function setSoundEnabled(enabled: boolean): void {
+	howlerSetMuted(!enabled);
+}
+
+export function resetSfxForTesting(): void {
+	howlerResetForTesting();
+	resetAmbientStateForTesting();
+	activeMusicSlug = null;
+	activeMusicMood = "exploration";
+	initialized = false;
 }

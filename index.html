@@ -18,16 +18,18 @@
 
 		  Allowlist rationale:
 		    - script-src 'self' 'wasm-unsafe-eval'
-		        Tone.js AudioWorklets + jeep-sqlite custom element load
-		        WASM at runtime (needs wasm-unsafe-eval, NOT unsafe-eval).
+		        jeep-sqlite custom element loads WASM at runtime (needs
+		        wasm-unsafe-eval, NOT unsafe-eval). Howler.js does NOT
+		        need this; the directive is retained for jeep-sqlite.
 		    - style-src 'self' 'unsafe-inline'
 		        framer-motion injects style attributes at runtime.
 		    - img-src 'self' data: blob:
 		        canvas → blob URLs for screenshot captures; data: URIs
 		        from postprocessing's lookup textures.
 		    - worker-src 'self' blob:
-		        AudioWorklet workers from Tone.js + potential Vite-issued
-		        blob: workers.
+		        Potential Vite-issued blob: workers. Howler does not
+		        use AudioWorklets; the directive is retained as
+		        defense-in-depth for future blob-worker introductions.
 		    - connect-src 'self'
 		        The game has ZERO outbound fetches (offline single-player).
 		        Lock it.
