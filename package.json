@@ -45,6 +45,7 @@
 		"test:perf": "node scripts/obs3-perf-snapshot.mjs",
 		"test:perf:mobile": "node scripts/obs3-perf-snapshot-mobile.mjs",
 		"assets:fbx-to-glb": "node scripts/convert-fbx.mjs",
+		"assets:bulk-fbx-to-glb": "node scripts/bulk-convert-fbx.mjs",
 		"itch:fetch": "node scripts/fetch-itch.mjs",
 		"itch:fetch:dry": "node scripts/fetch-itch.mjs --dry",
 		"itch:inventory": "node scripts/fetch-itch.mjs --inventory",
