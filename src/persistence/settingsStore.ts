@@ -25,6 +25,8 @@ import {
 	LEVEL_LABEL,
 	type LevelChoice,
 	type ObjexoomSettings,
+	TOUCH_CONTROL_LABEL,
+	type TouchControlMode,
 } from "../settings";
 import { readJsonPref, writeJsonPref } from "./preferences";
 
@@ -32,9 +34,14 @@ const SETTINGS_KEY = "objexoom.settings";
 
 const DIFFICULTY_KEYS = Object.keys(DIFFICULTY_LABEL) as readonly Difficulty[];
 const LEVEL_KEYS = Object.keys(LEVEL_LABEL) as readonly string[];
+const TOUCH_CONTROL_KEYS = Object.keys(TOUCH_CONTROL_LABEL) as readonly TouchControlMode[];
 
 function isDifficulty(v: unknown): v is Difficulty {
 	return typeof v === "string" && (DIFFICULTY_KEYS as readonly string[]).includes(v);
+}
+
+function isTouchControlMode(v: unknown): v is TouchControlMode {
+	return typeof v === "string" && (TOUCH_CONTROL_KEYS as readonly string[]).includes(v);
 }
 
 function isLevelChoice(v: unknown): v is LevelChoice {
@@ -81,7 +88,17 @@ export function validateSettings(raw: unknown): ObjexoomSettings {
 	const touchLookSensitivity = isFiniteNumber(r.touchLookSensitivity)
 		? Math.min(4, Math.max(0.5, r.touchLookSensitivity))
 		: DEFAULT_SETTINGS.touchLookSensitivity;
-	return { difficulty, level, soundEnabled, mouseSensitivity, touchLookSensitivity };
+	const touchControls = isTouchControlMode(r.touchControls)
+		? r.touchControls
+		: DEFAULT_SETTINGS.touchControls;
+	return {
+		difficulty,
+		level,
+		soundEnabled,
+		mouseSensitivity,
+		touchLookSensitivity,
+		touchControls,
+	};
 }
 
 /**

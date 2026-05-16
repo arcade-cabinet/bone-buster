@@ -27,6 +27,7 @@ import {
 	DIFFICULTY_TUNING,
 	type Difficulty,
 	type ObjexoomSettings,
+	type TouchControlMode,
 } from "./settings";
 import {
 	ensureMusic,
@@ -127,10 +128,40 @@ export type GameRef = {
 	onCollectPickup(kind: PickupKind): void;
 };
 
+// BC5 — touch-mode auto-detection. Previously a single `(pointer:
+// coarse)` query, which mis-classified the Pixel Fold's inner display
+// (it advertises a fine pointer because of the embedded keyboard
+// support) and every Chrome desktop emulation preset (which inherits
+// fine pointer regardless of the emulated device).
+//
+// The broadened gate is: ANY coarse pointer attached AND the viewport
+// is mid-size or smaller. The `any-pointer` query catches dual-input
+// devices (Surface, Pixel Fold) where `pointer` reports the precise
+// device but `any-pointer` reveals the secondary coarse input. The
+// `max-width: 1024px` clamp keeps a docked-keyboard 4K tablet from
+// flipping into touch-stick mode unnecessarily.
+//
+// The original `(pointer: coarse)` is kept as the first arm so phones
+// (single coarse input, no fine pointer) still match.
+const TOUCH_AUTO_QUERY = "(pointer: coarse), (max-width: 1024px) and (any-pointer: coarse)";
+
 const isCoarsePointer = () =>
 	typeof window !== "undefined" &&
 	typeof window.matchMedia === "function" &&
-	window.matchMedia("(pointer: coarse)").matches;
+	window.matchMedia(TOUCH_AUTO_QUERY).matches;
+
+// BC5 — resolve the player's touch-control preference against the
+// runtime device. `auto` runs the broadened media-query gate; `on`/
+// `off` are absolute pins. Returning a boolean lets the rest of the
+// HUD stay touchMode-only and ignorant of the preference layer.
+export function resolveTouchMode(
+	mode: TouchControlMode,
+	autoDetect: () => boolean = isCoarsePointer,
+): boolean {
+	if (mode === "on") return true;
+	if (mode === "off") return false;
+	return autoDetect();
+}
 
 const baseAmmo = (): Record<WeaponId, number> => ({
 	melee: WEAPONS.melee.startingAmmo,
@@ -320,7 +351,9 @@ export function ObjexoomShell() {
 		phase: "out",
 		goingBackDeadlineMs: null,
 	}));
-	const [touchMode, setTouchMode] = useState<boolean>(() => isCoarsePointer());
+	const [touchMode, setTouchMode] = useState<boolean>(() =>
+		resolveTouchMode(settings.touchControls),
+	);
 
 	// J3 — fade overlay trigger queue. Only the latest active trigger
 	// renders; subsequent triggers replace it. AnimatePresence + a unique
@@ -349,10 +382,11 @@ export function ObjexoomShell() {
 	}, [state.weapon, state.ammo]);
 
 	useEffect(() => {
-		const onResize = () => setTouchMode(isCoarsePointer());
+		const onResize = () => setTouchMode(resolveTouchMode(settings.touchControls));
+		onResize();
 		window.addEventListener("resize", onResize);
 		return () => window.removeEventListener("resize", onResize);
-	}, []);
+	}, [settings.touchControls]);
 
 	// CONV2 — GameRef callback construction extracted to useGameRef hook.
 	// The hook owns the lastPlayerHitAt iframe gate, the ammoIncrement

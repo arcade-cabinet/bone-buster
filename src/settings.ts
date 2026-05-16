@@ -7,12 +7,22 @@ export type Difficulty =
 
 export type LevelChoice = "procedural" | 1 | 2 | 3 | 4 | 5;
 
+// BC5 — touch-control mode. `auto` runs the broadened media-query
+// gate (covers desktops, tablets, foldables in unfolded mode, and
+// every phone form factor); `on` pins the touch HUD even on a
+// desktop browser (useful for screenshot work + Pixel Fold inner-
+// display previews on Chrome desktop with no coarse pointer); `off`
+// forces the keyboard+mouse HUD even on tablets (useful when a
+// Bluetooth keyboard is paired).
+export type TouchControlMode = "auto" | "on" | "off";
+
 export type ObjexoomSettings = Readonly<{
 	difficulty: Difficulty;
 	level: LevelChoice;
 	soundEnabled: boolean;
 	mouseSensitivity: number; // 0.5 → 2.5
 	touchLookSensitivity: number; // 0.5 → 4
+	touchControls: TouchControlMode;
 }>;
 
 // H1 — reference levels are the default. Procedural mode is the
@@ -25,6 +35,19 @@ export const DEFAULT_SETTINGS: ObjexoomSettings = {
 	soundEnabled: true,
 	mouseSensitivity: 1,
 	touchLookSensitivity: 1.6,
+	touchControls: "auto",
+};
+
+export const TOUCH_CONTROL_LABEL: Record<TouchControlMode, string> = {
+	auto: "AUTO",
+	on: "ALWAYS ON",
+	off: "ALWAYS OFF",
+};
+
+export const TOUCH_CONTROL_BLURB: Record<TouchControlMode, string> = {
+	auto: "Detect touch input automatically. Foldables + phones get sticks; desktops get keyboard.",
+	on: "Force on-screen sticks. Useful for previewing the touch HUD on a desktop browser.",
+	off: "Force keyboard + mouse. Useful when a Bluetooth keyboard is paired to a tablet.",
 };
 
 export type DifficultyTuning = Readonly<{
