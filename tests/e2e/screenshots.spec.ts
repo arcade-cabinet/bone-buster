@@ -116,9 +116,11 @@ async function withGame(baseURL: string, fn: (page: Page) => Promise<void>): Pro
 	});
 	const page = await context.newPage();
 	// Block external font loads — they stall page.screenshot's font-wait.
+	// CodeQL js/incomplete-url-substring-sanitization: `===` exact host match
+	// instead of `.includes()` so the rule can't be tricked by a hostname
+	// like `fonts.googleapis.com.attacker.example`.
 	await page.route(
-		(url) =>
-			url.hostname.includes("fonts.googleapis.com") || url.hostname.includes("fonts.gstatic.com"),
+		(url) => url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com",
 		(route) => route.abort(),
 	);
 	try {

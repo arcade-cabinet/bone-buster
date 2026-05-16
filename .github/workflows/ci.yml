@@ -9,6 +9,13 @@ on:
     # release-please tags.
     tags: ['v*']
 
+# CodeQL actions/missing-workflow-permissions: lock GITHUB_TOKEN to
+# read-only at the workflow level. Individual jobs override upward
+# only when they need write (none here — CI is verify + build only;
+# release.yml owns the publish surface).
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
