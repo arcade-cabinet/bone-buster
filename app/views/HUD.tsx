@@ -1,6 +1,6 @@
 import { addBoneBusterListener, dispatch } from "@engine/events";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
-import { type Difficulty, LEVEL_LABEL, type LevelChoice } from "@store/settings";
+import type { Difficulty } from "@store/settings";
 import {
 	BONE_BUSTER_PALETTE,
 	FONT_FAMILY,
@@ -12,7 +12,6 @@ import {
 } from "@styles/tokens/index";
 import { HUDOverlays } from "@views/hudOverlays/HUDOverlays";
 import type { GameState } from "@views/Shell";
-import type { PropArchetype } from "@world/scatter/propPool";
 import { motion } from "framer-motion";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -25,14 +24,12 @@ type BoneBusterHUDProps = Readonly<{
 	onReturnToLanding: () => void;
 	onQuit: () => void;
 	onSelectWeapon: (weapon: WeaponId) => void;
-	// M5 — current level identity for the top-left HUD readout.
-	level: LevelChoice;
 	/**
-	 * POL7 — current archetype for the top-left readout. Appended to the
-	 * level label so the player learns the name (`RANDOM · ARENA`,
-	 * `M1 · CORRIDOR`).
+	 * D8 — alliterative two-word level name computed in Shell via
+	 * pickLevelName(archetype, seed). Replaces the M5 LEVEL_LABEL[level]
+	 * + POL7 archetype suffix; the name itself already encodes the mood.
 	 */
-	archetype: PropArchetype;
+	levelName: string;
 	// POL31 — chosen difficulty + monotonic run id; threaded through to
 	// the DifficultyChip overlay slot which fires its 2s acknowledgment
 	// every time runId advances.
@@ -47,8 +44,7 @@ export function BoneBusterHUD({
 	onReturnToLanding,
 	onQuit,
 	onSelectWeapon,
-	level,
-	archetype,
+	levelName,
 	difficulty,
 	runId,
 }: BoneBusterHUDProps) {
@@ -110,8 +106,7 @@ export function BoneBusterHUD({
 							textShadow: `0 0 10px ${ROLE.accentPrimary}66`,
 						}}
 					>
-						{LEVEL_LABEL[level]} <span style={{ opacity: 0.5 }}>·</span>{" "}
-						<span style={{ opacity: 0.85 }}>{archetype.toUpperCase()}</span>
+						{levelName.toUpperCase()}
 					</div>
 				)}
 				<div style={hudLabelStyle}>HEALTH</div>

@@ -7,12 +7,8 @@
  * HUD reads this instead of the old "E1M1 · CORRIDOR" pattern.
  */
 
-import {
-	LEVEL_NAME_POOLS,
-	pickLevelName,
-	WELCOME_WING_NAME,
-} from "@world/levelNames";
 import { ARCHETYPE_NAMES } from "@world/archetype";
+import { LEVEL_NAME_POOLS, pickLevelName, WELCOME_WING_NAME } from "@world/levelNames";
 import { describe, expect, it } from "vitest";
 
 describe("D8 — pickLevelName", () => {

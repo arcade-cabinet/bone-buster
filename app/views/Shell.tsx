@@ -39,8 +39,9 @@ import { ROLE, SCALE } from "@styles/tokens/index";
 import { BoneBusterHUD } from "@views/HUD";
 import { BoneBusterLanding } from "@views/Landing";
 import { BoneBusterScene } from "@views/Scene";
-import { ARCHETYPE_NAMES, pickArchetype } from "@world/archetype";
+import { ARCHETYPE_NAMES } from "@world/archetype";
 import { buildMap } from "@world/buildMap";
+import { pickLevelName, WELCOME_WING_NAME } from "@world/levelNames";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGameRef } from "../../src/scene/hooks/useGameRef";
@@ -337,6 +338,14 @@ export function BoneBusterShell() {
 		// per the ref formula. Procedural maps don't read it.
 		() => buildMap(seed, settings.level, settings.difficulty),
 		[seed, settings.level, settings.difficulty],
+	);
+	// D8 — alliterative level name. refLevel(0) tutorial (LEVEL_CHOICE 1)
+	// is fixed at "Welcome Wing"; every other map rolls from its
+	// archetype's pool via the NAME-tagged PRNG so the name is stable
+	// across reloads of the same seed.
+	const levelName = useMemo(
+		() => (settings.level === 1 ? WELCOME_WING_NAME : pickLevelName(map.archetype, seed)),
+		[settings.level, map.archetype, seed],
 	);
 
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
@@ -936,8 +945,7 @@ export function BoneBusterShell() {
 								onReturnToLanding={onReturnToLanding}
 								onQuit={onQuit}
 								onSelectWeapon={onSelectWeapon}
-								level={settings.level}
-								archetype={pickArchetype(map)}
+								levelName={levelName}
 								difficulty={settings.difficulty}
 								runId={runId}
 							/>
