@@ -123,7 +123,7 @@ export const ARCHETYPE_AXES: readonly ArchetypeAxis[] = [
 	},
 	{
 		axisName: "ambient audio",
-		module: "src/sfx.ts",
+		module: "src/audio/sfx.ts",
 		axisDescription:
 			"Ambient pitch + volume per archetype (search for the ambient table near line 516).",
 	},

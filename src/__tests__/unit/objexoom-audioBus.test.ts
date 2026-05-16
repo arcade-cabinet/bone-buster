@@ -8,8 +8,8 @@
  * `t` values, and the schedule callback receives that `t`.
  */
 
+import { fire, resetForTest } from "@audio/audioBus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fire, resetForTest } from "../../audioBus";
 
 // Tone.now() is a thin wrapper over Tone.js's AudioContext time. In
 // jsdom there's no audio context, so Tone.now() returns 0 — predictable

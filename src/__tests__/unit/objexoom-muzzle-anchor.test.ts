@@ -8,9 +8,9 @@
  * red unit test instead of shipping a flash inside the grip.
  */
 
+import { WEAPON_MODELS } from "@assets/models";
 import { WEAPONS } from "@shared/weapons";
 import { describe, expect, it } from "vitest";
-import { WEAPON_MODELS } from "../../models";
 
 describe("PA-MOD7 — muzzleBboxFrac authoring contract", () => {
 	it("every wired weapon has a muzzleBboxFrac", () => {

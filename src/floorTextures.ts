@@ -25,7 +25,7 @@
  * blurring. Tune per archetype if the natural texture scale demands.
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 import type { PropArchetype } from "./scatter/propPool";
 
 export interface FloorTextureSet {

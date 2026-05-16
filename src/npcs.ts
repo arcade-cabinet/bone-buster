@@ -11,7 +11,7 @@
  * LOS, no attack) and have HUB sectors spawn one chibi per slot.
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 
 export type NpcKind = "archer" | "knight" | "merchant" | "ninja" | "student" | "basemesh";
 

@@ -1,5 +1,17 @@
 import { remapEnemyMix } from "@ai/enemyMix";
 import { clearYuka, makeYukaEntityAt, removeYukaEntity, tickYuka } from "@ai/yukaIntegration";
+import { preloadTier2MapMount, preloadTier3Deferred } from "@assets/preload";
+import {
+	playBoom,
+	playBossDeath,
+	playHurt,
+	playPickup,
+	playPortal,
+	playSkeletonDeath,
+	setAmbientArchetype,
+	setAmbientPhase,
+	stopAmbient,
+} from "@audio/sfx";
 import {
 	computePortalEdges,
 	ENEMY_BULLET_DAMAGE,
@@ -27,7 +39,6 @@ import { type LampInstance, spawnLamps } from "./lampScatter";
 import { getArchetypeLightPalette } from "./lighting/archetypePalette";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
-import { preloadTier2MapMount, preloadTier3Deferred } from "./preload";
 import { type DebrisInstance, spawnDebris } from "./scatter/debrisScatter";
 import { type DecalInstance, spawnDecals } from "./scatter/decalScatter";
 import { type FloorTileInstance, spawnFloorTiles } from "./scatter/floorTiles";
@@ -93,17 +104,6 @@ import { resolveFire } from "./scene/tick/fireResolution";
 import { createTimeScaleBus } from "./scene/tick/timeScaleBus";
 import { type Secret, spawnSecrets } from "./secrets";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
-import {
-	playBoom,
-	playBossDeath,
-	playHurt,
-	playPickup,
-	playPortal,
-	playSkeletonDeath,
-	setAmbientArchetype,
-	setAmbientPhase,
-	stopAmbient,
-} from "./sfx";
 
 type SceneProps = Readonly<{
 	map: ObjexoomMap;

@@ -39,24 +39,24 @@
  * Source: PERF audit Architectural D.
  */
 
-import { preloadBarrels } from "./scene/entities/BarrelMesh";
-import { preloadDebris } from "./scene/entities/DebrisField";
-import { preloadDecals } from "./scene/entities/DecalField";
-import { preloadEnemyRoster } from "./scene/entities/EnemyMesh";
-import { preloadFloorTiles } from "./scene/entities/FloorTileField";
-import { preloadKitchenProps } from "./scene/entities/KitchenField";
-import { preloadLamps } from "./scene/entities/LampField";
-import { preloadLargeProps } from "./scene/entities/LargePropField";
-import { preloadNature } from "./scene/entities/NatureField";
-import { preloadNpcs } from "./scene/entities/NpcField";
-import { preloadLootPickups } from "./scene/entities/PickupMesh";
-import { preloadProps } from "./scene/entities/PropField";
-import { preloadDoors } from "./scene/entities/RealDoor";
-import { preloadTraps } from "./scene/entities/TrapField";
-import { preloadVehicleWrecks } from "./scene/entities/VehicleWreck";
-import { preloadWalls } from "./scene/map/MapGeometry";
-import { preloadSectorWalls } from "./scene/map/SectorMapGeometry";
-import { preloadMeleeSkins, preloadWeapons } from "./scene/viewmodel/WeaponViewmodel";
+import { preloadBarrels } from "../scene/entities/BarrelMesh";
+import { preloadDebris } from "../scene/entities/DebrisField";
+import { preloadDecals } from "../scene/entities/DecalField";
+import { preloadEnemyRoster } from "../scene/entities/EnemyMesh";
+import { preloadFloorTiles } from "../scene/entities/FloorTileField";
+import { preloadKitchenProps } from "../scene/entities/KitchenField";
+import { preloadLamps } from "../scene/entities/LampField";
+import { preloadLargeProps } from "../scene/entities/LargePropField";
+import { preloadNature } from "../scene/entities/NatureField";
+import { preloadNpcs } from "../scene/entities/NpcField";
+import { preloadLootPickups } from "../scene/entities/PickupMesh";
+import { preloadProps } from "../scene/entities/PropField";
+import { preloadDoors } from "../scene/entities/RealDoor";
+import { preloadTraps } from "../scene/entities/TrapField";
+import { preloadVehicleWrecks } from "../scene/entities/VehicleWreck";
+import { preloadWalls } from "../scene/map/MapGeometry";
+import { preloadSectorWalls } from "../scene/map/SectorMapGeometry";
+import { preloadMeleeSkins, preloadWeapons } from "../scene/viewmodel/WeaponViewmodel";
 
 /**
  * Tier 1 — called at app boot from `ObjexoomShell` mount. The

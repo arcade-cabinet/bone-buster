@@ -1,9 +1,9 @@
+import { BARREL_MODEL_URLS, pickBarrelModelUrl } from "@assets/models";
 import { useGLTF } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 import type { Barrel } from "../../barrels";
-import { BARREL_MODEL_URLS, pickBarrelModelUrl } from "../../models";
 
 /**
  * E5 — destructible barrel mesh. Each barrel renders one of 5 PSX

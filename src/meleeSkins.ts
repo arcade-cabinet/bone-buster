@@ -14,7 +14,7 @@
  * path which deserves its own commit.
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 
 export const MELEE_SKIN_URLS: readonly string[] = [
 	A("/assets/models/weapons/slasher/melee_machete.glb"), // E1 default

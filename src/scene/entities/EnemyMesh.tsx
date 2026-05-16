@@ -1,10 +1,10 @@
+import { ENEMY_MODELS, pickEnemySkin } from "@assets/models";
 import { BOSS_VISUAL_SCALE, type Enemy } from "@engine/engine";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
-import { ENEMY_MODELS, pickEnemySkin } from "../../models";
 
 /**
  * Renders an enemy using a real 3DPSX GLB asset (see `models.ts`),

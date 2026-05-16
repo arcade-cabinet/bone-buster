@@ -11,7 +11,7 @@
  * placement in SectorMapGeometry.
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 import type { PropArchetype } from "./scatter/propPool";
 
 /** Graffiti decals — informal wall tags, sewer / corridor friendly. */

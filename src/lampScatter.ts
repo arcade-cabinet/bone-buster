@@ -13,9 +13,9 @@
  * pass.
  */
 
+import { A } from "@assets/assetUrl";
 import type { ObjexoomMap, Vec2 } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
-import { A } from "./assetUrl";
 
 /**
  * The 10 PSX Mega Pack II lamp GLBs, split by on/off state.

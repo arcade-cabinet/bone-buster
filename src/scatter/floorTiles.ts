@@ -20,10 +20,10 @@
  * adjust if the rendered scale looks off.
  */
 
+import { A } from "@assets/assetUrl";
 import type { ObjexoomMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
-import { A } from "../assetUrl";
 
 export const FLOOR_TILE_VARIANTS: readonly string[] = [
 	A("/assets/models/structures/asphalt_hr_1.glb"),

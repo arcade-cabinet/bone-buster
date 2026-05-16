@@ -1,3 +1,4 @@
+import { WEAPON_MODELS } from "@assets/models";
 import { addObjexoomListener } from "@engine/events";
 import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
@@ -7,7 +8,6 @@ import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 import { ROLE } from "../../design-tokens";
 import { MELEE_SKIN_URLS, pickMeleeSkin } from "../../meleeSkins";
-import { WEAPON_MODELS } from "../../models";
 
 /**
  * PA-MOD7 / D11 — callback the viewmodel invokes once the muzzle-anchor

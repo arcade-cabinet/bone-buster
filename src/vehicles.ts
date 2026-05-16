@@ -9,7 +9,7 @@
  * propScatter (or a sibling) gated on archetype === "courtyard".
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 
 export const VEHICLE_VARIANTS: readonly string[] = [
 	A("/assets/models/props/vehicles/RV1.glb"),

@@ -13,7 +13,7 @@
  * pickup spawn loop with new PickupKind values.
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 
 export type LootKind = "bottles" | "books" | "treasure";
 

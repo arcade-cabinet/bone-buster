@@ -7,8 +7,8 @@
  * SFX_BANDS.musicVoice in tandem; this test pins both contracts.
  */
 
+import { MUSIC_INTENSITY_DB, SFX_BANDS } from "@audio/sfx";
 import { describe, expect, it } from "vitest";
-import { MUSIC_INTENSITY_DB, SFX_BANDS } from "@/sfx";
 
 describe("POL33 — music intensity dB table", () => {
 	it("ranks the 5 difficulties monotonically from quiet to loud", () => {

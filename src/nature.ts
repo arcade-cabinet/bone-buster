@@ -14,6 +14,6 @@
  * covers the visual surface with low overhead (232 KB total).
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 
 export const NATURE_MEGA_PACK_URL: string = A("/assets/models/props/nature/Mega_Nature.glb");

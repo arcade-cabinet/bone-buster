@@ -15,7 +15,7 @@
  * past pipes and cages.
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 
 export interface LargePropDef {
 	readonly id: string;

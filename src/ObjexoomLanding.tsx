@@ -1,3 +1,4 @@
+import { getMusicLoadProgress } from "@audio/sfx";
 import { motion, useReducedMotion } from "framer-motion";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
@@ -14,7 +15,6 @@ import {
 	type LevelChoice,
 	type ObjexoomSettings,
 } from "./settings";
-import { getMusicLoadProgress } from "./sfx";
 
 type Props = Readonly<{
 	settings: ObjexoomSettings;

@@ -13,8 +13,8 @@
  * "I'll just bump this one synth up 4dB" creep that ruins mixes.
  */
 
+import { SFX_BANDS, SFX_CATEGORIES, SFX_VOLUMES } from "@audio/sfx";
 import { describe, expect, it } from "vitest";
-import { SFX_BANDS, SFX_CATEGORIES, SFX_VOLUMES } from "@/sfx";
 
 describe("AUD1 — SFX mix volume bands", () => {
 	for (const [name, volume] of Object.entries(SFX_VOLUMES)) {

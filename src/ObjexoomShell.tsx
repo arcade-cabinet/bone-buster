@@ -1,3 +1,18 @@
+import { preloadTier1Critical } from "@assets/preload";
+import {
+	ensureMusic,
+	ensureSfxCritical,
+	playKlaxon,
+	playPickup,
+	playPlayerDeath,
+	playSecretFound,
+	setMusicIntensityForDifficulty,
+	setMusicMood,
+	startAmbient,
+	startMusic,
+	stopAmbient,
+	stopMusic,
+} from "@audio/sfx";
 import type { ObjexoomMap, PickupKind } from "@engine/engine";
 import { addObjexoomListener, dispatch } from "@engine/events";
 import { Canvas } from "@react-three/fiber";
@@ -13,7 +28,6 @@ import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
 import { loadSettings, saveSettings } from "./persistence/settingsStore";
-import { preloadTier1Critical } from "./preload";
 import { openRunHistory, type RunHistory } from "./runHistory";
 import {
 	advanceLevel,
@@ -30,20 +44,6 @@ import {
 	type ObjexoomSettings,
 	type TouchControlMode,
 } from "./settings";
-import {
-	ensureMusic,
-	ensureSfxCritical,
-	playKlaxon,
-	playPickup,
-	playPlayerDeath,
-	playSecretFound,
-	setMusicIntensityForDifficulty,
-	setMusicMood,
-	startAmbient,
-	startMusic,
-	stopAmbient,
-	stopMusic,
-} from "./sfx";
 
 export type GameStatus = "landing" | "playing" | "paused" | "dead" | "transitioning" | "won";
 

@@ -7,8 +7,9 @@
 // XZ-as-XY world). pan ∈ [-1, 1]; centered = 0, right = +, left = -.
 //
 // K8 — also covers getMusicLoadProgress for the K6 landing indicator.
+
+import { getMusicLoadProgress, panForPosition } from "@audio/sfx";
 import { describe, expect, it } from "vitest";
-import { getMusicLoadProgress, panForPosition } from "@/sfx";
 
 describe("objexoom sfx — panForPosition", () => {
 	const camera = { x: 0, y: 0, yaw: 0 };

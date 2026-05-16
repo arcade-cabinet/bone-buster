@@ -12,8 +12,8 @@
  * accidentally drops leading-slash stripping would fail).
  */
 
+import { A } from "@assets/assetUrl";
 import { describe, expect, it } from "vitest";
-import { A } from "../../assetUrl";
 
 // The pure-function shape of A(). Mirroring this here is NOT a tautology
 // (cf. QW9 fade test) because we assert against `A` ALSO — these two are

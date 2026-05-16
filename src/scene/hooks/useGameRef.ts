@@ -22,6 +22,7 @@
  * updates flow back to Shell via the `setState` setter in deps.
  */
 
+import { playFlashlightClick, playHitSting, playPickup, playPlayerDeath } from "@audio/sfx";
 import type { PickupKind } from "@engine/engine";
 import { dispatch } from "@engine/events";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
@@ -31,7 +32,6 @@ import type { FadeKind, GameRef, GameState } from "../../ObjexoomShell";
 import { GOING_BACK_BUDGET_MS } from "../../ObjexoomShell";
 import { advanceLevel, runStatsReducer } from "../../runStats";
 import type { DifficultyTuning, LevelChoice, ObjexoomSettings } from "../../settings";
-import { playFlashlightClick, playHitSting, playPickup, playPlayerDeath } from "../../sfx";
 
 /**
  * Per-pickup-kind action table. Lives in this module rather than in

@@ -42,7 +42,7 @@ vi.mock("../../scene/viewmodel/WeaponViewmodel", () => ({
 
 // Imported AFTER the mock setup so the orchestrator's own
 // imports resolve to the spy versions.
-import { preloadTier1Critical, preloadTier2MapMount, preloadTier3Deferred } from "../../preload";
+import { preloadTier1Critical, preloadTier2MapMount, preloadTier3Deferred } from "@assets/preload";
 import { preloadBarrels } from "../../scene/entities/BarrelMesh";
 import { preloadDebris } from "../../scene/entities/DebrisField";
 import { preloadDecals } from "../../scene/entities/DecalField";

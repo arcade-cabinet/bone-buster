@@ -1,9 +1,9 @@
+import { playDoor, playDoorTick } from "@audio/sfx";
 import { useFrame } from "@react-three/fiber";
 import { TILE } from "@shared/constants";
 import { useRef } from "react";
 import type * as THREE from "three";
 import { OBJEXOOM_PALETTE } from "../../design-tokens";
-import { playDoor, playDoorTick } from "../../sfx";
 import { WALL_HEIGHT } from "../constants";
 
 /**

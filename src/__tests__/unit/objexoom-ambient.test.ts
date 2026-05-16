@@ -6,14 +6,14 @@
  * accessors via getAmbientStateForTesting().
  */
 
-import { beforeEach, describe, expect, it } from "vitest";
 import {
 	type AmbientArchetype,
 	getAmbientStateForTesting,
 	resetAmbientStateForTesting,
 	setAmbientArchetype,
 	setAmbientPhase,
-} from "../../sfx";
+} from "@audio/sfx";
+import { beforeEach, describe, expect, it } from "vitest";
 
 describe("E11 — ambient archetype + phase state", () => {
 	beforeEach(() => {

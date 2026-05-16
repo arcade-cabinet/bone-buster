@@ -1,5 +1,5 @@
+import { fire } from "@audio/audioBus";
 import * as Tone from "tone";
-import { fire } from "./audioBus";
 
 /**
  * AUD1 — SFX mix coherence table.

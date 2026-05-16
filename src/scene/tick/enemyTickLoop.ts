@@ -30,6 +30,7 @@
 
 import { tickEnemyFsm } from "@ai/enemyAi";
 import { removeYukaEntity } from "@ai/yukaIntegration";
+import { panForPosition, playAggroAlert, playHurt } from "@audio/sfx";
 import {
 	type CollisionContext,
 	type Enemy,
@@ -49,7 +50,6 @@ import type * as THREE from "three";
 import type * as Yuka from "yuka";
 import type { GameRef } from "../../ObjexoomShell";
 import type { ObjexoomSettings } from "../../settings";
-import { panForPosition, playAggroAlert, playHurt } from "../../sfx";
 
 // CollisionContext is a private export of engine.ts; if not exported, we
 // fall back to the structural type the helpers consume. The Scene

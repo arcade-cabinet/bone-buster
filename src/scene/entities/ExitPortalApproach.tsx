@@ -1,7 +1,7 @@
+import { resetPortalSwell, setPortalSwellVolume } from "@audio/sfx";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import type { PerspectiveCamera } from "three";
-import { resetPortalSwell, setPortalSwellVolume } from "../../sfx";
 
 /**
  * POL23 — exit-portal approach slot (see docs/SLOT-ARCHITECTURE.md).

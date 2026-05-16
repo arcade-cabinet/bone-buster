@@ -13,7 +13,7 @@
  * already.
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 
 export const KITCHEN_PROPS: readonly string[] = [
 	A("/assets/models/props/kitchen/bowl_01.glb"),

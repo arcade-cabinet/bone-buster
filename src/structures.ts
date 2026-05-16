@@ -19,7 +19,7 @@
  *   rx_*  — varied / outdoor (courtyard)
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 import type { PropArchetype } from "./scatter/propPool";
 
 /**

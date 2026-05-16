@@ -13,7 +13,7 @@
  * disarm pairing with E6 secrets) on top of this.
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 
 export type TrapKind = "spike" | "blade" | "rolling" | "trigger";
 

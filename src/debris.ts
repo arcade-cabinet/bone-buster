@@ -13,7 +13,7 @@
  * in propScatter or a sibling.
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 
 export const DEBRIS_VARIANTS: readonly string[] = [
 	A("/assets/models/props/debris/brick_mx_1.glb"),

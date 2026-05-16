@@ -10,7 +10,7 @@
  * and courtyard contexts.
  */
 
-import { A } from "../assetUrl";
+import { A } from "@assets/assetUrl";
 
 export type PropArchetype = "corridor" | "arena" | "courtyard" | "sewer" | "library";
 

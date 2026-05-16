@@ -12,7 +12,7 @@
  * variants reads as more variety than 3 with no extra code.
  */
 
-import { A } from "./assetUrl";
+import { A } from "@assets/assetUrl";
 
 export const DOOR_VARIANTS: readonly string[] = [
 	A("/assets/models/props/doors/door_hr_6.glb"),
