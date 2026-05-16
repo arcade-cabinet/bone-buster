@@ -4,7 +4,7 @@
 
 ## CONTINUE doesn't have an end-of-turn
 
-User feedback (verbatim, 2026-05-14): **"Update your directives FIRST you are STILL stopping and not dojng EVERYTHING"**
+Doctrine (set 2026-05-14): the directive is a continuous queue, not a turn boundary. Stopping at the end of a turn — even with a scheduled wake-up — is a stop. The agent must drive every shipped commit straight into the next pending item in the same turn.
 
 `ScheduleWakeup` at end-of-turn is a stop. Context auto-compacts; long
 turns are fine. After every shipped commit: pick the next `[ ]` item
@@ -18,7 +18,7 @@ ambiguous design question that flips scope.
 
 ## The quality bar is "modernized polished DOOM", not "simplest implementation"
 
-User feedback (verbatim, 2026-05-14): **"why are you looking for simolest and bkt highestvqual8ty"** + **"what SHOYLD be happenijg is whst hapoens in DOOM but modernied and polished."**
+Doctrine (set 2026-05-14): every shipped feature is benchmarked against what a comparable beat in DOOM 2016 / Eternal would look, feel, and sound like — then modernized. "Simplest implementation that satisfies the directive line" is below the bar.
 
 Every feature shipped from this point forward MUST be benchmarked against
 "what does this look/feel/sound like in DOOM Eternal / 2016, modernized
@@ -48,7 +48,7 @@ under Phase 12 and ship the modernized version.
 
 ## Slot architecture (mandatory pattern from POL20 onward)
 
-User feedback (verbatim, 2026-05-14): **"if that's happening it means you need to think more about slots"** — surfaced after POL14 + POL19 + POL20 (first-cut) all tripped the same shape of bug (bolting refs/effects into existing components instead of mounting in their own slot).
+Doctrine (set 2026-05-14, after POL14 + POL19 + POL20-first-cut all tripped the same shape of bug — bolting refs/effects into existing components instead of mounting in their own slot): every visual/audio feedback feature lives in its own slot. The host component is not modified to carry side effects.
 
 **Mandatory:** every new visual/audio feedback feature must answer:
 1. Does it observe an existing entity/event/pose? → it's a slot. Mount as a sibling, listen, render, fade.
@@ -59,33 +59,51 @@ If none of the three answer cleanly, sit with the design before writing code.
 
 Spec: `docs/SLOT-ARCHITECTURE.md`. Reference shapes: `HitChromaticAberration` (POL14), `SecretFoundFlash` (POL21), `EnemyHitFlash` (POL19 retrofit), `WeaponSwapDip` (POL20).
 
-## Phase 22 — Bone Buster rebrand + identity overhaul + archetype-asset audit + perf finish (2026-05-15)
+## Overhaul backlog — Bone Buster rebrand + identity overhaul + content audit + perf finish (2026-05-15)
 
-User feedback (verbatim, 2026-05-15):
-- **"wh3n yiu are CONPLETELY done and have PLAYED the game yourself in chrome devtools mcp i wqnt you to brqinstorm a unique identity and a move to ~/src/arcade-cabinet and the arcade-cabinet org as a public repo. Something luke Big Baboom."**
-- **"Bone Buster it is"** + **"think tyriygh a new fontooraphy selectipn from golgle fonts and new color scheme to suit it"** + **"and make sur the enemies all align or give them new names alongside"**
-- **"youre also missing several other enemies i gave you in references hiw come all the stuff i gave you is barely used? lets figure that oyt also"** + **"that alsl means yoj are probably missing a LOT pf other PSX assets. can definitely work them in bettwe as part of overhauling qf hetypes"**
-- **"i gave you a TON of assetw in references how do you still need the NAS"**
-- **"also stop focusong JUST on enemeies focus o  everythibg. walls props scenery"**
+Operating intent (translated from user direction; original phrasing is **not** the contract — the items below are):
 
-Brainstorm doc + locked decisions at [`docs/REBRAND.md`](../docs/REBRAND.md). Name = **Bone Buster**, tagline = **"They had it coming."**, fonts = Bungee/Space Grotesk/JetBrains Mono/Tilt Prism, palette = Bone (warm cream + buster-orange + dried-blood on charcoal-violet). Enemy roster overhaul: 3 renames + 14 promotions = 17 first-class kinds from the 20 GLBs in references/. Asset audit covers ALL content categories (walls, props, scenery, weapons, decals, structures), not just enemies. Mirror to `arcade-cabinet/bone-buster` AFTER source sweep is done. Per-archetype interleave: D7-content + A1/A2-perf per archetype, then move to the next.
+- The project is renamed Bone Buster. Typography, palette, enemy roster, weapon HUD, and level-name presentation all rebuild against the locked identity in [`docs/REBRAND.md`](../docs/REBRAND.md). No vestigial OBJEXOOM strings outside historical changelog appendices.
+- Content scope is the whole world (walls, props, scenery, vehicles, audio), not just enemies. Every reasonable use of an already-owned asset is wired in.
+- All extra assets come from `references/` (already on disk) plus the user's itch.io library (316 owned keys). The NAS is not consulted for this backlog.
+- The itch.io fetcher is general-purpose, not audio-only. Every category the user owns is in scope when an extracted asset improves a slot.
+- Branching: ONE long-running overhaul branch holds every commit until the backlog drains; no per-item branches. PR cadence: reviewer trio runs locally per commit, findings fold into the next commit, push + open one PR per coherent slice. See [[no-pr-per-commit]] + [[no-phases-single-overhaul-branch]] + [[single-branch-policy]].
+- Remote is `arcade-cabinet/bone-buster`. Local repo stays at `~/src/objexiv/objexoom` — GitHub's git-protocol redirect routes the old origin URL transparently.
 
-### ITCH-FETCH — full library audit, broader than just audio (PREREQ — gates D5, D7, D9, A11)
-User feedback (verbatim): **"~/src/arcade-cabinet/voxel-realms has code examples an a .env for dxploring 9ur itch.io assets yall coyld adapt it to our n3eds. theres all kimds of shit in ludong horror sounds ambient etc"** + **"remember i have way mire than just qudii its impirtqnt to fully search using the itch api"**.
+Locked decisions (full table in [`docs/REBRAND.md`](../docs/REBRAND.md)):
 
-Inspection of `~/src/arcade-cabinet/voxel-realms/.itch-cache/all-keys.json` shows the user owns **316 itch.io keys**. Voxel-realms only filtered the 26 AUDIO packs; the other ~290 cover 3D models (~180), characters/creatures (~100), PSX/retro (37), 2D/pixel (31), tilesets/tilemaps (30), weapons (9). The PSX/retro bucket alone (37 keys) includes "PSX Character Megapack", "Modular Mansion PSX Pack", "Retro PSX Style Mansion Assets", "PSX Mega Pack II", "PSX-Machinery & Pipes", "PSX-Traps", "PSX-RV-Camper/Vans", "PSX-Farm Pack", "PSX-Meats&Flesh", and weapon variants for every classic FPS gun shape. Most of these have NEVER been downloaded into `references/`.
+- Name: **Bone Buster**. Tagline: **"They had it coming."**
+- Fonts: Bungee / Space Grotesk / JetBrains Mono / Tilt Prism (self-hosted via `@fontsource/*` to honor S2 CSP)
+- Palette: Bone (warm cream + buster-orange + dried-blood on charcoal-violet)
+- Enemy roster: 24 first-class kinds (3 renames + 9 promotions of already-shipped variants + 12 new extracts)
+- Branch strategy: ONE long-running `overhaul` branch holds every commit until the backlog drains. NO phase numbering. The list below is the queue.
+- PR cadence: reviewer trio runs LOCALLY per commit on the active branch; fold findings forward; push + open PR only when a coherent slice is fully done.
+- Asset source: `references/` (already on disk) + itch.io API (user owns 316 keys; ~290 unfetched). NAS not needed.
+- Remote: `arcade-cabinet/bone-buster` (the move HAS been completed; local URL still works via GitHub redirect; do not `mv` the local directory).
 
-This block fetches + audits the full library so D5/D7/D9/A11 can pull from a complete inventory instead of guessing.
+### Sequencing rules
 
-- [ ] **IF1 — adapt the voxel-realms fetcher.** Copy `~/src/arcade-cabinet/voxel-realms/scripts/fetch-itch-audio.mjs` into this repo as `scripts/fetch-itch.mjs` (drop the "-audio" suffix — fetcher is general-purpose). Adapt allow-list pattern to take a `--filter=psx,horror,weapons,...` CLI flag so a single script handles every category. Keep idempotent-download + dry-run flags.
-- [ ] **IF2 — pull all 316 owned-key metadata.** Either reuse voxel-realms' `.itch-cache/all-keys.json` (copy in) OR re-fetch fresh via the itch.io API. Cache locally under `.itch-cache/` (gitignored). Sub-bucket by inferred category (3D / PSX / weapons / characters / audio / 2D / tilesets).
-- [ ] **IF3 — first whole-library `pnpm itch:fetch --dry`** run produces a markdown report at `docs/ITCH-INVENTORY.md`: every owned pack, its category, its title, its url. This becomes a reference doc.
-- [ ] **IF4 — opt-in allow-list per category.** Pick from the inventory the packs that will fuel D5/D7/D9/A11. Allow-list lives in `scripts/itch-allowlist.json`. Includes (initial draft from `docs/REBRAND.md` audit): all 37 PSX/retro packs + the 15 audio packs from A11 + ~5 horror-character extras. ~57 packs total.
-- [ ] **IF5 — bulk download + extract.** `pnpm itch:fetch` (no dry flag) pulls the allow-list to `raw-assets/archives/` + extracts to `raw-assets/extracted/{category}/{pack-name}/`. Both dirs gitignored.
-- [ ] **IF6 — fbx-to-glb conversion pass.** Extend `scripts/convert-fbx.mjs` to walk `raw-assets/extracted/**.fbx` and emit GLBs to `references/_extracted/{category}/`. References dir kept gitignored (already so) — production assets that get shipped land in `public/assets/models/` via individual D7-X / D9 commits.
+1. **ITCH-FETCH (IF1-IF7)** runs first — gates D5 (enemy promotion needs new extracts), D7 (archetype content needs new fetches), D9 (weapon promotions), A11 (audio).
+2. **REBRAND (R1-R10)** runs sequential, blocks everything visual.
+3. **IDENTITY (D1-D9)** runs in parallel with the archetype loop, depends on REBRAND + ITCH-FETCH.
+4. **ARCHETYPE INTERLEAVE** — D7-X content + A1-X / A2-X perf per archetype; 5 archetypes (corridor → arena → courtyard → sewer → library). After the first archetype slice, generalize `InstancedField` + `EphemeralPool` factories so subsequent slices reuse them.
+5. **AUDIO (A11)** runs in parallel with archetype loop, depends on ITCH-FETCH.
+6. **D7 "outside the box" discipline** — every archetype audit produces TWO outputs: (a) slotted asset assignments + (b) ideas the asset gave for new mechanics. Slot if obvious; brainstorm-capture if not. Outside-the-box ideas either ship inside the slice OR get added to the bottom-of-doc "Parked" list.
+
+### ITCH-FETCH — full library audit + extract (prereq for D5, D7, D9, A11)
+
+Inspection of `~/src/arcade-cabinet/voxel-realms/.itch-cache/all-keys.json` shows the user owns **316 itch.io keys**. Voxel-realms only filtered the 26 AUDIO packs; the other ~290 cover 3D models (~180), characters/creatures (~100), PSX/retro (37), 2D/pixel (31), tilesets/tilemaps (30), weapons (9). The PSX/retro bucket alone (37 keys) includes "PSX Character Megapack", "Modular Mansion PSX Pack", "Retro PSX Style Mansion Assets", "PSX Mega Pack II", "PSX-Machinery & Pipes", "PSX-Traps", "PSX-RV-Camper/Vans", "PSX-Farm Pack", "PSX-Meats&Flesh", and weapon variants for every classic FPS gun shape. Most have NEVER been downloaded into `references/`.
+
+- [ ] **IF1 — adapt the voxel-realms fetcher.** Copy `~/src/arcade-cabinet/voxel-realms/scripts/fetch-itch-audio.mjs` into this repo as `scripts/fetch-itch.mjs` (drop the "-audio" suffix — fetcher is general-purpose). Adapt allow-list pattern to take a `--filter=psx,horror,weapons,...` CLI flag. Keep idempotent-download + dry-run flags.
+- [ ] **IF2 — pull all 316 owned-key metadata.** Reuse voxel-realms' `.itch-cache/all-keys.json` (copy in) OR re-fetch fresh via the itch.io API. Cache locally under `.itch-cache/` (gitignored). Sub-bucket by inferred category.
+- [ ] **IF3 — `pnpm itch:fetch --dry` whole-library report.** Produces `docs/ITCH-INVENTORY.md`: every owned pack, its category, title, url. Reference doc.
+- [ ] **IF4 — opt-in allow-list per category.** `scripts/itch-allowlist.json`. Initial draft: all 37 PSX/retro packs + 15 audio packs + ~5 horror-character extras. ~57 packs total.
+- [ ] **IF5 — bulk download + extract.** `pnpm itch:fetch` pulls allow-list to `raw-assets/archives/` + extracts to `raw-assets/extracted/{category}/{pack-name}/`. Both dirs gitignored.
+- [ ] **IF6 — fbx-to-glb conversion pass.** Extend `scripts/convert-fbx.mjs` to walk `raw-assets/extracted/**.fbx` and emit GLBs to `references/_extracted/{category}/`. References dir stays gitignored; production shipping happens via D7-X / D9.
 - [ ] **IF7 — inventory doc.** Generate `docs/ASSET-INVENTORY.md`: every extracted GLB grouped by category + suggested archetype assignment. Live-updated by `scripts/audit-extracted-assets.mjs`. Source of truth for D5/D7/D9 sub-pickers.
 
-### REBRAND — typography + palette + landing redesign (sequential, blocks D + M + A lanes)
+### REBRAND — typography + palette + landing redesign (sequential)
+
 - [ ] **R1 — install fonts.** `@fontsource/{bungee,bungee-inline,bungee-shade,space-grotesk,jetbrains-mono,tilt-prism}` self-hosted to honor S2 CSP. Add `src/design-tokens/typography.ts` exporting `TYPE.display`, `TYPE.body`, `TYPE.mono`, `TYPE.flair`. Sweep ad-hoc `font-family` strings to the tokens.
 - [ ] **R2 — palette swap.** Update `src/design-tokens/role.ts` ROLE.* color values to the Bone palette (`docs/REBRAND.md` §Color scheme). Names survive, values shift. 4 surface + 3 text + 5 accent + 4 brand-bone-gradient tokens. Canonical screenshots refresh.
 - [ ] **R3 — `<BoneBusterLanding>` redesign.** New file replacing `<ObjexoomLanding>`. SVG `<text>` logo in Bungee, layered Bungee Inline + Bungee Shade for letterpress depth, framer-motion stagger drop-in, Tilt Prism axis flicker on lock-in. "They had it coming." tagline in Space Grotesk.
@@ -94,32 +112,28 @@ This block fetches + audits the full library so D5/D7/D9/A11 can pull from a com
 - [ ] **R6 — audio logo sting.** New `src/audio/logoSting.ts` — Tone.js 1.2s minor-key arpeggio (A2-C3-E3) + rim-shot on final lock-in. Fires once on landing mount; dedupes.
 - [ ] **R7 — HUD palette + type refresh.** Re-tokenize `ObjexoomHUD.tsx` + chips + readouts: TYPE.display (Bungee) for numerals + level names, TYPE.body (Space Grotesk) for sub-labels, TYPE.mono (JetBrains Mono) for debug overlay.
 - [ ] **R8 — source-string sweep.** Replace every literal `OBJEXOOM` / `objexoom` / `Objexoom` in src/ + tests/ + docs/ + .github/ + package.json + capacitor.config.ts with `BONE BUSTER` / `bone-buster` / `BoneBuster`. ~150 hits. Update unit-test pin tests that mention the old name.
-- [ ] **R9 — Capacitor + Android namespace rename.** `appId=com.arcadecabinet.bonebuster`, `appName=Bone Buster`. Java package path `com/objexiv/objexoom/` → `com/arcadecabinet/bonebuster/`. `pnpm cap:sync`. S1 hardening test gets its package-path assertion updated.
+- [ ] **R9 — Capacitor + Android namespace rename.** `appId=com.arcadecabinet.bonebuster`, `appName=Bone Buster`. Java package path `com/objexiv/objexoom/` → `com/arcadecabinet/bonebuster/`. `pnpm cap:sync`. S1 hardening test's package-path assertion updated.
 - [ ] **R10 — release-please rename.** `package-name="bone-buster"`. Next release tag cuts a fresh `v0.5.0` with REBRAND as the headline.
 
-### IDENTITY — gameplay-design depth (parallel with archetype loop)
+### IDENTITY — gameplay-design depth
+
 - [ ] **D1 — locked-weapon HUD chips read as status indicators.** Dim numeral only, no border, no `cursor: not-allowed`. Match DOOM-style ownership row.
 - [ ] **D2 — procedural maps spawn weapon-ammo pickups.** 1 chaingunAmmo + 1 shotgunAmmo per map at minimum, 1 flamethrowerAmmo every 3 maps. Per-archetype bias (arena → chaingun, courtyard → shotgun, library → rare flamethrower). Locations away from spawn sector.
 - [ ] **D3 — weapon-acquired HUD beat.** First time `ownedWeapons[X]` flips false→true, fire 600ms chip-brighten animation in the HUD weapon row. Extends PickupChip.
 - [ ] **D4 — enemy kind rename.** `skeleton→rattler`, `wraith→phaser`, `imp→bouncer`. Update EnemyKind union, ENEMY_MODELS keys, enemyBaseHp, every switch statement, every test. HUD strings + kill-confirmation popups.
-- [ ] **D5 — promote 14 enemy variants + new extracts to first-class kinds.** Roster grows to 17 distinct EnemyKind entries: rattler / phaser / bouncer (renamed); plaguebeak (gas cloud on death), jester (3-shot fan), reverend (ranged), stagged (line charge), grub (sewer swarms), signal (anti-air through walls), heap + heap2 (heavy tanks, drop health), gorehead (LOS charge); bighoss (big slow tank, drops loot), stomper (heavy charge variant), butcher (chainsaw melee), bloodphaser (red ranged phaser), devil (boss-tier 1-per-level), dolly (tiny erratic), gawker (ranged all-eyes), oneye (cyclope melee), goliath (heavy tank), swiney (fast aggressive), mrZ (3-shot zombie), lupin (courtyard-only werewolf). FBX → GLB conversion pass for the 12 new extracts (`references/_extracted/horror/`). EnemyKind union + ENEMY_MODELS + spawn-mix tables (`src/enemyMix.ts`) all updated.
+- [ ] **D5 — promote enemy variants + new extracts to first-class kinds.** Roster grows to **24 distinct EnemyKind entries** (3 renames + 9 already-shipped promotions + 12 new extracts). Full table at `docs/REBRAND.md` §"Enemy roster — 24 first-class kinds". Includes per-archetype mix table updates in `src/enemyMix.ts`.
 - [ ] **D6 — weapon vs enemy vulnerability tags.** Each enemy kind tags one vulnerability (BLADE/PISTOL/CHAINGUN/SHOTGUN/FLAMETHROWER); damage from that weapon is +50%. HUD shows the vulnerability icon when targeting (subtle overlay).
-- [ ] **D8 — level-name generator.** New `src/levelNames.ts` with per-archetype pool of alliterative two-word names ("Concrete Concourse", "Garden Gauntlet", "Ledger Loft" — see `docs/REBRAND.md` §Naming spec). `pickLevelName(archetype, seed)`. HUD top-left reads the generated name instead of `E1M1 · CORRIDOR`. refLevel(0) gets fixed name "Welcome Wing".
+- [ ] **D8 — level-name generator.** New `src/levelNames.ts` with per-archetype pool of alliterative two-word names ("Concrete Concourse", "Garden Gauntlet", "Ledger Loft" — see `docs/REBRAND.md`). `pickLevelName(archetype, seed)`. HUD top-left reads the generated name instead of `E1M1 · CORRIDOR`. refLevel(0) gets fixed name "Welcome Wing".
 - [ ] **D9 — references/ weapon promotions.** Wire the 4 unused melee weapons from `references/SlasherWeaponPackRelease10.zip` (chainsaw, kitchen knife, meat hook, axe) into MELEE_SKIN_URLS rotation. Optionally expose Uzi.zip (`references/`) as a chaingun skin variant; Handcannon.glb as a pistol-variant; expose Shotgun.glb as the canonical shotgun if it's not already.
 
-### ARCHETYPE-INTERLEAVE — content audit + perf pass, per archetype
-Each slice = D7-X content + A1/A2-X perf. Run in this order: corridor → arena → courtyard → sewer → library. After the first slice ships, generalize the InstancedField + EphemeralPool factories so subsequent slices reuse them.
+### ARCHETYPE INTERLEAVE — content audit + perf pass, per archetype
 
-**Think outside the box during D7-X**: every D7 slice should NOT just be "slot the existing references/ leftovers into the existing scatter mechanic". When an asset suggests a NEW mechanic, a NEW interaction, a NEW level layout shape — call it out, capture it as a sub-bullet, and brainstorm whether to ship it inside the slice or park for Phase 23. Examples of "outside the box" thinking:
-  - PSX-Ocean-Surface isn't just a sewer water-prop — could it be a knee-deep wading mechanic that slows the player + lets fish-grub variants spawn in it?
-  - Traps.glb isn't just decoration — does it suggest specific trap-room layouts (a corridor sector that's 80% spike-tile, courtyard mine fields)?
-  - Tilemap.png + 486 tile PNGs could become a minimap HUD overlay, or paper-on-wall flavor decals showing the map, or actual room-shape stamps for procedural assembly.
-  - Ghost-hunting tools (parked for Phase 23) — but if a sewer audit surfaces an EMF reader that fits naturally as a "ping signals through walls" mechanic, escalate it instead of waiting.
+Each slice = D7-X content + A1-X / A2-X perf. Run in this order: corridor → arena → courtyard → sewer → library. After the first slice ships, generalize the InstancedField + EphemeralPool factories so subsequent slices reuse them.
 
-Capture every "outside the box" idea inline in the slice's brainstorm bullets. The directive lane stays focused on "content into the archetype", but ideas that grow it become Phase 23 candidates.
+Outside-the-box discipline (D7-X): every archetype audit produces TWO outputs — slotted asset assignments AND "ideas this asset gave me" list. Slot if obvious; brainstorm-capture if not. Outside-the-box ideas either ship inside the slice OR get added to the bottom-of-doc "Parked" list.
 
 - [ ] **CORRIDOR slice.**
-  - [ ] D7-corridor — pull industrial/sci-fi PSX assets from `references/` (Misc.glb / Electrical.glb / Traps.glb leftovers / horror megapack assets that fit "industrial" — mrZ, anomaly, abomination heavies). Per-archetype scatter mix table for corridor populated with new content. Visual gate canonical screenshot refresh.
+  - [ ] D7-corridor — pull industrial/sci-fi PSX assets from `references/` (Misc.glb / Electrical.glb / Traps.glb leftovers + horror megapack "industrial" enemies — mrZ, anomaly, abomination heavies). Per-archetype scatter mix table for corridor populated with new content. Visual gate canonical screenshot refresh.
   - [ ] A1-corridor — InstancedMesh refactor for corridor static scatter (walls + props + lamps + debris + decals + large-props). New `src/scene/render/InstancedField.tsx` factory. Per-archetype draw-call measurement.
   - [ ] A2-corridor — InstancedMesh refactor for ephemeral pools (body parts, shells, motes, bullets) visible in corridor. New `src/scene/render/EphemeralPool.tsx` factory. setMatrixAt + scale-to-zero for expired slots.
 
@@ -143,25 +157,62 @@ Capture every "outside the box" idea inline in the slice's brainstorm bullets. T
   - [ ] A1-library — InstancedField reuse.
   - [ ] A2-library — EphemeralPool reuse.
 
-### AUDIO — itch.io horror/ambient/SFX integration (parallel with archetype loop, depends on IF5)
-- [ ] **A11a — wire `scripts/fetch-itch.mjs` script entry.** `pnpm fetch:itch` package.json script. After IF1-IF5 land, this is a one-liner.
-- [ ] **A11b — audio allow-list confirmed against IF inventory.** Lock the 15 audio packs (per `docs/REBRAND.md` §Bone Buster audio allow-list).
+### AUDIO — itch.io horror/ambient/SFX integration (depends on IF5)
+
+- [ ] **A11a — wire `scripts/fetch-itch.mjs` script entry.** `pnpm fetch:itch` package.json script.
+- [ ] **A11b — audio allow-list confirmed against IF inventory.** Lock the 15 audio packs (per `docs/REBRAND.md` §"Audio bucket").
 - [ ] **A11c — per-pack audit + cherry-pick.** For each of the 15 allow-listed audio packs, open the extracted folder, pick 3-10 most-fitting WAVs, convert to OGG (smaller), copy into `public/assets/audio/{category}/`. Categories: `sfx/weapons`, `sfx/impact`, `sfx/footsteps`, `sfx/ui`, `sfx/horror`, `music/ambient`, `music/combat`, `music/boss`, `music/victory`.
 - [ ] **A11d — `src/sfx.ts` integration.** Replace synth gunfire with sample-backed Tone.Player instances. Replace per-archetype ambient with real horror-ambient loops. Add per-step footstep audio (new event channel). Replace placeholder UI clicks with sampled SFX.
 - [ ] **A11e — music graph integration.** Per-archetype background music loops (horror dark ambient for sewer/library, mystery for corridor, retro combat for arena). Boss-tier music when devil enemy spawns. Victory sting on mission complete. Cross-fade between moods via existing Tone.js Crossfade.
 - [ ] **A11f — `scripts/verify-runtime-audio.mjs`.** Parallel to `verify-runtime-assets.mjs`. Walks every audio URL referenced in `src/`, confirms file exists on disk. CI gate added to `pnpm verify`.
 
-### MIGRATE — final step (after every R + D + archetype slice ships)
-- [ ] **M1 — create new repo.** `gh repo create arcade-cabinet/bone-buster --public --description "Procedural arcade FPS. They had it coming."`
-- [ ] **M2 — mirror push.** `git push --mirror git@github.com:arcade-cabinet/bone-buster.git` from the renamed clone. All branches, tags, history preserved.
-- [ ] **M3 — local rename.** `git remote set-url origin` to new repo. `mv ~/src/objexiv/objexoom ~/src/arcade-cabinet/bone-buster`. `.agent-state/` + repo CLAUDE.md come along.
-- [ ] **M4 — Pages redirect.** OLD repo's README points at new home. OLD GitHub Pages `index.html` redirects via `<meta http-equiv="refresh">` to `arcade-cabinet.github.io/bone-buster/`. Build + push.
-- [ ] **M5 — 30-day archive grace.** Watch traffic; after 30 days quiet, `gh repo archive objexiv/objexoom`. Redirect stays live on the archived repo.
+### BUILD-CONFIG — Vite + Vitest + Pages alignment with arcade-cabinet siblings
 
-### Out-of-scope (parked for Phase 23)
-- Ghost Hunting Tools as a new gameplay layer (spirit box, EMF reader, UV flashlight, walkie-talkie, crucifix, tape recorder). Brainstormed in `docs/REBRAND.md`; Phase 23 will scope.
+Operating intent: bring `vite.config.ts` and `vitest.config.ts` to the same shape used elsewhere in the `arcade-cabinet/` org so the deployed Pages site loads cleanly, the dev/build aliases match `RESTRUCTURE`'s `app/` + `src/` layout, and the live build serves correctly on a foldable form factor (both folded and unfolded) including on-screen joysticks.
+
+**Confirmed Pages defect (2026-05-15 via chrome-devtools MCP):** `https://arcade-cabinet.github.io/bone-buster/` returns 200 but the deployed `index.html` references `/objexoom/assets/index-*.js` and `/objexoom/assets/index-*.css` (both 404). Root cause is the hardcoded `base: "/objexoom/"` in `vite.config.ts:8` for `mode === "github-pages"`, baked at build time by the `pnpm build:pages` script. Also: `package.json` `homepage` field still reads `https://github.com/objexiv/objexoom`. BC1+BC3 jointly resolve this.
+
+Reference: `~/src/arcade-cabinet/voxel-realms/vite.config.ts` is the canonical pattern.
+
+- [ ] **BC1 — vite.config.ts overhaul.** Adopt voxel-realms pattern: `base` from `VITE_BASE_PATH` env-var via `normalizeBasePath()`, NOT mode-driven. Build `manualChunks` for vendor splitting (`vendor-three`, `vendor-react`, `vendor-sqlite`, `vendor-misc`, project-internal `game-engine`). Add `resolve.alias` set matching the new `app/` + `src/` layout (`@scene`, `@audio`, `@engine`, `@views`, `@components`, `@atoms`, `@hooks`, etc.). `optimizeDeps.include` + `dedupe: ['react','react-dom','three']`.
+- [ ] **BC2 — vitest.config.ts overhaul.** Match voxel-realms project structure (`unit` + `browser` projects, both reading the same aliases as vite). Ensure tests resolve the new aliases.
+- [ ] **BC3 — Pages base-path fix end-to-end.** Three surfaces change in one commit: (a) `vite.config.ts` drops `base: mode === "github-pages" ? "/objexoom/" : "/"` in favor of `normalizeBasePath(process.env.VITE_BASE_PATH ?? "/")`; (b) `.github/workflows/release.yml` passes `VITE_BASE_PATH=/bone-buster/` to the `build:pages` step; (c) `package.json` `homepage` field becomes `https://arcade-cabinet.github.io/bone-buster/`. Acceptance: tag a release, watch `release.yml` succeed, fetch `https://arcade-cabinet.github.io/bone-buster/`, confirm `index.html` references `/bone-buster/assets/...` and all referenced asset URLs return 200 (verified via `mcp__chrome-devtools-mcp__list_network_requests` after `new_page`).
+- [ ] **BC4 — `index.html` viewport + safe-area.** Verify the meta viewport supports foldables: `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">`. CSS uses `env(safe-area-inset-*)` for HUD padding so the unfolded foldable's edge cutouts don't clip the chips.
+- [ ] **BC5 — touch joysticks for foldable.** The existing touch-stick HUD (PlayerController.tsx via `isCoarsePointer()` gate) needs verification on a foldable form factor. Specifically: BOTH unfolded (tablet-wide) AND folded (phone-narrow) modes should produce on-screen joysticks. The `pointer: coarse` media query alone isn't enough — on a foldable in tablet mode, Chrome might report `pointer: fine` because the larger screen area changes the heuristic. Use `(pointer: coarse) OR (max-width: 1024px AND any-pointer: coarse)` instead. Add an in-game "touch sticks: forced/auto/off" setting so the user can override per session.
+- [ ] **BC6 — responsive scaling for unfolded foldable.** The HUD currently has fixed pixel widths on chips. On an unfolded ~2200px wide foldable that reads as tiny. Use `clamp()` or `calc()` so chip widths scale with viewport width (e.g. `min(20vw, 280px)`).
+- [ ] **BC7 — foldable smoke test.** Once BC4-BC6 ship: open the deployed Pages site in Chrome DevTools' device emulator under "Samsung Galaxy Z Fold5" preset (both folded + unfolded modes). Visual gate refresh of canonical screenshots at 2200x1400 (unfolded) + 880x2100 (folded) resolutions — this gates a `pnpm test:e2e:screenshots:foldable` script with 2 new poses.
+
+### RESTRUCTURE — app/ + src/ layout per arcade-cabinet conventions
+
+Operating intent: reorganize the flat `src/` tree into the canonical `arcade-cabinet/` layout — root-level `app/` for all `.tsx` (React/JSX rendering) decomposed into atoms/components/hooks/views/styles, and root-level `src/` for all `.ts` (no JSX) bucketed by responsibility. As part of the move, drop the project-name prefix from filenames so the folder owns the namespace (`BoneBusterHUD.tsx` → `app/hud/HUD.tsx`, etc).
+
+Reference: `~/src/arcade-cabinet/voxel-realms/{app,src}` is the canonical layout.
+
+- `app/` — every `.tsx` file (React + JSX rendering). Sub-packages: `atoms/`, `components/`, `hooks/`, `views/`, `styles/`, plus `main.tsx`.
+- `src/` — every `.ts` file (no JSX). Sub-packages: `ai/`, `assets/`, `audio/`, `engine/`, `platform/`, `scene/`, `shared/`, `store/`, `world/`.
+
+**Filename naming rule** — drop the project-prefix on filenames. Folder owns the namespace. So `BoneBusterHUD.tsx` (current name post-rebrand) → `app/views/HUD.tsx` (or wherever it lands in the new hierarchy). Same rule for every prefixed file.
+
+- [ ] **RS1 — map every current source file to its new home.** Walk `src/` (the current flat layout, ~70 files), classify each by extension + responsibility, assemble a migration spreadsheet (`docs/RESTRUCTURE-PLAN.md`). For each .tsx, target `app/<bucket>/<filename-without-prefix>.tsx`. For each .ts, target `src/<bucket>/<filename>.ts`. Sub-bucket conventions match voxel-realms.
+- [ ] **RS2 — adapt `tsconfig.json` + `vite.config.ts` + `vitest.config.ts` paths.** Update `include`, `paths`, alias rewrites so the new `app/` and `src/` both compile. The build emits one bundle as before.
+- [ ] **RS3 — bulk move via `git mv`.** Per-bucket commits (one commit per target dir) so reviewers can see one chunk at a time. Update import statements as part of each move commit (sed pass).
+- [ ] **RS4 — strip project-prefix on filenames.** Rename `BoneBusterShell.tsx` → `app/shell/Shell.tsx`, `BoneBusterHUD.tsx` → `app/hud/HUD.tsx`, `BoneBusterLanding.tsx` → `app/landing/Landing.tsx`, `BoneBusterScene.tsx` → `app/scene/Scene.tsx`. Followed by an import-statement sweep.
+- [ ] **RS5 — update tests' imports + the verify gate.** Vitest project configs (`unit` + `browser` projects) get their include patterns updated. All ~700 tests pass against the new paths.
+- [ ] **RS6 — update docs that reference file paths.** ARCHITECTURE.md's file table is the main one. Plus any inline `src/file.tsx` references in README + AGENTS + CLAUDE.
+
+### MIGRATE — final residual
+
+Remote move from `objexiv/objexoom` to `arcade-cabinet/bone-buster` was completed by the user on 2026-05-15. Per user direction the local repo dir stays at `~/src/objexiv/objexoom`; GitHub's git-protocol redirects route the existing `origin` URL transparently. Only the residual cleanup remains:
+
+- [ ] **M4 — Pages redirect.** OLD `objexiv/objexoom` repo's GitHub Pages `index.html` redirects via `<meta http-equiv="refresh">` to `arcade-cabinet.github.io/bone-buster/`. README on the old repo points at new home.
+- [ ] **M5 — 30-day archive grace.** Watch traffic on the old repo; after 30 days quiet, `gh repo archive objexiv/objexoom`. Redirect stays live on the archived repo.
+
+### Parked — out of scope until the overhaul backlog drains
+
+- Ghost Hunting Tools as a new gameplay layer (spirit box, EMF reader, UV flashlight, walkie-talkie, crucifix, tape recorder) — brainstormed in `docs/REBRAND.md`. Sliced-inline-or-defer per archetype audit.
 - Per-enemy-variant flavor names in kill-confirmation popup ("You busted a Plaguebeak (Stained-Cassock variant)").
-- Bespoke commissioned logo (Phase 22 ships re-lettered SVG using Google Fonts; bespoke is polish layer).
+- Bespoke commissioned logo — current SVG re-letter with Bungee/Inline/Shade is good enough for ship.
+- Slasher melee weapons as damage-profile variants (chainsaw: loud-attract; meat-hook: pull; axe: heavy-slow).
 
 ## Phase 21 — perf + complexity + arch sweep from 5-agent audit (2026-05-15)
 

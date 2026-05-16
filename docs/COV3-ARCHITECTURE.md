@@ -47,7 +47,7 @@ surface type ships separately. Walls / doorways are step-2 and step-3.
   `FloorTileInstance[]`. Deterministic per `map.seed XOR 0x464C5254`
   ("FLRT" tag). Returns `[]` for any refLevel other than index 0
   (gated by a new `map.useModularFloor: boolean` field on
-  `ObjexoomSectorMap`).
+  `BoneBusterSectorMap`).
 - New `src/scene/entities/FloorTileField.tsx` renders one cloned mesh
   per FloorTileInstance.
 - `SectorMapGeometry` detects `map.useModularFloor` and OMITS the
@@ -64,7 +64,7 @@ surface type ships separately. Walls / doorways are step-2 and step-3.
 ### Step 2 (shipped)
 
 Modular wall pieces for refLevel 0 sector edges. New optional
-`useModularWalls?: boolean` field on `ObjexoomSectorMap`; refLevel 0
+`useModularWalls?: boolean` field on `BoneBusterSectorMap`; refLevel 0
 opts in, refLevels 1+2 keep procedural box-walls. Implementation:
 one stretched GLB clone per non-portal edge (vs. tiling). 4 wall
 variants in the pool, deterministic per-edge pick via

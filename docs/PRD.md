@@ -1,14 +1,14 @@
 ---
-title: PRD — remaining work to a fully polished playable OBJEXOOM
+title: PRD — remaining work to a fully polished playable BONE BUSTER
 updated: 2026-05-14
 status: current
 domain: product
 ---
 
-# OBJEXOOM — Product Requirements (remaining work)
+# BONE BUSTER — Product Requirements (remaining work)
 
 This is the comprehensive remaining-work spec. Every item that is
-NOT yet shipped on `feat/objexoom-game-buildout` has:
+NOT yet shipped on `feat/bone-buster-game-buildout` has:
 
 1. A user story
 2. Acceptance criteria
@@ -49,10 +49,10 @@ library:
 
 **Shipped on this branch (200+ commits since 624d7ae):**
 
-- Full repository extraction from objexiv/objexiv (archive tag preserved)
+- Full repository extraction from arcade-cabinet/bone-buster (archive tag preserved)
 - Visual: design tokens, horror-tactical typography (Black Ops One +
   Rajdhani), 5 canonical screenshots, polygon-contains fix
-- Engine: ObjexoomScene decomposition (1900→<800 LOC orchestrator),
+- Engine: BoneBusterScene decomposition (1900→<800 LOC orchestrator),
   yuka pursuit, sector + grid maps, lava damage, going-back phase
 - Audio: 14-voice procedural Tone.js bank + per-archetype ambient bed (E11)
 - AI: per-enemy GameEntity registry, FSM, per-archetype enemy mix (E13 step-3)
@@ -178,7 +178,7 @@ public/assets/ outputs are reproducible.
 ### B2.1 — Capacitor Android APK
 
 **User story.** As a player on Android, I want a downloadable APK that
-launches OBJEXOOM with touch controls so I can play without a desktop
+launches BONE BUSTER with touch controls so I can play without a desktop
 browser.
 
 **Acceptance.**
@@ -186,10 +186,10 @@ browser.
 - `cap add android` succeeds.
 - `pnpm cap:sync:android && cd android && ./gradlew assembleDebug`
   produces `dist-android/app-debug.apk`.
-- APK installs on a Pixel emulator, `ObjexoomShell` renders, both
+- APK installs on a Pixel emulator, `BoneBusterShell` renders, both
   virtual joysticks respond, fire button fires, weapon switching
   works.
-- Capacitor config sets `webDir: "dist"`, `appId: "io.objexiv.objexoom"`.
+- Capacitor config sets `webDir: "dist"`, `appId: "com.arcadecabinet.bonebuster"`.
 - `.github/workflows/ci.yml` adds an `actions/setup-java@v4` +
   `android-actions/setup-android@v3` step that uploads the APK as a
   CI artifact.
@@ -204,17 +204,17 @@ for any Android-specific shim).
 ### B2.4 — GitHub Pages CD on release tag
 
 **User story.** As a maintainer, I want a release-please tag to
-automatically deploy `pnpm build:pages` output to `objexiv.github.io/objexoom/`
+automatically deploy `pnpm build:pages` output to `arcade-cabinet.github.io/bone-buster/`
 so the live demo always matches the latest release.
 
 **Acceptance.**
 
 - `.github/workflows/cd.yml` triggers on `push` to a release tag.
-- Runs `pnpm build:pages` (which sets BASE_URL=/objexoom/).
+- Runs `pnpm build:pages` (which sets BASE_URL=/bone-buster/).
 - Publishes `dist/` to the `gh-pages` branch via
   `peaceiris/actions-gh-pages@v4`.
-- `objexiv.github.io/objexoom/` serves the built game; every asset
-  resolves with the `/objexoom/` prefix (verified via the `A()`
+- `arcade-cabinet.github.io/bone-buster/` serves the built game; every asset
+  resolves with the `/bone-buster/` prefix (verified via the `A()`
   helper).
 
 **Dependencies.** B2.2 (CI), B2.3 (release-please) — both shipped.
@@ -246,14 +246,14 @@ chase down which files made the cut.
 
 ### AO.5 / AO.6 — PWA manifest + favicons
 
-**User story.** As a player on mobile, I want to add OBJEXOOM to my
+**User story.** As a player on mobile, I want to add BONE BUSTER to my
 home screen with a proper icon and full-screen launch so it feels
 like an app, not a web page.
 
 **Acceptance.**
 
-- `public/manifest.webmanifest` declares `name: "OBJEXOOM"`,
-  `short_name: "OBJEXOOM"`, `theme_color` from `--obx-bg-void`,
+- `public/manifest.webmanifest` declares `name: "BONE BUSTER"`,
+  `short_name: "BONE BUSTER"`, `theme_color` from `--obx-bg-void`,
   `background_color`, `display: "fullscreen"`, `orientation:
   "landscape"`, and icons at 192/512 + maskable variants.
 - `public/favicon.ico` + `public/apple-touch-icon.png` present.
@@ -263,7 +263,7 @@ like an app, not a web page.
   - `<meta name="theme-color" content="…">`
 - Lighthouse PWA score ≥ 90 against a local dev build.
 
-**Asset paths.** Generated via favicon.io from the OBJEXOOM wordmark
+**Asset paths.** Generated via favicon.io from the BONE BUSTER wordmark
 SVG; manifest icons rasterized from `public/assets/branding/wordmark.svg`
 (create if absent).
 
@@ -276,7 +276,7 @@ SVG; manifest icons rasterized from `public/assets/branding/wordmark.svg`
 ### DS.7 — Tokens in scene materials
 
 **User story.** As a designer, I want every material color in the
-scene to route through the `OBJEXOOM_PALETTE` / `ROLE` token set so
+scene to route through the `BONE BUSTER_PALETTE` / `ROLE` token set so
 brand changes are one-line.
 
 **Acceptance.**
@@ -284,7 +284,7 @@ brand changes are one-line.
 - Zero literal hex codes (`#xxxxxx`) anywhere under
   `src/scene/**/*.tsx` outside the design-tokens module.
 - Materials referencing lava, key glow, fire muzzle, pickup tints,
-  exit portal hues, all door colors use `OBJEXOOM_PALETTE.*` or
+  exit portal hues, all door colors use `BONE BUSTER_PALETTE.*` or
   `ROLE.*`.
 - The 5 canonical screenshots re-shot and visually compared — no
   regression.
@@ -322,8 +322,8 @@ matching the reference clone's chaingun-shell behavior.
 
 **Acceptance.**
 
-- The `onFire` block in `ObjexoomScene` emits an
-  `objexoom:shellEject` event for `weapon === "chaingun"` in addition
+- The `onFire` block in `BoneBusterScene` emits an
+  `bone-buster:shellEject` event for `weapon === "chaingun"` in addition
   to the existing `weapon === "shotgun"` branch.
 - Shell visuals differ: chaingun shell is smaller (0.6× scale) and
   ejects toward camera-right with slightly less velocity than the
@@ -373,7 +373,7 @@ positioning.
   time using a deterministic seed.
 - Each barrel has HP (3-5); take any weapon hit, decrement HP, on 0
   trigger:
-  - `objexoom:burst` event with `kind: "explode"`, 18 motes
+  - `bone-buster:burst` event with `kind: "explode"`, 18 motes
   - AoE damage to every enemy + the player within 2.5 tiles
   - Chain-react: barrels inside the AoE also explode (recursive
     1-tick delayed)
@@ -514,7 +514,7 @@ run an open arena, next a dripping sewer.
   - sector-density / size range
   - prop-density (E3 hook)
   - enemy-mix (which kinds prefer this archetype)
-  - lighting palette (which `OBJEXOOM_PALETTE` color tints the fog
+  - lighting palette (which `BONE BUSTER_PALETTE` color tints the fog
     + directional)
   - SFX ambient bed (E11 hook)
 - `buildMap` reads the archetype config and applies all of the above.
@@ -536,7 +536,7 @@ visible foot splashes — not just a blue floor.
 
 - New `WaterSector` type with a UV-scrolled normal-map plane.
 - Standing in water applies `PLAYER_MOVE_SPEED × 0.6`.
-- Optional splashes: `objexoom:burst` with `kind: "splash"` on
+- Optional splashes: `bone-buster:burst` with `kind: "splash"` on
   position changes inside water.
 - Asset: `PSX-Ocean-Surface` mesh from 3DPSX (unmined per
   ASSET_INVENTORY.md).
@@ -558,7 +558,7 @@ crowd control.
 **Acceptance.**
 
 - 5th `WeaponId = "flamethrower"`.
-- Continuous-fire: held trigger dispatches `objexoom:fire` every
+- Continuous-fire: held trigger dispatches `bone-buster:fire` every
   100ms.
 - Cone-shaped damage: 60° spread, 4-tile range, 8 dmg/tick.
 - Particle stream via `ParticleBurstField` with `kind: "flame"`
@@ -759,7 +759,7 @@ delta.
   double-render).
 
 **Implementation:** `src/hud/overlays/PickupChip.tsx`. Dispatch lives
-in `ObjexoomShell.onCollectPickup` before state apply.
+in `BoneBusterShell.onCollectPickup` before state apply.
 
 ### POL31 — Difficulty acknowledgment HUD chip (Shipped)
 
@@ -788,9 +788,9 @@ Cool indigo at the easy end, hot blood-red at NIGHTMARE.
   anything).
 
 **Implementation:** `src/hud/overlays/DifficultyChip.tsx`,
-`ObjexoomShell.tsx` `runId` state + `prevStatusRef` effect, props
-threaded through `ObjexoomHUD → HUDOverlays`. Debug hook
-`window.__objexoom.setDifficulty(Difficulty)` lets playtest scripts
+`BoneBusterShell.tsx` `runId` state + `prevStatusRef` effect, props
+threaded through `BoneBusterHUD → HUDOverlays`. Debug hook
+`window.__bonebuster.setDifficulty(Difficulty)` lets playtest scripts
 drive the chip in each palette. 5 captures land in
 `test-results/pol31-difficulty-chip/`.
 
@@ -811,14 +811,14 @@ time the page loaded.
   `removePref` + JSON variants as the thin facade. App code MUST go
   through this module — no direct `localStorage` access permitted.
 - `src/persistence/settingsStore.ts` defines
-  `validateSettings(unknown): ObjexoomSettings` (per-field type
+  `validateSettings(unknown): BoneBusterSettings` (per-field type
   guards with DEFAULT_SETTINGS fallback; mouseSensitivity clamped
   to [0.5, 2.5], touchLookSensitivity to [0.5, 4]; stringified
   numbers coerce back to LevelChoice).
-- `ObjexoomShell` async-hydrates persisted settings on mount, guards
+- `BoneBusterShell` async-hydrates persisted settings on mount, guards
   the save-on-change effect against the bootstrap, then auto-writes
   every change.
-- URL flag `?objexoomArchetype` still wins as override (test/debug
+- URL flag `?archetype` still wins as override (test/debug
   harness path).
 - 10 unit tests pin the validator contract.
 
@@ -849,13 +849,13 @@ doesn't take up landing space.
 - 6 unit tests pin `formatRunDuration` contract (sub-minute,
   minute-range, hour-range, negative/non-finite clamp, zero-padding).
 
-**Implementation:** `src/ObjexoomLanding.tsx` `BestRunChip` extended
+**Implementation:** `src/BoneBusterLanding.tsx` `BestRunChip` extended
 on top of the existing POL6 chip. New `formatRunDuration` export
 from `src/runHistory.ts` co-locates the format rule with the data.
 
 ### OBS1 — Perf readout overlay (Shipped)
 
-**User story:** When running with `?objexoomDebug`, the agent (or a
+**User story:** When running with `?debug`, the agent (or a
 playtest engineer) sees a top-left readout showing FPS, dynamic-pixel-
 ratio, draw-calls (peak per 60-frame window), and triangles (peak)
 so frame drops are caught BEFORE the user notices them.
@@ -866,7 +866,7 @@ so frame drops are caught BEFORE the user notices them.
 - Peak calls + peak triangles tracked across each 60-frame window
   via refs; `gl.info.reset()` called manually after sampling.
 - Readout shows `FPS N · DPR x.xx · CALLS N · TRIS Nk`.
-- Gated on `?objexoomDebug` URL flag.
+- Gated on `?debug` URL flag.
 
 **Implementation:** `src/scene/effects/AdaptiveResolution.tsx` +
 `AdaptiveResolutionReadout`. Verified: corridor archetype reports
@@ -912,7 +912,7 @@ synth drifts outside its band.
   - `killSting` — death/boom/aggro/hitSting: -14 to -4 dB
   - `musicVoice` — 6-voice procedural music: -36 to -28 dB
 - 15 per-synth band-check tests in
-  `src/__tests__/unit/objexoom-sfx-mix.test.ts`.
+  `src/__tests__/unit/bone-buster-sfx-mix.test.ts`.
 - Invariant: every synth has a category (keys match).
 - Invariant: `ambient.max < uiFeedback.min` AND `< weaponFire.min`
   (ambient must be strictly quietest).
@@ -929,7 +929,7 @@ HUD, and mission-complete CTA all read correctly on a small screen.
 
 **Acceptance:**
 - `scripts/pt7-mobile.mjs` captures 3 beats at Pixel 5 viewport:
-  1. Landing — stencil OBJEXOOM gradient title adapts, 4 menu items
+  1. Landing — stencil BONE BUSTER gradient title adapts, 4 menu items
      left-aligned with bullet arrows, 3-column compact footer.
   2. In-game — HEALTH 9/9 + KILLS 0/3 HUD top, weapon dock top-center,
      two virtual sticks at bottom corners, big orange-red FIRE button

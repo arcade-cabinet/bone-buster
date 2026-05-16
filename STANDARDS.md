@@ -36,7 +36,7 @@ preference, the standards win.
   `performance.now()` in `engine.ts` / `enemyAi.ts` / `buildMap.ts` /
   `turtle.ts` / `runStats.ts`. Seedable RNG only. The commit-gate
   enforces this.
-- **Reference parity.** OBJEXOOM is a port of the structure of
+- **Reference parity.** BONE BUSTER is a port of the structure of
   `reference-codebases/js13k2019-yet-another-doom-clone` (gitignored;
   developer-local). Behavior gaps vs the reference are bugs, not
   features. **100% reference parity reached** as of E12 (57dd8fa).
@@ -81,7 +81,7 @@ budget."
   `"Helvetica"` literals — those bypass the offline-safe fontset.
 - The four `LINEAGE.*` anchors in
   [`src/design-tokens/colors.ts`](./src/design-tokens/colors.ts) are
-  Objexiv-brand load-bearing. Edits there require a brand decision,
+  arcade-cabinet-brand load-bearing. Edits there require a brand decision,
   not a tweak.
 - New visual axis? Add a scale + ROLE entry; don't reach for an
   off-palette literal. The CSS mirror in
@@ -99,7 +99,7 @@ budget."
   slower belongs in browser/e2e.
 - **Browser tests** drive real Chromium via `@vitest/browser`.
 - **E2E tests** drive the built game via Playwright on port 5191 with
-  the `?objexoomDebug` hook contract.
+  the `?debug` hook contract.
 - **No test is "flaky" — it's broken.** Fix the race or replace the
   wait with a deterministic poll. Don't quarantine.
 - See [`docs/TESTING.md`](./docs/TESTING.md) for the full strategy.
@@ -135,6 +135,6 @@ loader call sites are bugs (will 404 in gh-pages). See
 
 - One commit per logical change.
 - Never amend a pushed commit.
-- Long-running branch is `feat/objexoom-game-buildout`; small
+- Long-running branch is `feat/bone-buster-game-buildout`; small
   unrelated fixes still get focused PRs.
 - Tag releases via release-please, not by hand.

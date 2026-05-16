@@ -5,7 +5,7 @@ status: current
 domain: context
 ---
 
-# OBJEXOOM — roadmap
+# BONE BUSTER — roadmap
 
 Milestone-level human-friendly summary of where we are and what's
 left. The full executable spec lives at [`PRD.md`](./PRD.md); the
@@ -15,7 +15,7 @@ those disagree, PRD wins.
 
 ## Current branch
 
-`feat/objexoom-game-buildout` — long-running until the game is FULLY
+`feat/bone-buster-game-buildout` — long-running until the game is FULLY
 done. See [`DECISIONS.md` D8](./DECISIONS.md#d8) for the rationale.
 
 ## Status banner
@@ -31,14 +31,14 @@ Selected highlights — full audit trail is in `git log` and
 
 **Standalone repo bring-up:**
 - Canonical `polygonContains` fix
-- OBJEXOOM design token system (`src/design-tokens/`) + CSS mirror
+- BONE BUSTER design token system (`src/design-tokens/`) + CSS mirror
   + horror-tactical fonts (Black Ops One + Rajdhani)
 - Dependabot grouped, release-please wired, CI green
 - Asset reorg + BASE_URL helper + 5 canonical screenshots verified
-- ObjexoomScene decomposition (1988 → 758 line root + 15 focused
+- BoneBusterScene decomposition (1988 → 758 line root + 15 focused
   scene modules)
 - Standalone browser smoke tests (real Chromium, no mocks)
-- OBJEXOOM cut out of Objexiv (archive tag preserved)
+- BONE BUSTER cut out of arcade-cabinet (archive tag preserved)
 - Standalone root docs: ROADMAP, DESIGN, ARCHITECTURE, DECISIONS,
   STANDARDS, TESTING, DEPLOYMENT, PARITY, ASSET_INVENTORY,
   ELEVATION, PRD
@@ -102,7 +102,7 @@ in [`PRD.md`](./PRD.md).
 
 ### 0.2.0 (2026-05-14)
 
-Initial standalone repo extracted from `objexiv/objexiv`. PRs #1
+Initial standalone repo extracted from `arcade-cabinet/bone-buster`. PRs #1
 (release-please) and #11 (lockfile + lint baseline) merged to `main`.
 
 See [`CHANGELOG.md`](../CHANGELOG.md) for the full release notes.

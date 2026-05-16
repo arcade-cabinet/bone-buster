@@ -5,7 +5,7 @@ status: current
 domain: quality
 ---
 
-# OBJEXOOM — testing strategy
+# BONE BUSTER — testing strategy
 
 Three suites, three purposes. All run from the repo root with `pnpm`.
 
@@ -35,7 +35,7 @@ vitest browser project (real Chromium via `@vitest/browser-playwright`).
 
 Covers anything that needs a real DOM + real fonts + real WebGL:
 sql.js run-history persistence (`runHistory.browser.test.ts`),
-ObjexoomShell mount + HUD render (`ObjexoomShell.browser.test.tsx`).
+BoneBusterShell mount + HUD render (`BoneBusterShell.browser.test.tsx`).
 New surface that touches DOM, fonts, or WebGL lands here.
 
 ## End-to-end — `pnpm test:e2e`
@@ -44,9 +44,9 @@ Playwright, lives at [`tests/e2e/`](../tests/e2e/). Two specs:
 
 - `screenshots.spec.ts` — captures the 5 canonical poses (landing,
   flashlight-on, flashlight-off, going-back-strobe, mission-complete)
-  to `test-results/objexoom-screenshots/`. Each pose drives the game
-  through the `window.__objexoom` debug hooks.
-- `objexoom.spec.ts` — gameplay smoke: NEW GAME → difficulty → level
+  to `test-results/bone-buster-screenshots/`. Each pose drives the game
+  through the `window.__bonebuster` debug hooks.
+- `bone-buster.spec.ts` — gameplay smoke: NEW GAME → difficulty → level
   → game starts, kill counter saturates, etc.
 
 Run only the screenshot pass:
@@ -84,7 +84,7 @@ that URL. See [DECISIONS D9](./DECISIONS.md#d9).
 1. Identify the layer (unit / browser / e2e). If it touches three.js
    or the DOM, it's browser or e2e, not unit.
 2. Drop the file in the matching `__tests__` subdir using the existing
-   naming convention (`objexoom-<module>.test.ts`).
+   naming convention (`bone-buster-<module>.test.ts`).
 3. Run `pnpm test` (or `:browser` / `:e2e`) and confirm it passes.
 4. If it's a regression test for a bug fix, name the bug in the test
    description: `it("polygonContains handles horizontal edges (regression: lava floor false-negatives)", ...)`.

@@ -7,7 +7,7 @@ domain: media
 
 # 3DPSX asset inventory — what we have vs what we're using
 
-OBJEXOOM ships real PSX-style GLB assets curated from two sources:
+BONE BUSTER ships real PSX-style GLB assets curated from two sources:
 
 1. **Local references** at `references/` (gitignored, ~175 MB) — pre-
    curated game-ready bundles (horror enemies, slasher weapons,
@@ -140,7 +140,7 @@ Loose extras:
 
 ### Vehicles
 
-- PS1-RVS — vehicles. Probably not useful for OBJEXOOM directly but
+- PS1-RVS — vehicles. Probably not useful for BONE BUSTER directly but
   worth noting.
 
 ### Fantasy

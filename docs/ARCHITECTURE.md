@@ -5,7 +5,7 @@ status: current
 domain: technical
 ---
 
-# OBJEXOOM — system architecture
+# BONE BUSTER — system architecture
 
 ## Top-down
 
@@ -15,14 +15,14 @@ domain: technical
 │  ┌─────────────────────────────────────────────────────┐  │
 │  │  Vite + React 19  (app/)                            │  │
 │  │  ┌────────────────────┐  ┌───────────────────────┐  │  │
-│  │  │  ObjexoomShell     │  │  design-tokens        │  │  │
+│  │  │  BoneBusterShell     │  │  design-tokens        │  │  │
 │  │  │  (lifecycle,       │  │  (colors, type,       │  │  │
 │  │  │   debug hooks,     │  │   spacing, motion)    │  │  │
 │  │  │   level transit.)  │  └───────────────────────┘  │  │
 │  │  └─────┬──────────────┘                             │  │
 │  │        │                                            │  │
 │  │  ┌─────▼──────────┐    ┌────────────────────────┐   │  │
-│  │  │ ObjexoomScene  │    │  ObjexoomHUD           │   │  │
+│  │  │ BoneBusterScene  │    │  BoneBusterHUD           │   │  │
 │  │  │ (r3f canvas,   │    │  (corner readouts,     │   │  │
 │  │  │  3D world)     │    │   weapon chips, ammo,  │   │  │
 │  │  │                │    │   overlays)            │   │  │
@@ -54,7 +54,7 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 | Module | Owns |
 | --- | --- |
-| `src/engine.ts` | Map types (`ObjexoomGridMap`, `ObjexoomSectorMap`), raycasts, collision, enemy/bullet/pickup types, sector portal computation, `polygonContains` |
+| `src/engine.ts` | Map types (`BoneBusterGridMap`, `BoneBusterSectorMap`), raycasts, collision, enemy/bullet/pickup types, sector portal computation, `polygonContains` |
 | `src/buildMap.ts` | Procedural map generation (grid + sector variants) from a seed |
 | `src/turtle.ts` | Logo-style turtle DSL used by `buildMap` for shape generation |
 | `src/enemyAi.ts` | Per-enemy FSM tick (patrol → approach → shoot). Pure function `tickEnemyFsm(enemy, ctx) → next` |
@@ -68,7 +68,7 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 | Module | Owns |
 | --- | --- |
-| `src/ObjexoomScene.tsx` | r3f Canvas root, scene composition, MapGeometry, SectorMapGeometry, EnemyMesh, WeaponViewmodel, KeyMarker, ExitPortal, RealDoor, TreasureChest — **flagged for decomposition; see DECISIONS** |
+| `src/BoneBusterScene.tsx` | r3f Canvas root, scene composition, MapGeometry, SectorMapGeometry, EnemyMesh, WeaponViewmodel, KeyMarker, ExitPortal, RealDoor, TreasureChest — **flagged for decomposition; see DECISIONS** |
 | `src/PlayerController.tsx` | Camera + movement input (pointer-lock + touch sticks), pointer-lock state |
 | `src/models.ts` | Enemy + weapon + prop GLB registry + per-kind skin rosters, BASE_URL-aware URL helper `A()` |
 | `src/RefLevelMap.tsx` | Renderer for reference-clone level layouts |
@@ -77,9 +77,9 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 | Module | Owns |
 | --- | --- |
-| `src/ObjexoomShell.tsx` | App lifecycle (landing ↔ in-game ↔ overlay), level transitions, debug hook attachment, fade trigger |
-| `src/ObjexoomHUD.tsx` | Corner HUD blocks (HP, KILLS, KEY), weapon chips, ammo readout, crosshair, overlay cards (PAUSED, YOU DIED, MISSION COMPLETE), touch sticks + FIRE button, CLICK TO ENGAGE |
-| `src/ObjexoomLanding.tsx` | Main menu (NEW GAME, OPTIONS, HOW TO PLAY), difficulty + level pickers, options pane, music loading indicator |
+| `src/BoneBusterShell.tsx` | App lifecycle (landing ↔ in-game ↔ overlay), level transitions, debug hook attachment, fade trigger |
+| `src/BoneBusterHUD.tsx` | Corner HUD blocks (HP, KILLS, KEY), weapon chips, ammo readout, crosshair, overlay cards (PAUSED, YOU DIED, MISSION COMPLETE), touch sticks + FIRE button, CLICK TO ENGAGE |
+| `src/BoneBusterLanding.tsx` | Main menu (NEW GAME, OPTIONS, HOW TO PLAY), difficulty + level pickers, options pane, music loading indicator |
 
 ### Audio layer
 
@@ -91,7 +91,7 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 | Module | Owns |
 | --- | --- |
-| `src/design-tokens/colors.ts` | `LINEAGE`, `SCALE` (50–950 per axis), semantic `ROLE` layer, back-compat `OBJEXOOM_PALETTE` |
+| `src/design-tokens/colors.ts` | `LINEAGE`, `SCALE` (50–950 per axis), semantic `ROLE` layer, back-compat `BONE BUSTER_PALETTE` |
 | `src/design-tokens/typography.ts` | `FONT_FAMILY`, `FONT_WEIGHT`, `LETTER_SPACING`, `FONT_SIZE`, `LINE_HEIGHT` |
 | `src/design-tokens/spacing.ts` | Spacing scale |
 | `src/design-tokens/motion.ts` | Duration + easing tokens |
@@ -104,24 +104,24 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 | Module | Owns |
 | --- | --- |
 | `src/persistence/preferences.ts` | Thin facade over `@capacitor/preferences` — `readPref`/`writePref`/`removePref` + JSON variants. App code MUST go through this module; **direct `localStorage` access in `src/**` is forbidden**. Best-effort writes (swallows quota/lock failures). |
-| `src/persistence/settingsStore.ts` | KV settings persistence — `validateSettings(unknown)` runtime narrows foreign blobs to the live `ObjexoomSettings` shape; `loadSettings()` / `saveSettings()` are the public surface for `ObjexoomShell` to async-hydrate + auto-save settings across sessions. |
+| `src/persistence/settingsStore.ts` | KV settings persistence — `validateSettings(unknown)` runtime narrows foreign blobs to the live `BoneBusterSettings` shape; `loadSettings()` / `saveSettings()` are the public surface for `BoneBusterShell` to async-hydrate + auto-save settings across sessions. |
 | `src/runHistory.ts` | E9 run history — currently sql.js + manual base64 blob (STO1b will replace with `@capacitor-community/sqlite` + jeep-sqlite WASM). Exports `openRunHistory()`, `RunRecord`, `RunInsert`, `formatRunDuration` (POL32 — shared formatter for landing chip + future HUD surfaces). |
 
 **Settings persistence flow:**
-1. Mount: `ObjexoomShell` initializes with `DEFAULT_SETTINGS` (or `{...DEFAULT_SETTINGS, level: "procedural"}` when URL has `?objexoomArchetype`).
+1. Mount: `BoneBusterShell` initializes with `DEFAULT_SETTINGS` (or `{...DEFAULT_SETTINGS, level: "procedural"}` when URL has `?archetype`).
 2. Async-hydrate effect: `loadSettings()` reads from Preferences; if a valid blob exists, `setSettings(persisted)`. Flag `settingsHydratedRef.current = true`.
 3. Save-on-change effect: gated on `settingsHydratedRef.current`, writes the current settings to Preferences on every change. The guard prevents the boot DEFAULT_SETTINGS from clobbering a persisted blob during the brief async window.
-4. URL override (`?objexoomArchetype`) wins as a per-load short-circuit — the debug harness path that swaps to procedural maps without first clearing storage.
+4. URL override (`?archetype`) wins as a per-load short-circuit — the debug harness path that swaps to procedural maps without first clearing storage.
 
 **Why this lives in `src/persistence/` instead of `src/settings.ts`:** the settings module is pure type + constants (no async, no I/O); the persistence module is the boundary where Capacitor lives. Keeping them separate means `src/settings.ts` stays trivially unit-testable without mocking the native plugin.
 
 ## Data flow — single frame
 
-1. Vite serves `app/main.tsx` → mounts `<ObjexoomShell />`.
+1. Vite serves `app/main.tsx` → mounts `<BoneBusterShell />`.
 2. Shell holds `state: GameState` (status, hp, ammo, weapon, kills,
-   key, run stats) and `map: ObjexoomMap` (built from
+   key, run stats) and `map: BoneBusterMap` (built from
    `buildMap(seed, level)`).
-3. `<ObjexoomScene>` mounts `<Canvas>` with the current map + a
+3. `<BoneBusterScene>` mounts `<Canvas>` with the current map + a
    `gameRef` for sim callbacks. Inside the canvas:
    - `useFrame` ticks every enemy via `tickEnemyFsm`
    - yuka EntityManager runs steering
@@ -137,7 +137,7 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 ## Debug hook contract
 
-Add `?objexoomDebug` to the URL to expose `window.__objexoom`:
+Add `?debug` to the URL to expose `window.__bonebuster`:
 
 ```ts
 type DebugHooks = {
@@ -170,9 +170,9 @@ URL param — neither alone enables it.
 - **GLB URL resolution.** Three's loaders ignore Vite's `base` env, so
   every asset URL in `models.ts` flows through `A()` which prefixes
   `import.meta.env.BASE_URL`. In dev/build the base is `/`; in
-  gh-pages it's `/objexoom/`. Both work identically downstream.
-- **No Objexiv imports.** This is a standalone game. The commit-gate
-  rejects any `@objexiv/*` or relative-up-to-Objexiv import.
+  gh-pages it's `/bone-buster/`. Both work identically downstream.
+- **No arcade-cabinet imports.** This is a standalone game. The commit-gate
+  rejects any `@arcade-cabinet/bone-buster or relative-up-to-arcade-cabinet import.
 - **Refs over state in the scene.** React re-renders inside `<Canvas>`
   are expensive. Game state that ticks every frame (positions,
   rotations, velocities, animation phase) lives in `useRef` and
@@ -186,7 +186,7 @@ URL param — neither alone enables it.
   itself out. Adding a new slot is one-file + one-line in HUDOverlays.
   Spec: [`docs/SLOT-ARCHITECTURE.md`](SLOT-ARCHITECTURE.md).
 - **Slot trigger choice — event vs. prop.** Two trigger styles coexist:
-  - **Event-driven** (`addObjexoomListener("type", h)`): the slot is
+  - **Event-driven** (`addBoneBusterListener("type", h)`): the slot is
     already mounted when the event fires. Examples: `SecretFoundFlash`,
     `KeyPickupCeremony`, `PickupChip`. Cheap to wire; works because the
     HUD is up.
