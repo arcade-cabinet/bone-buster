@@ -79,7 +79,8 @@ Full diagram in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 ## Design tokens
 
 - `src/design-tokens/colors.ts` — `LINEAGE`, `SCALE`, semantic `ROLE`
-  layer, back-compat `BONE BUSTER_PALETTE`.
+  layer, back-compat `OBJEXOOM_PALETTE` alias (renamed to
+  `BONE_BUSTER_PALETTE` by PRD §R8 source-string sweep).
 - `src/design-tokens/typography.ts` — `FONT_FAMILY`, weights, spacing,
   sizes, line-heights.
 - `app/tokens.css` — `--obx-*` CSS mirror.
