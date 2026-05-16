@@ -100,10 +100,20 @@ const skeletonBody = (version: string) =>
 
 type AppConfig = { title?: string; description?: string };
 
+// Vike's dev SSR pipeline injects an inline `<script>` for HMR + the
+// pageContext hydration handoff. Prod (the prerendered static bundle)
+// emits no inline scripts at all, so we keep the tight `script-src 'self'`
+// lockdown there. Dev opens the door with `'unsafe-inline'` only when
+// `import.meta.env.DEV` is true, scoped to the dev process.
+const DEV_SCRIPT_SRC = "'self' 'wasm-unsafe-eval' 'unsafe-inline' 'unsafe-eval'";
+const PROD_SCRIPT_SRC = "'self' 'wasm-unsafe-eval'";
+
 const onRenderHtml: OnRenderHtmlAsync = async (pageContext) => {
 	const config = pageContext.config as AppConfig;
 	const title = config.title ?? "Bone Buster";
 	const description = config.description ?? "Bone Buster";
+	const scriptSrc = import.meta.env.DEV ? DEV_SCRIPT_SRC : PROD_SCRIPT_SRC;
+	const csp = `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' blob: data: ws: wss:; object-src 'none'; base-uri 'none'; frame-ancestors 'none';`;
 
 	return escapeInject`<!DOCTYPE html>
 <html lang="en">
@@ -111,7 +121,7 @@ const onRenderHtml: OnRenderHtmlAsync = async (pageContext) => {
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="theme-color" content="${SURFACE_BASE}" />
-		<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' blob: data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none';" />
+		<meta http-equiv="Content-Security-Policy" content="${csp}" />
 		<title>${title}</title>
 		<meta name="description" content="${description}" />
 		<link rel="manifest" href="./manifest.webmanifest" />

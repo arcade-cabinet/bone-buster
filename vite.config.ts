@@ -151,12 +151,17 @@ export default defineConfig(({ mode }) => ({
 			"@atoms": path.resolve(__dirname, "app/atoms"),
 			"@hooks": path.resolve(__dirname, "app/hooks"),
 			"@styles": path.resolve(__dirname, "app/styles"),
-			// Dedupe-targets — pinned to the hoisted copy so r3f's
-			// instanceof checks don't trip on parallel React copies.
-			react: path.resolve(__dirname, "node_modules/react"),
-			"react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+			// Subpath alias kept — the addons mapping has no analogue in
+			// dedupe + we do want all `three/addons` imports to land in
+			// the official examples dir.
 			"three/addons": path.resolve(__dirname, "node_modules/three/examples/jsm"),
-			three: path.resolve(__dirname, "node_modules/three"),
+			// Note: we used to alias react/react-dom/three to their
+			// node_modules package roots, but that forced Vite to load
+			// CommonJS index.js files directly — which Vike's SSR
+			// module-runner can't evaluate (it ESM-only and chokes on
+			// the bare `module.exports = ...`). `dedupe` below already
+			// gives us the "single hoisted copy" guarantee r3f needs
+			// for its instanceof checks.
 		},
 		dedupe: ["react", "react-dom", "three"],
 	},
