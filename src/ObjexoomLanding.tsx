@@ -5,6 +5,7 @@ import { BoneBusterWordmark } from "./BoneBusterWordmark";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "./design-tokens";
 import { TYPE } from "./design-tokens/typography";
 import { formatRunDuration, openRunHistory, type RunRecord } from "./runHistory";
+import { ScuffShader } from "./ScuffShader";
 import {
 	DIFFICULTY_BLURB,
 	DIFFICULTY_LABEL,
@@ -519,6 +520,10 @@ function MenuItem({
 function BackdropEffect() {
 	return (
 		<div aria-hidden style={backdropStyle}>
+			{/* R4 — animated scuff-noise plate behind everything else.
+			    Renders Perlin-style value-noise + buster-orange flash
+			    scratches per docs/REBRAND.md §Visual identity. */}
+			<ScuffShader />
 			<div style={backdropGridStyle} />
 			<div style={backdropGlowStyle} />
 		</div>

@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
 		// DevTools open). Native (Capacitor) builds and dev keep
 		// sourcemaps — they're packaged inside the APK / served only
 		// from localhost.
-		sourcemap: mode === "github-pages" ? false : true,
+		sourcemap: mode !== "github-pages",
 	},
 	plugins: [react()],
 	resolve: {
