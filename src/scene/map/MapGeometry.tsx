@@ -14,7 +14,7 @@ import { WALL_HEIGHT } from "../constants";
 import { LockedDoor } from "./LockedDoor";
 
 /**
- * Renders an BoneBusterGridMap as floor + ceiling + wall slabs + lava
+ * Renders a BoneBusterGridMap as floor + ceiling + wall slabs + lava
  * tiles. COV3 step-5: wall cells are rendered as cloned modular GLBs
  * keyed to the map's archetype (via `pickArchetype(map)`), replacing
  * the procedural `<boxGeometry>` cubes. Each wall cell still

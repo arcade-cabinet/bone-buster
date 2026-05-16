@@ -11,7 +11,7 @@ import { SkeletonUtils } from "three-stdlib";
 import { WaterSurface } from "./WaterSurface";
 
 /**
- * Renders an BoneBusterSectorMap (decoded reference level) as r3f
+ * Renders a BoneBusterSectorMap (decoded reference level) as r3f
  * geometry. Each MapSector becomes a flat floor + ceiling shape plus
  * wall quads along every edge. Portal de-duping (skipping interior
  * edges shared with neighbors at the same height) is handled
