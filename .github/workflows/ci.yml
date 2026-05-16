@@ -100,7 +100,11 @@ jobs:
         # would be smaller. Pinned to port 5191 to match the local
         # workflow; perf script defaults to that URL.
         run: |
-          pnpm dev --host 0.0.0.0 &
+          # `server.host: true` is set in vite.config.ts so we don't need
+          # `--host 0.0.0.0` on the CLI. Post-Vike, the vike plugin
+          # routes the vite CLI through Vike's CAC parser, which rejects
+          # the unknown `--host` flag.
+          pnpm dev &
           for i in {1..60}; do
             if curl -s -o /dev/null -w "%{http_code}" http://localhost:5191 | grep -q 200; then
               echo "dev server up on :5191"
