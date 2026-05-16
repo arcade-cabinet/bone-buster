@@ -27,6 +27,7 @@ import {
 } from "@engine/engine";
 import { addObjexoomListener, dispatch } from "@engine/events";
 import { useFrame, useThree } from "@react-three/fiber";
+import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { PLAYER_HEIGHT, TILE } from "@shared/constants";
 import type { WeaponId } from "@shared/weapons";
 import { DIFFICULTY_TUNING, type ObjexoomSettings } from "@store/settings";
@@ -62,7 +63,6 @@ import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type * as Yuka from "yuka";
-import { getArchetypeLightPalette } from "./lighting/archetypePalette";
 import type { GameRef, LevelPhase, WeaponState } from "./ObjexoomShell";
 import { PlayerController } from "./PlayerController";
 import {

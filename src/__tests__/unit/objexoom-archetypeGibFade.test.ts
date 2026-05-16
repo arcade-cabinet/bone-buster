@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
 import {
 	ARCHETYPE_LIGHT_PALETTES,
 	getArchetypeLightPalette,
-} from "../../lighting/archetypePalette";
+} from "@scene/lighting/archetypePalette";
+import { describe, expect, it } from "vitest";
 
 /**
  * POL41 — per-archetype gib fade speed. Tests pin the gibFadeMs

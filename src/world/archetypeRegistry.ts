@@ -50,7 +50,7 @@ export const ARCHETYPE_AXES: readonly ArchetypeAxis[] = [
 	},
 	{
 		axisName: "lighting palette",
-		module: "src/lighting/archetypePalette.ts",
+		module: "src/scene/lighting/archetypePalette.ts",
 		axisDescription: "Ambient color + directional sun + per-archetype gibFadeMs + flicker config.",
 	},
 	{
