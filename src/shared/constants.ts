@@ -25,4 +25,4 @@ export const PISTOL_MAX_RANGE = TILE * 18;
 // (`from "@shared/constants"`) keep working while there's only one source of
 // truth for color values. New code should import from
 // `./design-tokens` directly and prefer `ROLE.*` over `OBJEXOOM_PALETTE.*`.
-export { OBJEXOOM_PALETTE } from "../design-tokens/colors";
+export { OBJEXOOM_PALETTE } from "@styles/tokens/colors";

@@ -10,11 +10,11 @@ import {
 	type LevelChoice,
 	type ObjexoomSettings,
 } from "@store/settings";
+import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "@styles/tokens/index";
+import { TYPE } from "@styles/tokens/typography";
 import { motion, useReducedMotion } from "framer-motion";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
-import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "../../src/design-tokens";
-import { TYPE } from "../../src/design-tokens/typography";
 
 type Props = Readonly<{
 	settings: ObjexoomSettings;

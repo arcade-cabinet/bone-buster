@@ -106,16 +106,22 @@ function buildSpecifierMatchers(fromPath, importerPath) {
 	if (noExt.startsWith("app/")) {
 		specifiers.add(`@app/${noExt.slice(4)}`);
 	}
-	// Importer-relative form. Drop the extension so authors who wrote
-	// `from './constants'` (no extension) and `from './constants.ts'`
-	// (with extension — rare but legal) both match.
 	const importerDir = dirname(importerPath);
 	const rel = relative(importerDir, noExt);
 	const normalized = rel.startsWith(".") ? rel : `./${rel}`;
 	specifiers.add(normalized);
-	// Also allow any pre-existing bucket alias usage if the old path
-	// already lived under a bucket (e.g. `@scene/foo` for a file that
-	// then moves inside src/scene/).
+	// Bare-folder import: when the moved file IS the index of a folder
+	// (e.g. src/design-tokens/index.ts), authors write
+	// `from "../../design-tokens"` not `from "../../design-tokens/index"`.
+	// Match both shapes.
+	if (noExt.endsWith("/index")) {
+		const folder = noExt.slice(0, -"/index".length);
+		const folderRel = relative(importerDir, folder);
+		const folderNorm = folderRel.startsWith(".") ? folderRel : `./${folderRel}`;
+		specifiers.add(folderNorm);
+		if (folder.startsWith("src/")) specifiers.add(`@/${folder.slice(4)}`);
+		if (folder.startsWith("app/")) specifiers.add(`@app/${folder.slice(4)}`);
+	}
 	const oldAliased = aliasForPath(fromPath);
 	if (oldAliased) {
 		specifiers.add(

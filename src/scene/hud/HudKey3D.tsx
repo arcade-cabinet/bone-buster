@@ -1,7 +1,7 @@
 import { Canvas, useFrame } from "@react-three/fiber";
+import { OBJEXOOM_PALETTE, ROLE } from "@styles/tokens/index";
 import { useRef } from "react";
 import * as THREE from "three";
-import { OBJEXOOM_PALETTE, ROLE } from "../../design-tokens";
 
 /**
  * E10 step-1 — screen-space 3D key indicator for the HUD.

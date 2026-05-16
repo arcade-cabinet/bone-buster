@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { getReturnBearing } from "../../scene/tick/returnBearing";
+import { getReturnBearing } from "../../../src/scene/tick/returnBearing";
 
 /**
  * POL26 — going-back klaxon overlay (HUD overlay slot per

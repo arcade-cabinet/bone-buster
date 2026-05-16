@@ -2,6 +2,7 @@ import type { ObjexoomGridMap } from "@engine/engine";
 import { useGLTF, useTexture } from "@react-three/drei";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { TILE } from "@shared/constants";
+import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
 import { pickArchetype } from "@world/archetype";
 import { FLOOR_TEXTURES } from "@world/floorTextures";
 import type { PropArchetype } from "@world/scatter/propPool";
@@ -9,7 +10,6 @@ import { ALL_WALL_URLS, pickWallUrl } from "@world/structures";
 import { Suspense, useMemo } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
-import { OBJEXOOM_PALETTE } from "../../design-tokens";
 import { WALL_HEIGHT } from "../constants";
 import { LockedDoor } from "./LockedDoor";
 

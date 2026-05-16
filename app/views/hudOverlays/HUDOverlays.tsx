@@ -1,13 +1,13 @@
 import type { Difficulty } from "@store/settings";
+import { BossBanner } from "@views/hudOverlays/BossBanner";
+import { DifficultyChip } from "@views/hudOverlays/DifficultyChip";
+import { GoingBackOverlay } from "@views/hudOverlays/GoingBackOverlay";
+import { KeyPickupCeremony } from "@views/hudOverlays/KeyPickupCeremony";
+import { MissionCompleteCeremony } from "@views/hudOverlays/MissionCompleteCeremony";
+import { PauseOverlay } from "@views/hudOverlays/PauseOverlay";
+import { PickupChip } from "@views/hudOverlays/PickupChip";
+import { SecretFoundFlash } from "@views/hudOverlays/SecretFoundFlash";
 import type { GameState, LevelPhase } from "@views/Shell";
-import { BossBanner } from "./BossBanner";
-import { DifficultyChip } from "./DifficultyChip";
-import { GoingBackOverlay } from "./GoingBackOverlay";
-import { KeyPickupCeremony } from "./KeyPickupCeremony";
-import { MissionCompleteCeremony } from "./MissionCompleteCeremony";
-import { PauseOverlay } from "./PauseOverlay";
-import { PickupChip } from "./PickupChip";
-import { SecretFoundFlash } from "./SecretFoundFlash";
 
 /**
  * AUDIO3 / SLOT-ARCHITECTURE.md §1 — HUD overlay aggregator.

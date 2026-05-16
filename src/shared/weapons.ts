@@ -1,4 +1,4 @@
-import { LINEAGE, ROLE, SCALE } from "../design-tokens";
+import { LINEAGE, ROLE, SCALE } from "@styles/tokens/index";
 
 export type WeaponId = "melee" | "pistol" | "chaingun" | "shotgun" | "flamethrower";
 

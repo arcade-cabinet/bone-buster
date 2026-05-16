@@ -1,7 +1,7 @@
+import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "@styles/tokens/index";
 import type { GameState } from "@views/Shell";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "../../design-tokens";
 
 /**
  * PT1B — mission-complete ceremony (HUD overlay slot per

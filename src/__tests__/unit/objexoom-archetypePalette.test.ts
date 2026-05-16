@@ -6,9 +6,9 @@ import {
 	ARCHETYPE_LIGHT_PALETTES,
 	getArchetypeLightPalette,
 } from "@scene/lighting/archetypePalette";
+import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 import { describe, expect, it } from "vitest";
-import { OBJEXOOM_PALETTE } from "../../design-tokens";
 
 describe("E13 — archetype lighting palette", () => {
 	it("ships an entry for every archetype", () => {

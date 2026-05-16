@@ -1,7 +1,7 @@
 import { addObjexoomListener } from "@engine/events";
+import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, SCALE } from "@styles/tokens/index";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, SCALE } from "../../design-tokens";
 
 /**
  * POL36 — boss HUD banner (HUD overlay slot per

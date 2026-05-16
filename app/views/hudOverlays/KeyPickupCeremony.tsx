@@ -1,7 +1,7 @@
 import { addObjexoomListener } from "@engine/events";
+import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "@styles/tokens/index";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "../../design-tokens";
 
 /**
  * POL22 — key pickup ceremony (HUD overlay slot per

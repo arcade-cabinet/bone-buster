@@ -17,10 +17,10 @@
  * so AT and Playwright queries find the wordmark by accessible name.
  */
 
+import { BONE_PALETTE, ROLE } from "@styles/tokens/index";
+import { TYPE } from "@styles/tokens/typography";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { useEffect, useState } from "react";
-import { BONE_PALETTE, ROLE } from "../../src/design-tokens";
-import { TYPE } from "../../src/design-tokens/typography";
 
 const TITLE = "BONE BUSTER";
 

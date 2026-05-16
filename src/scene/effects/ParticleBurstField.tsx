@@ -1,8 +1,8 @@
 import { addObjexoomListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
+import { OBJEXOOM_PALETTE, SCALE } from "@styles/tokens/index";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { OBJEXOOM_PALETTE, SCALE } from "../../design-tokens";
 
 const COLOR_WRAITH = new THREE.Color(OBJEXOOM_PALETTE.enemyWraithSoul).getHex();
 const COLOR_IMP = new THREE.Color(OBJEXOOM_PALETTE.enemyImpMagma).getHex();

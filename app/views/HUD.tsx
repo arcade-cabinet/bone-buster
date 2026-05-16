@@ -1,11 +1,6 @@
 import { addObjexoomListener, dispatch } from "@engine/events";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
 import { type Difficulty, LEVEL_LABEL, type LevelChoice } from "@store/settings";
-import type { GameState } from "@views/Shell";
-import type { PropArchetype } from "@world/scatter/propPool";
-import { motion } from "framer-motion";
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	FONT_FAMILY,
 	FONT_WEIGHT,
@@ -13,8 +8,13 @@ import {
 	OBJEXOOM_PALETTE,
 	ROLE,
 	SCALE,
-} from "../../src/design-tokens";
-import { HUDOverlays } from "../../src/hud/overlays/HUDOverlays";
+} from "@styles/tokens/index";
+import { HUDOverlays } from "@views/hudOverlays/HUDOverlays";
+import type { GameState } from "@views/Shell";
+import type { PropArchetype } from "@world/scatter/propPool";
+import { motion } from "framer-motion";
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { HudKey3D } from "../../src/scene/hud/HudKey3D";
 
 type ObjexoomHUDProps = Readonly<{

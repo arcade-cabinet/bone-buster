@@ -1,7 +1,7 @@
 import { addObjexoomListener } from "@engine/events";
+import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "@styles/tokens/index";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "../../design-tokens";
 
 /**
  * POL21 — modernized-DOOM secret-found ceremony. HUD overlay slot

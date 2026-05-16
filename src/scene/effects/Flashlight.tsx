@@ -1,8 +1,8 @@
 import { addObjexoomListener } from "@engine/events";
 import { useFrame, useThree } from "@react-three/fiber";
+import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { OBJEXOOM_PALETTE } from "../../design-tokens";
 
 /**
  * J1 — flashlight. A SpotLight that lives at the camera position and

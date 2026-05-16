@@ -35,6 +35,7 @@ import {
 	type ObjexoomSettings,
 	type TouchControlMode,
 } from "@store/settings";
+import { ROLE, SCALE } from "@styles/tokens/index";
 import { ObjexoomHUD } from "@views/HUD";
 import { ObjexoomLanding } from "@views/Landing";
 import { ObjexoomScene } from "@views/Scene";
@@ -42,7 +43,6 @@ import { ARCHETYPE_NAMES, pickArchetype } from "@world/archetype";
 import { buildMap } from "@world/buildMap";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ROLE, SCALE } from "../../src/design-tokens";
 import { useGameRef } from "../../src/scene/hooks/useGameRef";
 
 export type GameStatus = "landing" | "playing" | "paused" | "dead" | "transitioning" | "won";

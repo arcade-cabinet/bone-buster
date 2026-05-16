@@ -1,4 +1,4 @@
-import { OBJEXOOM_PALETTE, ROLE } from "../../design-tokens";
+import { OBJEXOOM_PALETTE, ROLE } from "@styles/tokens/index";
 
 /**
  * D1 — decorative treasure chest stamped on every exit. The reference

@@ -17,8 +17,8 @@
  * the visual reads need additional separation.
  */
 
+import { OBJEXOOM_PALETTE, SCALE } from "@styles/tokens/index";
 import type { PropArchetype } from "@world/scatter/propPool";
-import { OBJEXOOM_PALETTE, SCALE } from "../../design-tokens";
 
 export interface ArchetypeLightPalette {
 	/** Ambient light tint — a low-saturation hue that biases the bounced fill. */

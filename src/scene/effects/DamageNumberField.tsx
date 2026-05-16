@@ -1,8 +1,8 @@
 import { addObjexoomListener, type EventOf } from "@engine/events";
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
+import { SCALE } from "@styles/tokens/index";
 import { useEffect, useRef, useState } from "react";
-import { SCALE } from "../../design-tokens";
 
 /**
  * POL11-v2 — modernized-DOOM floating damage numbers.

@@ -1,5 +1,5 @@
+import { FONT_FAMILY, TYPE } from "@styles/tokens/typography";
 import { describe, expect, it } from "vitest";
-import { FONT_FAMILY, TYPE } from "../../design-tokens/typography";
 
 /**
  * R1 contract pins. TYPE.{display,body,mono,flair} are the canonical

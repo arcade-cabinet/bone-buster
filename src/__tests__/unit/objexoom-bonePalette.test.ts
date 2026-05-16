@@ -1,5 +1,5 @@
+import { BONE_PALETTE, ROLE } from "@styles/tokens/colors";
 import { describe, expect, it } from "vitest";
-import { BONE_PALETTE, ROLE } from "../../design-tokens/colors";
 
 /**
  * R2 contract pins. The bone palette is the new shippable identity;

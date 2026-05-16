@@ -15,7 +15,7 @@
  *    propagates without grep.
  */
 
-export * from "./colors";
-export * from "./motion";
-export * from "./spacing";
-export * from "./typography";
+export * from "@styles/tokens/colors";
+export * from "@styles/tokens/motion";
+export * from "@styles/tokens/spacing";
+export * from "@styles/tokens/typography";

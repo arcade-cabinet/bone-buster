@@ -1,11 +1,11 @@
 import type { Pickup } from "@engine/engine";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
+import { OBJEXOOM_PALETTE, ROLE } from "@styles/tokens/index";
 import { LOOT_URL_LIST, LOOT_URLS, type LootKind, pickLootKind } from "@world/loot";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
-import { OBJEXOOM_PALETTE, ROLE } from "../../design-tokens";
 
 /**
  * POL17 — per-pickup-kind halo color. Picks the dominant emissive

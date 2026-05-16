@@ -1,6 +1,6 @@
+import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "@styles/tokens/index";
 import type { GameState } from "@views/Shell";
 import { AnimatePresence, motion } from "framer-motion";
-import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "../../design-tokens";
 
 /**
  * POL34 — pause overlay (HUD overlay slot per

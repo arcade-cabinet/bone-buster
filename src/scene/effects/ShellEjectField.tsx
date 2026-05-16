@@ -1,8 +1,8 @@
 import { addObjexoomListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
+import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { OBJEXOOM_PALETTE } from "../../design-tokens";
 
 const COLOR_BRASS = new THREE.Color(OBJEXOOM_PALETTE.shellBrass).getHex();
 const COLOR_BRASS_DEEP = new THREE.Color(OBJEXOOM_PALETTE.shellBrassDeep).getHex();

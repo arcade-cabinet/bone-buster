@@ -1,7 +1,7 @@
 import { useFrame } from "@react-three/fiber";
+import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
 import { useRef } from "react";
 import type * as THREE from "three";
-import { OBJEXOOM_PALETTE } from "../../design-tokens";
 
 /**
  * H9 — 5-hue goal palette. Reference uses `pallet[rotation*8/PI]` to
