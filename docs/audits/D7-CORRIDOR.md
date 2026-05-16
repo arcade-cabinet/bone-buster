@@ -93,9 +93,73 @@ factory mounts are added to existing slot mounts.
       for step-2 perf-baseline pass.
 - [x] InstancedField factory module shipped (commit a4daceb).
 - [x] EphemeralPool factory module shipped (commit a4daceb).
-- [ ] Step-2: at least one Field migrated to InstancedField,
-      at least one Pool migrated to EphemeralPool. Pending.
+- [x] Factories split into procedural + GLB forms (commit ebe1706)
+      to satisfy React rules-of-hooks (useGLTF must be unconditional).
+- [x] Step-2a: DebrisField → InstancedGltfField (commit 288a7d3).
+      Groups instances by url; one InstancedMesh per unique url,
+      one draw call per group instead of N. 5 canonical + 10
+      archetype e2e screenshots stayed green.
+- [ ] Step-2b: at least one ephemeral pool migrated. **DEFERRED —
+      see Architectural decision below.**
 - [ ] Step-3: perf-baseline regression gate updated. Pending.
+
+## Architectural decision — ephemeral pools
+
+ShellEjectField, BodyPartField, BulletField, ParticleBurstField
+all share an architectural shape that EphemeralPool DOES NOT fit:
+
+1. **Per-frame physics.** Each mote/shell/shard updates position
+   + rotation + (sometimes) velocity every frame in `useFrame`,
+   not just at spawn.
+2. **Per-mesh independent materials.** Opacity decays over a
+   per-instance TTL; some pools also vary color/radius/emissive
+   per instance. Three.js InstancedMesh has ONE shared material
+   per draw call — per-instance opacity requires custom shader
+   work (`InstancedBufferAttribute` + `onBeforeCompile`).
+
+EphemeralPool as built writes matrices on a `slots` prop change
+in `useEffect`, with the implicit contract that slots are
+spawn-once-then-static-then-expired. That's the right design
+for *scatter* with TTL (e.g. a footstep decal field that pops
+in, persists, then fades), but it is NOT the right design for
+ballistic particle fields where every frame writes new positions.
+
+Two real options for closing the gap:
+
+**Option A — per-mote InstancedBufferAttribute opacity.** Add
+an `instanceOpacity` attribute on the InstancedMesh, branch the
+material's fragment shader to multiply gl_FragColor.a by it.
+Pool the `useFrame` body writes per-mote position via setMatrixAt
+AND per-mote opacity via setAttributeAt. Big-bang change touching
+all four files; requires shader patches.
+
+**Option B — leave the ephemeral fields alone.** They already
+use QW3 module-scope shared geometry. The remaining draw-call
+cost is per-mote, but the QW3 fix already eliminated the
+GPU-resident geometry churn that was the original perf wedge.
+Profile first; if peakCalls in the corridor baseline shows
+ephemeral motes dominating, revisit with Option A.
+
+**Decision: Option B.** Reasoning:
+- The factory's whole job (per the PRD) is collapsing N draw
+  calls into 1 for *scatter* — the static, GLB-backed sources.
+  Ephemeral pools were named in the audit but the audit author
+  (myself) underestimated the per-frame + per-material shape.
+- A1 already wins on debris (the biggest static scatter pool);
+  step-3 will measure whether the ephemeral pools are actually
+  on the critical path.
+- If the perf-baseline data demands Option A, that's a separate
+  slice with shader-level work + its own test surface. Forcing
+  it through EphemeralPool now would either ship a broken pool
+  (slot model wrong) or balloon the corridor slice into a shader
+  refactor.
+
+This is exactly the "use-case enumeration" the CLAUDE.md asks
+for: the ephemeral fields have a per-frame physics + per-mesh
+material lifecycle that's genuinely different from the static
+scatter the factory was built for. The hybrid is "static scatter
+→ InstancedField; ephemeral physics → leave as-is until shader
+work is justified by data."
 
 ## References
 

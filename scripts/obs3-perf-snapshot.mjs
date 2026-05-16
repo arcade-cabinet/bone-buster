@@ -49,14 +49,21 @@ const ARCHETYPES = ["corridor", "arena", "courtyard", "sewer", "library"];
 // (effectively a "panic, the render path is broken" alarm). OBS3
 // samples peak-per-window across a 3-second budget window with the
 // camera framing the densest enemy cluster (PT1C trick) — the
-// pathological case. Measured shipped values: corridor 828 / arena
-// 494 / courtyard 887 / sewer 651 / library 502 — all healthy frame
-// rates in practice. The OBS3 budget is set to 1000 calls / 100k
-// triangles, which is ~15-20% headroom above the worst measured
-// archetype; baselines provide the per-archetype regression check
-// for finer-grained tracking.
-const OBS3_CALL_BUDGET = 1000;
-const OBS3_TRI_BUDGET = 100_000;
+// pathological case.
+//
+// Post-D5 measured shipped values: corridor 810 / arena 1013 /
+// courtyard 885 / sewer 638 / library 752. Arena leads because its
+// mix is enemy-dense AND draws from the new 24-kind roster (each
+// enemy GLB is a skinned mesh — 1 call each + its shadow pass).
+// CORRIDOR step-2 brought corridor down by ~24 calls (InstancedField
+// debris) but the D5 enemy expansion drove total counts up across
+// the board. Budget is set to 1200 calls / 80k triangles — ~15-20%
+// headroom above arena. Baselines provide the per-archetype
+// regression check for finer-grained tracking. When future slices
+// add more skinned meshes (e.g. NPCs in library) the budgets will
+// lift again with a matching baseline bump.
+const OBS3_CALL_BUDGET = 1200;
+const OBS3_TRI_BUDGET = 80_000;
 const REGRESSION_RATIO = 1.1; // 10% above baseline = fail
 // T4 — avgFps floor for desktop CI. The 3-second probe runs in
 // headless ANGLE-GL Chromium on a GitHub Actions ubuntu runner (no
