@@ -18,21 +18,29 @@
  * brand identity inside ~100ms (FCP) instead of waiting for the
  * full bundle.
  *
- * Once React mounts and the SPA paints over `#page-view`, a tiny
- * inline script flips `<body class="bb-spa-hydrated">` which hides
- * the skeleton via CSS — the SPA's own React landing surface
+ * Once React mounts and the SPA paints over `#page-view`,
+ * `+onRenderClient.tsx` flips `<body class="bb-spa-hydrated">` from
+ * inside the React tree (via useEffect on the Shell mount) which
+ * hides the skeleton via CSS — the SPA's own React landing surface
  * (BoneBusterWordmark) paints in the same coords, so the visual
- * handoff is seamless.
+ * handoff is seamless. We can't use an inline `<script>` because
+ * CSP `script-src 'self'` blocks inline scripts.
  *
  * The skeleton + the critical CSS are static strings: no React
  * renderToString at build time, no dependencies on the runtime
  * design-token modules. The few palette literals are mirrored from
  * BONE_PALETTE in app/styles/tokens/colors.ts; the
- * `bonebuster-prerender-css` unit test asserts they stay in sync.
+ * `bonebuster-prerenderCss` unit test asserts they stay in sync.
+ *
+ * `__BONEBUSTER_VERSION__` is injected by Vite from package.json so
+ * the version chip + footer chip ride release-please bumps instead
+ * of drifting from a hardcoded literal.
  */
 
-import { escapeInject, dangerouslySkipEscape } from "vike/server";
+import { dangerouslySkipEscape, escapeInject } from "vike/server";
 import type { OnRenderHtmlAsync } from "vike/types";
+
+declare const __BONEBUSTER_VERSION__: string;
 
 // PRERENDER-PALETTE-START
 // Mirrored from app/styles/tokens/colors.ts BONE_PALETTE.
@@ -71,9 +79,10 @@ body.bb-spa-hydrated .bb-prerender { display: none; }
 }
 `.trim();
 
-const SKELETON_BODY = `
+const skeletonBody = (version: string) =>
+	`
 <div class="bb-prerender" aria-hidden="true">
-  <div class="bb-prerender__version">VERSION 0.1 · EARLY ACCESS</div>
+  <div class="bb-prerender__version">VERSION ${version} · EARLY ACCESS</div>
   <h1 class="bb-prerender__wordmark">BONE BUSTER</h1>
   <hr class="bb-prerender__hr" />
   <p class="bb-prerender__tagline">THEY HAD IT COMING.</p>
@@ -84,14 +93,17 @@ const SKELETON_BODY = `
     <div class="bb-prerender__menu-item"><span class="bb-prerender__menu-chevron">›</span> QUIT</div>
   </nav>
   <div class="bb-prerender__footer">
-    <span>Bone Buster v0.5</span><span>·</span><span>ESC → exit</span><span>·</span><span>Loading…</span>
+    <span>Bone Buster v${version}</span><span>·</span><span>ESC → exit</span><span>·</span><span>Loading…</span>
   </div>
 </div>
 `.trim();
 
+type AppConfig = { title?: string; description?: string };
+
 const onRenderHtml: OnRenderHtmlAsync = async (pageContext) => {
-	const title = (pageContext.config as { title?: string }).title ?? "Bone Buster";
-	const description = (pageContext.config as { description?: string }).description ?? "";
+	const config = pageContext.config as AppConfig;
+	const title = config.title ?? "Bone Buster";
+	const description = config.description ?? "Bone Buster";
 
 	return escapeInject`<!DOCTYPE html>
 <html lang="en">
@@ -114,7 +126,7 @@ const onRenderHtml: OnRenderHtmlAsync = async (pageContext) => {
 		<style>${dangerouslySkipEscape(CRITICAL_CSS)}</style>
 	</head>
 	<body>
-		${dangerouslySkipEscape(SKELETON_BODY)}
+		${dangerouslySkipEscape(skeletonBody(__BONEBUSTER_VERSION__))}
 		<div id="page-view"></div>
 	</body>
 </html>`;

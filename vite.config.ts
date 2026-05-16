@@ -1,7 +1,11 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import react from "@vitejs/plugin-react";
 import vike from "vike/plugin";
 import { defineConfig } from "vite";
+
+const PKG_VERSION = JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf8"))
+	.version as string;
 
 /**
  * Bone Buster Vite config (PRD §BC1). Aligned with the canonical
@@ -51,6 +55,12 @@ export default defineConfig(({ mode }) => ({
 	base,
 	cacheDir: ".vite",
 	plugins: [react(), vike()],
+	define: {
+		// Surfaced to client + prerender hooks so the version chip in the
+		// landing skeleton stays in sync with release-please bumps instead
+		// of drifting from a hardcoded literal.
+		__BONEBUSTER_VERSION__: JSON.stringify(PKG_VERSION),
+	},
 	build: {
 		target: "es2022",
 		// QW7 / SECURITY #1 — gh-pages builds drop sourcemaps entirely so

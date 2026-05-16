@@ -31,4 +31,6 @@ export default {
 	title: "Bone Buster — They Had It Coming",
 	description:
 		"Bone Buster — a procedural arcade FPS in the PSX-jank tradition. They had it coming.",
+	// `title` + `description` are meta-extended keys (declared above) —
+	// they sit outside the static Config type, so the cast is required.
 } as Config;

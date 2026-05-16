@@ -4,9 +4,15 @@
  *
  * The +onRenderHtml hook bakes the skeleton into `<body>` and an
  * empty `<div id="page-view">` next to it. This hook fires on first
- * load, replaces page-view's contents with the React tree, and lets
- * the inline `SKELETON_HIDE_SCRIPT` (also in +onRenderHtml) flip
- * `<body class="bb-spa-hydrated">` to hide the skeleton.
+ * load, replaces page-view's contents with the React tree, then flips
+ * `<body class="bb-spa-hydrated">` to hide the skeleton via CSS.
+ *
+ * We use `flushSync` around `root.render` for the FIRST mount so the
+ * React commit is guaranteed to have painted into `#page-view` before
+ * we toggle the body class. A naive `requestAnimationFrame` after a
+ * concurrent-mode render can fire before the commit lands, briefly
+ * exposing an empty `#page-view` over a hidden skeleton. Subsequent
+ * re-renders (HMR / client-routing) reuse the root without flushSync.
  *
  * vike-react would normally own this hook. We write it ourselves so
  * we get exact control over the mount + the bootstrap (jeep-sqlite)
@@ -14,9 +20,10 @@
  */
 
 import { ensureJeepSqliteReady } from "@platform/persistence/initJeepSqlite";
-import type { OnRenderClientAsync, PageContextClient } from "vike/types";
 import { type ComponentType, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { flushSync } from "react-dom";
+import type { OnRenderClientAsync, PageContextClient } from "vike/types";
 
 // Bone Buster fonts (PRD §R1). Self-hosted via @fontsource/*; no CDN.
 // Each import is byte-for-byte the woff2 from the font package. Order
@@ -51,30 +58,25 @@ const onRenderClient: OnRenderClientAsync = async (pageContext) => {
 		throw new Error("onRenderClient: missing #page-view mount point");
 	}
 
+	const tree = (
+		<StrictMode>
+			<Page />
+		</StrictMode>
+	);
+
 	if (!root) {
 		root = createRoot(container);
 		// STO1b — fire-and-forget WASM bridge bootstrap. Was in
 		// app/main.tsx; now lives at the post-Vike mount point.
 		void ensureJeepSqliteReady();
-	}
-
-	root.render(
-		<StrictMode>
-			<Page />
-		</StrictMode>,
-	);
-
-	// Hide the prerendered skeleton once React has had a chance to
-	// paint. We can't use an inline <script> in the HTML because CSP
-	// `script-src 'self'` blocks inline. Setting the class here keeps
-	// the same CSS rule (`body.bb-spa-hydrated .bb-prerender { display: none }`)
-	// in charge of the swap. requestAnimationFrame gives the React
-	// commit one frame to paint into #page-view first so we don't
-	// flash an empty page-view above an already-hidden skeleton.
-	if (typeof window !== "undefined") {
-		requestAnimationFrame(() => {
-			document.body.classList.add("bb-spa-hydrated");
+		// Synchronous commit for the first paint so the skeleton
+		// stays visible until the React tree is actually on screen.
+		flushSync(() => {
+			root!.render(tree);
 		});
+		document.body.classList.add("bb-spa-hydrated");
+	} else {
+		root.render(tree);
 	}
 };
 
