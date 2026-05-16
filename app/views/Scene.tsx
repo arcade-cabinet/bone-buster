@@ -104,6 +104,7 @@ import {
 import { tickEnemyLoop } from "../../src/scene/tick/enemyTickLoop";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
 import { createTimeScaleBus } from "../../src/scene/tick/timeScaleBus";
+import { pickMeleeProfile } from "../../src/world/meleeSkins";
 
 type SceneProps = Readonly<{
 	map: BoneBusterMap;
@@ -795,6 +796,11 @@ export function BoneBusterScene({
 		}
 	};
 
+	// PB4 — per-run melee profile resolved from level.seed; pairs with
+	// the viewmodel's pickMeleeSkin so the visible weapon and the damage
+	// numbers stay in lockstep.
+	const meleeProfile = useMemo(() => pickMeleeProfile(map.seed), [map.seed]);
+
 	// ARCH2b — single-shot resolution moved to src/scene/tick/fireResolution.ts.
 	// The useEffect that wires `objexoom:fire` stays here (it owns the
 	// listener lifecycle); the body is one call into the pure helper.
@@ -821,11 +827,12 @@ export function BoneBusterScene({
 				muzzleIntensityScaleRef,
 				timeScaleBus: timeScaleBusRef.current,
 				explodeBarrel: (b) => explodeBarrelRef.current(b),
+				meleeProfile,
 			});
 		};
 
 		return addBoneBusterListener("fire", onFire);
-	}, [active, camera, map, hasKey, gameRef, weapon, ammoRef, settings]);
+	}, [active, camera, map, hasKey, gameRef, weapon, ammoRef, settings, meleeProfile]);
 
 	useFrame(() => {
 		if (!active || hasKey) return;
