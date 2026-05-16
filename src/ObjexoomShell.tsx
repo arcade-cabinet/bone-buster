@@ -840,8 +840,14 @@ export function ObjexoomShell() {
 			<div
 				style={{
 					position: "relative",
-					width: "min(100vw, 1280px)",
-					height: "min(100vh, 800px)",
+					// BC4/BC7 — on desktop the game frames as a 1280x800
+					// cabinet centered on the page. On touch (phones,
+					// foldables, tablets) the desktop frame leaves huge
+					// black bands on tall portrait viewports — fill the
+					// full viewport instead so the HUD reaches the edges
+					// and the background gradient covers the page.
+					width: touchMode ? "100%" : "min(100vw, 1280px)",
+					height: touchMode ? "100%" : "min(100vh, 800px)",
 					maxWidth: "100%",
 					maxHeight: "100%",
 					borderRadius: touchMode ? 0 : 20,
