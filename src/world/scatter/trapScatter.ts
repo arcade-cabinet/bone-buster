@@ -18,7 +18,7 @@
  * every other scatter sequence.
  */
 
-import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
@@ -96,7 +96,7 @@ function pickTrigger(rng: () => number): TrapDef {
  * placement. Returns mutable instances (disarmed flag mutates over the
  * level's lifetime).
  */
-export function spawnTraps(map: ObjexoomMap): TrapInstance[] {
+export function spawnTraps(map: BoneBusterMap): TrapInstance[] {
 	if (map.kind !== "sectors") return [];
 	const out: TrapInstance[] = [];
 	const archetype = pickArchetype(map);

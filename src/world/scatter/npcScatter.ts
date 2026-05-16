@@ -22,7 +22,7 @@
  * every other scatter sequence.
  */
 
-import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
@@ -72,7 +72,7 @@ function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean 
  * Deterministic per-map NPC scatter. Returns [] on non-library archetypes
  * and on grid maps.
  */
-export function spawnNpcs(map: ObjexoomMap): NpcInstance[] {
+export function spawnNpcs(map: BoneBusterMap): NpcInstance[] {
 	if (map.kind !== "sectors") return [];
 	if (pickArchetype(map) !== "library") return [];
 	const out: NpcInstance[] = [];

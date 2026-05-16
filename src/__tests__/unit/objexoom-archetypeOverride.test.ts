@@ -4,12 +4,12 @@
  * regardless of the input seed.
  */
 
-import type { ObjexoomMap } from "@engine/engine";
+import type { BoneBusterMap } from "@engine/engine";
 import { applyArchetypeOverride } from "@views/Shell";
 import { ARCHETYPE_NAMES, pickArchetype } from "@world/archetype";
 import { describe, expect, it } from "vitest";
 
-function fakeMap(seed: number): ObjexoomMap {
+function fakeMap(seed: number): BoneBusterMap {
 	// CONV3 — archetype is now denormalized onto the map type. The fake
 	// here mirrors what `generateMap`/`loadRefLevel` would have set so
 	// `pickArchetype(map)` round-trips correctly.
@@ -30,7 +30,7 @@ function fakeMap(seed: number): ObjexoomMap {
 		enemySpawns: [],
 		pickupSpawns: [],
 		secretCells: [],
-	} as unknown as ObjexoomMap;
+	} as unknown as BoneBusterMap;
 }
 
 describe("INF3 — applyArchetypeOverride", () => {

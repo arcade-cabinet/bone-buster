@@ -4,12 +4,12 @@ import { playLogoSting } from "@audio/logoSting";
 import { getMusicLoadProgress } from "@audio/sfx";
 import { formatRunDuration, openRunHistory, type RunRecord } from "@store/runHistory";
 import {
+	type BoneBusterSettings,
 	DIFFICULTY_BLURB,
 	DIFFICULTY_LABEL,
 	type Difficulty,
 	LEVEL_LABEL,
 	type LevelChoice,
-	type ObjexoomSettings,
 } from "@store/settings";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "@styles/tokens/index";
 import { TYPE } from "@styles/tokens/typography";
@@ -18,8 +18,8 @@ import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 
 type Props = Readonly<{
-	settings: ObjexoomSettings;
-	onSettingsChange: (patch: Partial<ObjexoomSettings>) => void;
+	settings: BoneBusterSettings;
+	onSettingsChange: (patch: Partial<BoneBusterSettings>) => void;
 	onStart: () => void;
 	onQuit: () => void;
 	canResume?: boolean;
@@ -51,7 +51,7 @@ const DIFFICULTY_ORDER: Difficulty[] = [
 
 const LEVEL_ORDER: LevelChoice[] = ["procedural", 1, 2, 3, 4, 5];
 
-export function ObjexoomLanding({
+export function BoneBusterLanding({
 	settings,
 	onSettingsChange,
 	onStart,
@@ -385,8 +385,8 @@ function OptionsPane({
 	onChange,
 	onBack,
 }: {
-	settings: ObjexoomSettings;
-	onChange: (patch: Partial<ObjexoomSettings>) => void;
+	settings: BoneBusterSettings;
+	onChange: (patch: Partial<BoneBusterSettings>) => void;
 	onBack: () => void;
 }) {
 	return (

@@ -18,7 +18,7 @@
  * every other scatter sequence.
  */
 
-import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
@@ -70,7 +70,7 @@ function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean 
  * Deterministic per-map nature scatter. Returns [] for non-courtyard
  * archetypes and for grid maps. Same `map.seed` → byte-identical layout.
  */
-export function spawnNature(map: ObjexoomMap): NatureInstance[] {
+export function spawnNature(map: BoneBusterMap): NatureInstance[] {
 	if (map.kind !== "sectors") return [];
 	if (pickArchetype(map) !== "courtyard") return [];
 	const out: NatureInstance[] = [];

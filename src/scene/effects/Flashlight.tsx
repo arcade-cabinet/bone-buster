@@ -1,6 +1,6 @@
-import { addObjexoomListener } from "@engine/events";
+import { addBoneBusterListener } from "@engine/events";
 import { useFrame, useThree } from "@react-three/fiber";
-import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
@@ -37,7 +37,7 @@ export function Flashlight() {
 	const boostStartRef = useRef(-Infinity);
 
 	useEffect(() => {
-		return addObjexoomListener("flashlightAcquired", () => {
+		return addBoneBusterListener("flashlightAcquired", () => {
 			boostStartRef.current = performance.now();
 		});
 	}, []);
@@ -69,7 +69,7 @@ export function Flashlight() {
 				angle={0.5}
 				penumbra={0.3}
 				decay={1.5}
-				color={OBJEXOOM_PALETTE.flashlightWarm}
+				color={BONE_BUSTER_PALETTE.flashlightWarm}
 				castShadow
 				// QW6 — shadow map 1024² → 512². PCF soft + 512² on a
 				// tight 14m cone is still convincing visually and roughly

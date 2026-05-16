@@ -1,12 +1,12 @@
-import { addObjexoomListener } from "@engine/events";
+import { addBoneBusterListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
-import { OBJEXOOM_PALETTE, SCALE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE, SCALE } from "@styles/tokens/index";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const COLOR_WRAITH = new THREE.Color(OBJEXOOM_PALETTE.enemyWraithSoul).getHex();
-const COLOR_IMP = new THREE.Color(OBJEXOOM_PALETTE.enemyImpMagma).getHex();
-const COLOR_AMBER = new THREE.Color(OBJEXOOM_PALETTE.actionPickupGlow).getHex();
+const COLOR_WRAITH = new THREE.Color(BONE_BUSTER_PALETTE.enemyWraithSoul).getHex();
+const COLOR_IMP = new THREE.Color(BONE_BUSTER_PALETTE.enemyImpMagma).getHex();
+const COLOR_AMBER = new THREE.Color(BONE_BUSTER_PALETTE.actionPickupGlow).getHex();
 // POL16 — extra colors for the layered damage burst.
 const COLOR_SPARK = new THREE.Color(SCALE.amber[100]).getHex(); // hot white-amber impact
 const COLOR_SMOKE = new THREE.Color(SCALE.parchment[600]).getHex(); // cool gray smoke
@@ -66,7 +66,7 @@ export function ParticleBurstField() {
 	const nextId = useRef(1);
 
 	useEffect(() => {
-		return addObjexoomListener("burst", (detail) => {
+		return addBoneBusterListener("burst", (detail) => {
 			const now = performance.now();
 			if (detail.kind === "flameStream") {
 				// E8 step-2 — directional flame cone stream. Emits a wave

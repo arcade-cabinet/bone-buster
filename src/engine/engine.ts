@@ -137,11 +137,11 @@ export type MapSector = Readonly<{
 	isWater?: boolean;
 }>;
 
-export type ObjexoomMap = ObjexoomGridMap | ObjexoomSectorMap;
+export type BoneBusterMap = ObjexoomGridMap | ObjexoomSectorMap;
 
-export const isGridMap = (m: ObjexoomMap): m is ObjexoomGridMap => m.kind === "grid";
+export const isGridMap = (m: BoneBusterMap): m is ObjexoomGridMap => m.kind === "grid";
 
-export const isSectorMap = (m: ObjexoomMap): m is ObjexoomSectorMap => m.kind === "sectors";
+export const isSectorMap = (m: BoneBusterMap): m is ObjexoomSectorMap => m.kind === "sectors";
 
 export type Vec2 = Readonly<{ x: number; y: number }>;
 
@@ -618,7 +618,7 @@ export const BOSS_VISUAL_SCALE = 1.6;
  * farthest from `map.playerSpawn` (the "final sector" per PRD §E2).
  * Returns -1 if there are no spawns. Deterministic given the map.
  */
-export function pickBossSpawnIndex(map: ObjexoomMap): number {
+export function pickBossSpawnIndex(map: BoneBusterMap): number {
 	if (map.enemySpawns.length === 0) return -1;
 	let bestIdx = 0;
 	// Use -Infinity (not -1) so the comparison is independent of the loop
@@ -642,7 +642,7 @@ export function pickBossSpawnIndex(map: ObjexoomMap): number {
  * enemy mix). When absent, uses `map.enemySpawns` directly. Length and
  * order must match `map.enemySpawns` so bossIdx still aligns.
  */
-export function spawnEnemies(map: ObjexoomMap, spawnsOverride?: readonly EnemySpawn[]): Enemy[] {
+export function spawnEnemies(map: BoneBusterMap, spawnsOverride?: readonly EnemySpawn[]): Enemy[] {
 	const spawns = spawnsOverride ?? map.enemySpawns;
 	const bossIdx = pickBossSpawnIndex(map);
 	return spawns.map((spawn, i) => {
@@ -675,7 +675,7 @@ export type Pickup = {
 	collected: boolean;
 };
 
-export function spawnPickups(map: ObjexoomMap): Pickup[] {
+export function spawnPickups(map: BoneBusterMap): Pickup[] {
 	return map.pickupSpawns.map((p, i) => ({
 		id: i,
 		kind: p.kind,
@@ -702,7 +702,7 @@ export type CollisionContext = Readonly<{
 
 export function resolveCollisionAny(
 	desired: Vec2,
-	map: ObjexoomMap,
+	map: BoneBusterMap,
 	ctx: CollisionContext,
 	radius: number = PLAYER_RADIUS,
 ): Vec2 {
@@ -761,7 +761,7 @@ function pushOutBlockers(
 export function hasLineOfSightAny(
 	a: Vec2,
 	b: Vec2,
-	map: ObjexoomMap,
+	map: BoneBusterMap,
 	ctx: CollisionContext,
 ): boolean {
 	if (map.kind === "grid") {
@@ -773,7 +773,7 @@ export function hasLineOfSightAny(
 export function castRayAny(
 	origin: Vec2,
 	dir: Vec2,
-	map: ObjexoomMap,
+	map: BoneBusterMap,
 	ctx: CollisionContext,
 	maxDist?: number,
 ): { dist: number } {
@@ -848,7 +848,7 @@ export function stepEnemyBullet(
 	dt: number,
 	now: number,
 	playerPos: Vec2,
-	map: ObjexoomMap,
+	map: BoneBusterMap,
 	ctx: CollisionContext,
 ): EnemyBulletStep {
 	// `dead` is set by the scene as a removal signal — treat it the same as
@@ -954,7 +954,7 @@ export const WATER_SPEED_MULTIPLIER = 0.6;
  * PlayerController to apply the wading slowdown. Returns false for
  * grid maps + for points outside any sector.
  */
-export function isInWaterAt(map: ObjexoomMap, point: Vec2, cache?: SectorCache): boolean {
+export function isInWaterAt(map: BoneBusterMap, point: Vec2, cache?: SectorCache): boolean {
 	if (map.kind !== "sectors") return false;
 	const sector = getSectorAtPoint(map, point, cache);
 	return sector?.isWater === true;
@@ -973,13 +973,13 @@ export function getCeilingHeightAt(
 // (floor=0, ceiling=WALL_HEIGHT); sector maps look up the polygon
 // the point sits inside. Returns null when the point is outside the
 // playable region (e.g. inside a wall).
-export function getFloorHeightAtAny(map: ObjexoomMap, point: Vec2): number | null {
+export function getFloorHeightAtAny(map: BoneBusterMap, point: Vec2): number | null {
 	if (map.kind === "grid") return 0;
 	const sector = getSectorAtPoint(map, point);
 	return sector ? sector.floorHeight : null;
 }
 
-export function getCeilingHeightAtAny(map: ObjexoomMap, point: Vec2): number | null {
+export function getCeilingHeightAtAny(map: BoneBusterMap, point: Vec2): number | null {
 	if (map.kind === "grid") return 3; // matches WALL_HEIGHT
 	const sector = getSectorAtPoint(map, point);
 	return sector ? sector.ceilingHeight : null;

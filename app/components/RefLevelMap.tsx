@@ -13,7 +13,7 @@
  */
 
 import { type DecodedLevel, levelBounds, type Polygon } from "@ai/turtle";
-import { OBJEXOOM_PALETTE } from "@shared/constants";
+import { BONE_BUSTER_PALETTE } from "@shared/constants";
 import { useMemo } from "react";
 import * as THREE from "three";
 
@@ -56,8 +56,8 @@ export function RefLevelMap({ level }: Props) {
 						<mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, floorY, 0]}>
 							<shapeGeometry args={[shape]} />
 							<meshStandardMaterial
-								color={lava ? OBJEXOOM_PALETTE.amber : "#1f2547"}
-								emissive={lava ? OBJEXOOM_PALETTE.amber : "#0b1024"}
+								color={lava ? BONE_BUSTER_PALETTE.amber : "#1f2547"}
+								emissive={lava ? BONE_BUSTER_PALETTE.amber : "#0b1024"}
 								emissiveIntensity={lava ? 1.4 : 0.1}
 								roughness={lava ? 0.4 : 0.9}
 								side={THREE.DoubleSide}
@@ -90,7 +90,7 @@ export function RefLevelMap({ level }: Props) {
 									<boxGeometry args={[len, height, 0.08]} />
 									<meshStandardMaterial
 										color={idx % 3 === 0 ? "#1f2547" : idx % 3 === 1 ? "#26224a" : "#1a1e3b"}
-										emissive={OBJEXOOM_PALETTE.indigo}
+										emissive={BONE_BUSTER_PALETTE.indigo}
 										emissiveIntensity={0.08}
 										roughness={0.85}
 									/>

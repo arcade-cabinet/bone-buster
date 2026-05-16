@@ -18,7 +18,7 @@
  *    `blocking: true` + a `blockingRadius` consumed by collision).
  */
 
-import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
@@ -82,7 +82,7 @@ function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean 
  * Deterministic per-map large-prop scatter. Grid maps return [].
  * Same `map.seed` → byte-identical layout.
  */
-export function spawnLargeProps(map: ObjexoomMap): LargePropInstance[] {
+export function spawnLargeProps(map: BoneBusterMap): LargePropInstance[] {
 	if (map.kind !== "sectors") return [];
 	const out: LargePropInstance[] = [];
 	const rng = mulberry32((map.seed >>> 0) ^ 0x4c415250);

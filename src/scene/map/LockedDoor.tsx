@@ -1,7 +1,7 @@
 import { playDoor, playDoorTick } from "@audio/sfx";
 import { useFrame } from "@react-three/fiber";
 import { TILE } from "@shared/constants";
-import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import { useRef } from "react";
 import type * as THREE from "three";
 import { WALL_HEIGHT } from "../constants";
@@ -44,8 +44,8 @@ export function LockedDoor({
 		>
 			<boxGeometry args={[TILE * 0.95, WALL_HEIGHT * 0.95, TILE * 0.25]} />
 			<meshStandardMaterial
-				color={OBJEXOOM_PALETTE.amber}
-				emissive={OBJEXOOM_PALETTE.amber}
+				color={BONE_BUSTER_PALETTE.amber}
+				emissive={BONE_BUSTER_PALETTE.amber}
 				emissiveIntensity={open ? 0.08 : 0.55}
 				roughness={0.5}
 			/>

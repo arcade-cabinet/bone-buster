@@ -1,5 +1,5 @@
 /**
- * ARCH2a — per-frame enemy AI tick, extracted from ObjexoomScene's
+ * ARCH2a — per-frame enemy AI tick, extracted from BoneBusterScene's
  * useFrame. Pure function over a context object so the call site in
  * the Scene remains a one-liner inside useFrame and the logic lives
  * in a focused, individually-testable module.
@@ -19,9 +19,9 @@
  *   aggroFiredRef        — Set<id> of enemies that already played alert
  *   collisionCtxRef      — collision helper context (built per Scene)
  *   gameRef              — Shell callbacks (onHit/onKill/...)
- *   map                  — current ObjexoomMap (sector or grid)
+ *   map                  — current BoneBusterMap (sector or grid)
  *   camera               — three.js camera (for yaw on aggro pan)
- *   settings             — full ObjexoomSettings (for soundEnabled)
+ *   settings             — full BoneBusterSettings (for soundEnabled)
  *   playerVelocity       — XZ-frame player velocity (Y3)
  *   playerX / playerY    — camera.position.{x,z}
  *   now                  — performance.now() at the top of the tick
@@ -32,12 +32,12 @@ import { tickEnemyFsm } from "@ai/enemyAi";
 import { removeYukaEntity } from "@ai/yukaIntegration";
 import { panForPosition, playAggroAlert, playHurt } from "@audio/sfx";
 import {
+	type BoneBusterMap,
 	type CollisionContext,
 	type Enemy,
 	type EnemyBullet,
 	hasLineOfSightAny,
 	makeEnemyBullet,
-	type ObjexoomMap,
 	resolveCollisionAny,
 } from "@engine/engine";
 import { dispatch } from "@engine/events";
@@ -46,7 +46,7 @@ import {
 	SKELETON_ATTACK_RANGE,
 	SKELETON_DAMAGE,
 } from "@shared/constants";
-import type { ObjexoomSettings } from "@store/settings";
+import type { BoneBusterSettings } from "@store/settings";
 import type { GameRef } from "@views/Shell";
 import type * as THREE from "three";
 import type * as Yuka from "yuka";
@@ -73,9 +73,9 @@ export interface EnemyTickContext {
 	bossSpottedFiredRef?: { current: Set<number> };
 	collisionCtxRef: CollisionCtxRef;
 	gameRef: { current: GameRef };
-	map: ObjexoomMap;
+	map: BoneBusterMap;
 	camera: THREE.Camera;
-	settings: ObjexoomSettings;
+	settings: BoneBusterSettings;
 	playerVelocity: { x: number; y: number };
 	playerX: number;
 	playerY: number;

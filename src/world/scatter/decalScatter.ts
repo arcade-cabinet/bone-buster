@@ -13,7 +13,7 @@
  * survives map mutations to other sectors.
  */
 
-import type { MapSector, ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, MapSector, Vec2 } from "@engine/engine";
 import { pickArchetype } from "@world/archetype";
 import { pickDecalUrlByArchetype } from "@world/decals";
 import type { PropArchetype } from "@world/scatter/propPool";
@@ -120,7 +120,7 @@ function decalsOnEdge(
 	return out;
 }
 
-export function spawnDecals(map: ObjexoomMap): DecalInstance[] {
+export function spawnDecals(map: BoneBusterMap): DecalInstance[] {
 	if (map.kind !== "sectors") return [];
 	const out: DecalInstance[] = [];
 	const archetype = pickArchetype(map);

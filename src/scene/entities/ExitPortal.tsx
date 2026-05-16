@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import { useRef } from "react";
 import type * as THREE from "three";
 
@@ -10,11 +10,11 @@ import type * as THREE from "three";
  * amber/teal/rose.
  */
 const GOAL_HUES: readonly string[] = [
-	OBJEXOOM_PALETTE.violet,
-	OBJEXOOM_PALETTE.indigo,
-	OBJEXOOM_PALETTE.amber,
-	OBJEXOOM_PALETTE.portalTeal,
-	OBJEXOOM_PALETTE.portalRose,
+	BONE_BUSTER_PALETTE.violet,
+	BONE_BUSTER_PALETTE.indigo,
+	BONE_BUSTER_PALETTE.amber,
+	BONE_BUSTER_PALETTE.portalTeal,
+	BONE_BUSTER_PALETTE.portalRose,
 ];
 
 /**
@@ -41,8 +41,8 @@ export function ExitPortal({
 		<mesh ref={ref} position={[position.x, 1.2, position.y]}>
 			<torusGeometry args={[0.95, 0.22, 18, 32]} />
 			<meshStandardMaterial
-				color={unlocked ? hue : OBJEXOOM_PALETTE.indigo}
-				emissive={unlocked ? hue : OBJEXOOM_PALETTE.indigo}
+				color={unlocked ? hue : BONE_BUSTER_PALETTE.indigo}
+				emissive={unlocked ? hue : BONE_BUSTER_PALETTE.indigo}
 				emissiveIntensity={unlocked ? 1.4 : 0.3}
 			/>
 		</mesh>

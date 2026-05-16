@@ -15,7 +15,7 @@
  * every other scatter sequence.
  */
 
-import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
@@ -66,7 +66,7 @@ function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean 
  * Deterministic per-map kitchen scatter. Returns [] on non-library
  * archetypes and on grid maps. Same `map.seed` → byte-identical layout.
  */
-export function spawnKitchen(map: ObjexoomMap): KitchenInstance[] {
+export function spawnKitchen(map: BoneBusterMap): KitchenInstance[] {
 	if (map.kind !== "sectors") return [];
 	if (pickArchetype(map) !== "library") return [];
 	const out: KitchenInstance[] = [];

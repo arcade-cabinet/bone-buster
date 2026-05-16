@@ -1,4 +1,4 @@
-import { addObjexoomListener } from "@engine/events";
+import { addBoneBusterListener } from "@engine/events";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "@styles/tokens/index";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -24,7 +24,7 @@ export function SecretFoundFlash() {
 	const [activeKey, setActiveKey] = useState(0);
 
 	useEffect(() => {
-		return addObjexoomListener("secretTriggered", () => {
+		return addBoneBusterListener("secretTriggered", () => {
 			setActiveKey((k) => k + 1);
 		});
 	}, []);

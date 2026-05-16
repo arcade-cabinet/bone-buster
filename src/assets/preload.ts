@@ -4,7 +4,7 @@
  * Pre-A4 every scene entity file ran a module-scope IIFE on first
  * import that pumped its GLB list into `useGLTF.preload(url)`. The
  * scene barrel (`src/scene/index.ts`) re-exports all entity files,
- * and ObjexoomShell statically imports ObjexoomScene → which
+ * and BoneBusterShell statically imports BoneBusterScene → which
  * imports the barrel. Net effect: the moment the app booted —
  * while the user was still on the landing screen with the play
  * button — every GLB the game might ever load was queued for
@@ -15,11 +15,11 @@
  *
  * A4 splits the preload set into three explicit tiers:
  *
- * Tier 1 (critical) — fired at app boot from `ObjexoomShell`.
+ * Tier 1 (critical) — fired at app boot from `BoneBusterShell`.
  *   Only the GLBs needed BEFORE the user has clicked "Start
  *   Game": the pistol viewmodel.
  *
- * Tier 2 (map-mount) — fired from `ObjexoomScene` on first mount.
+ * Tier 2 (map-mount) — fired from `BoneBusterScene` on first mount.
  *   Assets needed to render the first frame: walls, doors, floor
  *   tiles, lamps, barrels, enemy roster, loot pickups, large
  *   props, ambient props, melee skin variants (rare per-map swap
@@ -59,7 +59,7 @@ import { preloadSectorWalls } from "../scene/map/SectorMapGeometry";
 import { preloadMeleeSkins, preloadWeapons } from "../scene/viewmodel/WeaponViewmodel";
 
 /**
- * Tier 1 — called at app boot from `ObjexoomShell` mount. The
+ * Tier 1 — called at app boot from `BoneBusterShell` mount. The
  * pistol is the start weapon for every run, so its GLB must be
  * hot before the Canvas mounts. Melee skins are NOT tier 1 —
  * they're a per-map variant only visible if the player picks up
@@ -70,7 +70,7 @@ export function preloadTier1Critical(): void {
 }
 
 /**
- * Tier 2 — called from `ObjexoomScene` useEffect on first mount.
+ * Tier 2 — called from `BoneBusterScene` useEffect on first mount.
  * Everything needed to render the first frame.
  */
 export function preloadTier2MapMount(): void {

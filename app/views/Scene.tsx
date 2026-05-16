@@ -14,24 +14,24 @@ import {
 } from "@audio/sfx";
 import { PlayerController } from "@components/PlayerController";
 import {
+	type BoneBusterMap,
 	computePortalEdges,
 	ENEMY_BULLET_DAMAGE,
 	type Enemy,
 	type EnemyBullet,
 	isSectorMap,
-	type ObjexoomMap,
 	type Pickup,
 	polygonContains,
 	spawnEnemies,
 	spawnPickups,
 	stepEnemyBullet,
 } from "@engine/engine";
-import { addObjexoomListener, dispatch } from "@engine/events";
+import { addBoneBusterListener, dispatch } from "@engine/events";
 import { useFrame, useThree } from "@react-three/fiber";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { PLAYER_HEIGHT, TILE } from "@shared/constants";
 import type { WeaponId } from "@shared/weapons";
-import { DIFFICULTY_TUNING, type ObjexoomSettings } from "@store/settings";
+import { type BoneBusterSettings, DIFFICULTY_TUNING } from "@store/settings";
 import type { GameRef, LevelPhase, WeaponState } from "@views/Shell";
 import { pickArchetype } from "@world/archetype";
 import { type Barrel, resolveExplosion, spawnBarrels } from "@world/barrels";
@@ -106,13 +106,13 @@ import { resolveFire } from "../../src/scene/tick/fireResolution";
 import { createTimeScaleBus } from "../../src/scene/tick/timeScaleBus";
 
 type SceneProps = Readonly<{
-	map: ObjexoomMap;
+	map: BoneBusterMap;
 	active: boolean;
 	hasKey: boolean;
 	gameRef: RefObject<GameRef>;
 	weapon: WeaponId;
 	ammoRef: RefObject<WeaponState>;
-	settings: ObjexoomSettings;
+	settings: BoneBusterSettings;
 	// H8 — drives going_back behavior (re-aggro, strobe, return-to-spawn).
 	phase: LevelPhase;
 	// J1 — flashlight ownership. When false, ambient/directional drop to
@@ -120,7 +120,7 @@ type SceneProps = Readonly<{
 	hasFlashlight: boolean;
 }>;
 
-export function ObjexoomScene({
+export function BoneBusterScene({
 	map,
 	active,
 	hasKey,
@@ -369,7 +369,7 @@ export function ObjexoomScene({
 	// hit (post-iframe). Resolve the camera position and emit the actual
 	// burst at the player's XZ so 30 red motes spawn in-place.
 	useEffect(() => {
-		return addObjexoomListener("playerHit", () => {
+		return addBoneBusterListener("playerHit", () => {
 			dispatch({
 				type: "burst",
 				x: camera.position.x,
@@ -385,7 +385,7 @@ export function ObjexoomScene({
 	// (0.05× for 80ms) so a player can feel the difference between "you
 	// killed something heavy" and "you got the key".
 	useEffect(() => {
-		return addObjexoomListener("keyPickedUp", () => {
+		return addBoneBusterListener("keyPickedUp", () => {
 			timeScaleBusRef.current.reserve("key-acquire", 0.55, performance.now() + 220);
 		});
 	}, []);
@@ -734,9 +734,9 @@ export function ObjexoomScene({
 				gameRef.current.onCollectPickup(pickup.kind);
 			}
 		};
-		const teardownKillAll = addObjexoomListener("debugKillAll", onDebugKillAll);
-		const teardownKillBoss = addObjexoomListener("debugKillBoss", onDebugKillBoss);
-		const teardownCollect = addObjexoomListener("debugCollectPickups", onDebugCollectPickups);
+		const teardownKillAll = addBoneBusterListener("debugKillAll", onDebugKillAll);
+		const teardownKillBoss = addBoneBusterListener("debugKillBoss", onDebugKillBoss);
+		const teardownCollect = addBoneBusterListener("debugCollectPickups", onDebugCollectPickups);
 		return () => {
 			teardownKillAll();
 			teardownKillBoss();
@@ -824,7 +824,7 @@ export function ObjexoomScene({
 			});
 		};
 
-		return addObjexoomListener("fire", onFire);
+		return addBoneBusterListener("fire", onFire);
 	}, [active, camera, map, hasKey, gameRef, weapon, ammoRef, settings]);
 
 	useFrame(() => {
@@ -903,7 +903,7 @@ export function ObjexoomScene({
 			<pointLight ref={muzzleLightRef} intensity={0} distance={8} decay={1.5} />
 			{/* E13 step-4 — per-archetype fog tint. Dominant depth-fade
 			    signal in low-lit play; biggest visual lever for archetype-
-			    distinctness. Corridor still resolves to OBJEXOOM_PALETTE.ink. */}
+			    distinctness. Corridor still resolves to BONE_BUSTER_PALETTE.ink. */}
 			<fog attach="fog" args={[lightPalette.fogColor, 6, TILE * lightPalette.fogFarTiles]} />
 			<color attach="background" args={[lightPalette.fogColor]} />
 
@@ -920,7 +920,7 @@ export function ObjexoomScene({
 			/>
 			{/* POL23 — exit-portal approach FOV-widen slot per
 			    docs/SLOT-ARCHITECTURE.md. The base FOV of 75 mirrors
-			    the ObjexoomShell Canvas camera config. */}
+			    the BoneBusterShell Canvas camera config. */}
 			<ExitPortalApproach
 				portalPosition={map.exitPosition}
 				unlocked={hasKey && allBossesDead}
@@ -959,7 +959,7 @@ export function ObjexoomScene({
 
 			{/* COV8 step-2 — trap scatter (0-2 hazards + 1 trigger per
 			    sector, archetype-biased). Tick damage + lever-disarm
-			    flow lives in the per-frame loop in ObjexoomScene. */}
+			    flow lives in the per-frame loop in BoneBusterScene. */}
 			<TrapField traps={trapsRef.current} />
 
 			{/* COV13 step-2 — library-archetype kitchen scatter.

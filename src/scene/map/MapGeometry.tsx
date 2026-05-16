@@ -2,7 +2,7 @@ import type { ObjexoomGridMap } from "@engine/engine";
 import { useGLTF, useTexture } from "@react-three/drei";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { TILE } from "@shared/constants";
-import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import { pickArchetype } from "@world/archetype";
 import { FLOOR_TEXTURES } from "@world/floorTextures";
 import type { PropArchetype } from "@world/scatter/propPool";
@@ -178,8 +178,8 @@ export function MapGeometry({ map, doorOpen }: { map: ObjexoomGridMap; doorOpen:
 				<mesh key={`l-${p.x}-${p.z}`} position={[p.x, 0.02, p.z]} rotation={[-Math.PI / 2, 0, 0]}>
 					<planeGeometry args={[TILE, TILE]} />
 					<meshStandardMaterial
-						color={OBJEXOOM_PALETTE.amber}
-						emissive={OBJEXOOM_PALETTE.amber}
+						color={BONE_BUSTER_PALETTE.amber}
+						emissive={BONE_BUSTER_PALETTE.amber}
 						emissiveIntensity={1.6}
 					/>
 				</mesh>

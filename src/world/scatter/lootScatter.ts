@@ -16,7 +16,7 @@
  * flag.
  */
 
-import type { ObjexoomMap, PickupSpawn, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, PickupSpawn, Vec2 } from "@engine/engine";
 import { isSectorMap } from "@engine/engine";
 import { type LootKind, pickLootKind } from "@world/loot";
 
@@ -29,7 +29,7 @@ export interface LootSpawn {
  * Compute the loot spawn for a map. Returns null for grid maps and
  * for sector maps with no sectors.
  */
-export function pickLootSpawn(map: ObjexoomMap): LootSpawn | null {
+export function pickLootSpawn(map: BoneBusterMap): LootSpawn | null {
 	if (!isSectorMap(map)) return null;
 	if (map.sectors.length === 0) return null;
 	let best = map.sectors[0];
@@ -69,7 +69,7 @@ export function pickLootSpawn(map: ObjexoomMap): LootSpawn | null {
  * position, or null if there's no eligible spot. Callers append this to
  * the map's pickupSpawns before passing to `spawnPickups`.
  */
-export function lootPickupSpawn(map: ObjexoomMap): PickupSpawn | null {
+export function lootPickupSpawn(map: BoneBusterMap): PickupSpawn | null {
 	const ls = pickLootSpawn(map);
 	if (ls === null) return null;
 	return { kind: "loot", position: ls.position };

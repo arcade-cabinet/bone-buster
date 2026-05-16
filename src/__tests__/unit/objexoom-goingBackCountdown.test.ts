@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
  * POL37 — going-back countdown. Tests cover the formatter contract +
  * the budget constant. State integration (deadline-set on phase
  * transition, deadline-clear on reachSpawn, expiry triggers hp=0) is
- * verified at the integration layer by ObjexoomShell's existing
+ * verified at the integration layer by BoneBusterShell's existing
  * end-to-end test path.
  */
 
@@ -52,7 +52,7 @@ describe("POL37 going-back countdown", () => {
 	describe("deadline lifecycle (state-machine semantics replicated)", () => {
 		/**
 		 * These tests replicate the relevant onWin / onReachSpawn / tick
-		 * logic from ObjexoomShell as pure functions so the deadline
+		 * logic from BoneBusterShell as pure functions so the deadline
 		 * lifecycle is autonomously verifiable without mounting React.
 		 * Any divergence between these and the real Shell setState
 		 * branches IS the bug the test is supposed to catch.

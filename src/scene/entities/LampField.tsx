@@ -14,7 +14,7 @@ import { SkeletonUtils } from "three-stdlib";
  * E13 step-9: the pointLight color is now passed in (archetype-keyed
  * via `palette.lampLightColor`) so each archetype's lamps bathe the
  * scene in their own tint. Corridor still resolves to
- * `OBJEXOOM_PALETTE.flashlightWarm` so lamp-shadow byte-stability on
+ * `BONE_BUSTER_PALETTE.flashlightWarm` so lamp-shadow byte-stability on
  * refLevel 0 is preserved.
  */
 export function LampField({

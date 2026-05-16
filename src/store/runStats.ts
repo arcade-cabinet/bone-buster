@@ -79,7 +79,7 @@ export function advanceLevel(current: LevelChoice, clearedCount: number): LevelC
 }
 
 /**
- * PT1E — the level-transition handler in ObjexoomShell uses this to
+ * PT1E — the level-transition handler in BoneBusterShell uses this to
  * decide whether `status` should flip to `"playing"` (start the next
  * level) or `"won"` (campaign complete). Extracted as a pure function
  * because the bug shipped before was a missing branch: when

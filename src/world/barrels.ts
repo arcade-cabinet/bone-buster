@@ -20,7 +20,7 @@
  *    accidentally counts as a kill or vice versa.
  */
 
-import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 
 /** Default barrel HP. Tuned so a pistol shot doesn't pop a barrel on
@@ -61,7 +61,7 @@ export type Barrel = {
  * subset of pickup-spawn positions offset by a small jitter so they
  * don't sit directly on a key/health pickup.
  */
-export function spawnBarrels(map: ObjexoomMap): Barrel[] {
+export function spawnBarrels(map: BoneBusterMap): Barrel[] {
 	if (map.pickupSpawns.length === 0) return [];
 	const out: Barrel[] = [];
 	const rng = mulberry32(map.seed >>> 0);
@@ -144,7 +144,7 @@ export function resolveExplosion(
 }
 
 /** Ray-vs-barrel hit-test. Mirrors the enemy hit-test in
- * `ObjexoomScene.onFire`: project the barrel onto the ray, accept if
+ * `BoneBusterScene.onFire`: project the barrel onto the ray, accept if
  * the perpendicular distance is within `BARREL_HIT_RADIUS`. Returns
  * the closest hit barrel + its forward distance, or `null` if no
  * barrel is hit within `maxDist`.

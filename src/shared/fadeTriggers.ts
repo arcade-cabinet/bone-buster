@@ -1,6 +1,6 @@
 /**
  * QW9 — extracted fade-trigger tables. Pre-QW9 these lived inline in
- * `triggerFade` inside ObjexoomShell.tsx, and a "drift canary" test
+ * `triggerFade` inside BoneBusterShell.tsx, and a "drift canary" test
  * (`objexoom-fade.test.ts`) defined a local copy that asserted against
  * itself — a tautology that couldn't catch real drift. Moving the
  * tables here lets the test import the SAME table the runtime uses.

@@ -1,7 +1,7 @@
 /**
  * STO1a — settings-blob validation contract.
  *
- * Pins the shape-coercion rules so a future change to ObjexoomSettings
+ * Pins the shape-coercion rules so a future change to BoneBusterSettings
  * (new field, renamed difficulty, etc) trips the test before silently
  * shipping a blob-format break.
  */

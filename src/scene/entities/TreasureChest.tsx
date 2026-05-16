@@ -1,4 +1,4 @@
-import { OBJEXOOM_PALETTE, ROLE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE, ROLE } from "@styles/tokens/index";
 
 /**
  * D1 — decorative treasure chest stamped on every exit. The reference
@@ -12,7 +12,7 @@ export function TreasureChest({ position }: { position: { x: number; y: number }
 			<mesh position={[0, 0, 0]}>
 				<boxGeometry args={[0.9, 0.45, 0.65]} />
 				<meshStandardMaterial
-					color={OBJEXOOM_PALETTE.chestWood}
+					color={BONE_BUSTER_PALETTE.chestWood}
 					emissive={ROLE.actionPickup}
 					emissiveIntensity={0.15}
 					roughness={0.7}
@@ -21,7 +21,7 @@ export function TreasureChest({ position }: { position: { x: number; y: number }
 			<mesh position={[0, 0.33, 0]}>
 				<boxGeometry args={[0.92, 0.22, 0.68]} />
 				<meshStandardMaterial
-					color={OBJEXOOM_PALETTE.chestWoodDeep}
+					color={BONE_BUSTER_PALETTE.chestWoodDeep}
 					emissive={ROLE.actionPickup}
 					emissiveIntensity={0.18}
 					roughness={0.6}

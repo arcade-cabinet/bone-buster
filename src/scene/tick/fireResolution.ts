@@ -1,5 +1,5 @@
 /**
- * ARCH2b — single-shot fire resolution, extracted from ObjexoomScene's
+ * ARCH2b — single-shot fire resolution, extracted from BoneBusterScene's
  * `objexoom:fire` event handler. Pure function over a context object
  * for the same reasons as ARCH2a's `tickEnemyLoop` (see that module).
  *
@@ -31,11 +31,11 @@ import {
 	playSkeletonDeath,
 } from "@audio/sfx";
 import type { CollisionContext } from "@engine/engine";
-import { castRayAny, type Enemy, type ObjexoomMap } from "@engine/engine";
+import { type BoneBusterMap, castRayAny, type Enemy } from "@engine/engine";
 import { dispatch } from "@engine/events";
 import { TILE } from "@shared/constants";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
-import type { ObjexoomSettings } from "@store/settings";
+import type { BoneBusterSettings } from "@store/settings";
 import type { GameRef, WeaponState } from "@views/Shell";
 import { type Barrel, pickRayBarrel } from "@world/barrels";
 import { pickRaySwitch, type Secret } from "@world/secrets";
@@ -57,8 +57,8 @@ export interface FireResolutionContext {
 	weapon: WeaponId;
 	now: number;
 	camera: THREE.Camera;
-	map: ObjexoomMap;
-	settings: ObjexoomSettings;
+	map: BoneBusterMap;
+	settings: BoneBusterSettings;
 	ammoRef: { current: WeaponState };
 	gameRef: { current: GameRef };
 	enemiesRef: { current: Enemy[] };
@@ -124,7 +124,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	muzzleFlashUntilRef.current = now + 80;
 	muzzleColorRef.current.set(spec.muzzleColor);
 	// POL13 — per-weapon bloom tier. Drives the muzzleLight intensity
-	// multiplier in ObjexoomScene's per-frame decay block. Defaults to
+	// multiplier in BoneBusterScene's per-frame decay block. Defaults to
 	// 1.0 if the weapon spec doesn't declare one (back-compat).
 	muzzleIntensityScaleRef.current = spec.muzzleIntensity ?? 1.0;
 

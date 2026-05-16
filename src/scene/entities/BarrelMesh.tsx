@@ -16,7 +16,7 @@ import { SkeletonUtils } from "three-stdlib";
  *
  * Visibility is bound to `barrel.exploded`. When the engine flags a
  * barrel exploded, the registered group's `.visible` flag flips false
- * (the registrar in ObjexoomScene handles the imperative update);
+ * (the registrar in BoneBusterScene handles the imperative update);
  * the mesh itself stays mounted so React doesn't churn the tree on
  * every chain reaction.
  */

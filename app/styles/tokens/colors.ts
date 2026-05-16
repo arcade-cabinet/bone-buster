@@ -247,7 +247,7 @@ export const ROLE = {
 	actionGoingBack: BONE_PALETTE.accentPrimary, // going-back-strobe — orange
 
 	// 3D scene materials — semantic anchors for untextured weapon GLBs
-	// + scene props. Kept here (not in OBJEXOOM_PALETTE) so the 3D scene
+	// + scene props. Kept here (not in BONE_BUSTER_PALETTE) so the 3D scene
 	// pulls from the same ROLE layer as the HUD.
 	sceneWeaponMetalLight: "#3a3a48", // pistol / lighter weapons
 	sceneWeaponMetalDark: "#1f2230", // chaingun / shotgun / darker weapons
@@ -266,12 +266,12 @@ export const ROLE = {
 } as const;
 
 /**
- * Back-compat alias — `OBJEXOOM_PALETTE` was a flat object literal in
+ * Back-compat alias — `BONE_BUSTER_PALETTE` was a flat object literal in
  * the original Objexiv-embedded version. Keep the same keys exported
- * so the existing call sites (`OBJEXOOM_PALETTE.violet`, etc.) work
+ * so the existing call sites (`BONE_BUSTER_PALETTE.violet`, etc.) work
  * without a code-wide rename. Values now resolve through the scale.
  */
-export const OBJEXOOM_PALETTE = {
+export const BONE_BUSTER_PALETTE = {
 	indigo: SCALE.indigo[400],
 	violet: SCALE.violet[400],
 	amber: SCALE.amber[400],

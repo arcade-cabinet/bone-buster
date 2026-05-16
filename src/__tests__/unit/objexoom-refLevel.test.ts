@@ -9,7 +9,7 @@ describe("objexoom refLevel loader", () => {
 		describe(`level ${i + 1}`, () => {
 			const map = loadRefLevel(idx);
 
-			it("produces a sector-shaped ObjexoomMap", () => {
+			it("produces a sector-shaped BoneBusterMap", () => {
 				expect(isSectorMap(map)).toBe(true);
 				expect(map.sectors.length).toBeGreaterThan(2);
 			});

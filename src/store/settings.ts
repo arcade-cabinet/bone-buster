@@ -16,7 +16,7 @@ export type LevelChoice = "procedural" | 1 | 2 | 3 | 4 | 5;
 // Bluetooth keyboard is paired).
 export type TouchControlMode = "auto" | "on" | "off";
 
-export type ObjexoomSettings = Readonly<{
+export type BoneBusterSettings = Readonly<{
 	difficulty: Difficulty;
 	level: LevelChoice;
 	soundEnabled: boolean;
@@ -29,7 +29,7 @@ export type ObjexoomSettings = Readonly<{
 // deliberate opt-in via the RANDOM chip on the landing's level pane.
 // Reason: hand-authored ref geometry is the canonical OBJEXOOM
 // gameplay; the procedural grid is a sandbox alternative.
-export const DEFAULT_SETTINGS: ObjexoomSettings = {
+export const DEFAULT_SETTINGS: BoneBusterSettings = {
 	difficulty: "hurtMePlenty",
 	level: 1,
 	soundEnabled: true,

@@ -282,11 +282,11 @@ export function dispatch<E extends ObjexoomEvent>(event: E): void {
  * Returns a teardown function so consumers can clean up without
  * tracking the bound handler manually:
  *
- *   useEffect(() => addObjexoomListener("burst", (e) => {
+ *   useEffect(() => addBoneBusterListener("burst", (e) => {
  *     // e is BurstEvent — e.kind narrows to BurstKind, etc.
  *   }), []);
  */
-export function addObjexoomListener<K extends ObjexoomEventType>(
+export function addBoneBusterListener<K extends ObjexoomEventType>(
 	type: K,
 	handler: (event: EventOf<K>) => void,
 ): () => void {

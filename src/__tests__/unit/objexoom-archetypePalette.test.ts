@@ -6,7 +6,7 @@ import {
 	ARCHETYPE_LIGHT_PALETTES,
 	getArchetypeLightPalette,
 } from "@scene/lighting/archetypePalette";
-import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 import { describe, expect, it } from "vitest";
 
@@ -19,26 +19,26 @@ describe("E13 — archetype lighting palette", () => {
 
 	it("corridor preserves the pre-step-2 literal colors (canonical byte-stability)", () => {
 		const corridor = getArchetypeLightPalette("corridor");
-		expect(corridor.ambientColor).toBe(OBJEXOOM_PALETTE.violet);
-		expect(corridor.directionalColor).toBe(OBJEXOOM_PALETTE.parchment);
+		expect(corridor.ambientColor).toBe(BONE_BUSTER_PALETTE.violet);
+		expect(corridor.directionalColor).toBe(BONE_BUSTER_PALETTE.parchment);
 		// E13 step-4 — fog also preserves the pre-step-4 literal for
 		// refLevel 0 canonical byte-stability.
-		expect(corridor.fogColor).toBe(OBJEXOOM_PALETTE.ink);
+		expect(corridor.fogColor).toBe(BONE_BUSTER_PALETTE.ink);
 		// COV3 step-6 — floor color preserves the pre-step-6 grid-map
-		// literal (`OBJEXOOM_PALETTE.ink`) so MapGeometry's corridor
+		// literal (`BONE_BUSTER_PALETTE.ink`) so MapGeometry's corridor
 		// procedural floor remains visually identical to the prior
 		// hardcoded value.
-		expect(corridor.floorColor).toBe(OBJEXOOM_PALETTE.ink);
-		expect(corridor.floorEmissive).toBe(OBJEXOOM_PALETTE.wallEmissive);
+		expect(corridor.floorColor).toBe(BONE_BUSTER_PALETTE.ink);
+		expect(corridor.floorEmissive).toBe(BONE_BUSTER_PALETTE.wallEmissive);
 		// COV3 step-7 — corridor ceiling preserves pre-step-7 literal.
-		expect(corridor.ceilingColor).toBe(OBJEXOOM_PALETTE.wallBase);
+		expect(corridor.ceilingColor).toBe(BONE_BUSTER_PALETTE.wallBase);
 		// E13 step-9 — lamp light color preserves canonical literal.
-		expect(corridor.lampLightColor).toBe(OBJEXOOM_PALETTE.flashlightWarm);
+		expect(corridor.lampLightColor).toBe(BONE_BUSTER_PALETTE.flashlightWarm);
 		// E13 step-12 — hemisphere preserves canonical literals.
-		expect(corridor.hemisphereSky).toBe(OBJEXOOM_PALETTE.indigo);
-		expect(corridor.hemisphereGround).toBe(OBJEXOOM_PALETTE.ink);
+		expect(corridor.hemisphereSky).toBe(BONE_BUSTER_PALETTE.indigo);
+		expect(corridor.hemisphereGround).toBe(BONE_BUSTER_PALETTE.ink);
 		// E13 step-13 — water preserves canonical literal.
-		expect(corridor.waterColor).toBe(OBJEXOOM_PALETTE.indigo);
+		expect(corridor.waterColor).toBe(BONE_BUSTER_PALETTE.indigo);
 	});
 
 	it("every entry has all 10 colors set as valid hex", () => {

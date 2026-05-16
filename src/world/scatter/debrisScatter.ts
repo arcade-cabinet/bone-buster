@@ -15,7 +15,7 @@
  *    floorTiles (FLRT) sequences.
  */
 
-import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
@@ -49,7 +49,7 @@ export interface DebrisInstance {
 	readonly url: string;
 }
 
-export function spawnDebris(map: ObjexoomMap): DebrisInstance[] {
+export function spawnDebris(map: BoneBusterMap): DebrisInstance[] {
 	if (map.kind !== "sectors") return [];
 	const out: DebrisInstance[] = [];
 	const rng = mulberry32((map.seed >>> 0) ^ 0x44455242);

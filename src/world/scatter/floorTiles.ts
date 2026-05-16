@@ -21,7 +21,7 @@
  */
 
 import { A } from "@assets/assetUrl";
-import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 
@@ -51,7 +51,7 @@ export interface FloorTileInstance {
  * fully tiled (no gaps) by walking a grid over the bbox at TILE_SIZE
  * spacing and accepting tiles whose center is inside the polygon.
  */
-export function spawnFloorTiles(map: ObjexoomMap): FloorTileInstance[] {
+export function spawnFloorTiles(map: BoneBusterMap): FloorTileInstance[] {
 	if (map.kind !== "sectors") return [];
 	if (!map.useModularFloor) return [];
 

@@ -1,4 +1,4 @@
-import { addObjexoomListener, type EventOf } from "@engine/events";
+import { addBoneBusterListener, type EventOf } from "@engine/events";
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { SCALE } from "@styles/tokens/index";
@@ -87,7 +87,7 @@ export function DamageNumberField() {
 	const nextId = useRef(1);
 
 	useEffect(() => {
-		return addObjexoomListener("damageNumber", (d: EventOf<"damageNumber">) => {
+		return addBoneBusterListener("damageNumber", (d: EventOf<"damageNumber">) => {
 			const now = performance.now();
 			const incomingEnemyId = d.enemyId;
 			// Crit-stack: if the most-recent same-enemy slot is still

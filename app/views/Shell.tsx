@@ -13,8 +13,8 @@ import {
 	stopAmbient,
 	stopMusic,
 } from "@audio/sfx";
-import type { ObjexoomMap, PickupKind } from "@engine/engine";
-import { addObjexoomListener, dispatch } from "@engine/events";
+import type { BoneBusterMap, PickupKind } from "@engine/engine";
+import { addBoneBusterListener, dispatch } from "@engine/events";
 import { loadSettings, saveSettings } from "@platform/persistence/settingsStore";
 import { Canvas } from "@react-three/fiber";
 import { PLAYER_MAX_HP } from "@shared/constants";
@@ -29,16 +29,16 @@ import {
 	runStatsReducer,
 } from "@store/runStats";
 import {
+	type BoneBusterSettings,
 	DEFAULT_SETTINGS,
 	DIFFICULTY_TUNING,
 	type Difficulty,
-	type ObjexoomSettings,
 	type TouchControlMode,
 } from "@store/settings";
 import { ROLE, SCALE } from "@styles/tokens/index";
-import { ObjexoomHUD } from "@views/HUD";
-import { ObjexoomLanding } from "@views/Landing";
-import { ObjexoomScene } from "@views/Scene";
+import { BoneBusterHUD } from "@views/HUD";
+import { BoneBusterLanding } from "@views/Landing";
+import { BoneBusterScene } from "@views/Scene";
 import { ARCHETYPE_NAMES, pickArchetype } from "@world/archetype";
 import { buildMap } from "@world/buildMap";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -258,19 +258,19 @@ declare global {
 			// Playwright). Settings is the source of truth; this hook
 			// mutates it the same way the landing settings UI would.
 			setDifficulty: (difficulty: Difficulty) => void;
-			getSettings: () => ObjexoomSettings;
+			getSettings: () => BoneBusterSettings;
 		};
 	}
 }
 
-export function ObjexoomShell() {
+export function BoneBusterShell() {
 	const [seed, setSeed] = useState(readSeedFromUrl);
 	// INF3 — when `?objexoomArchetype` is present, switch the level to
 	// procedural so the seed rewrite (and thus the archetype pick)
 	// actually drives map generation. Without this override the default
 	// `level: 1` would load the baked refLevel 0 (corridor) and the
 	// archetype flag would silently no-op.
-	const [settings, setSettings] = useState<ObjexoomSettings>(() =>
+	const [settings, setSettings] = useState<BoneBusterSettings>(() =>
 		readArchetypeFromUrl() ? { ...DEFAULT_SETTINGS, level: "procedural" } : DEFAULT_SETTINGS,
 	);
 	// STO1a — track whether the async load-from-Preferences pass has
@@ -281,7 +281,7 @@ export function ObjexoomShell() {
 	// A4 — fire tier-1 preload on shell mount. The pistol viewmodel
 	// must be hot before the user clicks Start Game; everything else
 	// is split into tier 2 (map-mount) and tier 3 (deferred) and
-	// fires from inside `ObjexoomScene`. Pre-A4 every entity file's
+	// fires from inside `BoneBusterScene`. Pre-A4 every entity file's
 	// module-scope IIFE pumped all ~90 MB of GLBs into the loader
 	// at app boot, contending with the landing-screen UI.
 	useEffect(() => {
@@ -324,7 +324,7 @@ export function ObjexoomShell() {
 		if (!settingsHydratedRef.current) return;
 		void saveSettings(settings);
 	}, [settings]);
-	const map: ObjexoomMap = useMemo(
+	const map: BoneBusterMap = useMemo(
 		// I4 — difficulty plumbed through so ManyEnemies (class 9) expands
 		// per the ref formula. Procedural maps don't read it.
 		() => buildMap(seed, settings.level, settings.difficulty),
@@ -400,7 +400,7 @@ export function ObjexoomShell() {
 		level: settings.level,
 	});
 
-	const updateSettings = useCallback((patch: Partial<ObjexoomSettings>) => {
+	const updateSettings = useCallback((patch: Partial<BoneBusterSettings>) => {
 		setSettings((prev) => ({ ...prev, ...patch }));
 	}, []);
 
@@ -470,7 +470,7 @@ export function ObjexoomShell() {
 	}, []);
 
 	// POL31 — monotonic run id, bumped on every landing→playing
-	// transition. Threaded into ObjexoomHUD → HUDOverlays → DifficultyChip
+	// transition. Threaded into BoneBusterHUD → HUDOverlays → DifficultyChip
 	// where a useEffect on `runId` triggers the 2-second acknowledgment
 	// chip. Prop-driven (not event-driven) because the HUD subtree only
 	// mounts AFTER the landing→playing transition (AnimatePresence
@@ -573,7 +573,7 @@ export function ObjexoomShell() {
 	// has been below the local floor for longer than the grace window. Snap
 	// status to dead so the YOU DIED card surfaces.
 	useEffect(() => {
-		return addObjexoomListener("fellToDeath", () => {
+		return addBoneBusterListener("fellToDeath", () => {
 			setState((prev) => {
 				if (prev.status !== "playing") return prev;
 				// POL9 — player-death sting also on fall-to-death.
@@ -588,7 +588,7 @@ export function ObjexoomShell() {
 	// secret switch. RunStats survives clearLevel so the win-screen totals
 	// reflect every secret found across the whole 5-level run.
 	useEffect(() => {
-		return addObjexoomListener("secretTriggered", () => {
+		return addBoneBusterListener("secretTriggered", () => {
 			setState((prev) => ({ ...prev, run: runStatsReducer(prev.run, { type: "secretFound" }) }));
 			// POL21 — secret-found audio sting. Distinct 4-note ascending
 			// chime + brief reverb push so the discovery moment is
@@ -825,7 +825,7 @@ export function ObjexoomShell() {
 		<div
 			data-testid="objexoom-shell"
 			role="dialog"
-			aria-label="OBJEXOOM"
+			aria-label="Bone Buster"
 			style={{
 				position: "fixed",
 				inset: 0,
@@ -868,7 +868,7 @@ export function ObjexoomShell() {
 							exit={{ opacity: 0 }}
 							transition={{ duration: 0.35 }}
 						>
-							<ObjexoomLanding
+							<BoneBusterLanding
 								settings={settings}
 								onSettingsChange={updateSettings}
 								onStart={onStartGame}
@@ -905,7 +905,7 @@ export function ObjexoomShell() {
 								{/* Re-key on map identity so enemies/pickups/bullets/lastWonAt
 								    reset between levels. Without this, Section B level
 								    transitions silently inherit dead state from level 1. */}
-								<ObjexoomScene
+								<BoneBusterScene
 									key={`${settings.level}-${seed}-${map.seed}`}
 									map={map}
 									active={state.status === "playing"}
@@ -918,7 +918,7 @@ export function ObjexoomShell() {
 									hasFlashlight={state.hasFlashlight}
 								/>
 							</Canvas>
-							<ObjexoomHUD
+							<BoneBusterHUD
 								state={state}
 								touchMode={touchMode}
 								onResume={onResume}

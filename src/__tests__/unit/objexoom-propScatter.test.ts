@@ -10,7 +10,7 @@
  *  - Every prop is in the matching archetype bucket.
  */
 
-import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
+import type { BoneBusterMap, ObjexoomGridMap } from "@engine/engine";
 import { loadRefLevel } from "@world/refLevel";
 import { POOLS, type PropArchetype } from "@world/scatter/propPool";
 import { PROPS_PER_SECTOR_MAX, spawnProps } from "@world/scatter/propScatter";
@@ -151,7 +151,7 @@ describe("E3 — sector prop scatter", () => {
 
 describe("E3 — grid maps don't scatter in this slice", () => {
 	it("spawnProps returns [] on a grid map", () => {
-		const grid: ObjexoomMap = makeGridMap();
+		const grid: BoneBusterMap = makeGridMap();
 		expect(spawnProps(grid, "corridor")).toEqual([]);
 	});
 });

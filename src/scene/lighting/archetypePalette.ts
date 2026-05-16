@@ -7,17 +7,17 @@
  * this step extends to lighting per PRD §E13.
  *
  * Back-compat: the "corridor" entry uses the literal colors that
- * ObjexoomScene had before this module shipped (violet ambient,
+ * BoneBusterScene had before this module shipped (violet ambient,
  * parchment directional) so refLevel 0's canonical screenshots stay
  * byte-stable.
  *
  * Intensity multipliers stay 1.0 across the board for step-2; the
- * existing `hasFlashlight ? bright : dark` blending in ObjexoomScene
+ * existing `hasFlashlight ? bright : dark` blending in BoneBusterScene
  * is untouched. A future step can vary intensity per archetype if
  * the visual reads need additional separation.
  */
 
-import { OBJEXOOM_PALETTE, SCALE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE, SCALE } from "@styles/tokens/index";
 import type { PropArchetype } from "@world/scatter/propPool";
 
 export interface ArchetypeLightPalette {
@@ -28,7 +28,7 @@ export interface ArchetypeLightPalette {
 	/**
 	 * E13 step-4 — fog tint. The dominant depth-fade signal in low-lit
 	 * play; biggest visual lever for archetype-distinctness. The
-	 * corridor entry preserves the pre-step-4 literal `OBJEXOOM_PALETTE.ink`
+	 * corridor entry preserves the pre-step-4 literal `BONE_BUSTER_PALETTE.ink`
 	 * for canonical byte-stability.
 	 */
 	readonly fogColor: string;
@@ -38,7 +38,7 @@ export interface ArchetypeLightPalette {
 	 * the conspicuous remaining flat surface. This tint reads via
 	 * `MapGeometry`'s floor `<meshStandardMaterial>`; sector maps
 	 * render the floor via `floorTiles.ts` GLB scatter, untouched.
-	 * Corridor preserves the pre-step-6 literal `OBJEXOOM_PALETTE.ink`.
+	 * Corridor preserves the pre-step-6 literal `BONE_BUSTER_PALETTE.ink`.
 	 */
 	readonly floorColor: string;
 	/** COV3 step-6 — procedural floor emissive tint (low-intensity bias). */
@@ -46,12 +46,12 @@ export interface ArchetypeLightPalette {
 	/**
 	 * COV3 step-7 — procedural grid-map ceiling tint. Mirror of
 	 * `floorColor` for the upper plane. Corridor preserves the
-	 * pre-step-7 literal `OBJEXOOM_PALETTE.wallBase`.
+	 * pre-step-7 literal `BONE_BUSTER_PALETTE.wallBase`.
 	 */
 	readonly ceilingColor: string;
 	/**
 	 * E13 step-9 — per-archetype lit-lamp pointLight color. Corridor
-	 * preserves the pre-step-9 literal `OBJEXOOM_PALETTE.flashlightWarm`
+	 * preserves the pre-step-9 literal `BONE_BUSTER_PALETTE.flashlightWarm`
 	 * so lamp shadows on refLevel 0 stay byte-stable.
 	 */
 	readonly lampLightColor: string;
@@ -65,7 +65,7 @@ export interface ArchetypeLightPalette {
 	readonly hemisphereGround: string;
 	/**
 	 * E13 step-13 — water-surface tint (sector maps with `isWater: true`).
-	 * Corridor preserves the pre-step-13 literal `OBJEXOOM_PALETTE.indigo`
+	 * Corridor preserves the pre-step-13 literal `BONE_BUSTER_PALETTE.indigo`
 	 * for canonical byte-stability. Sewer goes sickly-amber, courtyard
 	 * keeps cool indigo, library is still-amber, arena is ember-tinged.
 	 */
@@ -112,16 +112,16 @@ export interface ArchetypeLightPalette {
 export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeLightPalette>> = {
 	// Pre-existing literal values — preserves the refLevel 0 canonical.
 	corridor: {
-		ambientColor: OBJEXOOM_PALETTE.violet,
-		directionalColor: OBJEXOOM_PALETTE.parchment,
-		fogColor: OBJEXOOM_PALETTE.ink,
-		floorColor: OBJEXOOM_PALETTE.ink,
-		floorEmissive: OBJEXOOM_PALETTE.wallEmissive,
-		ceilingColor: OBJEXOOM_PALETTE.wallBase,
-		lampLightColor: OBJEXOOM_PALETTE.flashlightWarm,
-		hemisphereSky: OBJEXOOM_PALETTE.indigo,
-		hemisphereGround: OBJEXOOM_PALETTE.ink,
-		waterColor: OBJEXOOM_PALETTE.indigo,
+		ambientColor: BONE_BUSTER_PALETTE.violet,
+		directionalColor: BONE_BUSTER_PALETTE.parchment,
+		fogColor: BONE_BUSTER_PALETTE.ink,
+		floorColor: BONE_BUSTER_PALETTE.ink,
+		floorEmissive: BONE_BUSTER_PALETTE.wallEmissive,
+		ceilingColor: BONE_BUSTER_PALETTE.wallBase,
+		lampLightColor: BONE_BUSTER_PALETTE.flashlightWarm,
+		hemisphereSky: BONE_BUSTER_PALETTE.indigo,
+		hemisphereGround: BONE_BUSTER_PALETTE.ink,
+		waterColor: BONE_BUSTER_PALETTE.indigo,
 		// Canonical defaults — preserves refLevel 0 bytes exactly.
 		ambientMul: 1.0,
 		directionalMul: 1.0,

@@ -1,6 +1,6 @@
 import type { EnemyBullet } from "@engine/engine";
 import { useFrame } from "@react-three/fiber";
-import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import { type RefObject, useRef } from "react";
 import * as THREE from "three";
 
@@ -10,8 +10,8 @@ import * as THREE from "three";
 // churn. Materials/geometries owned at module scope; never disposed.
 const BULLET_GEOMETRY = new THREE.SphereGeometry(0.18, 10, 10);
 const BULLET_MATERIAL = new THREE.MeshStandardMaterial({
-	color: OBJEXOOM_PALETTE.amber,
-	emissive: OBJEXOOM_PALETTE.amber,
+	color: BONE_BUSTER_PALETTE.amber,
+	emissive: BONE_BUSTER_PALETTE.amber,
 	emissiveIntensity: 1.8,
 });
 

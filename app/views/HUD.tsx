@@ -1,11 +1,11 @@
-import { addObjexoomListener, dispatch } from "@engine/events";
+import { addBoneBusterListener, dispatch } from "@engine/events";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
 import { type Difficulty, LEVEL_LABEL, type LevelChoice } from "@store/settings";
 import {
+	BONE_BUSTER_PALETTE,
 	FONT_FAMILY,
 	FONT_WEIGHT,
 	LETTER_SPACING,
-	OBJEXOOM_PALETTE,
 	ROLE,
 	SCALE,
 } from "@styles/tokens/index";
@@ -17,7 +17,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HudKey3D } from "../../src/scene/hud/HudKey3D";
 
-type ObjexoomHUDProps = Readonly<{
+type BoneBusterHUDProps = Readonly<{
 	state: GameState;
 	touchMode: boolean;
 	onResume: () => void;
@@ -39,7 +39,7 @@ type ObjexoomHUDProps = Readonly<{
 	runId: number;
 }>;
 
-export function ObjexoomHUD({
+export function BoneBusterHUD({
 	state,
 	touchMode,
 	onResume,
@@ -50,7 +50,7 @@ export function ObjexoomHUD({
 	archetype,
 	difficulty,
 	runId,
-}: ObjexoomHUDProps) {
+}: BoneBusterHUDProps) {
 	const currentSpec = WEAPONS[state.weapon];
 	const currentAmmo = state.ammo[state.weapon];
 	const ammoLabel = Number.isFinite(currentAmmo) ? `${currentAmmo}` : "∞";
@@ -60,14 +60,14 @@ export function ObjexoomHUD({
 	// from amber to blood as long as `now < flashUntil`.
 	const [keyFlashUntil, setKeyFlashUntil] = useState(0);
 	useEffect(() => {
-		return addObjexoomListener("playerHit", () => {
+		return addBoneBusterListener("playerHit", () => {
 			setKeyFlashUntil(performance.now() + 250);
 		});
 	}, []);
 
 	return (
 		<section
-			aria-label="OBJEXOOM heads-up display"
+			aria-label="Bone Buster heads-up display"
 			style={{
 				position: "absolute",
 				inset: 0,
@@ -349,7 +349,7 @@ function AdaptiveResolutionReadout() {
 
 	useEffect(() => {
 		if (!enabled) return;
-		return addObjexoomListener("fpsUpdate", ({ fps, pixelRatio, drawCalls, triangles }) => {
+		return addBoneBusterListener("fpsUpdate", ({ fps, pixelRatio, drawCalls, triangles }) => {
 			setInfo({ fps, pixelRatio, drawCalls, triangles });
 			// OBS2 — accumulate consecutive over-budget windows.
 			const overCalls = drawCalls != null && drawCalls > OBS2_CALL_BUDGET;
@@ -395,7 +395,7 @@ function AdaptiveResolutionReadout() {
 				fontSize: "var(--obx-hud-fs-hint, 11px)",
 				letterSpacing: LETTER_SPACING.hudLabel,
 				color: textColor,
-				background: `${OBJEXOOM_PALETTE.ink}cc`,
+				background: `${BONE_BUSTER_PALETTE.ink}cc`,
 				padding: "4px 8px",
 				borderRadius: 4,
 				border: `1px solid ${borderColor}`,
@@ -617,7 +617,7 @@ function OverlayCard({
 					<button
 						type="button"
 						onClick={primary.onClick}
-						style={ctaButton(OBJEXOOM_PALETTE.amber, true)}
+						style={ctaButton(BONE_BUSTER_PALETTE.amber, true)}
 					>
 						{primary.label}
 					</button>
@@ -736,7 +736,7 @@ function ctaButton(bg: string, primary: boolean): CSSProperties {
 		borderRadius: 10,
 		border: primary ? "none" : `1px solid ${ROLE.borderSoft}`,
 		background: bg,
-		color: primary ? OBJEXOOM_PALETTE.ink : ROLE.textPrimary,
+		color: primary ? BONE_BUSTER_PALETTE.ink : ROLE.textPrimary,
 		fontFamily: FONT_FAMILY.display,
 		fontWeight: FONT_WEIGHT.regular,
 		fontSize: 14,

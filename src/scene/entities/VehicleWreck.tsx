@@ -8,7 +8,7 @@ import { SkeletonUtils } from "three-stdlib";
  *
  * One wrecked vehicle prop placed at a sector centroid when the
  * archetype is "courtyard" (PRD §COV10). The variant is deterministic
- * per map seed via pickVehicleUrl. Mounted from ObjexoomScene only
+ * per map seed via pickVehicleUrl. Mounted from BoneBusterScene only
  * when `archetype === "courtyard"`.
  *
  * Yaw is also seeded deterministically so the wreck rests at a

@@ -9,7 +9,7 @@ import { computeBearingRad, setReturnBearing } from "../tick/returnBearing";
  * frame and writes it to the module-scope `returnBearing` ref. The
  * GoingBackOverlay slot reads the ref every 250ms.
  *
- * Mounted in ObjexoomScene as a sibling to other scene effects. Only
+ * Mounted in BoneBusterScene as a sibling to other scene effects. Only
  * meaningful during the going-back phase, but cheap enough to leave
  * mounted always — the write is a single trig call per frame.
  *

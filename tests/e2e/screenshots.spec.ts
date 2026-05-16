@@ -18,7 +18,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { chromium, type Page, test } from "@playwright/test";
 
-type ObjexoomDebugHooks = {
+type BoneBusterDebugHooks = {
 	getState: () => unknown;
 	start: () => void;
 	teleport: (x: number, y: number, yawRad?: number) => void;
@@ -167,11 +167,11 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.collectAllPickups();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.collectAllPickups();
 			});
 			// T7 — 45 frames (≈750ms @60fps) settles SpotLight + shadow map composite.
 			await waitForFrames(page, 45);
@@ -189,7 +189,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			// T7 — 30 frames (≈500ms @60fps) for the dark-mode pose.
@@ -208,7 +208,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			// Teleport AWAY from spawn before flipping to going_back —
@@ -218,7 +218,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			// trip onReachSpawn and the LEVEL COMPLETE overlay would
 			// render instead of the strobing going_back walk back.
 			await page.evaluate(() => {
-				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
+				const hooks = (window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom;
 				const state = hooks.getState() as {
 					playerSpawn?: { x: number; y: number };
 					exitPosition?: { x: number; y: number };
@@ -256,7 +256,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.goto(DEBUG_URL, { waitUntil: "domcontentloaded" });
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			// Clear N levels: each level needs killAllEnemies + collectKey
@@ -265,7 +265,7 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			// next level mounts). One full cycle per iteration.
 			for (let i = 0; i < 6; i += 1) {
 				await page.evaluate(() => {
-					const hooks = (window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom;
+					const hooks = (window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom;
 					if (!hooks) return;
 					hooks.killAllEnemies();
 					hooks.collectKey();

@@ -46,7 +46,7 @@ describe("T1 — POL1 score wiring", () => {
 	});
 
 	it("HUD score chip is gated by score > 0", async () => {
-		// Reads ObjexoomHUD.tsx and confirms the score-chip render is
+		// Reads BoneBusterHUD.tsx and confirms the score-chip render is
 		// inside a `score > 0` check. Pre-T1 this gate was inline
 		// boolean logic; if anyone removes it the SCORE chip would
 		// render "SCORE 0" on every fresh run.

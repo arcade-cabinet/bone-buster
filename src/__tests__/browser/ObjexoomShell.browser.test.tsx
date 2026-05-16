@@ -1,5 +1,5 @@
 /**
- * Browser smoke tests for the standalone ObjexoomShell.
+ * Browser smoke tests for the standalone BoneBusterShell.
  *
  * Runs in REAL Chromium via @vitest/browser-playwright with the same
  * ANGLE-GL launch args the e2e screenshot suite uses (default
@@ -22,7 +22,7 @@
  */
 
 import { cleanup, render, screen } from "@testing-library/react";
-import { ObjexoomShell } from "@views/Shell";
+import { BoneBusterShell } from "@views/Shell";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 function setSearchParams(qs: string) {
@@ -41,9 +41,9 @@ afterEach(() => {
 	delete (window as unknown as { __objexoom?: unknown }).__objexoom;
 });
 
-describe("ObjexoomShell — landing surface", () => {
+describe("BoneBusterShell — landing surface", () => {
 	it("renders the Bone Buster wordmark + menu items", async () => {
-		render(<ObjexoomShell />);
+		render(<BoneBusterShell />);
 
 		// R3 — Bone Buster wordmark is an inline SVG with
 		// `role="img" aria-label="Bone Buster"`. Replaces the prior
@@ -59,14 +59,14 @@ describe("ObjexoomShell — landing surface", () => {
 	});
 
 	it("does NOT expose window.__objexoom without the debug query param", async () => {
-		render(<ObjexoomShell />);
+		render(<BoneBusterShell />);
 		await screen.findByRole("img", { name: /Bone Buster/i });
 		expect((window as unknown as { __objexoom?: unknown }).__objexoom).toBeUndefined();
 	});
 
 	it("exposes the full debug-hook surface when ?objexoomDebug is set", async () => {
 		setSearchParams("?objexoomDebug");
-		render(<ObjexoomShell />);
+		render(<BoneBusterShell />);
 		await screen.findByRole("img", { name: /Bone Buster/i });
 
 		const hooks = (

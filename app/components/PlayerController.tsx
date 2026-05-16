@@ -1,22 +1,22 @@
 import {
+	type BoneBusterMap,
 	computePortalEdges,
 	getFloorHeightAtAny,
 	isInWaterAt,
-	type ObjexoomMap,
 	resolveCollisionAny,
 	WATER_SPEED_MULTIPLIER,
 } from "@engine/engine";
-import { addObjexoomListener, dispatch } from "@engine/events";
+import { addBoneBusterListener, dispatch } from "@engine/events";
 import { useFrame, useThree } from "@react-three/fiber";
 import { PLAYER_HEIGHT, PLAYER_MOVE_SPEED, PLAYER_TURN_SENSITIVITY } from "@shared/constants";
-import type { ObjexoomSettings } from "@store/settings";
+import type { BoneBusterSettings } from "@store/settings";
 import { useEffect, useMemo, useRef } from "react";
 
 type Props = Readonly<{
-	map: ObjexoomMap;
+	map: BoneBusterMap;
 	active: boolean;
 	hasKey: boolean;
-	settings: ObjexoomSettings;
+	settings: BoneBusterSettings;
 }>;
 
 // H3 — jump physics. World-space units (1 unit ≈ 1 m of game world).
@@ -128,7 +128,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 				grounded.current = false;
 			}
 		};
-		const teardownJump = addObjexoomListener("jump", () => {
+		const teardownJump = addBoneBusterListener("jump", () => {
 			if (active && grounded.current) {
 				verticalVelocity.current = JUMP_VELOCITY;
 				grounded.current = false;
@@ -143,7 +143,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 
 	// Debug teleport (e2e harness).
 	useEffect(() => {
-		return addObjexoomListener("teleport", ({ x, y, yaw: newYaw }) => {
+		return addBoneBusterListener("teleport", ({ x, y, yaw: newYaw }) => {
 			camera.position.x = x;
 			camera.position.z = y;
 			const floor = getFloorHeightAtAny(map, { x, y }) ?? 0;
@@ -157,10 +157,10 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 
 	// Virtual joystick events from the HUD (mobile / coarse pointer).
 	useEffect(() => {
-		const teardownMove = addObjexoomListener("move", ({ x, y }) => {
+		const teardownMove = addBoneBusterListener("move", ({ x, y }) => {
 			moveStick.current = { x, y };
 		});
-		const teardownLook = addObjexoomListener("look", ({ x, y }) => {
+		const teardownLook = addBoneBusterListener("look", ({ x, y }) => {
 			lookStick.current = { x, y };
 		});
 		return () => {
@@ -184,7 +184,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 	// faster (so a chaingun spray taps quietly but a shotgun pellet
 	// barrage snaps the camera). Decay rate unchanged.
 	useEffect(() => {
-		return addObjexoomListener("shake", ({ amount }) => {
+		return addBoneBusterListener("shake", ({ amount }) => {
 			const a = Math.max(0, amount);
 			const add = 0.08 * a + 0.018 * a ** 1.7;
 			shakeRef.current = Math.min(SHAKE_MAX, shakeRef.current + add);

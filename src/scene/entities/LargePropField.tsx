@@ -12,7 +12,7 @@ import { SkeletonUtils } from "three-stdlib";
  * shape (SkeletonUtils.clone per mount; primitive-wrapped under a group).
  *
  * Blocking entries push the player out via collision; that wiring is
- * fed from ObjexoomScene via the CollisionContext blocker list.
+ * fed from BoneBusterScene via the CollisionContext blocker list.
  */
 export function LargePropField({ props }: { props: readonly LargePropInstance[] }) {
 	return (

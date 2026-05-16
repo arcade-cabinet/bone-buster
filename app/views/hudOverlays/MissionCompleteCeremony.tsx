@@ -24,7 +24,7 @@ import { useEffect, useState } from "react";
  *     fill, spring-eased.
  *
  * The generic OverlayCard for status==="won" is retired in
- * ObjexoomHUD.tsx — this slot owns the visual.
+ * BoneBusterHUD.tsx — this slot owns the visual.
  */
 
 interface Stat {

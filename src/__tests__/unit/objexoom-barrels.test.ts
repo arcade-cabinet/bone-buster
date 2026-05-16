@@ -11,7 +11,7 @@
  *    player-included
  */
 
-import type { ObjexoomMap } from "@engine/engine";
+import type { BoneBusterMap } from "@engine/engine";
 import {
 	BARREL_AOE_DAMAGE,
 	BARREL_AOE_RADIUS,
@@ -24,7 +24,7 @@ import {
 } from "@world/barrels";
 import { describe, expect, it } from "vitest";
 
-function makeMap(pickupCount: number, seed = 1): ObjexoomMap {
+function makeMap(pickupCount: number, seed = 1): BoneBusterMap {
 	return {
 		kind: "grid",
 		seed,
@@ -40,7 +40,7 @@ function makeMap(pickupCount: number, seed = 1): ObjexoomMap {
 			kind: "health" as const,
 			position: { x: i + 1, y: i + 1 },
 		})),
-	} as unknown as ObjexoomMap;
+	} as unknown as BoneBusterMap;
 }
 
 describe("spawnBarrels", () => {

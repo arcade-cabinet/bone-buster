@@ -10,7 +10,7 @@
  *  - WATER_SPEED_MULTIPLIER is in a sensible range.
  */
 
-import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
+import type { BoneBusterMap, ObjexoomGridMap } from "@engine/engine";
 import { isInWaterAt, polygonContains, WATER_SPEED_MULTIPLIER } from "@engine/engine";
 import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
@@ -88,7 +88,7 @@ describe("E7 — isInWaterAt", () => {
 	});
 
 	it("returns false on grid maps", () => {
-		const grid: ObjexoomMap = makeGridMap();
+		const grid: BoneBusterMap = makeGridMap();
 		expect(isInWaterAt(grid, { x: 0, y: 0 })).toBe(false);
 	});
 });

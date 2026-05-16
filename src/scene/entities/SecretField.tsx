@@ -1,7 +1,7 @@
 import { playDoor, playDoorTick } from "@audio/sfx";
-import { addObjexoomListener } from "@engine/events";
+import { addBoneBusterListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
-import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import type { Secret } from "@world/secrets";
 import { useEffect, useRef, useState } from "react";
 import type * as THREE from "three";
@@ -22,7 +22,7 @@ export function SecretField({ secretsRef }: { secretsRef: { current: Secret[] } 
 	const [, setTick] = useState(0);
 
 	useEffect(() => {
-		return addObjexoomListener("secretTriggered", () => {
+		return addBoneBusterListener("secretTriggered", () => {
 			playDoor();
 			playDoorTick();
 			setTick((t) => t + 1);
@@ -43,8 +43,12 @@ export function SecretField({ secretsRef }: { secretsRef: { current: Secret[] } 
 
 function SecretSwitch({ secret }: { secret: Secret }) {
 	const spec = secret.spec;
-	const color = secret.triggered ? OBJEXOOM_PALETTE.actionPickupGlow : OBJEXOOM_PALETTE.violet;
-	const emissive = secret.triggered ? OBJEXOOM_PALETTE.actionPickupGlow : OBJEXOOM_PALETTE.indigo;
+	const color = secret.triggered
+		? BONE_BUSTER_PALETTE.actionPickupGlow
+		: BONE_BUSTER_PALETTE.violet;
+	const emissive = secret.triggered
+		? BONE_BUSTER_PALETTE.actionPickupGlow
+		: BONE_BUSTER_PALETTE.indigo;
 	return (
 		<mesh position={[spec.switchPosition.x, 1.2, spec.switchPosition.y]}>
 			<boxGeometry args={[spec.switchRadius * 1.4, spec.switchRadius * 1.4, 0.12]} />
@@ -88,8 +92,8 @@ function SecretWall({ secret }: { secret: Secret }) {
 		>
 			<boxGeometry args={[spec.wallSize.x, 2.4, spec.wallSize.z]} />
 			<meshStandardMaterial
-				color={OBJEXOOM_PALETTE.wallVariantCool}
-				emissive={OBJEXOOM_PALETTE.indigo}
+				color={BONE_BUSTER_PALETTE.wallVariantCool}
+				emissive={BONE_BUSTER_PALETTE.indigo}
 				emissiveIntensity={0.18}
 				roughness={0.55}
 				metalness={0.2}

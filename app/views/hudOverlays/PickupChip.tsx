@@ -1,4 +1,4 @@
-import { addObjexoomListener } from "@engine/events";
+import { addBoneBusterListener } from "@engine/events";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "@styles/tokens/index";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -63,7 +63,7 @@ export function PickupChip() {
 
 	useEffect(() => {
 		let counter = 0;
-		return addObjexoomListener("pickupCollected", ({ kind }) => {
+		return addBoneBusterListener("pickupCollected", ({ kind }) => {
 			const spec = CHIPS[kind];
 			if (!spec) return;
 			counter += 1;

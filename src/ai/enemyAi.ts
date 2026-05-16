@@ -21,7 +21,7 @@
 // landing spot. Tests are unaffected because the return shape is
 // identical.
 import { yukaAvoidObstacles, yukaStepToward, yukaWanderTarget } from "@ai/yukaIntegration";
-import type { CollisionContext, Enemy, EnemyFsmState, ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, CollisionContext, Enemy, EnemyFsmState, Vec2 } from "@engine/engine";
 import { hasLineOfSightAny, resolveCollisionAny } from "@engine/engine";
 
 export const GETHELP_RADIUS = 6.5;
@@ -55,7 +55,7 @@ export const IMP_LEAD_FACTOR = 0.35;
 export type FsmTickInput = Readonly<{
 	enemy: Enemy;
 	player: Vec2;
-	map: ObjexoomMap;
+	map: BoneBusterMap;
 	ctx: CollisionContext;
 	now: number;
 	dt: number;

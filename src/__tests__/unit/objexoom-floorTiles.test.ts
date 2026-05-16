@@ -9,7 +9,7 @@
  *  - Grid maps return [].
  */
 
-import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
+import type { BoneBusterMap, ObjexoomGridMap } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { loadRefLevel } from "@world/refLevel";
 import { FLOOR_TILE_VARIANTS, floorTileUrlFor, spawnFloorTiles } from "@world/scatter/floorTiles";
@@ -69,7 +69,7 @@ describe("COV3 step-1 — modular floor gating", () => {
 	});
 
 	it("grid maps return []", () => {
-		const grid: ObjexoomMap = makeGridMap();
+		const grid: BoneBusterMap = makeGridMap();
 		expect(spawnFloorTiles(grid)).toEqual([]);
 	});
 });

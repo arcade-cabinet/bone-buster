@@ -1,7 +1,7 @@
 /**
- * CONV2 — `GameRef` callback construction extracted from ObjexoomShell.
+ * CONV2 — `GameRef` callback construction extracted from BoneBusterShell.
  *
- * Pre-CONV2 the 7-callback GameRef was inlined inside ObjexoomShell.tsx
+ * Pre-CONV2 the 7-callback GameRef was inlined inside BoneBusterShell.tsx
  * as a ~190-LOC `useRef<GameRef>({...})` block. Every callback closed
  * over Shell-local refs (lastPlayerHitAt, triggerFadeRef) plus
  * Shell-local state (settings, tuning, seed) plus reducer/dispatch.
@@ -27,7 +27,7 @@ import type { PickupKind } from "@engine/engine";
 import { dispatch } from "@engine/events";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import { advanceLevel, runStatsReducer } from "@store/runStats";
-import type { DifficultyTuning, LevelChoice, ObjexoomSettings } from "@store/settings";
+import type { BoneBusterSettings, DifficultyTuning, LevelChoice } from "@store/settings";
 import type { FadeKind, GameRef, GameState } from "@views/Shell";
 import { GOING_BACK_BUDGET_MS } from "@views/Shell";
 import { LOOT_BONUSES, pickLootKind } from "@world/loot";
@@ -53,7 +53,7 @@ const AMMO_INCREMENT: Record<
 export type UseGameRefDeps = Readonly<{
 	setState: React.Dispatch<React.SetStateAction<GameState>>;
 	triggerFadeRef: React.MutableRefObject<(kind: FadeKind, intensity?: number) => void>;
-	settings: ObjexoomSettings;
+	settings: BoneBusterSettings;
 	tuning: DifficultyTuning;
 	seed: number;
 	level: LevelChoice;

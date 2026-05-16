@@ -1,4 +1,4 @@
-import { addObjexoomListener } from "@engine/events";
+import { addBoneBusterListener } from "@engine/events";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, SCALE } from "@styles/tokens/index";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -40,11 +40,11 @@ export function BossBanner() {
 
 	useEffect(() => {
 		let counter = 0;
-		const offSpotted = addObjexoomListener("bossSpotted", () => {
+		const offSpotted = addBoneBusterListener("bossSpotted", () => {
 			counter += 1;
 			setActive({ kind: "spotted", id: counter });
 		});
-		const offDefeated = addObjexoomListener("bossDefeated", () => {
+		const offDefeated = addBoneBusterListener("bossDefeated", () => {
 			counter += 1;
 			setActive({ kind: "defeated", id: counter });
 		});

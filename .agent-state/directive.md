@@ -36,7 +36,8 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 - [x] **R5b** — responsive landing stack for portrait + foldable viewports. Wordmark fills band on both 880×2100 and 2200×1400; tagline + menu legible.
 - [x] **R6** — logo sting via Howler + OGG sample (re-scoped from Tone.js). PRD §R6.
 - [ ] **R7** — HUD palette + type refresh. PRD §R7.
-- [ ] **R8** — source-string `OBJEXOOM`→`BONE BUSTER` sweep. PRD §R8.
+- [x] **R8** — identifier + user-string sweep (`Objexoom*` types/components → `BoneBuster*`, HTML title, ARIA labels). PRD §R8.
+- [ ] **R8b** — storage key + URL param + `__objexoom` global migration (gated on a per-key shim so existing player saves survive the rename). Adds `bonebuster.*` keys alongside `objexoom.*` with one-shot migration; URL params `?objexoomDebug` / `?objexoomSeed` / `?objexoomArchetype` keep accepting old names but emit `?bonebuster*` in canonical links.
 - [ ] **R9** — Capacitor + Android namespace rename. PRD §R9.
 - [ ] **R10** — release-please `package-name` rename. PRD §R10.
 

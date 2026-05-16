@@ -1,14 +1,14 @@
-import { addObjexoomListener } from "@engine/events";
+import { addBoneBusterListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
-import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import type { PropArchetype } from "@world/scatter/propPool";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
-const COLOR_WRAITH = new THREE.Color(OBJEXOOM_PALETTE.enemyWraithSoul).getHex();
-const COLOR_IMP = new THREE.Color(OBJEXOOM_PALETTE.enemyImpMagma).getHex();
-const COLOR_BONE = new THREE.Color(OBJEXOOM_PALETTE.enemyBone).getHex();
+const COLOR_WRAITH = new THREE.Color(BONE_BUSTER_PALETTE.enemyWraithSoul).getHex();
+const COLOR_IMP = new THREE.Color(BONE_BUSTER_PALETTE.enemyImpMagma).getHex();
+const COLOR_BONE = new THREE.Color(BONE_BUSTER_PALETTE.enemyBone).getHex();
 
 type BodyShard = {
 	id: number;
@@ -102,7 +102,7 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 	const nextId = useRef(1);
 
 	useEffect(() => {
-		return addObjexoomListener("bodyParts", (detail) => {
+		return addBoneBusterListener("bodyParts", (detail) => {
 			const count = 4 + ((Math.random() * 3) | 0); // 4-6
 			const baseColor =
 				detail.kind === "wraith" ? COLOR_WRAITH : detail.kind === "imp" ? COLOR_IMP : COLOR_BONE;

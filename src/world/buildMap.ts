@@ -1,4 +1,4 @@
-import { generateMap, type ObjexoomMap } from "@engine/engine";
+import { type BoneBusterMap, generateMap } from "@engine/engine";
 import type { Difficulty, LevelChoice } from "@store/settings";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 import { getArchetypeMapShape } from "@world/archetypeMapShape";
@@ -21,7 +21,7 @@ export function buildMap(
 	seed: number,
 	level: LevelChoice,
 	difficulty: Difficulty = "hurtMePlenty",
-): ObjexoomMap {
+): BoneBusterMap {
 	if (level === "procedural") {
 		// CONV3 — this is the ONE place we recompute the archetype
 		// modulus, because `getArchetypeMapShape` needs it BEFORE

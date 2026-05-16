@@ -1,5 +1,5 @@
 import { ensureJeepSqliteReady } from "@platform/persistence/initJeepSqlite";
-import { ObjexoomShell } from "@views/Shell";
+import { BoneBusterShell } from "@views/Shell";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 // Bone Buster fonts (PRD §R1). Self-hosted via @fontsource/*; no CDN.
@@ -34,6 +34,6 @@ void ensureJeepSqliteReady();
 
 createRoot(container).render(
 	<StrictMode>
-		<ObjexoomShell />
+		<BoneBusterShell />
 	</StrictMode>,
 );

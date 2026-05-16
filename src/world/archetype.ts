@@ -9,7 +9,7 @@
  * cycle through every run. Same seed → same archetype across reloads.
  */
 
-import type { ObjexoomMap } from "@engine/engine";
+import type { BoneBusterMap } from "@engine/engine";
 import type { PropArchetype } from "@world/scatter/propPool";
 
 /**
@@ -32,6 +32,6 @@ export const ARCHETYPE_NAMES: readonly PropArchetype[] = [
  * lives in `buildMap`/`generateMap`/`loadRefLevel`; downstream
  * consumers MUST NOT recompute the modulus.
  */
-export function pickArchetype(map: ObjexoomMap): PropArchetype {
+export function pickArchetype(map: BoneBusterMap): PropArchetype {
 	return map.archetype;
 }

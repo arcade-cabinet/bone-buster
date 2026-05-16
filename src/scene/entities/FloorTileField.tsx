@@ -9,7 +9,7 @@ import { SkeletonUtils } from "three-stdlib";
  * scatter. Each FloorTileInstance gets a cloned mesh at its world
  * position with a quarter-turn yaw rotation for variety.
  *
- * Mounted by ObjexoomScene next to LampField when the map's
+ * Mounted by BoneBusterScene next to LampField when the map's
  * `useModularFloor` flag is set. SectorMapGeometry omits its
  * procedural floor `shapeGeometry` when the flag is set, so these
  * tiles ARE the floor for that map.

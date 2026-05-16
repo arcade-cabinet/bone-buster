@@ -8,7 +8,7 @@
  * slice.
  */
 
-import type { ObjexoomGridMap, ObjexoomMap } from "@engine/engine";
+import type { BoneBusterMap, ObjexoomGridMap } from "@engine/engine";
 import {
 	countLampVariants,
 	LAMP_VARIANTS_OFF,
@@ -131,7 +131,7 @@ describe("COV1 — sector-map lamp scatter", () => {
 
 describe("COV1 — grid maps don't scatter lamps in this slice", () => {
 	it("spawnLamps returns [] on a grid map", () => {
-		const grid: ObjexoomMap = makeGridMap();
+		const grid: BoneBusterMap = makeGridMap();
 		expect(spawnLamps(grid)).toEqual([]);
 	});
 });

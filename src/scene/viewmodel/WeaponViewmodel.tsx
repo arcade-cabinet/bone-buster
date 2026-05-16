@@ -1,5 +1,5 @@
 import { WEAPON_MODELS } from "@assets/models";
-import { addObjexoomListener } from "@engine/events";
+import { addBoneBusterListener } from "@engine/events";
 import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
@@ -11,7 +11,7 @@ import { SkeletonUtils } from "three-stdlib";
 
 /**
  * PA-MOD7 / D11 — callback the viewmodel invokes once the muzzle-anchor
- * `<group>` is mounted. Consumers (ObjexoomScene's muzzle-light loop)
+ * `<group>` is mounted. Consumers (BoneBusterScene's muzzle-light loop)
  * keep this ref and read `getWorldPosition` each frame so the flash
  * originates from the barrel tip rather than the camera position.
  */
@@ -88,7 +88,7 @@ export function WeaponViewmodel({
 	/**
 	 * PA-MOD7 / D11 — invoked with the muzzle-anchor group once it mounts
 	 * (and with `null` on unmount). The world-position of this group is
-	 * the actual barrel tip of the wired GLB; ObjexoomScene reads it
+	 * the actual barrel tip of the wired GLB; BoneBusterScene reads it
 	 * each frame for the muzzle-flash point light.
 	 *
 	 * STABILITY CONTRACT (PR #16 fold, CodeRabbit nit): the callback's
@@ -169,7 +169,7 @@ export function WeaponViewmodel({
 	);
 
 	useEffect(() => {
-		return addObjexoomListener("fire", () => {
+		return addBoneBusterListener("fire", () => {
 			recoilUntil.current = performance.now() + RECOIL_DURATION_MS;
 		});
 	}, []);
@@ -246,7 +246,7 @@ export function WeaponViewmodel({
 					    (per-weapon `muzzleBboxFrac` lerped over the GLB
 					    bbox). Sits in the same re-center frame as the
 					    primitive, so it inherits autoScale + rotation
-					    naturally. ObjexoomScene reads the world-position
+					    naturally. BoneBusterScene reads the world-position
 					    of this group each frame to position the muzzle-
 					    flash point light. */}
 					<group

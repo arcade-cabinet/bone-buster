@@ -14,7 +14,7 @@
  */
 
 import { A } from "@assets/assetUrl";
-import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 
 /**
@@ -73,7 +73,7 @@ export interface LampInstance {
  * follow-on can add room-center placement once the use case demands
  * it.
  */
-export function spawnLamps(map: ObjexoomMap): LampInstance[] {
+export function spawnLamps(map: BoneBusterMap): LampInstance[] {
 	if (map.kind !== "sectors") return [];
 	const out: LampInstance[] = [];
 	const rng = mulberry32((map.seed >>> 0) ^ 0x4c4d50); // mix in a "LMP" tag

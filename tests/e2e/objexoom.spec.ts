@@ -14,7 +14,7 @@
 
 import { expect, test } from "@playwright/test";
 
-type ObjexoomDebugHooks = {
+type BoneBusterDebugHooks = {
 	getState: () => unknown;
 	start: () => void;
 	teleport: (x: number, y: number, yawRad?: number) => void;
@@ -67,7 +67,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 
 		// Sanity: getState() exposes the right snapshot.
 		const state = await page.evaluate(() =>
-			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.getState(),
+			(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.getState(),
 		);
 		expect(state).toBeDefined();
 		expect((state as { status: string }).status).toBe("playing");
@@ -95,13 +95,13 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		// guaranteed to land hits within the next few seconds.
 		await page.evaluate(() => {
 			const state = (
-				window as unknown as { __objexoom?: ObjexoomDebugHooks }
+				window as unknown as { __objexoom?: BoneBusterDebugHooks }
 			).__objexoom?.getState() as
 				| { enemySpawns: { position: { x: number; y: number } }[] }
 				| undefined;
 			const target = state?.enemySpawns[0]?.position;
 			if (!target) throw new Error("no enemy spawn");
-			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(
+			(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.teleport(
 				target.x + 1.2,
 				target.y + 1.2,
 			);
@@ -140,7 +140,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		// the debug listeners.
 		await page.waitForFunction(
 			() => {
-				const hooks = (window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom;
+				const hooks = (window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom;
 				const s = hooks?.getState() as { status?: string } | undefined;
 				return s?.status === "playing";
 			},
@@ -154,7 +154,9 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			.poll(
 				async () => {
 					await page.evaluate(() => {
-						(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.killAllEnemies();
+						(
+							window as unknown as { __objexoom?: BoneBusterDebugHooks }
+						).__objexoom?.killAllEnemies();
 					});
 					return (await page.locator(KILLS_HUD).innerText()).trim();
 				},
@@ -173,7 +175,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		});
 
 		await page.evaluate(() => {
-			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.collectKey();
+			(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.collectKey();
 		});
 
 		await expect(page.locator(KEY_HUD)).toContainText(/KEY ACQUIRED/, {
@@ -189,7 +191,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await expect(page.locator(PLAYER_HUD)).toBeVisible({ timeout: 5_000 });
 
 		await page.evaluate(() => {
-			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.triggerWin();
+			(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.triggerWin();
 		});
 
 		// First win in a run flips status to "transitioning" — overlay renders
@@ -219,7 +221,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		// the MISSION COMPLETE overlay renders with run stats.
 		for (let i = 0; i < 5; i += 1) {
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.triggerWin();
+				(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.triggerWin();
 			});
 			// 1s > 800ms transition hold + a margin
 			await page.waitForTimeout(1100);
@@ -248,7 +250,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		for (let level = 0; level < 2; level += 1) {
 			// Collect the key first so the door opens.
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.collectKey();
+				(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.collectKey();
 			});
 			await expect(page.locator(KEY_HUD)).toContainText(/KEY ACQUIRED/, {
 				timeout: 3_000,
@@ -261,7 +263,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			// will dispatch through the same hook.
 			const positions = await page.evaluate(() => {
 				const state = (
-					window as unknown as { __objexoom?: ObjexoomDebugHooks }
+					window as unknown as { __objexoom?: BoneBusterDebugHooks }
 				).__objexoom?.getState() as
 					| {
 							exitPosition: { x: number; y: number };
@@ -274,7 +276,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 
 			// Step 1: teleport to exit, flips phase → going_back.
 			await page.evaluate((exit) => {
-				(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(
+				(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.teleport(
 					exit.x,
 					exit.y,
 				);
@@ -284,7 +286,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			await page.waitForFunction(
 				() => {
 					const s = (
-						window as unknown as { __objexoom?: ObjexoomDebugHooks }
+						window as unknown as { __objexoom?: BoneBusterDebugHooks }
 					).__objexoom?.getState() as { phase?: string } | undefined;
 					return s?.phase === "going_back";
 				},
@@ -294,7 +296,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			// Step 2: teleport back to spawn, fires onReachSpawn →
 			// LEVEL COMPLETE.
 			await page.evaluate((spawn) => {
-				(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(
+				(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.teleport(
 					spawn.x,
 					spawn.y,
 				);
@@ -329,7 +331,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 
 		// Capture starting positions for the round-trip teleport.
 		const positions = await page.evaluate(() => {
-			const hooks = (window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom;
+			const hooks = (window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom;
 			if (!hooks) throw new Error("no debug hooks");
 			const s = hooks.getState() as {
 				playerSpawn: { x: number; y: number };
@@ -344,12 +346,12 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		// triggerWin), then teleport onto the exit so the Scene's own
 		// proximity-check flips phase → going_back.
 		await page.evaluate(() => {
-			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.collectKey();
+			(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.collectKey();
 		});
 		await expect(page.locator(KEY_HUD)).toContainText(/KEY ACQUIRED/);
 
 		await page.evaluate((exit) => {
-			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(
+			(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.teleport(
 				exit.x,
 				exit.y,
 			);
@@ -363,7 +365,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await page.waitForFunction(
 			() => {
 				const s = (
-					window as unknown as { __objexoom?: ObjexoomDebugHooks }
+					window as unknown as { __objexoom?: BoneBusterDebugHooks }
 				).__objexoom?.getState() as { phase?: string } | undefined;
 				return s?.phase === "going_back";
 			},
@@ -374,14 +376,17 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			y: (positions.spawn.y + positions.exit.y) / 2,
 		};
 		await page.evaluate((mid) => {
-			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(mid.x, mid.y);
+			(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.teleport(
+				mid.x,
+				mid.y,
+			);
 		}, midpoint);
 		await expect(page.locator(KEY_HUD)).toContainText(/KEY ACQUIRED/);
 
 		// Phase 3 — reach spawn. Teleport back to the original spawn so
 		// the Scene's proximity-check fires onReachSpawn → LEVEL COMPLETE.
 		await page.evaluate((spawn) => {
-			(window as unknown as { __objexoom?: ObjexoomDebugHooks }).__objexoom?.teleport(
+			(window as unknown as { __objexoom?: BoneBusterDebugHooks }).__objexoom?.teleport(
 				spawn.x,
 				spawn.y,
 			);

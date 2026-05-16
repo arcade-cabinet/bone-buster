@@ -24,7 +24,7 @@
  * sample.
  */
 
-import type { ObjexoomMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 import type { PropArchetype, PropDef } from "@world/scatter/propPool";
@@ -91,7 +91,7 @@ function bboxOf(verts: readonly Vec2[]): {
  * it diverges from lampScatter's `map.seed XOR 0x4C4D50` ("LMP") and
  * the two systems can't accidentally produce identical sequences.
  */
-export function spawnProps(map: ObjexoomMap, archetype: PropArchetype): PropInstance[] {
+export function spawnProps(map: BoneBusterMap, archetype: PropArchetype): PropInstance[] {
 	if (map.kind !== "sectors") return [];
 	const pool = POOLS[archetype];
 	if (pool.length === 0) return [];

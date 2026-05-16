@@ -1,14 +1,14 @@
 /**
  * ARCH1a — typed event-bus contract.
  *
- * Pins the round-trip: dispatch(typed event) → addObjexoomListener(K, h)
+ * Pins the round-trip: dispatch(typed event) → addBoneBusterListener(K, h)
  * produces a payload narrowed to EventOf<K>. Also pins that the wire
  * format (CustomEvent.detail) doesn't accidentally include `type`,
  * because that would conflict with the event-name encoding.
  */
 
 import {
-	addObjexoomListener,
+	addBoneBusterListener,
 	type BurstEvent,
 	dispatch,
 	type FpsUpdateEvent,
@@ -21,9 +21,9 @@ afterEach(() => {
 });
 
 describe("ARCH1a — typed event dispatch round-trip", () => {
-	it("dispatch + addObjexoomListener round-trips a BurstEvent", () => {
+	it("dispatch + addBoneBusterListener round-trips a BurstEvent", () => {
 		const received: BurstEvent[] = [];
-		const teardown = addObjexoomListener("burst", (e) => received.push(e));
+		const teardown = addBoneBusterListener("burst", (e) => received.push(e));
 		const out: BurstEvent = { type: "burst", x: 1.2, y: 3.4, kind: "damage" };
 		dispatch(out);
 		teardown();
@@ -31,9 +31,9 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 		expect(received[0]).toEqual(out);
 	});
 
-	it("dispatch + addObjexoomListener round-trips an FpsUpdateEvent", () => {
+	it("dispatch + addBoneBusterListener round-trips an FpsUpdateEvent", () => {
 		const received: FpsUpdateEvent[] = [];
-		const teardown = addObjexoomListener("fpsUpdate", (e) => received.push(e));
+		const teardown = addBoneBusterListener("fpsUpdate", (e) => received.push(e));
 		dispatch({ type: "fpsUpdate", fps: 144, pixelRatio: 1.5 });
 		teardown();
 		expect(received).toHaveLength(1);
@@ -44,7 +44,7 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 
 	it("returned teardown removes the listener", () => {
 		let count = 0;
-		const teardown = addObjexoomListener("fire", () => {
+		const teardown = addBoneBusterListener("fire", () => {
 			count += 1;
 		});
 		dispatch({ type: "fire" });
@@ -58,10 +58,10 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 	it("only listeners of the matching type receive the event", () => {
 		let burstHits = 0;
 		let fireHits = 0;
-		const t1 = addObjexoomListener("burst", () => {
+		const t1 = addBoneBusterListener("burst", () => {
 			burstHits += 1;
 		});
-		const t2 = addObjexoomListener("fire", () => {
+		const t2 = addBoneBusterListener("fire", () => {
 			fireHits += 1;
 		});
 		dispatch({ type: "burst", x: 0, y: 0, kind: "pickup" });
@@ -118,7 +118,7 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 		// `window.dispatchEvent(new CustomEvent(...))` pattern must reach
 		// new typed listeners during the rolling migration.
 		const received: BurstEvent[] = [];
-		const teardown = addObjexoomListener("burst", (e) => received.push(e));
+		const teardown = addBoneBusterListener("burst", (e) => received.push(e));
 		window.dispatchEvent(
 			new CustomEvent("objexoom:burst", {
 				detail: { x: 9, y: 8, kind: "playerHit" },
@@ -133,7 +133,7 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 describe("E8 step-2 — flameStream BurstKind", () => {
 	it("BurstEvent.kind includes 'flameStream' and carries optional dirX/dirY", () => {
 		const received: BurstEvent[] = [];
-		const teardown = addObjexoomListener("burst", (e) => received.push(e));
+		const teardown = addBoneBusterListener("burst", (e) => received.push(e));
 		dispatch({
 			type: "burst",
 			kind: "flameStream",
@@ -151,7 +151,7 @@ describe("E8 step-2 — flameStream BurstKind", () => {
 
 	it("other BurstKind events work without dirX/dirY (back-compat)", () => {
 		const received: BurstEvent[] = [];
-		const teardown = addObjexoomListener("burst", (e) => received.push(e));
+		const teardown = addBoneBusterListener("burst", (e) => received.push(e));
 		dispatch({ type: "burst", kind: "damage", x: 1, y: 2 });
 		teardown();
 		expect(received[0].kind).toBe("damage");

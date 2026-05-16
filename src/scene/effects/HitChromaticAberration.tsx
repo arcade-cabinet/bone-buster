@@ -1,4 +1,4 @@
-import { addObjexoomListener } from "@engine/events";
+import { addBoneBusterListener } from "@engine/events";
 import { useFrame } from "@react-three/fiber";
 import { ChromaticAberration } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
@@ -44,7 +44,7 @@ export function HitChromaticAberration() {
 	const [pulseActive, setPulseActive] = useState(false);
 
 	useEffect(() => {
-		return addObjexoomListener("playerHit", () => {
+		return addBoneBusterListener("playerHit", () => {
 			const now = performance.now();
 			pulseStarted.current = now;
 			pulseUntil.current = now + PULSE_MS;

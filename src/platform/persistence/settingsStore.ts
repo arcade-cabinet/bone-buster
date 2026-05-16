@@ -1,7 +1,7 @@
 /**
  * STO1a — settings persistence on top of Capacitor Preferences.
  *
- * Stores the full ObjexoomSettings as a JSON blob under the
+ * Stores the full BoneBusterSettings as a JSON blob under the
  * `objexoom.settings` key. Read at app boot, written on every
  * setSettings call. Validated against the live Difficulty + LevelChoice
  * unions so a forged or stale blob can't silently flip the player into
@@ -20,12 +20,12 @@
 
 import { readJsonPref, writeJsonPref } from "@platform/persistence/preferences";
 import {
+	type BoneBusterSettings,
 	DEFAULT_SETTINGS,
 	DIFFICULTY_LABEL,
 	type Difficulty,
 	LEVEL_LABEL,
 	type LevelChoice,
-	type ObjexoomSettings,
 	TOUCH_CONTROL_LABEL,
 	type TouchControlMode,
 } from "@store/settings";
@@ -68,14 +68,14 @@ function isFiniteNumber(v: unknown): v is number {
 }
 
 /**
- * Validate a foreign blob against the live ObjexoomSettings shape. Any
+ * Validate a foreign blob against the live BoneBusterSettings shape. Any
  * field that fails validation falls back to its DEFAULT_SETTINGS value
  * — partial blobs are accepted, never reject the whole thing. This
  * matters for forward compat: when a new setting is added the old
  * blobs are missing it but the rest of the settings should still
  * hydrate.
  */
-export function validateSettings(raw: unknown): ObjexoomSettings {
+export function validateSettings(raw: unknown): BoneBusterSettings {
 	if (raw === null || typeof raw !== "object") return DEFAULT_SETTINGS;
 	const r = raw as Record<string, unknown>;
 	const difficulty = isDifficulty(r.difficulty) ? r.difficulty : DEFAULT_SETTINGS.difficulty;
@@ -113,7 +113,7 @@ export function validateSettings(raw: unknown): ObjexoomSettings {
  * Never throws — corrupted JSON / partial blobs / missing fields all
  * fall back to DEFAULT_SETTINGS via the validator.
  */
-export async function loadSettings(): Promise<ObjexoomSettings | null> {
+export async function loadSettings(): Promise<BoneBusterSettings | null> {
 	const raw = await readJsonPref<unknown>(SETTINGS_KEY);
 	if (raw === null) return null;
 	return validateSettings(raw);
@@ -124,6 +124,6 @@ export async function loadSettings(): Promise<ObjexoomSettings | null> {
  * Preferences facade swallows quota/lock failures so the app never
  * blocks on a failed save.
  */
-export async function saveSettings(settings: ObjexoomSettings): Promise<void> {
+export async function saveSettings(settings: BoneBusterSettings): Promise<void> {
 	await writeJsonPref(SETTINGS_KEY, settings);
 }

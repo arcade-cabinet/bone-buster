@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OBJEXOOM_PALETTE, ROLE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE, ROLE } from "@styles/tokens/index";
 import { useRef } from "react";
 import * as THREE from "three";
 
@@ -62,7 +62,7 @@ function KeyMesh({ flashUntil }: { flashUntil: number }) {
 		const remaining = flashUntil - now;
 		// 250ms flash window; intensity ramps linearly from 1 → 0.
 		const flash = remaining > 0 ? Math.min(1, remaining / 250) : 0;
-		const baseColor = new THREE.Color(OBJEXOOM_PALETTE.amber);
+		const baseColor = new THREE.Color(BONE_BUSTER_PALETTE.amber);
 		const flashColor = new THREE.Color(ROLE.actionDamage);
 		const lerped = baseColor.lerp(flashColor, flash);
 		if (shaftMatRef.current) shaftMatRef.current.emissive.copy(lerped);
@@ -75,8 +75,8 @@ function KeyMesh({ flashUntil }: { flashUntil: number }) {
 				<torusGeometry args={[0.38, 0.1, 12, 24]} />
 				<meshStandardMaterial
 					ref={headMatRef}
-					color={OBJEXOOM_PALETTE.amber}
-					emissive={OBJEXOOM_PALETTE.amber}
+					color={BONE_BUSTER_PALETTE.amber}
+					emissive={BONE_BUSTER_PALETTE.amber}
 					emissiveIntensity={0.5}
 					roughness={0.3}
 					metalness={0.9}
@@ -87,8 +87,8 @@ function KeyMesh({ flashUntil }: { flashUntil: number }) {
 				<cylinderGeometry args={[0.08, 0.08, 1.0, 12]} />
 				<meshStandardMaterial
 					ref={shaftMatRef}
-					color={OBJEXOOM_PALETTE.amber}
-					emissive={OBJEXOOM_PALETTE.amber}
+					color={BONE_BUSTER_PALETTE.amber}
+					emissive={BONE_BUSTER_PALETTE.amber}
 					emissiveIntensity={0.5}
 					roughness={0.3}
 					metalness={0.9}
@@ -98,8 +98,8 @@ function KeyMesh({ flashUntil }: { flashUntil: number }) {
 			<mesh position={[0.16, -0.5, 0]}>
 				<boxGeometry args={[0.18, 0.1, 0.12]} />
 				<meshStandardMaterial
-					color={OBJEXOOM_PALETTE.amber}
-					emissive={OBJEXOOM_PALETTE.amber}
+					color={BONE_BUSTER_PALETTE.amber}
+					emissive={BONE_BUSTER_PALETTE.amber}
 					emissiveIntensity={0.5}
 					roughness={0.3}
 					metalness={0.9}
@@ -108,8 +108,8 @@ function KeyMesh({ flashUntil }: { flashUntil: number }) {
 			<mesh position={[0.16, -0.65, 0]}>
 				<boxGeometry args={[0.13, 0.08, 0.1]} />
 				<meshStandardMaterial
-					color={OBJEXOOM_PALETTE.amber}
-					emissive={OBJEXOOM_PALETTE.amber}
+					color={BONE_BUSTER_PALETTE.amber}
+					emissive={BONE_BUSTER_PALETTE.amber}
 					emissiveIntensity={0.5}
 					roughness={0.3}
 					metalness={0.9}

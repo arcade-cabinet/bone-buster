@@ -8,7 +8,7 @@ import * as THREE from "three";
  * POL19 — enemy hit-flash slot (see docs/SLOT-ARCHITECTURE.md).
  *
  * Mounted as a sibling to `<EnemyMesh>` under a shared per-enemy
- * `<group key={enemy.id}>` in ObjexoomScene. Responsibilities:
+ * `<group key={enemy.id}>` in BoneBusterScene. Responsibilities:
  *
  *   - Watch `enemy.staggerUntil` each frame.
  *   - Look up the enemy mesh group from the shared `enemyMeshes`
@@ -42,7 +42,7 @@ export function EnemyHitFlash({
 	meshLookup,
 }: {
 	enemy: Enemy;
-	/** Shared lookup from ObjexoomScene — same map EnemyMesh.register writes into. */
+	/** Shared lookup from BoneBusterScene — same map EnemyMesh.register writes into. */
 	meshLookup: { current: Map<number, THREE.Group> };
 }) {
 	const slotsRef = useRef<MaterialSlot[] | null>(null);

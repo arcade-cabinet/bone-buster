@@ -20,7 +20,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { chromium, type Page, test } from "@playwright/test";
 
-type ObjexoomDebugHooks = {
+type BoneBusterDebugHooks = {
 	getState: () => unknown;
 	start: () => void;
 	teleport: (x: number, y: number, yawRad?: number) => void;
@@ -132,14 +132,16 @@ test.describe("OBJEXOOM per-archetype screenshots (INF4)", () => {
 				});
 				await waitForHooks(page);
 				await page.evaluate(() => {
-					(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+					(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.start();
 				});
 				await page.locator("[data-testid='objexoom-hp']").waitFor();
 				// Flashlight ON so the per-archetype palette tint reads
 				// clearly. collectAllPickups grants the flashlight + all
 				// weapons via the existing debug hook.
 				await page.evaluate(() => {
-					(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.collectAllPickups();
+					(
+						window as unknown as { __objexoom: BoneBusterDebugHooks }
+					).__objexoom.collectAllPickups();
 				});
 				// T7 — 45 frames (≈750ms @60fps) for SpotLight + shadow composite.
 				await waitForFrames(page, 45);
@@ -175,17 +177,17 @@ test.describe("OBJEXOOM per-archetype screenshots (INF4)", () => {
 			});
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.collectAllPickups();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.collectAllPickups();
 			});
 			// Teleport to the keyPosition vantage — courtyard wrecks scatter
 			// near sector edges; centering on the key gives a typical
 			// "player walks into the area" view.
 			await page.evaluate(() => {
-				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
+				const hooks = (window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom;
 				const state = hooks.getState() as { keyPosition?: { x: number; y: number } };
 				if (state.keyPosition) {
 					hooks.teleport(state.keyPosition.x, state.keyPosition.y);
@@ -208,17 +210,17 @@ test.describe("OBJEXOOM per-archetype screenshots (INF4)", () => {
 			});
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.collectAllPickups();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.collectAllPickups();
 			});
 			// Library exitPosition is in a far sector — that's where
 			// COV13 kitchen sectors are likeliest to fire (20% per-sector
 			// opt-in means a multi-sector tour to find one is typical).
 			await page.evaluate(() => {
-				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
+				const hooks = (window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom;
 				const state = hooks.getState() as { exitPosition?: { x: number; y: number } };
 				if (state.exitPosition) {
 					hooks.teleport(state.exitPosition.x, state.exitPosition.y);
@@ -243,17 +245,17 @@ test.describe("OBJEXOOM per-archetype screenshots (INF4)", () => {
 			});
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.collectAllPickups();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.collectAllPickups();
 			});
 			// Centroid of spawn + key = decent "indoor library" framing
 			// where library NPCs (0-2/sector) are most likely to be in
 			// frame.
 			await page.evaluate(() => {
-				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
+				const hooks = (window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom;
 				const state = hooks.getState() as {
 					playerSpawn?: { x: number; y: number };
 					keyPosition?: { x: number; y: number };
@@ -282,17 +284,17 @@ test.describe("OBJEXOOM per-archetype screenshots (INF4)", () => {
 			});
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.collectAllPickups();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.collectAllPickups();
 			});
 			// Sewer water is a per-archetype surface tint; framing the
 			// exit (typically in a deeper sector) reads the tint at
 			// distance.
 			await page.evaluate(() => {
-				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
+				const hooks = (window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom;
 				const state = hooks.getState() as { exitPosition?: { x: number; y: number } };
 				if (state.exitPosition) {
 					hooks.teleport(state.exitPosition.x, state.exitPosition.y);
@@ -315,17 +317,17 @@ test.describe("OBJEXOOM per-archetype screenshots (INF4)", () => {
 			});
 			await waitForHooks(page);
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.start();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.start();
 			});
 			await page.locator("[data-testid='objexoom-hp']").waitFor();
 			await page.evaluate(() => {
-				(window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom.collectAllPickups();
+				(window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom.collectAllPickups();
 			});
 			// Teleport adjacent to the first enemy spawn, then fire to
 			// trigger the POL16 layered damage burst (spark + smoke +
 			// ember). Capture mid-burst.
 			await page.evaluate(() => {
-				const hooks = (window as unknown as { __objexoom: ObjexoomDebugHooks }).__objexoom;
+				const hooks = (window as unknown as { __objexoom: BoneBusterDebugHooks }).__objexoom;
 				const state = hooks.getState() as {
 					enemySpawns?: { position: { x: number; y: number } }[];
 				};
@@ -338,7 +340,7 @@ test.describe("OBJEXOOM per-archetype screenshots (INF4)", () => {
 			await waitForFrames(page, 15);
 			await page.evaluate(() => {
 				const hooks = (
-					window as unknown as { __objexoom: ObjexoomDebugHooks & { fire: () => void } }
+					window as unknown as { __objexoom: BoneBusterDebugHooks & { fire: () => void } }
 				).__objexoom;
 				hooks.fire();
 			});

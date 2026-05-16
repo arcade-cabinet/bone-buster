@@ -1,7 +1,7 @@
 import { computePortalEdges, edgeKey, type ObjexoomSectorMap } from "@engine/engine";
 import { useGLTF } from "@react-three/drei";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
-import { OBJEXOOM_PALETTE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import { pickArchetype } from "@world/archetype";
 import type { PropArchetype } from "@world/scatter/propPool";
 import { ALL_WALL_URLS, pickWallUrl } from "@world/structures";
@@ -22,7 +22,7 @@ import { WaterSurface } from "./WaterSurface";
  *
  * COV3 step-1: when `map.useModularFloor` is true, the procedural
  * floor `<shapeGeometry>` is OMITTED — the per-sector floor is
- * rendered by `FloorTileField` instead (mounted by ObjexoomScene).
+ * rendered by `FloorTileField` instead (mounted by BoneBusterScene).
  * Lava floors keep the procedural shape even when the flag is set
  * (the molten emissive surface is visually load-bearing and there's
  * no lava-tile asset in the modular pack).
@@ -57,15 +57,15 @@ export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 			{shapes.map(({ sector, shape, lava, sectorKey }) => (
 				<group key={`sec-${sectorKey}`}>
 					{/* Floor — omitted when COV3 modular floor tiles are active
-					    (FloorTileField in ObjexoomScene renders the surface).
+					    (FloorTileField in BoneBusterScene renders the surface).
 					    Lava sectors keep the procedural emissive shape since
 					    there's no lava-tile asset in the modular pack. */}
 					{!useModularFloor || lava ? (
 						<mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, sector.floorHeight, 0]}>
 							<shapeGeometry args={[shape]} />
 							<meshStandardMaterial
-								color={lava ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.wallVariantCool}
-								emissive={lava ? OBJEXOOM_PALETTE.amber : OBJEXOOM_PALETTE.wallBase}
+								color={lava ? BONE_BUSTER_PALETTE.amber : BONE_BUSTER_PALETTE.wallVariantCool}
+								emissive={lava ? BONE_BUSTER_PALETTE.amber : BONE_BUSTER_PALETTE.wallBase}
 								emissiveIntensity={lava ? 1.4 : 0.18}
 								roughness={lava ? 0.4 : 0.95}
 								side={THREE.DoubleSide}
@@ -123,12 +123,12 @@ export function SectorMapGeometry({ map }: { map: ObjexoomSectorMap }) {
 								<meshStandardMaterial
 									color={
 										variant === 0
-											? OBJEXOOM_PALETTE.wallVariantCool
+											? BONE_BUSTER_PALETTE.wallVariantCool
 											: variant === 1
-												? OBJEXOOM_PALETTE.wallVariantWarm
-												: OBJEXOOM_PALETTE.wallVariantNeutral
+												? BONE_BUSTER_PALETTE.wallVariantWarm
+												: BONE_BUSTER_PALETTE.wallVariantNeutral
 									}
-									emissive={variant === 0 ? OBJEXOOM_PALETTE.indigo : OBJEXOOM_PALETTE.violet}
+									emissive={variant === 0 ? BONE_BUSTER_PALETTE.indigo : BONE_BUSTER_PALETTE.violet}
 									emissiveIntensity={0.08}
 									roughness={0.85}
 								/>

@@ -1,7 +1,7 @@
 import type { Pickup } from "@engine/engine";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { OBJEXOOM_PALETTE, ROLE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE, ROLE } from "@styles/tokens/index";
 import { LOOT_URL_LIST, LOOT_URLS, type LootKind, pickLootKind } from "@world/loot";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -15,9 +15,9 @@ import { SkeletonUtils } from "three-stdlib";
 function haloColorFor(kind: Pickup["kind"]): string {
 	switch (kind) {
 		case "chaingunAmmo":
-			return OBJEXOOM_PALETTE.indigo;
+			return BONE_BUSTER_PALETTE.indigo;
 		case "loot":
-			return OBJEXOOM_PALETTE.amber; // treasure-tier glow
+			return BONE_BUSTER_PALETTE.amber; // treasure-tier glow
 		default:
 			return ROLE.actionPickup;
 	}
@@ -162,8 +162,8 @@ export function PickupMesh({
 					<mesh>
 						<boxGeometry args={[0.55, 0.32, 0.32]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.wallVariantCool}
-							emissive={OBJEXOOM_PALETTE.indigo}
+							color={BONE_BUSTER_PALETTE.wallVariantCool}
+							emissive={BONE_BUSTER_PALETTE.indigo}
 							emissiveIntensity={0.55}
 							roughness={0.5}
 						/>
@@ -171,16 +171,16 @@ export function PickupMesh({
 					<mesh position={[0.18, 0, 0]}>
 						<boxGeometry args={[0.06, 0.4, 0.4]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.indigo}
-							emissive={OBJEXOOM_PALETTE.indigo}
+							color={BONE_BUSTER_PALETTE.indigo}
+							emissive={BONE_BUSTER_PALETTE.indigo}
 							emissiveIntensity={1.4}
 						/>
 					</mesh>
 					<mesh position={[-0.18, 0, 0]}>
 						<boxGeometry args={[0.06, 0.4, 0.4]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.indigo}
-							emissive={OBJEXOOM_PALETTE.indigo}
+							color={BONE_BUSTER_PALETTE.indigo}
+							emissive={BONE_BUSTER_PALETTE.indigo}
 							emissiveIntensity={1.4}
 						/>
 					</mesh>
@@ -211,16 +211,16 @@ export function PickupMesh({
 					<mesh position={[-0.15, 0.18, 0]}>
 						<cylinderGeometry args={[0.13, 0.13, 0.04, 12]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.ammoBrass}
-							emissive={OBJEXOOM_PALETTE.ammoBrass}
+							color={BONE_BUSTER_PALETTE.ammoBrass}
+							emissive={BONE_BUSTER_PALETTE.ammoBrass}
 							emissiveIntensity={0.4}
 						/>
 					</mesh>
 					<mesh position={[0.15, 0.18, 0]}>
 						<cylinderGeometry args={[0.13, 0.13, 0.04, 12]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.ammoBrass}
-							emissive={OBJEXOOM_PALETTE.ammoBrass}
+							color={BONE_BUSTER_PALETTE.ammoBrass}
+							emissive={BONE_BUSTER_PALETTE.ammoBrass}
 							emissiveIntensity={0.4}
 						/>
 					</mesh>
@@ -233,8 +233,8 @@ export function PickupMesh({
 					<mesh rotation={[0, 0, Math.PI / 2]}>
 						<cylinderGeometry args={[0.13, 0.16, 0.45, 12]} />
 						<meshStandardMaterial
-							color={OBJEXOOM_PALETTE.flashlightWarm}
-							emissive={OBJEXOOM_PALETTE.flashlightWarm}
+							color={BONE_BUSTER_PALETTE.flashlightWarm}
+							emissive={BONE_BUSTER_PALETTE.flashlightWarm}
 							emissiveIntensity={0.6}
 							metalness={0.4}
 							roughness={0.3}
