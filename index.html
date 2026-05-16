@@ -30,16 +30,24 @@
 		        Potential Vite-issued blob: workers. Howler does not
 		        use AudioWorklets; the directive is retained as
 		        defense-in-depth for future blob-worker introductions.
-		    - connect-src 'self'
-		        The game has ZERO outbound fetches (offline single-player).
-		        Lock it.
+		    - connect-src 'self' blob: data:
+		        The game has ZERO outbound network fetches (offline
+		        single-player). `blob:` + `data:` are REQUIRED —
+		        three.js's GLTFLoader extracts GLB-embedded textures
+		        into blob: URLs (when texture has a buffer view) or
+		        data: URLs (when texture has an inline mime + base64
+		        payload) and then fetches them back to decode
+		        (see three/src/loaders/GLTFLoader.js#loadImage).
+		        Without these schemes in connect-src, every textured
+		        asset silently fails to upload its texture to the
+		        GPU and the scene renders untextured.
 		    - object-src 'none' / base-uri 'none' / frame-ancestors 'none'
 		        Removes the legacy <object> / <embed> attack surface and
 		        prevents clickjacking via iframe embedding.
 		-->
 		<meta
 			http-equiv="Content-Security-Policy"
-			content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';"
+			content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' blob: data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none';"
 		/>
 		<title>Bone Buster — They Had It Coming</title>
 		<meta name="description" content="Bone Buster — a procedural arcade FPS in the PSX-jank tradition. They had it coming." />

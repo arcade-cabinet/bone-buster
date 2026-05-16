@@ -749,11 +749,7 @@ function ctaButton(bg: string, primary: boolean): CSSProperties {
 	};
 }
 
-export function weaponChipStyle(
-	active: boolean,
-	owned: boolean,
-	accent: string,
-): CSSProperties {
+export function weaponChipStyle(active: boolean, owned: boolean, accent: string): CSSProperties {
 	return {
 		padding: "6px 10px",
 		borderRadius: 10,
@@ -769,11 +765,7 @@ export function weaponChipStyle(
 		// signaled border-ness to a screen reader). Active chips keep
 		// the accent ring; owned-inactive chips keep a transparent
 		// ring so all owned slots align to the same metrics.
-		border: !owned
-			? "none"
-			: active
-				? `1px solid ${accent}`
-				: "1px solid transparent",
+		border: !owned ? "none" : active ? `1px solid ${accent}` : "1px solid transparent",
 		background: active
 			? `${accent}22`
 			: owned
