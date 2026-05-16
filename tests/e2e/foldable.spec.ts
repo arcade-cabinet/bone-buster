@@ -105,6 +105,10 @@ test.describe("BC7 — foldable smoke", () => {
 				const wordmark = page.getByRole("img", { name: /Bone Buster/i });
 				await wordmark.waitFor();
 				await page.evaluate(() => document.fonts.ready);
+				// Wait for the staggered drop-in + flicker (~2.0s total).
+				// Without this the screenshot catches the wordmark mid-
+				// animation with most letters off-screen above the band.
+				await page.waitForTimeout(2500);
 
 				// Geometry assertions — every visible chip is strictly
 				// inside the viewport. Catches the foldable cutout

@@ -76,7 +76,14 @@ export function BoneBusterWordmark({ width = 720, height = 180 }: Props) {
 		<motion.svg
 			viewBox={`0 0 ${width} ${height}`}
 			width="100%"
-			style={{ maxWidth: width, display: "block", overflow: "visible" }}
+			// R5b — the wordmark previously capped at maxWidth=720 even
+			// on portrait foldables, leaving a tiny logo with massive
+			// negative space top + bottom (BC7 smoke surfaced this).
+			// Letting the SVG fill its parent + relying on the parent
+			// container to size against vmin fixes the portrait case
+			// without harming the desktop appearance (parent caps the
+			// header band at ~720px on desktop anyway).
+			style={{ display: "block", overflow: "visible", width: "100%" }}
 			role="img"
 			aria-label="Bone Buster"
 			initial="hidden"

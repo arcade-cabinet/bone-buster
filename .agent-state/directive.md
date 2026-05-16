@@ -33,7 +33,7 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 
 ### REBRAND — remaining items
 
-- [ ] **R5b** — responsive landing stack for portrait + foldable viewports. Surfaced by BC7 smoke: wordmark tiny in top-left, menu floats mid-screen, tagline invisible on 880×2100. Landing must stack: full-bleed wordmark band → tagline → menu column, all sized via clamp() vs viewport. Acceptance: BC7 screenshots show readable wordmark + menu on both 880×2100 and 2200×1400 viewports.
+- [x] **R5b** — responsive landing stack for portrait + foldable viewports. Wordmark fills band on both 880×2100 and 2200×1400; tagline + menu legible.
 - [ ] **R6** — logo sting via Howler + OGG sample (re-scoped from Tone.js). PRD §R6.
 - [ ] **R7** — HUD palette + type refresh. PRD §R7.
 - [ ] **R8** — source-string `OBJEXOOM`→`BONE BUSTER` sweep. PRD §R8.

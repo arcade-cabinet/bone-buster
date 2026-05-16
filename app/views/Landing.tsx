@@ -94,7 +94,9 @@ export function ObjexoomLanding({
 					transition={{ duration: 0.6, ease: "easeOut" }}
 				>
 					<div style={eyebrowStyle}>VERSION 0.1 · EARLY ACCESS</div>
-					<BoneBusterWordmark width={720} height={180} />
+					<div style={wordmarkBandStyle}>
+						<BoneBusterWordmark width={720} height={180} />
+					</div>
 					<motion.div
 						style={tagStyle}
 						initial={{ opacity: 0, y: 6 }}
@@ -552,6 +554,19 @@ const headerStyle: CSSProperties = {
 	textAlign: "center",
 	padding: "clamp(20px, 4vh, 48px) 24px 8px",
 	zIndex: 1,
+};
+
+// R5b — explicit wordmark band sizing wraps the SVG so it doesn't
+// either render at its intrinsic 720px on narrow portraits (leaving
+// negative space) or stretch edge-to-edge (overpowering the menu).
+// The clamp:
+//   - desktop (~1440 wide): hits the 720px cap, identical to pre-R5b.
+//   - narrow portrait (~880 wide): fills the band at 92vw → ~810px.
+//   - phone (~360 wide): scales down to ~330px.
+const wordmarkBandStyle: CSSProperties = {
+	width: "min(720px, 92vw)",
+	maxWidth: "100%",
+	margin: "0 auto",
 };
 
 const eyebrowStyle: CSSProperties = {
