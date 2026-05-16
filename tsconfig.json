@@ -17,7 +17,21 @@
 		"types": ["vite/client", "node"],
 		"paths": {
 			"@/*": ["./src/*"],
-			"@app/*": ["./app/*"]
+			"@app/*": ["./app/*"],
+			"@scene/*": ["./src/scene/*"],
+			"@audio/*": ["./src/audio/*"],
+			"@engine/*": ["./src/engine/*"],
+			"@ai/*": ["./src/ai/*"],
+			"@assets/*": ["./src/assets/*"],
+			"@store/*": ["./src/store/*"],
+			"@platform/*": ["./src/platform/*"],
+			"@shared/*": ["./src/shared/*"],
+			"@world/*": ["./src/world/*"],
+			"@views/*": ["./app/views/*"],
+			"@components/*": ["./app/components/*"],
+			"@atoms/*": ["./app/atoms/*"],
+			"@hooks/*": ["./app/hooks/*"],
+			"@styles/*": ["./app/styles/*"]
 		}
 	},
 	"include": [

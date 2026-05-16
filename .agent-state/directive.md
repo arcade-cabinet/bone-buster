@@ -44,7 +44,7 @@ Foundation → assets → surface. The original ITCH-FETCH-first / REBRAND-first
 ### RESTRUCTURE — app/ + src/ layout per arcade-cabinet conventions
 
 - [x] **RS1** — migration plan `docs/RESTRUCTURE-PLAN.md`. PRD §RS1.
-- [ ] **RS2** — resolver + tsconfig paths. PRD §RS2.
+- [x] **RS2** — resolver + tsconfig paths. PRD §RS2.
 - [ ] **RS3** — bulk `git mv` (per-bucket commits). PRD §RS3.
 - [ ] **RS4** — drop project-name prefix on filenames (incl. R1-R5 shipped components). PRD §RS4.
 - [ ] **RS5** — test imports + verify gate. PRD §RS5.
