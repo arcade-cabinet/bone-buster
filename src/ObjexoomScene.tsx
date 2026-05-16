@@ -29,6 +29,7 @@ import { addObjexoomListener, dispatch } from "@engine/events";
 import { useFrame, useThree } from "@react-three/fiber";
 import { PLAYER_HEIGHT, TILE } from "@shared/constants";
 import type { WeaponId } from "@shared/weapons";
+import { DIFFICULTY_TUNING, type ObjexoomSettings } from "@store/settings";
 import { pickArchetype } from "@world/archetype";
 import { type Barrel, resolveExplosion, spawnBarrels } from "@world/barrels";
 import { type LampInstance, spawnLamps } from "@world/lampScatter";
@@ -103,7 +104,6 @@ import {
 import { tickEnemyLoop } from "./scene/tick/enemyTickLoop";
 import { resolveFire } from "./scene/tick/fireResolution";
 import { createTimeScaleBus } from "./scene/tick/timeScaleBus";
-import { DIFFICULTY_TUNING, type ObjexoomSettings } from "./settings";
 
 type SceneProps = Readonly<{
 	map: ObjexoomMap;

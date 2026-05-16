@@ -1,5 +1,6 @@
 import { addObjexoomListener, dispatch } from "@engine/events";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
+import { type Difficulty, LEVEL_LABEL, type LevelChoice } from "@store/settings";
 import type { PropArchetype } from "@world/scatter/propPool";
 import { motion } from "framer-motion";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
@@ -15,7 +16,6 @@ import {
 import { HUDOverlays } from "./hud/overlays/HUDOverlays";
 import type { GameState } from "./ObjexoomShell";
 import { HudKey3D } from "./scene/hud/HudKey3D";
-import { type Difficulty, LEVEL_LABEL, type LevelChoice } from "./settings";
 
 type ObjexoomHUDProps = Readonly<{
 	state: GameState;

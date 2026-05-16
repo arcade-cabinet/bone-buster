@@ -15,10 +15,26 @@ import {
 } from "@audio/sfx";
 import type { ObjexoomMap, PickupKind } from "@engine/engine";
 import { addObjexoomListener, dispatch } from "@engine/events";
+import { loadSettings, saveSettings } from "@platform/persistence/settingsStore";
 import { Canvas } from "@react-three/fiber";
 import { PLAYER_MAX_HP } from "@shared/constants";
 import { computeFadePeak, FADE_COLOR_BY_KIND } from "@shared/fadeTriggers";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
+import { openRunHistory, type RunHistory } from "@store/runHistory";
+import {
+	advanceLevel,
+	makeInitialRunStats,
+	nextStatusAfterTransition,
+	type RunStats,
+	runStatsReducer,
+} from "@store/runStats";
+import {
+	DEFAULT_SETTINGS,
+	DIFFICULTY_TUNING,
+	type Difficulty,
+	type ObjexoomSettings,
+	type TouchControlMode,
+} from "@store/settings";
 import { ARCHETYPE_NAMES, pickArchetype } from "@world/archetype";
 import { buildMap } from "@world/buildMap";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -27,23 +43,7 @@ import { ROLE, SCALE } from "./design-tokens";
 import { ObjexoomHUD } from "./ObjexoomHUD";
 import { ObjexoomLanding } from "./ObjexoomLanding";
 import { ObjexoomScene } from "./ObjexoomScene";
-import { loadSettings, saveSettings } from "./persistence/settingsStore";
-import { openRunHistory, type RunHistory } from "./runHistory";
-import {
-	advanceLevel,
-	makeInitialRunStats,
-	nextStatusAfterTransition,
-	type RunStats,
-	runStatsReducer,
-} from "./runStats";
 import { useGameRef } from "./scene/hooks/useGameRef";
-import {
-	DEFAULT_SETTINGS,
-	DIFFICULTY_TUNING,
-	type Difficulty,
-	type ObjexoomSettings,
-	type TouchControlMode,
-} from "./settings";
 
 export type GameStatus = "landing" | "playing" | "paused" | "dead" | "transitioning" | "won";
 

@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
 import {
 	advanceLevel,
 	makeInitialRunStats,
 	nextStatusAfterTransition,
 	RUN_LENGTH,
 	runStatsReducer,
-} from "@/runStats";
+} from "@store/runStats";
+import { describe, expect, it } from "vitest";
 
 describe("objexoom runStatsReducer (B2)", () => {
 	it("makeInitialRunStats starts at zero", () => {

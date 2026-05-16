@@ -9,8 +9,8 @@ import {
 import { addObjexoomListener, dispatch } from "@engine/events";
 import { useFrame, useThree } from "@react-three/fiber";
 import { PLAYER_HEIGHT, PLAYER_MOVE_SPEED, PLAYER_TURN_SENSITIVITY } from "@shared/constants";
+import type { ObjexoomSettings } from "@store/settings";
 import { useEffect, useMemo, useRef } from "react";
-import type { ObjexoomSettings } from "./settings";
 
 type Props = Readonly<{
 	map: ObjexoomMap;

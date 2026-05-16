@@ -1,5 +1,5 @@
+import type { Difficulty } from "@store/settings";
 import type { GameState, LevelPhase } from "../../ObjexoomShell";
-import type { Difficulty } from "../../settings";
 import { BossBanner } from "./BossBanner";
 import { DifficultyChip } from "./DifficultyChip";
 import { GoingBackOverlay } from "./GoingBackOverlay";

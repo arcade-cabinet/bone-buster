@@ -1,7 +1,7 @@
+import { DIFFICULTY_LABEL, type Difficulty } from "@store/settings";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "../../design-tokens";
-import { DIFFICULTY_LABEL, type Difficulty } from "../../settings";
 
 /**
  * POL31 — difficulty acknowledgment chip (HUD overlay slot per

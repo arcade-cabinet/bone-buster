@@ -1,4 +1,4 @@
-import type { LevelChoice } from "./settings";
+import type { LevelChoice } from "@store/settings";
 
 export type RunStats = Readonly<{
 	runStartAt: number;

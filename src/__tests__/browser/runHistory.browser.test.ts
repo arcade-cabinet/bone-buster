@@ -15,8 +15,8 @@
  * the runHistory SQL we exercise here is identical to that path.
  */
 
+import { openRunHistory, type RunInsert } from "@store/runHistory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { openRunHistory, type RunInsert } from "../../runHistory";
 
 const SAMPLE: RunInsert = {
 	startedAt: 1_700_000_000_000,

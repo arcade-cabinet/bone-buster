@@ -6,9 +6,9 @@
  * shipping a blob-format break.
  */
 
+import { validateSettings } from "@platform/persistence/settingsStore";
+import { DEFAULT_SETTINGS } from "@store/settings";
 import { describe, expect, it } from "vitest";
-import { validateSettings } from "@/persistence/settingsStore";
-import { DEFAULT_SETTINGS } from "@/settings";
 
 describe("STO1a — validateSettings", () => {
 	it("returns DEFAULT_SETTINGS for null", () => {

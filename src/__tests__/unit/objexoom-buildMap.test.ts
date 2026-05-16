@@ -1,7 +1,7 @@
 import { isGridMap, isSectorMap } from "@engine/engine";
+import type { LevelChoice } from "@store/settings";
 import { buildMap } from "@world/buildMap";
 import { describe, expect, it } from "vitest";
-import type { LevelChoice } from "@/settings";
 
 describe("objexoom buildMap (A6)", () => {
 	it("level='procedural' returns a deterministic grid map", () => {

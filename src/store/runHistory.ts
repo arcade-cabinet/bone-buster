@@ -15,9 +15,9 @@
  * legacy key deleted. Subsequent opens skip the migration entirely.
  */
 
-import { createDatabase } from "./persistence/createDatabase";
-import type { DatabaseAdapter } from "./persistence/database";
-import type { LevelChoice } from "./settings";
+import { createDatabase } from "@platform/persistence/createDatabase";
+import type { DatabaseAdapter } from "@platform/persistence/database";
+import type { LevelChoice } from "@store/settings";
 
 const LEGACY_STORAGE_KEY = "objexoom.runHistory";
 

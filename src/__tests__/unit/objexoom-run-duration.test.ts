@@ -5,8 +5,8 @@
  * split surface here before a player sees a regression.
  */
 
+import { formatRunDuration } from "@store/runHistory";
 import { describe, expect, it } from "vitest";
-import { formatRunDuration } from "@/runHistory";
 
 describe("POL32 — formatRunDuration", () => {
 	it("formats sub-minute runs as 0:SS", () => {

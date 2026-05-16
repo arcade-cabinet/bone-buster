@@ -14,8 +14,8 @@
 
 import { decodeRefLevel, levelBounds, type RefLevelIndex } from "@ai/turtle";
 import type { EnemySpawn, MapSector, ObjexoomSectorMap, PickupSpawn, Vec2 } from "@engine/engine";
+import type { Difficulty } from "@store/settings";
 import { ARCHETYPE_NAMES } from "@world/archetype";
-import type { Difficulty } from "../settings";
 
 const REF_TO_RUNTIME_SCALE = 0.25;
 

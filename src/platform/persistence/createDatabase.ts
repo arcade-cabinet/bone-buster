@@ -14,10 +14,10 @@
  */
 
 import { Capacitor } from "@capacitor/core";
-import { CapacitorDatabase } from "./capacitorDatabase";
-import type { DatabaseAdapter } from "./database";
-import { InMemoryDatabase } from "./database";
-import { isJeepSqliteReady } from "./initJeepSqlite";
+import { CapacitorDatabase } from "@platform/persistence/capacitorDatabase";
+import type { DatabaseAdapter } from "@platform/persistence/database";
+import { InMemoryDatabase } from "@platform/persistence/database";
+import { isJeepSqliteReady } from "@platform/persistence/initJeepSqlite";
 
 export async function createDatabase(dbName = "objexoom"): Promise<DatabaseAdapter> {
 	const canUseCapacitorSqlite =

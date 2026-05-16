@@ -18,6 +18,7 @@
  * without mocking the native plugin.
  */
 
+import { readJsonPref, writeJsonPref } from "@platform/persistence/preferences";
 import {
 	DEFAULT_SETTINGS,
 	DIFFICULTY_LABEL,
@@ -27,8 +28,7 @@ import {
 	type ObjexoomSettings,
 	TOUCH_CONTROL_LABEL,
 	type TouchControlMode,
-} from "../settings";
-import { readJsonPref, writeJsonPref } from "./preferences";
+} from "@store/settings";
 
 const SETTINGS_KEY = "objexoom.settings";
 

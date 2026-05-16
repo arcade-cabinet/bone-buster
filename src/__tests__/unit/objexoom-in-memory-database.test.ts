@@ -8,8 +8,8 @@
  * relies on.
  */
 
+import { InMemoryDatabase } from "@platform/persistence/database";
 import { describe, expect, it } from "vitest";
-import { InMemoryDatabase } from "@/persistence/database";
 
 const CREATE = `
 	CREATE TABLE IF NOT EXISTS runs (

@@ -1,12 +1,5 @@
 import { getMusicLoadProgress } from "@audio/sfx";
-import { motion, useReducedMotion } from "framer-motion";
-import type { CSSProperties } from "react";
-import { useEffect, useState } from "react";
-import { BoneBusterWordmark } from "./BoneBusterWordmark";
-import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "./design-tokens";
-import { TYPE } from "./design-tokens/typography";
-import { formatRunDuration, openRunHistory, type RunRecord } from "./runHistory";
-import { ScuffShader } from "./ScuffShader";
+import { formatRunDuration, openRunHistory, type RunRecord } from "@store/runHistory";
 import {
 	DIFFICULTY_BLURB,
 	DIFFICULTY_LABEL,
@@ -14,7 +7,14 @@ import {
 	LEVEL_LABEL,
 	type LevelChoice,
 	type ObjexoomSettings,
-} from "./settings";
+} from "@store/settings";
+import { motion, useReducedMotion } from "framer-motion";
+import type { CSSProperties } from "react";
+import { useEffect, useState } from "react";
+import { BoneBusterWordmark } from "./BoneBusterWordmark";
+import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "./design-tokens";
+import { TYPE } from "./design-tokens/typography";
+import { ScuffShader } from "./ScuffShader";
 
 type Props = Readonly<{
 	settings: ObjexoomSettings;

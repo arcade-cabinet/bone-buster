@@ -46,10 +46,10 @@ import {
 	SKELETON_ATTACK_RANGE,
 	SKELETON_DAMAGE,
 } from "@shared/constants";
+import type { ObjexoomSettings } from "@store/settings";
 import type * as THREE from "three";
 import type * as Yuka from "yuka";
 import type { GameRef } from "../../ObjexoomShell";
-import type { ObjexoomSettings } from "../../settings";
 
 // CollisionContext is a private export of engine.ts; if not exported, we
 // fall back to the structural type the helpers consume. The Scene

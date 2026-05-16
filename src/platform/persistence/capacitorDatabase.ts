@@ -20,7 +20,7 @@ import {
 	SQLiteConnection,
 	type SQLiteDBConnection,
 } from "@capacitor-community/sqlite";
-import type { DatabaseAdapter } from "./database";
+import type { DatabaseAdapter } from "@platform/persistence/database";
 
 export class CapacitorDatabase implements DatabaseAdapter {
 	#db: SQLiteDBConnection | null = null;
