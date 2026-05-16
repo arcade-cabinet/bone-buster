@@ -85,6 +85,10 @@ export type GameState = {
 	// the level reads as dark and only the muzzle flash + ambient hue
 	// give the player anything to navigate by.
 	hasFlashlight: boolean;
+	// PB5 step-2 — EMF reader ownership flag. When true, the HUD shows
+	// the EMF chip with a 1-5 stepwise readout of nearest-enemy
+	// proximity. Off by default; flips true on pickup.
+	hasEmfReader: boolean;
 	weapon: WeaponId;
 	ammo: Record<WeaponId, number>;
 	ownedWeapons: Record<WeaponId, boolean>;
@@ -343,6 +347,7 @@ export function BoneBusterShell() {
 		totalEnemies: map.enemySpawns.length,
 		hasKey: false,
 		hasFlashlight: false,
+		hasEmfReader: false,
 		weapon: "pistol",
 		ammo: baseAmmo(),
 		ownedWeapons: baseOwnedWeapons(),
@@ -442,6 +447,7 @@ export function BoneBusterShell() {
 			totalEnemies: map.enemySpawns.length,
 			hasKey: false,
 			hasFlashlight: false,
+			hasEmfReader: false,
 			weapon: "pistol",
 			ammo: baseAmmo(),
 			ownedWeapons: baseOwnedWeapons(),
@@ -670,6 +676,7 @@ export function BoneBusterShell() {
 				score: 0,
 				hasKey: false,
 				hasFlashlight: false,
+				hasEmfReader: false,
 				weapon: "pistol",
 				ammo: baseAmmo(),
 				ownedWeapons: baseOwnedWeapons(),
@@ -928,6 +935,7 @@ export function BoneBusterShell() {
 									settings={settings}
 									phase={state.phase}
 									hasFlashlight={state.hasFlashlight}
+									hasEmfReader={state.hasEmfReader}
 								/>
 							</Canvas>
 							<BoneBusterHUD

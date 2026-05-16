@@ -259,6 +259,19 @@ export interface EnemyKilledEvent {
 	kind: string;
 }
 
+/**
+ * PB5 step-2 — EMF reading broadcast. Dispatched from the Scene's
+ * per-frame tick (throttled to ~10Hz so HUD re-renders stay cheap)
+ * with the current 0-5 EMF level. The HUD's EmfChip slot listens
+ * for this and renders a stepwise color-coded bar. Only dispatched
+ * while the player owns the EMF reader; un-owned = no events = HUD
+ * chip stays hidden.
+ */
+export interface EmfReadingEvent {
+	type: "emfReading";
+	level: 0 | 1 | 2 | 3 | 4 | 5;
+}
+
 export type BoneBusterEvent =
 	| BurstEvent
 	| BodyPartsEvent
@@ -283,7 +296,8 @@ export type BoneBusterEvent =
 	| WeaponAcquiredEvent
 	| BossSpottedEvent
 	| BossDefeatedEvent
-	| EnemyKilledEvent;
+	| EnemyKilledEvent
+	| EmfReadingEvent;
 
 export type BoneBusterEventType = BoneBusterEvent["type"];
 

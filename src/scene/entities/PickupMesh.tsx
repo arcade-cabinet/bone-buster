@@ -250,6 +250,24 @@ export function PickupMesh({
 					</mesh>
 				</group>
 			)}
+			{pickup.kind === "emfReader" && (
+				/* PB5 step-2 — EMF reader: handheld brick with a green
+				   indicator strip. Renders as a small dark-grey rectangular
+				   prism with three stacked emissive bars on the front face
+				   so it reads as an LED bar-graph from across a room. */
+				<group>
+					<mesh>
+						<boxGeometry args={[0.2, 0.3, 0.08]} />
+						<meshStandardMaterial color="#222831" metalness={0.5} roughness={0.6} />
+					</mesh>
+					{[-0.06, 0, 0.06].map((y) => (
+						<mesh key={y} position={[0, y, 0.045]}>
+							<boxGeometry args={[0.14, 0.03, 0.005]} />
+							<meshStandardMaterial color="#5af78e" emissive="#5af78e" emissiveIntensity={1.6} />
+						</mesh>
+					))}
+				</group>
+			)}
 		</group>
 	);
 }
