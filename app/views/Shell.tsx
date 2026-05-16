@@ -39,7 +39,7 @@ import { ROLE, SCALE } from "@styles/tokens/index";
 import { BoneBusterHUD } from "@views/HUD";
 import { BoneBusterLanding } from "@views/Landing";
 import { BoneBusterScene } from "@views/Scene";
-import { ARCHETYPE_NAMES } from "@world/archetype";
+import { applyArchetypeOverride } from "@world/archetype";
 import { buildMap } from "@world/buildMap";
 import { pickLevelName, WELCOME_WING_NAME } from "@world/levelNames";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -217,23 +217,6 @@ function readArchetypeFromUrl(): string | null {
 	}
 }
 
-/**
- * INF3 — rewrite a seed so `pickArchetype(map)` lands on the requested
- * archetype. The mapping in `archetype.ts` is `seed % 5`, so we shift
- * `seed` by `-(seed % 5) + wantedIndex`. Returns the seed unchanged
- * when `archetype` is null / unknown.
- *
- * Exported for the unit test that pins the invariant: after override
- * the seed satisfies `seed % 5 === wantedIndex` for every input seed.
- */
-export function applyArchetypeOverride(seed: number, archetype: string | null): number {
-	if (!archetype) return seed;
-	const idx = ARCHETYPE_NAMES.indexOf(archetype as (typeof ARCHETYPE_NAMES)[number]);
-	if (idx < 0) return seed;
-	const s = seed >>> 0;
-	return ((s - (s % ARCHETYPE_NAMES.length) + idx) >>> 0) & 0xffffffff;
-}
-
 function debugHooksEnabled(): boolean {
 	if (typeof window === "undefined") return false;
 	if (process.env.NODE_ENV === "production") return false;
@@ -399,10 +382,19 @@ export function BoneBusterShell() {
 	}, [state.weapon, state.ammo]);
 
 	useEffect(() => {
-		const onResize = () => setTouchMode(resolveTouchMode(settings.touchControls));
-		onResize();
-		window.addEventListener("resize", onResize);
-		return () => window.removeEventListener("resize", onResize);
+		const recompute = () => setTouchMode(resolveTouchMode(settings.touchControls));
+		recompute();
+		window.addEventListener("resize", recompute);
+		// Also re-evaluate when the pointer-capability media query flips
+		// (e.g. user plugs in a mouse on a 2-in-1, or DevTools toggles
+		// device emulation). Without this, the shell can get stuck in
+		// the wrong input mode until reload.
+		const mq = typeof window.matchMedia === "function" ? window.matchMedia(TOUCH_AUTO_QUERY) : null;
+		mq?.addEventListener?.("change", recompute);
+		return () => {
+			window.removeEventListener("resize", recompute);
+			mq?.removeEventListener?.("change", recompute);
+		};
 	}, [settings.touchControls]);
 
 	// CONV2 — GameRef callback construction extracted to useGameRef hook.

@@ -22,8 +22,14 @@ let played = false;
  */
 export function playLogoSting(): void {
 	if (played) return;
-	played = true;
-	play("system/mission-complete");
+	const id = play("system/mission-complete");
+	// Only flip the played-flag after the bus accepts the playback —
+	// if play() returns null (unknown slug, unloaded bus, etc) we want
+	// the next mount to retry rather than be silently no-op'd for the
+	// session.
+	if (id !== null) {
+		played = true;
+	}
 }
 
 /**

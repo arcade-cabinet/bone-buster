@@ -47,36 +47,23 @@ The active work-unit is the **overhaul** lane stack in
 | Lane | Status | What's next |
 | --- | --- | --- |
 | ITCH-FETCH | not started | IF1 — adapt voxel-realms fetcher |
-| REBRAND | not started | R1 — install Bone Buster fonts |
-| IDENTITY | not started | D1 — locked-weapon HUD chips |
-| ARCHETYPE INTERLEAVE | not started | corridor slice (depends on IF5/IF6 for new extracts) |
-| AUDIO | not started | A11a — audio inventory (depends on IF5) |
-| BUILD-CONFIG | not started | BC1 — vite.config.ts overhaul |
-| RESTRUCTURE | not started | RS1 — migration plan doc |
-| MIGRATE | not started | M4 — OLD repo Pages redirect |
-
-Order within a lane is topological. Across lanes:
-ITCH-FETCH gates D5/D7/D9/A11; REBRAND gates anything
-visual; BUILD-CONFIG fixes the deployed Pages site
-(currently broken — see PRD §BC3); RESTRUCTURE happens
-when imports are stable.
+| REBRAND | DRAINED | R5b/R6/R7/R8/R8b/R9/R10 all shipped (commits in overhaul branch) |
+| IDENTITY | DRAINED | D1/D2/D3/D4/D5/D6/D8/D9 all shipped |
+| ARCHETYPE INTERLEAVE | DRAINED | all 5 archetypes audited; corridor + library A1 migrations shipped (DebrisField + KitchenField); A2 (ephemeral pool) deferred per architectural decision |
+| AUDIO | DRAINED | A11a-A11f all shipped — Howler swap, music graph, ambient graph, runtime audio verifier |
+| BUILD-CONFIG | DRAINED | BC1-BC7 all shipped; gh-pages base path fixed |
+| RESTRUCTURE | DRAINED | RS1-RS6 all shipped; `app/` + `src/` layout adopted, all imports updated |
+| MIGRATE | CUT | M4 + M5 cut as non-applicable — GitHub's repo-rename redirect IS the durable substitute. See PRD §MIGRATE for empirical findings. |
 
 ## Known issues
 
-- **GH Pages deploy is broken.** Diagnosed 2026-05-15:
-  `https://arcade-cabinet.github.io/bone-buster/`
-  returns 200 but `index.html` references
-  `/objexoom/assets/index-*.js` (404). Root cause:
-  `vite.config.ts:8` hardcodes `base: "/objexoom/"` for
-  `mode === "github-pages"`. Fix tracked at PRD §BC3.
-- **No actively known runtime bugs.** Phase 21 polish
-  cleared the last regression batch; visual gate is
-  green; mobile-perf baseline is within budget on the
-  Pixel 5a-class CI target.
+- **No actively known runtime bugs.** The overhaul slice (PR #62)
+  drained the full directive; visual gate green (5 canonical + 10
+  per-archetype e2e screenshots); 818 unit tests pass; perf within
+  budget across all 5 archetypes (post-D5 + post-A1 baselines).
 
 ## Active branch
 
-`docs/p22-rebrand-brainstorm` — the docs-only PR #60
-landing the rebrand sweep. After PR #60 merges, work
-moves to the long-running `overhaul` branch for the
-code + asset overhaul drainage.
+`overhaul/bone-buster` — the single long-running branch that
+holds every commit for this overhaul slice. PR #62 squash-merges
+to main on 2026-05-16.

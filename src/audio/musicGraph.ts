@@ -21,7 +21,11 @@ export type MusicMood = "exploration" | "combat" | "going_back" | "boss";
 const MOOD_TO_SLUG: Record<MusicMood, string> = {
 	exploration: "music/corridor/loop",
 	combat: "music/arena/loop",
-	going_back: "music/arena/loop",
+	// going_back is the player's escape sprint — a tense, end-game
+	// mood. The library bed reads as the most-distinct atmospheric
+	// layer (vs reusing arena's combat bed), so it fits going_back
+	// without needing a bespoke 5th bed.
+	going_back: "music/library/loop",
 	boss: "music/boss/loop",
 };
 

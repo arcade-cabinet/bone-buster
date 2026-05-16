@@ -8,7 +8,7 @@ import {
 } from "@ai/turtle";
 import { describe, expect, it } from "vitest";
 
-describe("objexoom turtle-graphics decoder", () => {
+describe("bonebuster turtle-graphics decoder", () => {
 	it("exposes the original five reference levels", () => {
 		const levels = listRefLevels();
 		expect(REF_LEVEL_COUNT).toBe(levels.length);

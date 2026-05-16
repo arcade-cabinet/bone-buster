@@ -61,7 +61,7 @@ The high-value gaps in that list:
 | `src/world/floorTextures.ts` | Per-archetype floor PBR resolution — drives part of the per-archetype palette intent. No test exists. | Unit test asserting each archetype resolves to a distinct texture URL set. |
 | `src/scene/entities/TreasureChest.tsx`, `LootField` (via `lootScatter`) | POL1 score wiring; see G1. | Covered by G1. |
 | `src/shared/weapons.ts` | The muzzle-anchor test is for the viewmodel transform, not weapon switch / ammo / firing-rate state. | Unit test for "switching to chaingun when ammo>0" and "pickup grants +N ammo per kind." |
-| `src/assets/assetUrl.ts` (the `A()` helper) | Critical — wrong BASE_URL prefix produces blank screenshots in gh-pages/Capacitor. | Unit test that asserts `A("/foo")` resolves to `${import.meta.env.BASE_URL}foo` under three mock BASE_URL values (dev `/`, pages `/objexoom/`, capacitor `file://`). ~15 lines. |
+| `src/assets/assetUrl.ts` (the `A()` helper) | Critical — wrong BASE_URL prefix produces blank screenshots in gh-pages/Capacitor. | Unit test that asserts `A("/foo")` resolves to `${import.meta.env.BASE_URL}foo` under three mock BASE_URL values (dev `/`, pages `/bone-buster/`, capacitor `file://`). ~15 lines. |
 
 ### G6. POL items present in docs/code but with zero test coverage
 Cross-referencing `grep -oh 'POL[0-9]+'` between `src/` and `src/__tests__/`:

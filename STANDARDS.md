@@ -174,7 +174,8 @@ budget."
   slower belongs in browser/e2e.
 - **Browser tests** drive real Chromium via `@vitest/browser`.
 - **E2E tests** drive the built game via Playwright on port 5191 with
-  the `?debug` hook contract.
+  the `?bonebusterDebug` hook contract (R8b — legacy `?objexoomDebug`
+  still accepted via the storage-key migration shim).
 - **No test is "flaky" — it's broken.** Fix the race or replace the
   wait with a deterministic poll. Don't quarantine.
 - See [`docs/TESTING.md`](./docs/TESTING.md) for the full strategy.

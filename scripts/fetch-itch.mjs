@@ -222,7 +222,12 @@ async function main() {
 			)
 		: null;
 
-	const KEY = loadKey();
+	// `--inventory` reads `.itch-cache/all-keys.json` only — no network,
+	// no API key needed. Defer `loadKey()` so a missing `.env` doesn't
+	// block inventory generation. Network paths (`--refresh-keys` + the
+	// download flow) still load the key below where they need it.
+	const needsKey = REFRESH_KEYS || (!INVENTORY && !DRY);
+	const KEY = needsKey ? loadKey() : "";
 
 	if (REFRESH_KEYS) {
 		refreshKeys(KEY);

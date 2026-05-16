@@ -146,11 +146,18 @@ function pickKindFromTable(table: EnemyMixTable, rng: () => number): EnemyKind {
  * Apply the per-archetype enemy mix to a map's enemy spawns.
  * Preserves count, order, and position. Only rewrites `kind`.
  *
- * D5 — corridor no longer pass-through; it has its own mix table
- * now (rattler-heavy + mrZ + signal accent). Canonical-byte
- * stability for the seed-0 corridor screenshot is no longer
- * preserved through this function — the visual gate will regen
- * the screenshot in the same commit.
+ * D5 — corridor now has its own 24-kind mix table (rattler-heavy
+ * + mrZ + signal accent). The canonical e2e screenshot was
+ * intentionally rebaked in the same slice that introduced the
+ * 24-kind roster (D5 commit) — the visual gate is the snapshot of
+ * post-D5 truth, not pre-D5 truth.
+ *
+ * Going forward the canonical-byte-stability rule (see memory
+ * note `canonical-byte-stability-pattern.md`) requires that the
+ * **corridor entry of `ENEMY_MIX_TABLES`** must not change without
+ * a coordinated visual-gate rebake — that's how seed-0 corridor
+ * screenshots stay stable. The literal byte-sequence the function
+ * produces is allowed to change exactly when its mix table does.
  */
 export function remapEnemyMix(
 	spawns: readonly EnemySpawn[],

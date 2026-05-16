@@ -5,8 +5,7 @@
  */
 
 import type { BoneBusterMap } from "@engine/engine";
-import { applyArchetypeOverride } from "@views/Shell";
-import { ARCHETYPE_NAMES, pickArchetype } from "@world/archetype";
+import { ARCHETYPE_NAMES, applyArchetypeOverride, pickArchetype } from "@world/archetype";
 import { describe, expect, it } from "vitest";
 
 function fakeMap(seed: number): BoneBusterMap {

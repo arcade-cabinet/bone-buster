@@ -4,10 +4,12 @@
 		<meta charset="utf-8" />
 		<!-- BC4 — viewport tuned for foldables. `viewport-fit=cover`
 		     extends content beneath the notch / status bar so HUD
-		     bands can use `env(safe-area-inset-*)` for padding;
-		     `user-scalable=no` blocks pinch-zoom on touch so the
-		     player can't accidentally zoom the canvas mid-combat. -->
-		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+		     bands can use `env(safe-area-inset-*)` for padding.
+		     `user-scalable=no` was removed (a11y) — players who
+		     need to pinch-zoom on landing / mission-complete / pause
+		     menus can; the in-canvas touch-controls layer captures
+		     mid-combat gestures so accidental zoom isn't a concern. -->
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="theme-color" content="#0F0C12" />
 		<!--
 		  S2 — Content Security Policy. Defense-in-depth — there are no

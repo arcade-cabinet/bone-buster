@@ -20,7 +20,7 @@ domain: product
 | Font delivery | Self-hosted via `@fontsource/*` (honors the S2 CSP — no third-party DNS) |
 | Logo treatment | Full SVG redesign: Bungee letters layered with Bungee Inline + Bungee Shade for letterpress depth, blood-stroke outline, bone-gradient fill, framer-motion stagger drop-in, Tilt Prism axis flicker on final letter |
 | Landing screen | Replace `<ObjexoomLanding>` with `<BoneBusterLanding>` — SVG logo + Radix card-menu (tilted ticket-stub cards) + animated scuff-pattern canvas-shader background |
-| Audio logo sting | 1.2s minor-key arpeggio + rim-shot on landing mount, via Tone.js |
+| Audio logo sting | Sampled `system/mission-complete` OGG on landing mount, via Howler (A11c — replaced Tone.js arpeggio) |
 | GitHub destination | `arcade-cabinet/bone-buster` (public) |
 | Local dir | STAYS at `~/src/objexiv/objexoom` — GitHub redirects handle the URL change automatically |
 | Branch strategy | ONE long-running `overhaul` branch holds every commit until the backlog drains. No phases. |
@@ -60,7 +60,7 @@ The 5 archetype lighting palettes (`archetypePalette.ts`) get a one-pass refresh
 | Tagline | "RIP AND TEAR · THE OBJEXIV CUT" | "They had it coming." in Space Grotesk Medium, `text.secondary`, drops in 200ms after the logo lock-in completes |
 | Background | navy diagonal grid | Animated scuff-pattern shader on `<canvas>` — slowly-scrolling Perlin noise tinted `surface.elevated`, occasional `accent.primary` scratch flashes. Falls back to static SVG noise on AdaptiveResolution low-quality (A3 carryover). |
 | Menu | terminal-style ">  NEW GAME" list | Radix `<NavigationMenu>` primitive styled as ticket-stub cards stacked with -2° rotation. Hover/focus rotates active card forward via framer-motion `whileHover` + lifts via shadow expansion. Keyboard nav unchanged. |
-| Audio | none on landing | Logo sting: 1.2s on mount — minor-key arpeggio (A2-C3-E3) on Tone.js metallic synth + single rim-shot percussion hit on the final letter lock. Plays once per page load. |
+| Audio | none on landing | Logo sting: sampled `system/mission-complete` OGG on mount via Howler. Plays once per page load. (A11c — replaced the Tone.js minor-key arpeggio that pre-dated the sampled audio pipeline.) |
 | In-game HUD | navy chips with orange chevrons | Same compositional structure, re-tokened to new palette. Bungee for level names + status numerals (HEALTH 9, KILLS 3/7), Space Grotesk for sub-labels ("FIND THE KEY"), JetBrains Mono for debug overlay. |
 
 ### Component-level files affected
@@ -69,7 +69,7 @@ The 5 archetype lighting palettes (`archetypePalette.ts`) get a one-pass refresh
 - `app/styles/tokens/role.ts` — palette swap (names survive; values shift)
 - `app/styles/tokens/typography.ts` — NEW: exports `TYPE.display`, `TYPE.body`, `TYPE.mono`, `TYPE.flair`
 - `src/scene/shaders/scuffBackground.tsx` — NEW: `<canvas>` Perlin-noise shader
-- `src/audio/logoSting.ts` — NEW: Tone.js arpeggio + rim-shot
+- `src/audio/logoSting.ts` — NEW: Howler-backed `system/mission-complete` sample (A11c)
 - `src/ui/CardMenu.tsx` — NEW: Radix-based ticket-stub stack menu
 - `package.json` — adds `@fontsource/{bungee,bungee-inline,bungee-shade,space-grotesk,jetbrains-mono,tilt-prism}`
 
@@ -99,7 +99,12 @@ Current: 3 kinds (`skeleton`, `wraith`, `imp`) with cosmetic skin variants. Afte
 | `abomination2.glb` | `heap2` | Heavier `heap` variant. Same mechanic, bigger HP pool. |
 | `horned.glb` | `gorehead` | Skeleton-like, bigger. Charge-attack on line of sight. |
 
-### 12 new extracts (FBX → GLB conversion pass from `references/_extracted/horror/`)
+### New extracts (FBX → GLB conversion pass from `references/_extracted/horror/`)
+
+14 entries (clown2 + doll2 are skin-only variants of existing kinds,
+so the post-D5 first-class kind count remains 24 = 3 base + 9 promoted
++ 12 new mechanically-distinct kinds; clown2/doll2 are subsumed into
+their parent kind's skin pool).
 
 | GLB to extract | New kind | Mechanic |
 |---|---|---|

@@ -84,7 +84,10 @@ src/
 ├── BoneBusterHUD.tsx        # corner HUD, weapon chips, overlays
 ├── BoneBusterLanding.tsx    # landing screen
 ├── PlayerController.tsx     # camera + input (pointer-lock + touch sticks)
-└── sfx.ts                   # Tone.js procedural music + SFX bank
+├── sfx.ts                   # Howler-based audio facade (A11c — replaced Tone.js)
+├── howlerBus.ts             # variant-aware loop pool + crossfade primitives
+├── musicGraph.ts            # mood → music-bed routing
+└── ambientGraph.ts          # archetype → ambient-bed routing
 
 public/
 ├── README.md                # asset layout convention
@@ -144,5 +147,5 @@ When docs disagree, the order is:
 Code: see `LICENSE`. Sample art + audio under their respective
 itch.io / pack-creator licenses — `docs/CREDITS.md` enumerates
 the upstream packs. Built with React, Three.js, drei,
-react-three/postprocessing, Tone.js, Vite, Capacitor, Biome,
+react-three/postprocessing, Howler.js, Vite, Capacitor, Biome,
 Vitest, Playwright.

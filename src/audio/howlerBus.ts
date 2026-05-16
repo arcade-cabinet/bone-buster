@@ -182,6 +182,19 @@ const LOOPING_SLUGS = new Set([
  */
 const HOWL_POOL: Map<string, Howl> = new Map();
 
+// Pending stop timers from crossfade(). Keyed by slug so a quick
+// archetype flip (A → B → A) cancels the first transition's stop
+// before it kills the re-activated loop.
+const PENDING_STOPS: Map<string, ReturnType<typeof setTimeout>> = new Map();
+
+function clearPendingStop(slug: string): void {
+	const t = PENDING_STOPS.get(slug);
+	if (t) {
+		clearTimeout(t);
+		PENDING_STOPS.delete(slug);
+	}
+}
+
 function dbToLinear(db: number): number {
 	return 10 ** (db / 20);
 }
@@ -225,6 +238,7 @@ function makeHowl(slug: string, variantPath: string): Howl {
  * Howl is fire-and-forget — its lifecycle ends when playback does).
  */
 export function play(slug: string): number | null {
+	clearPendingStop(slug);
 	const files = SLOT_FILES[slug];
 	if (!files || files.length === 0) {
 		return null;
@@ -249,6 +263,7 @@ export function play(slug: string): number | null {
  * Stop a looping slug. No-op for non-loop slugs.
  */
 export function stop(slug: string): void {
+	clearPendingStop(slug);
 	const h = HOWL_POOL.get(slug);
 	if (h) h.stop();
 }
@@ -293,6 +308,9 @@ export function crossfade(
 	durationMs: number,
 ): void {
 	if (fromSlug === toSlug) return;
+	// If toSlug had a pending stop from a previous crossfade away,
+	// cancel it — we're activating this loop again.
+	clearPendingStop(toSlug);
 	// Start the new slug at silent so the fade-in is audible.
 	if (!HOWL_POOL.has(toSlug)) {
 		// Bootstrap a Howl at the slug's baseline; we'll override
@@ -310,8 +328,14 @@ export function crossfade(
 		if (oldH) {
 			oldH.fade(oldH.volume(), dbToLinear(-60), durationMs);
 			// Stop the old loop after the fade completes so it doesn't
-			// keep ticking the AudioContext at zero gain.
-			setTimeout(() => oldH.stop(), durationMs + 50);
+			// keep ticking the AudioContext at zero gain. Tracked in
+			// PENDING_STOPS so a quick A→B→A flip can cancel the stop.
+			clearPendingStop(fromSlug);
+			const timer = setTimeout(() => {
+				oldH.stop();
+				PENDING_STOPS.delete(fromSlug);
+			}, durationMs + 50);
+			PENDING_STOPS.set(fromSlug, timer);
 		}
 	}
 }
@@ -353,6 +377,8 @@ export function getActiveLoopSlugsForTesting(): readonly string[] {
  * each test starts with a clean bus.
  */
 export function resetForTesting(): void {
+	for (const t of PENDING_STOPS.values()) clearTimeout(t);
+	PENDING_STOPS.clear();
 	for (const h of HOWL_POOL.values()) h.unload();
 	HOWL_POOL.clear();
 	variantRng = mulberry32(1);

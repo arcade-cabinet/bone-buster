@@ -78,7 +78,7 @@ await page2.goto("http://localhost:5191/?bonebusterDebug&bonebusterSeed=12345", 
 await page2.waitForFunction(() => Boolean(window.__bonebuster), { timeout: 8000 });
 await page2.evaluate(() => window.__bonebuster.start());
 await page2.locator("[data-testid='bonebuster-hp']").waitFor();
-await page2.evaluate(() => window.__bonebuster.forceMissionComplete());
+await page2.evaluate(() => window.__bonebuster.triggerWin());
 await page2.waitForTimeout(2200);
 await captureCDP(page2, `${OUT}/03-mission-complete.png`);
 await browser2.close();

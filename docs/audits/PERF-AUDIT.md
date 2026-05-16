@@ -11,21 +11,21 @@ Target: web (GitHub Pages) + Capacitor Android/iOS. Reference device: Pixel 5a.
 
 ## Existing instrumentation read first (so we don't suggest dupes)
 
-- `src/scene/effects/AdaptiveResolution.tsx` is the OBS1 emitter: per-frame `gl.info.render.calls`/`triangles` are accumulated as peak across a 60-frame window, then emitted on `objexoom:fpsUpdate`. It runs `gl.info.autoReset = false` once and `gl.info.reset()` every useFrame.
-- `app/views/HUD.tsx:316-405` is the OBS2 overlay — debug-build banner when calls > budget or tris > budget; HUD readout under `?objexoomDebug`.
-- `scripts/obs3-perf-snapshot.mjs` (OBS3) launches Chromium per-archetype, drives `?objexoomArchetype=<X>&objexoomSeed=12345`, samples `objexoom:fpsUpdate` over a 3s window, compares peak vs `tests/perf-baselines/<archetype>.json`, fails on >10% regression or absolute budget (1000 calls / 100k tris).
+- `src/scene/effects/AdaptiveResolution.tsx` is the OBS1 emitter: per-frame `gl.info.render.calls`/`triangles` are accumulated as peak across a 60-frame window, then emitted on `bonebuster:fpsUpdate`. It runs `gl.info.autoReset = false` once and `gl.info.reset()` every useFrame.
+- `app/views/HUD.tsx:316-405` is the OBS2 overlay — debug-build banner when calls > budget or tris > budget; HUD readout under `?bonebusterDebug`.
+- `scripts/obs3-perf-snapshot.mjs` (OBS3) launches Chromium per-archetype, drives `?bonebusterArchetype=<X>&bonebusterSeed=12345`, samples `bonebuster:fpsUpdate` over a 3s window, compares peak vs `tests/perf-baselines/<archetype>.json`, fails on >10% regression or absolute budget (1200 calls / 80k tris — bumped from 1000/100k post-D5 to fit arena's 24-kind roster).
 - `.github/workflows/ci.yml` job `perf` (lines 33-56) is OBS4 — runs `pnpm test:perf` after `verify`.
-- Tracked baselines (`tests/perf-baselines/*.json`):
+- Tracked baselines (`tests/perf-baselines/*.json`, post-D5 + post-A1):
 
   | Archetype | peakCalls | peakTris |
   |-----------|----------:|---------:|
-  | corridor  | 834       | 21,433   |
-  | arena     | 494       | 30,090   |
-  | courtyard | 887       | 18,318   |
-  | sewer     | 650       | 30,880   |
-  | library   | 784       | 31,769   |
+  | corridor  | 810       | 21,994   |
+  | arena     | 1,013     | 67,903   |
+  | courtyard | 885       | 17,824   |
+  | sewer     | 638       | 26,533   |
+  | library   | 752       | 26,135   |
 
-What these numbers say: **the bottleneck is draw calls, not triangle count**. Corridor and courtyard already burn ~80-90% of the 1000-call OBS3 budget at 21-32k tris. Pixel 5a class GPUs can chew through 100k tris easily; 800+ draw calls per frame is where they hurt. Every issue below ties back to that fact.
+What these numbers say: **the bottleneck is draw calls, dominated by skinned-mesh enemies post-D5**. Arena's 24-kind mix puts it at 1013 calls (only the A1 InstancedField corridor migration knocked ~24 calls off corridor itself). The next perf-slice priority is migrating PropField + LargePropField + TrapField to InstancedGltfField (see PRD §Parked) for ~150 more reclaimed arena calls.
 
 OBS1/2/3/4 do not currently track: GC pause time, audio-thread underruns, ms/frame split between sim and render, or per-system draw-call ownership. See §3 for proposed additions.
 

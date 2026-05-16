@@ -37,13 +37,19 @@ generic — every archetype reuses them. The corridor slice's
 job is to PROVE them out before the other 4 archetype slices
 adopt.
 
-Step-2 migrations (subsequent commits in this slice):
-- DebrisField → InstancedField (single-url-per-mesh groups)
-- ShellEjectField → EphemeralPool (single-url canonical shell)
+Step-2 migrations (shipped this slice):
+- DebrisField → InstancedGltfField (single-url-per-mesh groups) — SHIPPED in commit `288a7d3`
+- KitchenField → InstancedGltfField (library-only, same shape) — SHIPPED in commit `be4e4af`
+- ShellEjectField → EphemeralPool — DEFERRED (see §Architectural decision below).
+  EphemeralPool was deleted entirely in commit `0ec99bd` after the
+  simplifier + perf reviewers independently flagged it as wrong-fit;
+  per-frame physics + per-mesh independent opacity require a separate
+  `InstancedBufferAttribute` shader path that's its own slice.
 
-Step-3: tests/perf-baselines/corridor.json regression gate.
-Pre-migration peakCalls = 834; target post-migration ≤ 700
-(one InstancedField collapses ~30 debris draw calls into 1).
+Step-3: tests/perf-baselines/corridor.json regression gate updated
+(commit `5d36291`). Post-A1 peakCalls = 810 (down 24 from 834
+baseline). Bigger win — arena's 1013 calls — surfaced the OBS3
+budget bump from 1000/100k to 1200/80k tris.
 
 ## Ideas this audit gave me
 

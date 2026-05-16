@@ -25,7 +25,7 @@
  */
 
 import { mkdirSync, readdirSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import convert from "fbx2gltf";
 
@@ -73,9 +73,11 @@ function mtimeOrZero(path) {
 
 function categoryOf(fbxAbs) {
 	// raw-assets/extracted/<category>/<pack-slug>/...
-	const rel = relative(SRC, fbxAbs);
+	// Normalize Windows backslashes + lowercase so the filter set
+	// (already lowercased in `categoryFilter`) matches correctly.
+	const rel = relative(SRC, fbxAbs).split(sep).join("/");
 	const parts = rel.split("/");
-	return parts[0] ?? "misc";
+	return (parts[0] ?? "misc").toLowerCase();
 }
 
 try {

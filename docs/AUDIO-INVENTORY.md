@@ -101,7 +101,7 @@ Total: 1,777 OGG/WAV/MP3 files across 26 packs (1,554 audio-bucket
 Howler sprite registry uses slug paths matching the slot allocation
 table:
 
-```
+```text
 weapon/pistol/fire
 weapon/chaingun/loop-start
 weapon/chaingun/loop-body

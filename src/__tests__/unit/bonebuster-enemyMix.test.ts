@@ -174,11 +174,18 @@ describe("D5 — remapEnemyMix", () => {
 				}
 			}
 		}
-		// Expect at least 23 of 24 (24 minus devil). Tail-weight kinds
-		// occasionally miss small sample sizes; 100 seeds × 5
-		// archetypes × 50 spawns = 25,000 draws is plenty.
-		reached.delete("devil");
-		expect(reached.size).toBeGreaterThanOrEqual(20);
+		// Expect exactly 21 of 24 reachable kinds. Three are NOT in any
+		// per-archetype ENEMY_MIX_TABLES entry and are therefore
+		// unreachable by the procedural remap:
+		//   - `devil` — boss-room gated (intentional)
+		//   - `bloodphaser` — reserved for future archetype placement
+		//   - `oneye` — reserved for future archetype placement
+		// 100 seeds × 5 archetypes × 50 spawns = 25,000 draws is
+		// plenty for every kind that's in a mix table to land at
+		// least once. If a tail-weight kind suddenly stops landing,
+		// the test FAILs (regression catch).
+		for (const k of ["devil", "bloodphaser", "oneye"] as const) reached.delete(k);
+		expect(reached.size).toBe(21);
 	});
 
 	it("empty spawn list passes through without error for every archetype", () => {

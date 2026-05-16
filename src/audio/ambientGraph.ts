@@ -11,7 +11,7 @@
  * facade and makes the cross-fade contract testable in isolation.
  */
 
-import { crossfade, fadeTo } from "@audio/howlerBus";
+import { crossfade, fadeTo, stop } from "@audio/howlerBus";
 
 export type AmbientArchetype = "corridor" | "arena" | "courtyard" | "sewer" | "library";
 export type AmbientPhase = "out" | "going_back";
@@ -84,16 +84,18 @@ export function startAmbient(): void {
 }
 
 /**
- * Stop the ambient bed entirely. The next startAmbient() call will
- * fade in from silent.
+ * Stop the ambient bed entirely. Fades out then actually stops the
+ * underlying Howl so the audio resource isn't left at near-silent
+ * gain forever. If `startAmbient` re-activates the same slug before
+ * the fade-out completes, the scheduled `stop()` is skipped.
  */
 export function stopAmbient(): void {
-	if (activeSlug) {
-		// Fade to silent over CROSSFADE_MS then stop happens inside
-		// howlerBus.crossfade — but stopAmbient doesn't get a target
-		// slug; use fadeTo to drop to -60dB and let GC handle the
-		// rest on next-start.
-		fadeTo(activeSlug, -60, PHASE_FADE_MS);
+	const slugToStop = activeSlug;
+	if (slugToStop) {
+		fadeTo(slugToStop, -60, PHASE_FADE_MS);
+		setTimeout(() => {
+			if (activeSlug !== slugToStop) stop(slugToStop);
+		}, PHASE_FADE_MS + 50);
 	}
 	activeSlug = null;
 }

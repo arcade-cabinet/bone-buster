@@ -2,7 +2,8 @@
  * STO1a — settings persistence on top of Capacitor Preferences.
  *
  * Stores the full BoneBusterSettings as a JSON blob under the
- * `objexoom.settings` key. Read at app boot, written on every
+ * `bonebuster.settings` key (legacy `objexoom.settings` read-only
+ * fallback per R8b migration shim). Read at app boot, written on every
  * setSettings call. Validated against the live Difficulty + LevelChoice
  * unions so a forged or stale blob can't silently flip the player into
  * an unsupported state.

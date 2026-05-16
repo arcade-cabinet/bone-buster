@@ -85,7 +85,10 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 | Module | Owns |
 | --- | --- |
-| `src/audio/sfx.ts` | Tone.js procedural music + SFX bank — pan-aware, mood-switched, loaded on demand |
+| `src/audio/sfx.ts` | Howler-based facade — pan-aware, mood-switched, loaded on demand (A11c — replaced Tone.js) |
+| `src/audio/howlerBus.ts` | Variant-aware Howl pool + crossfade primitives + pending-stop cancellation |
+| `src/audio/musicGraph.ts` | mood (exploration/combat/going_back/boss) → music-bed slug routing |
+| `src/audio/ambientGraph.ts` | (archetype, phase) → ambient-bed slug routing + crossfade-on-transition |
 
 ### Design system
 

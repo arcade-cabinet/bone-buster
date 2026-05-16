@@ -35,3 +35,21 @@ export const ARCHETYPE_NAMES: readonly PropArchetype[] = [
 export function pickArchetype(map: BoneBusterMap): PropArchetype {
 	return map.archetype;
 }
+
+/**
+ * INF3 — rewrite a seed so its `seed % 5` index lands on the named
+ * archetype. Caller is the Shell URL-flag plumbing (`?bonebusterArchetype=`).
+ * Pure function — lives here (not in the view layer) so unit tests
+ * can pin the invariant without importing any TSX.
+ *
+ * Contract: after override, `(returnedSeed % 5) === ARCHETYPE_NAMES.indexOf(archetype)`
+ * for every input seed. Unknown archetype names return the seed
+ * unchanged.
+ */
+export function applyArchetypeOverride(seed: number, archetype: string | null): number {
+	if (!archetype) return seed;
+	const idx = ARCHETYPE_NAMES.indexOf(archetype as PropArchetype);
+	if (idx < 0) return seed;
+	const s = seed >>> 0;
+	return ((s - (s % ARCHETYPE_NAMES.length) + idx) >>> 0) & 0xffffffff;
+}

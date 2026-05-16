@@ -41,7 +41,7 @@ When two docs disagree, use this order:
 - **Biome only.** No ESLint, no Prettier. See
   [`DECISIONS.md` D4](./docs/DECISIONS.md#d4).
 - **Design tokens.** Use `ROLE.*` from
-  [`app/styles/tokens/`](../app/styles/tokens/), NOT raw hex / rgba /
+  [`app/styles/tokens/`](./app/styles/tokens/), NOT raw hex / rgba /
   scale steps. See [`DECISIONS.md` D7](./docs/DECISIONS.md#d7).
 
 ## Game architecture
@@ -104,9 +104,11 @@ inline justification.
 - `pnpm assets:fbx-to-glb` regenerates the curated GLBs. Edit
   `scripts/convert-fbx.mjs` to add new sources.
 - After regenerating, run `pnpm test:e2e:screenshots` to refresh the
-  canonical poses. They land under
-  `test-results/objexoom-screenshots/` (path renamed to
-  `bone-buster-screenshots/` by PRD §R8 source-string sweep).
+  canonical poses. They land under `test-results/objexoom-screenshots/`
+  (path preserved post-rebrand — the canonical screenshot harness's
+  output directory wasn't sweep-renamed to keep diff noise low and
+  avoid invalidating the `tests/perf-baselines/` cross-reference;
+  see R8b storage-key migration shim for the same pattern).
 
 ## Test discipline
 
@@ -117,9 +119,8 @@ Full doc: [`docs/TESTING.md`](./docs/TESTING.md).
 - **Browser (`pnpm test:browser`)** — Vitest in real Chromium. Empty
   for now; first standalone smoke tests queued.
 - **E2E (`pnpm test:e2e`)** — Playwright driving the actual built
-  game via `?bonebusterDebug` hooks (URL flag renamed to `?debug`
-  by PRD §R8 source-string sweep). Includes the 5 canonical
-  screenshot poses.
+  game via `?bonebusterDebug` hooks. Includes the 5 canonical
+  screenshot poses + 10 per-archetype poses.
 
 ## Ports
 
@@ -129,12 +130,12 @@ Vite dev pinned to **5191**, preview to **8191**, with
 
 ## Debug-hook contract
 
-When `?bonebusterDebug` is in the URL (renamed to `?debug` by
-PRD §R8), `window.__bonebuster` exposes (renamed to
-`window.__bonebuster` by PRD §R8):
+When `?bonebusterDebug` is in the URL, `window.__bonebuster`
+exposes the following surface (legacy `?objexoomDebug` /
+`window.__objexoom` aliases also accepted via R8b shim):
 
 ```ts
-type ObjexoomDebugHooks = {
+type BoneBusterDebugHooks = {
   getState(): unknown;
   start(): void;
   teleport(x: number, y: number, yawRad?: number): void;

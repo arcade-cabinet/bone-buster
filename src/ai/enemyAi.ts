@@ -129,6 +129,11 @@ export type FsmTickOutput = Readonly<{
  */
 export function tickEnemyFsm(input: FsmTickInput): FsmTickOutput {
 	const { enemy, player, map, ctx, now, allEnemies } = input;
+	// D5 — derive behavior from the variant's base kind, not the
+	// literal kind. Variants like `plaguebeak` (base=phaser) would
+	// otherwise fall through to rattler logic across every gate
+	// below.
+	const baseKind = BASE_KIND[enemy.kind];
 	const dx = player.x - enemy.position.x;
 	const dy = player.y - enemy.position.y;
 	const dist = Math.hypot(dx, dy);
@@ -136,9 +141,9 @@ export function tickEnemyFsm(input: FsmTickInput): FsmTickOutput {
 	const lastSeenAt = sees ? now : input.lastSeenAt;
 
 	const chaseSpeed =
-		enemy.kind === "phaser"
+		baseKind === "phaser"
 			? CHASE_SPEED_PHASER
-			: enemy.kind === "bouncer"
+			: baseKind === "bouncer"
 				? CHASE_SPEED_BOUNCER
 				: CHASE_SPEED_RATTLER;
 
@@ -197,8 +202,9 @@ export function tickEnemyFsm(input: FsmTickInput): FsmTickOutput {
 				lastSeenAt,
 			};
 		}
-		// Can we shoot? wraiths + imps shoot; skeletons don't.
-		const canShoot = enemy.kind !== "rattler";
+		// Can we shoot? phaser + bouncer (and their variants) shoot;
+		// rattler-base kinds don't.
+		const canShoot = baseKind !== "rattler";
 		if (canShoot && sees && dist <= SHOOT_RANGE && now - enemy.lastShotAt > SHOOT_COOLDOWN_MS) {
 			return {
 				nextState: 3,
@@ -219,14 +225,14 @@ export function tickEnemyFsm(input: FsmTickInput): FsmTickOutput {
 		// FSM returns.
 		if (dist > 1e-3) {
 			let chaseTarget = input.player;
-			if (enemy.kind === "bouncer" && input.playerVelocity) {
+			if (baseKind === "bouncer" && input.playerVelocity) {
 				const leadTime = BOUNCER_LEAD_FACTOR * (dist / chaseSpeed);
 				chaseTarget = {
 					x: input.player.x + input.playerVelocity.x * leadTime,
 					y: input.player.y + input.playerVelocity.y * leadTime,
 				};
 			}
-			if (enemy.kind !== "phaser") {
+			if (baseKind !== "phaser") {
 				chaseTarget = yukaAvoidObstacles(
 					enemy.position,
 					chaseTarget,

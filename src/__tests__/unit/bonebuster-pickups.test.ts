@@ -46,11 +46,11 @@ describe("D2 — procedural pickup contract", () => {
 			const flameCount = map.pickupSpawns.filter((p) => p.kind === "flamethrowerAmmo").length;
 			if (seed % 3 === 0) {
 				expect(flameCount).toBeGreaterThanOrEqual(1);
-			} else {
-				// Non-3rd maps can still get flamethrowerAmmo via the library
-				// archetype bias; the floor is "no guarantee", not "zero allowed".
-				expect(flameCount).toBeGreaterThanOrEqual(0);
 			}
+			// Non-3rd maps: the gate is "no guarantee" so flameCount can
+			// be 0 OR positive (library archetype bias adds it). No
+			// meaningful assertion — flameCount is a Number ≥ 0 by
+			// definition of .filter().length.
 		});
 
 		it(`seed=${seed}: at least one health pickup is always present (regression)`, () => {
