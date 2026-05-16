@@ -14,6 +14,24 @@ importers:
       '@capacitor/preferences':
         specifier: ^8.0.1
         version: 8.0.1(@capacitor/core@8.3.4)
+      '@fontsource/bungee':
+        specifier: ^5.2.7
+        version: 5.2.7
+      '@fontsource/bungee-inline':
+        specifier: ^5.2.8
+        version: 5.2.8
+      '@fontsource/bungee-shade':
+        specifier: ^5.2.7
+        version: 5.2.7
+      '@fontsource/jetbrains-mono':
+        specifier: ^5.2.8
+        version: 5.2.8
+      '@fontsource/space-grotesk':
+        specifier: ^5.2.10
+        version: 5.2.10
+      '@fontsource/tilt-prism':
+        specifier: ^5.2.11
+        version: 5.2.11
       '@react-three/drei':
         specifier: ^10.7.7
         version: 10.7.7(@react-three/fiber@9.6.1(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(three@0.184.0))(@types/react@19.2.14)(@types/three@0.184.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(three@0.184.0)
@@ -465,6 +483,24 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
+
+  '@fontsource/bungee-inline@5.2.8':
+    resolution: {integrity: sha512-ojrMEJYwO2P4M35/WqmtgDZYZqXUCHD2hws4tzICi7kmi7aBFx8driNZH43rVn81SoW6wN82k/CDy5zflEIONw==}
+
+  '@fontsource/bungee-shade@5.2.7':
+    resolution: {integrity: sha512-lkXUV70wgUtqDU5RuljKchpQY3QGZCkygwET4w57QNLArZ72LJGURuSuakS6ItDGK0tzU2CxjrekRekRngShqw==}
+
+  '@fontsource/bungee@5.2.7':
+    resolution: {integrity: sha512-pzUlTXEFdiDM5p0inlWRM+1ovS3vTWG6NplJ65EpfBwZNQmM6wNS6z22tml07+NWKK+e8/FPPupBVbzd0th54w==}
+
+  '@fontsource/jetbrains-mono@5.2.8':
+    resolution: {integrity: sha512-6w8/SG4kqvIMu7xd7wt6x3idn1Qux3p9N62s6G3rfldOUYHpWcc2FKrqf+Vo44jRvqWj2oAtTHrZXEP23oSKwQ==}
+
+  '@fontsource/space-grotesk@5.2.10':
+    resolution: {integrity: sha512-XNXEbT74OIITPqw2H6HXwPDp85fy43uxfBwFR5PU+9sLnjuLj12KlhVM9nZVN6q6dlKjkuN8JisW/OBxwxgUew==}
+
+  '@fontsource/tilt-prism@5.2.11':
+    resolution: {integrity: sha512-0zY5pQ+muDRSbPiEj0LvOu/EMMzH9Cc0RHdV6ExG4SAF7qMdj279++IGEbyXiKAj8FpUOyul2dOkksyswQo0tg==}
 
   '@ionic/cli-framework-output@2.2.8':
     resolution: {integrity: sha512-TshtaFQsovB4NWRBydbNFawql6yul7d5bMiW1WYYf17hd99V6xdDdk3vtF51bw6sLkxON3bDQpWsnUc9/hVo3g==}
@@ -2206,6 +2242,18 @@ snapshots:
     optional: true
 
   '@exodus/bytes@1.15.0': {}
+
+  '@fontsource/bungee-inline@5.2.8': {}
+
+  '@fontsource/bungee-shade@5.2.7': {}
+
+  '@fontsource/bungee@5.2.7': {}
+
+  '@fontsource/jetbrains-mono@5.2.8': {}
+
+  '@fontsource/space-grotesk@5.2.10': {}
+
+  '@fontsource/tilt-prism@5.2.11': {}
 
   '@ionic/cli-framework-output@2.2.8':
     dependencies:

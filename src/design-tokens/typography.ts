@@ -1,25 +1,55 @@
 /**
- * OBJEXOOM type tokens.
+ * Bone Buster type tokens.
  *
- * Two curated families, bundled locally (see `public/assets/fonts/`):
+ * Four curated families, self-hosted via `@fontsource/*` packages
+ * (no CDN — S2 CSP enforcement + Capacitor offline support):
  *
- *   - Black Ops One — display font. Stencil-cut military horror; the
- *     OBJEXOOM wordmark + every overlay heading (LEVEL COMPLETE, YOU
- *     DIED, MISSION COMPLETE) sits in this. One weight only (400) —
- *     the typeface itself ships as a single weight.
- *   - Rajdhani — body + HUD copy. Condensed tactical sans with five
- *     weights (300, 400, 500, 600, 700). Plays naturally with Black
- *     Ops One; numerics tabular-aligned cleanly for the HP / ammo /
- *     kill readouts.
+ *   - **Bungee** family (display) — `bungee`, `bungee-inline`,
+ *     `bungee-shade`. The Bone Buster wordmark is layered Bungee
+ *     + Bungee Inline + Bungee Shade for letterpress depth. Every
+ *     numeric readout (HP / score / kill count / ammo) and every
+ *     overlay heading (LEVEL COMPLETE, YOU DIED, MISSION COMPLETE)
+ *     sits in plain Bungee.
+ *   - **Space Grotesk** (body) — modern geometric sans. HUD
+ *     sub-labels, in-game subtitles, settings copy, kill-confirm
+ *     popups. Variable weight family (300-700).
+ *   - **JetBrains Mono** (mono) — the debug overlay, the perf
+ *     readout (`SCORE`/`KILLS`/`HP`), and the optional
+ *     coordinate-readout dev tier.
+ *   - **Tilt Prism** (flair) — animated phase-transition glyph
+ *     for the landing lock-in moment and the level-name handoff.
+ *     Use sparingly — it's expressive enough that overuse reads
+ *     as decoration noise.
  *
- * Bundled locally rather than CDN-loaded because (a) the game runs in
- * Capacitor offline, and (b) we already hit a Playwright stability-
- * wait stall on font fetches during the e2e screenshot pass — fonts.css
- * blocks any external load attempts.
+ * The fonts are imported by `app/main.tsx` via:
+ *   import "@fontsource/bungee/400.css";
+ *   import "@fontsource/bungee-inline/400.css";
+ *   import "@fontsource/bungee-shade/400.css";
+ *   import "@fontsource/space-grotesk/{300,400,500,600,700}.css";
+ *   import "@fontsource/jetbrains-mono/{400,500,700}.css";
+ *   import "@fontsource/tilt-prism/400.css";
  *
- * Monospace tier is system-default — only the ammo readout uses it,
- * and Rajdhani's tabular numerals usually cover the slot anyway.
+ * Each `@fontsource` import is byte-for-byte the self-hosted woff2
+ * file from the font's package; no CDN fetch happens at runtime.
+ *
+ * `FONT_FAMILY` (legacy keys: body/display/mono with the OBJEXOOM
+ * Rajdhani/Black-Ops-One stacks) is kept exported until the R7 HUD
+ * pass finishes the transition; the canonical post-rebrand surface
+ * is `TYPE.{display,body,mono,flair}` below.
  */
+
+/**
+ * Bone Buster post-rebrand type tokens (PRD §R1). Use these for
+ * every new surface. Each value is a CSS `font-family` stack with
+ * graceful fallbacks for the brief window before the woff2 lands.
+ */
+export const TYPE = {
+	display:
+		'"Bungee", "Bungee Inline", "Bungee Shade", "Black Ops One", ui-sans-serif, system-ui, sans-serif',
+	body: '"Space Grotesk", "Rajdhani", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+	mono: '"JetBrains Mono", ui-monospace, "Menlo", "Monaco", "Consolas", monospace',
+	flair: '"Tilt Prism", "Bungee", "Bungee Inline", ui-sans-serif, system-ui, sans-serif',
+} as const;
 
 export const FONT_FAMILY = {
 	body: '"Rajdhani", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
