@@ -32,7 +32,7 @@
 ### REBRAND — typography + palette + landing redesign
 
 - [x] **R1** — self-hosted Bone Buster fonts via `@fontsource/*`. PRD §R1.
-- [ ] **R2** — Bone palette swap. PRD §R2.
+- [x] **R2** — Bone palette swap. PRD §R2.
 - [ ] **R3** — Landing redesign with SVG + framer-motion. PRD §R3.
 - [ ] **R4** — animated scuff shader. PRD §R4.
 - [ ] **R5** — Radix card-menu. PRD §R5.

@@ -143,37 +143,108 @@ export const SCALE = {
 } as const;
 
 /**
- * Semantic role tokens — what code SHOULD reference. These map to a
- * specific shade in a scale so swapping the underlying scale value
- * propagates everywhere consistently.
+ * Bone Buster bone-palette (PRD §R2). New nested ROLE namespaces:
+ * surface / text / accent / brand. Every new visual surface routes
+ * through these. The flat legacy keys below (`bgVoid`, `textPrimary`,
+ * `accentPrimary`, etc.) survive until the R7 HUD pass migrates the
+ * last call sites — the values just resolve to the bone-palette
+ * anchors so the legacy keys ripple the rebrand even before code
+ * migration.
+ */
+export const BONE_PALETTE = {
+	// Backgrounds — warm-tinted near-black for letterbox + scene void
+	surfaceBase: "#0F0C12", // near-black with violet
+	surfaceElevated: "#1A1620", // charcoal-violet — HUD chip backgrounds
+	surfaceDeep: "#070509", // true-black — modal overlays
+	// Text — bone-cream + aged-tan + weathered
+	textPrimary: "#F4ECDC", // bone-white
+	textSecondary: "#A89B85", // aged-bone-tan
+	textMuted: "#6D6458", // weathered-bone
+	// Accents — the gameplay palette
+	accentPrimary: "#FF6B35", // buster-orange — action chips, weapon-acquired
+	accentWarning: "#FFB347", // safety-amber — low-HP, traps, secret-found
+	accentDanger: "#E63946", // crimson — damage overlay, boss HP, GAME OVER
+	accentDiscovery: "#9D4EDD", // violet — key pickup, portal, secret
+	accentGain: "#06D6A0", // mint — health pickup, MISSION COMPLETE
+	// Brand surfaces — the Bone Buster wordmark identity
+	brandBone1: "#F4ECDC", // logo letter fill (light)
+	brandBone2: "#D9C5A0", // logo letter fill (mid)
+	brandBone3: "#8B6F47", // logo letter fill (dark)
+	brandBlood: "#9B2226", // logo accent + letter stroke
+} as const;
+
+/**
+ * Semantic role tokens — what code SHOULD reference.
+ *
+ * Two namespaces co-exist during the R2→R7 transition:
+ *
+ * 1. **Bone Buster nested** (PRD §R2 — the canonical post-rebrand
+ *    surface): `ROLE.surface.*`, `ROLE.text.*`, `ROLE.accent.*`,
+ *    `ROLE.brand.*`. Every new surface uses these.
+ * 2. **Legacy flat** (`bgVoid`, `textPrimary`, `accentPrimary`,
+ *    `actionFire`, etc.): kept exporting until R7 sweeps each call
+ *    site; their values are re-pointed at the bone-palette anchors
+ *    so the rebrand ripples even where the migration hasn't run yet.
+ *
+ * Both forms read from the same BONE_PALETTE so a future
+ * brand-color tweak only edits one place.
  */
 export const ROLE = {
-	// Backgrounds
-	bgVoid: SCALE.ink[950], // deepest, behind everything
-	bgWorld: SCALE.ink[900], // game world ambient (= Objexiv ink)
-	bgWall: SCALE.ink[700], // wall fill in sectors / corridors
-	bgPanel: SCALE.ink[800], // HUD card / menu card background
-	bgPanelAlpha: "rgba(8, 12, 32, 0.78)", // HUD card translucent
+	// Bone Buster nested (PRD §R2 canonical surface)
+	surface: {
+		base: BONE_PALETTE.surfaceBase,
+		elevated: BONE_PALETTE.surfaceElevated,
+		deep: BONE_PALETTE.surfaceDeep,
+	},
+	text: {
+		primary: BONE_PALETTE.textPrimary,
+		secondary: BONE_PALETTE.textSecondary,
+		muted: BONE_PALETTE.textMuted,
+	},
+	accent: {
+		primary: BONE_PALETTE.accentPrimary,
+		warning: BONE_PALETTE.accentWarning,
+		danger: BONE_PALETTE.accentDanger,
+		discovery: BONE_PALETTE.accentDiscovery,
+		gain: BONE_PALETTE.accentGain,
+	},
+	brand: {
+		bone1: BONE_PALETTE.brandBone1,
+		bone2: BONE_PALETTE.brandBone2,
+		bone3: BONE_PALETTE.brandBone3,
+		blood: BONE_PALETTE.brandBlood,
+	},
 
-	// Text
-	textPrimary: SCALE.parchment[100],
-	textSecondary: SCALE.parchment[300],
-	textMuted: SCALE.parchment[500],
-	textHighContrast: SCALE.parchment[50],
+	// ─── Legacy flat keys (pre-rebrand surface) ────────────────────
+	// Re-pointed at the bone palette so existing call sites pick up
+	// the rebrand. R7 migrates each to the nested ROLE.* form.
+
+	// Backgrounds — Bone Buster surface tier
+	bgVoid: BONE_PALETTE.surfaceDeep, // deepest, behind everything
+	bgWorld: BONE_PALETTE.surfaceBase, // game world ambient
+	bgWall: BONE_PALETTE.surfaceElevated, // wall fill in sectors / corridors
+	bgPanel: BONE_PALETTE.surfaceElevated, // HUD card / menu card background
+	bgPanelAlpha: "rgba(26, 22, 32, 0.78)", // HUD card translucent (surface.elevated)
+
+	// Text — Bone Buster text tier
+	textPrimary: BONE_PALETTE.textPrimary,
+	textSecondary: BONE_PALETTE.textSecondary,
+	textMuted: BONE_PALETTE.textMuted,
+	textHighContrast: BONE_PALETTE.textPrimary, // brightest on dark = bone-white
 
 	// Accents (HUD chrome, link highlights)
-	accentCool: SCALE.indigo[400], // = Objexiv indigo, our chrome accent
-	accentPrimary: SCALE.violet[400], // = Objexiv violet, our hero accent
+	accentCool: BONE_PALETTE.accentDiscovery, // discovery-violet — chrome accent
+	accentPrimary: BONE_PALETTE.accentPrimary, // buster-orange — hero accent
 
 	// Action / state
-	actionFire: SCALE.blood[500], // muzzle flash + bullet hit
-	actionDamage: SCALE.blood[600], // damage flash overlay
-	actionHurt: SCALE.blood[300], // low HP warning text
-	actionKey: SCALE.amber[400], // KEY ACQUIRED indicator
-	actionPickup: SCALE.amber[300], // pickup glow
-	actionLava: SCALE.ember[400], // lava emissive
-	actionWin: SCALE.indigo[300], // win overlay accent (echoes Objexiv)
-	actionGoingBack: SCALE.ember[500], // going-back-strobe color
+	actionFire: BONE_PALETTE.accentDanger, // muzzle flash + bullet hit — crimson
+	actionDamage: BONE_PALETTE.accentDanger, // damage flash overlay
+	actionHurt: BONE_PALETTE.accentWarning, // low HP warning — safety-amber
+	actionKey: BONE_PALETTE.accentWarning, // KEY ACQUIRED — amber
+	actionPickup: BONE_PALETTE.accentWarning, // pickup glow — amber
+	actionLava: BONE_PALETTE.accentPrimary, // lava emissive — buster-orange
+	actionWin: BONE_PALETTE.accentGain, // win overlay accent — mint
+	actionGoingBack: BONE_PALETTE.accentPrimary, // going-back-strobe — orange
 
 	// 3D scene materials — semantic anchors for untextured weapon GLBs
 	// + scene props. Kept here (not in OBJEXOOM_PALETTE) so the 3D scene
