@@ -17,45 +17,26 @@
 5. Flip `[ ]` → `[x]` in the same commit; **delete the item from this file** in the next forward-going commit (per the prune-shipped-from-directive rule).
 6. Push + open one PR per coherent slice (lane completion or larger), not per commit (per the no-pr-per-commit rule).
 
-## Queue — Reference-asset drain (user-directed 2026-05-16)
+## Queue — InstancedField perf drain (user-directed 2026-05-16, continued)
 
-Mandate: drain unwired assets in `references/` and `references/_extracted/`. 798 GLBs/FBXs extracted; ~75 wired. Most-impactful pulls split across four lanes. Each lane ships as its own squash-merged PR.
+Reference-asset drain (Lanes C/D/E/F) drained via PR #75 (20 commits: PC1-4 + PD1-3+PD3b + PE1-3+PE4a-c + PF1-3). PRD `Parked` carries the next perf slice: migrate remaining per-instance `<primitive>` scatter fields to `InstancedGltfField` / `InstancedMultiGltfField` so per-instance draw calls collapse to one per (url, sub-mesh).
 
-### Lane C — Ghost Hunting Tools follow-ups (`docs/GHOST-HUNTING.md`)
+Already migrated (PB3 series): PropField, LargePropField, DebrisField, KitchenField.
+Remaining candidates (per PRD Parked note + reality-check):
 
-Builds on PR #72's EMF vertical. Each slice opens its own PR. Asset extraction lands first because every subsequent tool needs viewmodels from the same zip.
+- [ ] PT2 NatureField — blocked on Mega_Nature.glb scene-split (one mega GLB → per-plant GLBs). Architectural prerequisite, NOT a code slice.
+- [ ] PT3 LampField split — per-lamp pointLight children make naive instancing wrong; the lit subset needs scene-graph children for the lights, the unlit set can instance. Refactor into LampLitField (per-mount lights) + LampUnlitField (InstancedMultiGltfField). Defer past PT1.
 
-### Lane D — Unused weapon-pack variants (mirrors PB4)
-
-Pattern-match PB4's per-skin profile architecture for the ranged + extra-melee assets. Each slice = (a) wire the URL pool, (b) extend the profile table, (c) pick deterministic per-run, (d) contract test.
-
-
-### Lane E — Per-archetype scenery packs
-
-`references/_extracted/psx/psx-mega-pack-ii-v1-8/` carries 549 GLBs; the per-archetype scatter pools currently reference ~30. Wire the obvious archetype matches first. Each slice = inventory pass (Bash + Blender preview) → assign per-archetype prop GLBs → extend `PROP_CATALOGUE` / archetype prop pool → re-bake canonical archetype screenshot.
-
-
-### Lane F — Unwired horror-fantasy enemies
-
-`references/_extracted/psx/psx-horror-fantasy-megapack/` carries 23 enemy GLBs; current `EnemyKind` union has 24 entries, ~10 of which point at horror-fantasy GLBs. The unwired 13 (bigfoot, alien_invader, anomaly_monster, !NEW Abomination2, multiple clowns) are candidates for new variants of existing kinds or net-new kinds.
-
+PT1 is the first concrete code slice. PT2 needs an asset-pipeline step; PT3 needs an architectural decomposition. Both belong in the queue but PT1 unblocks the simplest perf win.
 
 ### Ship rules
-
-- One PR per lane item, squash-merged. Lane C items are sequential within the lane (PC1 unlocks PC2 etc); Lanes D, E, F can interleave.
-- Reviewer trio (code/security/simplification) dispatched locally per commit; findings folded forward.
-- Lighthouse gate must stay green on every merge; perf snapshot must stay green on every Lane D/E/F merge that touches scene/render or adds draw calls.
-- Canonical screenshot byte-stability is the gate: refLevel(0) must NOT change because of any of these slices. Per-archetype canonical screenshots ARE allowed to change when their archetype's scenery (PE) or enemy mix (PF3) changes — that's the point of the slice — but every change requires an explicit screenshot refresh commit.
+- Reviewer trio dispatched locally per commit; findings folded forward.
+- Canonical screenshot byte-stability stays the gate: refLevel(0) MUST NOT change. Trap visibility is per-spawn-position so seed=0 layout must match pre-migration pixel output.
 - Prune from this file in the commit that closes the item.
 
-## Closeout note (2026-05-16)
+## Closeout notes
 
-PB1–PB5 + PA1–PA2 fully shipped via PRs #66, #67, #68, #70, #71, #72, #73 (directive bookkeeping). See `CHANGELOG.md` / `git log` for the audit trail.
-
-ARCHETYPE INTERLEAVE drained — see commits `a4daceb` through
-`be4e4af` and the per-archetype audit docs under `docs/audits/`.
-
-MIGRATE lane (M4 + M5) cut as non-applicable — GitHub's
-repo-rename redirect handles all the durable substitutes;
-there is no separate OLD repo with a Pages deployment to
-manage. PRD §MIGRATE updated with the empirical findings.
+- Reference-asset drain (Lanes C/D/E/F) — PR #75, 20 commits 2026-05-16.
+- PB1–PB5 + PA1–PA2 — PRs #66, #67, #68, #70, #71, #72, #73.
+- ARCHETYPE INTERLEAVE drained — commits `a4daceb` through `be4e4af`.
+- MIGRATE lane (M4 + M5) cut as non-applicable — GitHub redirect handles it.

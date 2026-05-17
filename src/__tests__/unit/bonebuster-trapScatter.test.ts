@@ -5,6 +5,7 @@
 import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
 import {
 	disarmSector,
+	isTrapVisible,
 	spawnTraps,
 	TRAP_OVERLAP_RADIUS,
 	TRIGGER_OVERLAP_RADIUS,
@@ -144,5 +145,39 @@ describe("COV8 step-2 — disarmSector + triggerAt + trapAt", () => {
 	it("trapAt returns null when no overlap", () => {
 		const traps = spawnTraps(reseed(1));
 		expect(trapAt(traps, { x: 9999, y: 9999 }, TRAP_OVERLAP_RADIUS)).toBeNull();
+	});
+});
+
+describe("PT1 — isTrapVisible render-filter contract", () => {
+	it("non-disarmed hazards are visible", () => {
+		expect(isTrapVisible({ disarmed: false, def: { kind: "spike" } as never })).toBe(true);
+		expect(isTrapVisible({ disarmed: false, def: { kind: "blade" } as never })).toBe(true);
+		expect(isTrapVisible({ disarmed: false, def: { kind: "rolling" } as never })).toBe(true);
+	});
+
+	it("disarmed hazards drop out of the visible set", () => {
+		// PT1 instanced renderer filters disarmed hazards from the
+		// InstancedMultiGltfField input array — they stop drawing once
+		// the sector trigger fires.
+		expect(isTrapVisible({ disarmed: true, def: { kind: "spike" } as never })).toBe(false);
+		expect(isTrapVisible({ disarmed: true, def: { kind: "blade" } as never })).toBe(false);
+		expect(isTrapVisible({ disarmed: true, def: { kind: "rolling" } as never })).toBe(false);
+	});
+
+	it("triggers stay visible after activation as a tell", () => {
+		// Pressure plate visible-after-disarm is the design tell — it
+		// shows the player which plate they tripped. Without this case
+		// the PT1 instance filter would mass-hide every trigger and
+		// the visual feedback would disappear.
+		expect(isTrapVisible({ disarmed: false, def: { kind: "trigger" } as never })).toBe(true);
+		expect(isTrapVisible({ disarmed: true, def: { kind: "trigger" } as never })).toBe(true);
+	});
+
+	it("post-spawn-then-disarm flow leaves only triggers visible", () => {
+		const traps = spawnTraps(SECTOR_FIXTURE);
+		if (traps.length === 0) return;
+		for (const t of traps) t.disarmed = true;
+		const visible = traps.filter(isTrapVisible);
+		for (const v of visible) expect(v.def.kind).toBe("trigger");
 	});
 });

@@ -241,6 +241,11 @@ export function BoneBusterScene({
 	// COV8 step-2 — per-map trap scatter (hazards + triggers per sector).
 	// Tick damage + lever-disarm-sector handled in the main per-frame loop.
 	const trapsRef = useRef<TrapInstance[]>(spawnTraps(map));
+	// PT1 — version counter bumped on every sector-disarm so TrapField
+	// re-memos its visible-traps filter (which drops disarmed non-trigger
+	// traps from the InstancedMultiGltfField instance buffer). The ref
+	// stores the latest count; the state pair drives React re-renders.
+	const [trapsDisarmedVersion, setTrapsDisarmedVersion] = useState(0);
 	// Per-trap last-tick timestamp so the player takes one damage pulse
 	// per TRAP_TICK_COOLDOWN_MS while overlapping a hazard.
 	const lastTrapTickAt = useRef<Map<number, number>>(new Map());
@@ -633,6 +638,11 @@ export function BoneBusterScene({
 			trigger.disarmed = true;
 			const count = disarmSector(trapsRef.current, trigger.sectorId);
 			if (count > 1) playPickup();
+			// PT1 — bump the version so TrapField re-memos the visible
+			// filter and the disarmed hazards drop from the instanced
+			// buffer this render cycle (not on whatever next ambient
+			// render happens to fire).
+			setTrapsDisarmedVersion((v) => v + 1);
 		}
 		// Then check for hazard overlap (per-trap ticked damage).
 		const hazard = trapAt(trapsRef.current, { x: px, y: py }, TRAP_OVERLAP_RADIUS);
@@ -1134,7 +1144,7 @@ export function BoneBusterScene({
 			{/* COV8 step-2 — trap scatter (0-2 hazards + 1 trigger per
 			    sector, archetype-biased). Tick damage + lever-disarm
 			    flow lives in the per-frame loop in BoneBusterScene. */}
-			<TrapField traps={trapsRef.current} />
+			<TrapField traps={trapsRef.current} disarmedVersion={trapsDisarmedVersion} />
 
 			{/* COV13 step-2 — library-archetype kitchen scatter.
 			    Empty on non-library archetypes. */}
