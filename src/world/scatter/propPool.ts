@@ -245,7 +245,7 @@ export const PROP_CATALOGUE = {
 	},
 	// PE3 — PSX-Electrical scatter additions for the sewer archetype.
 	// Pipes / valve / machinery read as industrial scenery and replace
-	// the corridor-flavored placeholders previously serving sewer.
+	// the corridor-flavored stand-ins previously serving sewer.
 	electricalValve: {
 		id: "electrical_valve",
 		url: A("/assets/models/props/scatter/sewer/electrical_valve.glb"),

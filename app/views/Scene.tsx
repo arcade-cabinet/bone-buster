@@ -1076,10 +1076,15 @@ export function BoneBusterScene({
 			{hasUvFlashlight && <UvFlashlight />}
 			{/* PC4 — active crucifix placements. Re-renders when
 			    crucifixesVersion bumps (push on place / filter on
-			    expiry). Always mounted (no owner-gate) — the list is
-			    empty when no crucifix is active, so the cost collapses
-			    to a single empty Array.map. */}
-			<CrucifixField crucifixes={activeCrucifixesRef.current} key={crucifixesVersion} />
+			    expiry); the version is passed as a prop (not a key)
+			    so existing CrucifixMesh children — already keyed by
+			    `c.id` for stable identity — keep their accumulated
+			    yaw + fade state across additions/expirations. PT5
+			    review fold: a `key={crucifixesVersion}` would force
+			    every existing crucifix to remount on every placement,
+			    snapping rotations back to 0. Always mounted (no
+			    owner-gate) — empty list collapses to one Array.map. */}
+			<CrucifixField crucifixes={activeCrucifixesRef.current} version={crucifixesVersion} />
 
 			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.35]} />
 			{/* I11 — muzzle-flash point light. Lives at camera position,

@@ -453,7 +453,7 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 		16,
 		Math.max(4, Math.round(baseEnemyCount * ARCHETYPE_ENEMY_MULTIPLIER[archetypeIdx])),
 	);
-	// Base trio placeholder. Production paths remap through
+	// Base trio stand-in. Production paths remap through
 	// `remapEnemyMix` (see app/views/Scene.tsx:141) before consuming
 	// `enemySpawns`, but cycle all three base kinds so any caller that
 	// reads the raw list (incl. tests + the bypass-remap pickup path)

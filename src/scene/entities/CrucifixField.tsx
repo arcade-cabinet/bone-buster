@@ -18,7 +18,21 @@ import { SkeletonUtils } from "three-stdlib";
  * per-frame tick (the Scene prunes expired entries) — this component
  * just renders whatever is in the array.
  */
-export function CrucifixField({ crucifixes }: { crucifixes: readonly CrucifixInstance[] }) {
+export function CrucifixField({
+	crucifixes,
+	version: _version,
+}: {
+	crucifixes: readonly CrucifixInstance[];
+	/**
+	 * Bumped by Scene whenever the underlying ref-backed active list
+	 * mutates (push on place, filter on expiry). Re-renders this
+	 * component without remounting children — each `CrucifixMesh` is
+	 * keyed by `c.id` so additions/removals are minimal-diff and
+	 * already-mounted crucifixes keep their accumulated yaw + fade
+	 * state. The value itself is unused; only the prop change matters.
+	 */
+	version: number;
+}) {
 	return (
 		<>
 			{crucifixes.map((c) => (

@@ -293,7 +293,7 @@ export function preloadLootPickups(): void {
  * LootPickupMesh's approach).
  *
  * Pre-PC1 this rendered as a procedural dark-grey brick with three
- * stacked green emissive bars (PB5 step-2 placeholder). The procedural
+ * stacked green emissive bars (PB5 step-2 stand-in). The procedural
  * fallback is deleted alongside this swap — the asset is the source
  * of truth now.
  */
