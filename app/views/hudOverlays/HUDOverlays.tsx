@@ -1,6 +1,7 @@
 import type { Difficulty } from "@store/settings";
 import { BossBanner } from "@views/hudOverlays/BossBanner";
 import { DifficultyChip } from "@views/hudOverlays/DifficultyChip";
+import { EmfChip } from "@views/hudOverlays/EmfChip";
 import { GoingBackOverlay } from "@views/hudOverlays/GoingBackOverlay";
 import { KeyPickupCeremony } from "@views/hudOverlays/KeyPickupCeremony";
 import { KillBanner } from "@views/hudOverlays/KillBanner";
@@ -27,6 +28,7 @@ import type { GameState, LevelPhase } from "@views/Shell";
  *   - PauseOverlay             (state: status === "paused")      POL34
  *   - BossBanner               (event: bossSpotted/bossDefeated) POL36
  *   - KillBanner                (event: enemyKilled, non-boss)   PB2
+ *   - EmfChip                   (event: emfReading, owner-gated) PB5
  */
 export function HUDOverlays({
 	phase,
@@ -61,6 +63,7 @@ export function HUDOverlays({
 			<MissionCompleteCeremony state={state} onReturnToMenu={onReturnToMenu} />
 			<BossBanner />
 			<KillBanner />
+			{state.hasEmfReader && <EmfChip />}
 		</>
 	);
 }

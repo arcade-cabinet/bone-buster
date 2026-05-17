@@ -62,6 +62,11 @@ export type PickupKind =
 	// J1 — flashlight pickup. Carrying it grants a forward cone of
 	// directional light; without it the level reads as dark.
 	| "flashlight"
+	// PB5 step-2 — EMF reader pickup. Carrying it activates the HUD
+	// EMF chip (1-5 step readout of nearest-enemy proximity). Passive
+	// detection only; doesn't replace any weapon or change damage. See
+	// `docs/GHOST-HUNTING.md` for the slice plan.
+	| "emfReader"
 	// COV12 step-2 — rare hero-tier bonus drop. Exactly one per map,
 	// placed at the centroid of the sector farthest from playerSpawn.
 	// On collect, dispatches a kind-specific bonus picked from the COV12
@@ -466,8 +471,17 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 		Math.max(4, Math.round(basePickupCount * ARCHETYPE_PICKUP_MULTIPLIER[archetypeIdx])),
 	);
 	const wantsFlame = (seed >>> 0) % 3 === 0;
+	// PB5 step-2 — EMF reader spawns on every 4th seed (seed%4==0). One
+	// per map. Ownership resets on level transition — Shell.tsx
+	// re-initializes hasEmfReader: false alongside hasFlashlight at
+	// every new map / new run / respawn site, so the player re-acquires
+	// the reader on each EMF-eligible level. Keeping the cadence sparse
+	// so the tool reads as a discovery beat rather than a guaranteed
+	// every-map find.
+	const wantsEmf = (seed >>> 0) % 4 === 0;
 	const reserved: PickupKind[] = ["chaingunAmmo", "shotgunAmmo"];
 	if (wantsFlame) reserved.push("flamethrowerAmmo");
+	if (wantsEmf) reserved.push("emfReader");
 	const pickupSpawns: PickupSpawn[] = pickupCandidates
 		.slice(0, pickupTotal)
 		.map((position, idx) => {

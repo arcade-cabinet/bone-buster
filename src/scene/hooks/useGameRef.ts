@@ -41,7 +41,7 @@ import { useRef } from "react";
  */
 const AMMO_INCREMENT: Record<
 	PickupKind,
-	{ weapon: WeaponId; amount: number } | "health" | "flashlight" | "loot"
+	{ weapon: WeaponId; amount: number } | "health" | "flashlight" | "loot" | "emfReader"
 > = {
 	health: "health",
 	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
@@ -53,6 +53,10 @@ const AMMO_INCREMENT: Record<
 	flamethrowerAmmo: { weapon: "flamethrower", amount: WEAPONS.flamethrower.pickupAmmo },
 	flashlight: "flashlight",
 	loot: "loot",
+	// PB5 step-2 — EMF reader on-collect flips the ownership flag. No
+	// weapon slot, no ammo: it's a passive detection tool consumed by
+	// the HUD chip.
+	emfReader: "emfReader",
 };
 
 export type UseGameRefDeps = Readonly<{
@@ -226,6 +230,13 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 					playFlashlightClick();
 					dispatch({ type: "flashlightAcquired" });
 					return { ...prev, hasFlashlight: true };
+				}
+				if (action === "emfReader") {
+					// PB5 step-2 — passive tool pickup. No fade, no dedicated
+					// sting in step-2; the POL30 pickupCollected dispatch
+					// above already feeds the PickupChip slot. Future audio
+					// commit can layer in the Phasmo-style EMF click.
+					return { ...prev, hasEmfReader: true };
 				}
 				if (action === "loot") {
 					// COV12 step-2 — kind-specific bonus from pickLootKind(seed).

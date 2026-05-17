@@ -104,6 +104,7 @@ import {
 import { tickEnemyLoop } from "../../src/scene/tick/enemyTickLoop";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
 import { createTimeScaleBus } from "../../src/scene/tick/timeScaleBus";
+import { pickEmfReading } from "../../src/world/ghostHunting";
 import { pickMeleeProfile } from "../../src/world/meleeSkins";
 
 type SceneProps = Readonly<{
@@ -119,6 +120,10 @@ type SceneProps = Readonly<{
 	// J1 — flashlight ownership. When false, ambient/directional drop to
 	// near-dark; when true, a SpotLight tracks camera yaw + pitch.
 	hasFlashlight: boolean;
+	// PB5 step-2 — EMF reader ownership. When false, the Scene skips
+	// the per-frame nearest-enemy distance calc and dispatches no
+	// emfReading events; the HUD chip stays hidden.
+	hasEmfReader: boolean;
 }>;
 
 export function BoneBusterScene({
@@ -131,6 +136,7 @@ export function BoneBusterScene({
 	settings,
 	phase,
 	hasFlashlight,
+	hasEmfReader,
 }: SceneProps) {
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
 	// E13 step-3 — per-archetype enemy mix. Remap spawn `kind`s through
@@ -842,6 +848,40 @@ export function BoneBusterScene({
 			gameRef.current.onPickupKey();
 			playPickup();
 		}
+	});
+
+	// PB5 step-2 — EMF reader per-frame nearest-enemy distance dispatch.
+	// Throttled to 100 ms (≈10 Hz) so HUD re-renders stay cheap; the chip
+	// animation interpolates smoothly between the discrete level steps.
+	// Gated on hasEmfReader — when the player doesn't own the reader the
+	// per-frame cost collapses to one boolean check.
+	const lastEmfDispatchRef = useRef(0);
+	const lastEmfLevelRef = useRef<-1 | 0 | 1 | 2 | 3 | 4 | 5>(-1);
+	useFrame(() => {
+		if (!hasEmfReader || !active) return;
+		const now = performance.now();
+		if (now - lastEmfDispatchRef.current < 100) return;
+		lastEmfDispatchRef.current = now;
+		// Nearest-enemy distance in tiles. Camera position is world units;
+		// 1 tile = 1 world unit in Bone Buster's coordinate space (TILE
+		// constant), so the raw Euclidean distance IS the tile count.
+		let bestDistSq = Number.POSITIVE_INFINITY;
+		for (const enemy of enemiesRef.current) {
+			if (enemy.dead) continue;
+			const ex = enemy.position.x - camera.position.x;
+			const ez = enemy.position.y - camera.position.z;
+			const d = ex * ex + ez * ez;
+			if (d < bestDistSq) bestDistSq = d;
+		}
+		const dist = Number.isFinite(bestDistSq) ? Math.sqrt(bestDistSq) : Number.POSITIVE_INFINITY;
+		const level = pickEmfReading(dist);
+		// Skip the dispatch when the level hasn't changed since the last
+		// emit — the HUD chip only needs deltas. Initial value (-1) always
+		// triggers the first dispatch so the chip can clear an inherited
+		// state.
+		if (level === lastEmfLevelRef.current) return;
+		lastEmfLevelRef.current = level;
+		dispatch({ type: "emfReading", level });
 	});
 
 	// POL44 — muzzle-light decay at positive priority. The fire event

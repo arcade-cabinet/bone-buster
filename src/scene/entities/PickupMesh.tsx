@@ -250,6 +250,37 @@ export function PickupMesh({
 					</mesh>
 				</group>
 			)}
+			{pickup.kind === "emfReader" && (
+				/* PB5 step-2 — EMF reader: handheld brick with a green
+				   indicator strip. Renders as a small dark-grey rectangular
+				   prism with three stacked emissive bars on the front face
+				   so it reads as an LED bar-graph from across a room.
+				   Body uses ROLE.sceneWeaponMetalDark (the same neutral
+				   used for chaingun / shotgun bodies so the reader reads
+				   as the same material family). Indicator bars use
+				   ROLE.actionWin (mint gain — matches EMF_TOKEN's "active
+				   signal" tier in the HUD chip). */
+				<group>
+					<mesh>
+						<boxGeometry args={[0.2, 0.3, 0.08]} />
+						<meshStandardMaterial
+							color={ROLE.sceneWeaponMetalDark}
+							metalness={0.5}
+							roughness={0.6}
+						/>
+					</mesh>
+					{[-0.06, 0, 0.06].map((y) => (
+						<mesh key={y} position={[0, y, 0.045]}>
+							<boxGeometry args={[0.14, 0.03, 0.005]} />
+							<meshStandardMaterial
+								color={ROLE.actionWin}
+								emissive={ROLE.actionWin}
+								emissiveIntensity={1.6}
+							/>
+						</mesh>
+					))}
+				</group>
+			)}
 		</group>
 	);
 }
