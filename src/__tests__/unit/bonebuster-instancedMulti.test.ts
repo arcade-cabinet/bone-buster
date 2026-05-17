@@ -1,6 +1,7 @@
 import { Group, Matrix4, Mesh, MeshStandardMaterial, PlaneGeometry, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import {
+	chunkInstances,
 	composeInstanceMatrix,
 	findAllMeshes,
 	findFirstMesh,
@@ -142,5 +143,42 @@ describe("PB3 findFirstMesh / findAllMeshes", () => {
 		const dx = worldReversed.x - worldA.x;
 		const dz = worldReversed.z - worldA.z;
 		expect(Math.hypot(dx, dz)).toBeGreaterThan(1);
+	});
+});
+
+describe("PB3 fold — chunkInstances", () => {
+	it("returns [] for empty input", () => {
+		expect(chunkInstances([], 4)).toEqual([]);
+	});
+
+	it("returns one batch when items.length <= size", () => {
+		expect(chunkInstances([1, 2, 3], 4)).toEqual([[1, 2, 3]]);
+		expect(chunkInstances([1, 2, 3, 4], 4)).toEqual([[1, 2, 3, 4]]);
+	});
+
+	it("splits into N batches of `size` plus a smaller tail", () => {
+		// The regression this guards: prior LargePropField cap of 16
+		// silently dropped every instance past index 15 for a URL.
+		// chunkInstances must emit a full additional batch for the
+		// remainder, not a truncation.
+		const items = Array.from({ length: 35 }, (_, i) => i);
+		const chunks = chunkInstances(items, 16);
+		expect(chunks).toHaveLength(3);
+		expect(chunks[0]).toHaveLength(16);
+		expect(chunks[1]).toHaveLength(16);
+		expect(chunks[2]).toHaveLength(3);
+		// Every item is preserved (no truncation).
+		expect(chunks.flat()).toEqual(items);
+	});
+
+	it("preserves input order across batches", () => {
+		const items = [10, 20, 30, 40, 50, 60, 70];
+		const chunks = chunkInstances(items, 3);
+		expect(chunks.flat()).toEqual(items);
+	});
+
+	it("throws when size <= 0 (caller bug)", () => {
+		expect(() => chunkInstances([1, 2], 0)).toThrow(/size must be > 0/);
+		expect(() => chunkInstances([1, 2], -1)).toThrow(/size must be > 0/);
 	});
 });

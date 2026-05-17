@@ -85,6 +85,24 @@ export function groupByUrl<T>(
 }
 
 /**
+ * PB3 fold — partition an oversized URL group into fixed-size batches.
+ * Lets the scatter fields render N InstancedMeshes per URL instead of
+ * one (with the prior MAX_PER_URL cap silently dropping every instance
+ * past index N−1, which turns a perf cap into missing world geometry).
+ *
+ * Returns `[]` for an empty input. For a non-empty input the last
+ * batch is the only one that may be smaller than `size`.
+ */
+export function chunkInstances<T>(items: readonly T[], size: number): T[][] {
+	if (size <= 0) throw new Error(`chunkInstances: size must be > 0, got ${size}`);
+	const chunks: T[][] = [];
+	for (let i = 0; i < items.length; i += size) {
+		chunks.push(items.slice(i, i + size));
+	}
+	return chunks;
+}
+
+/**
  * Compose a world-space Matrix4 for one instance, into the shared
  * SCRATCH_MATRIX. Caller MUST consume the matrix immediately (e.g.
  * `im.setMatrixAt(i, composeInstanceMatrix(inst))`) since the next
