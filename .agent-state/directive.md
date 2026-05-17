@@ -46,7 +46,6 @@ Pattern-match PB4's per-skin profile architecture for the ranged + extra-melee a
 
 `references/_extracted/psx/psx-horror-fantasy-megapack/` carries 23 enemy GLBs; current `EnemyKind` union has 24 entries, ~10 of which point at horror-fantasy GLBs. The unwired 13 (bigfoot, alien_invader, anomaly_monster, !NEW Abomination2, multiple clowns) are candidates for new variants of existing kinds or net-new kinds.
 
-- [ ] PF2 Add `bigfoot` as a new EnemyKind. Wire `bigfootfbx.glb` → `public/assets/models/enemies/horror/bigfoot.glb`. Rattler-archetype FSM (close-range melee, no ranged). HP between rattler and bighoss. New MELEE_HP_TIERS row. Per the PF1 audit, this is the ONLY truly novel kind in the unwired set — everything else is a skin variant.
 - [ ] PF2b Add three skin variants on existing kinds (per PF1 audit): cloaked clown skin on `jester`, eyenoid skin on `oneye`, muscular abomination skin on `heap`/`heap2`. Pure asset + roster extension; no FSM, no EnemyKind enum change, no spawn-table change.
 - [ ] PF3 Spawn-table integration — extend `src/ai/enemyMix.ts` to include `bigfoot` in courtyard (primary) + arena (low-weight). Canonical archetype screenshot refresh; mobile-perf regression check stays green.
 

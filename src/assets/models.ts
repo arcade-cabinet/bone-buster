@@ -284,6 +284,8 @@ export const ENEMY_MODELS: Record<EnemyKind, EnemyModel> = {
 	swiney: singleSkinModel("/assets/models/enemies/horror/swiney.glb", 1.3),
 	mrZ: singleSkinModel("/assets/models/enemies/horror/mrZ.glb", 1.7),
 	lupin: singleSkinModel("/assets/models/enemies/horror/lupin.glb", 1.8),
+	// PF2 — bigfoot stands tallest of the rattler-archetype melee kinds.
+	bigfoot: singleSkinModel("/assets/models/enemies/horror/bigfoot.glb", 2.1),
 };
 
 export type WeaponModel = {

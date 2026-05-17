@@ -66,6 +66,11 @@ export const BASE_KIND: Record<Enemy["kind"], BaseKind> = {
 	swiney: "bouncer", // fast aggressive
 	mrZ: "rattler", // 3-shot zombie
 	lupin: "bouncer", // werewolf aggressive
+	// PF2 — fur-clad brawler. Rattler-archetype: close-range melee,
+	// no ranged. Tankier than baseline rattler but slower-attacking;
+	// the HP boost (1.8× RATTLER_HP) compensates for the lower DPS
+	// silhouette.
+	bigfoot: "rattler",
 };
 
 // Y2 — per-kind wander tuning. Rattlers wander tight, bouncers

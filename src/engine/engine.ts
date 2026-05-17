@@ -43,7 +43,12 @@ export type EnemyKind =
 	| "goliath"
 	| "swiney"
 	| "mrZ"
-	| "lupin";
+	| "lupin"
+	// PF2 — sole truly novel kind from the unwired horror-fantasy set
+	// per docs/audits/horror-fantasy-enemy-audit.md. Distinct fur-clad
+	// brawler silhouette; everything else in the unwired set is a skin
+	// variant on an existing kind.
+	| "bigfoot";
 
 export type EnemySpawn = Readonly<{
 	kind: EnemyKind;
@@ -729,6 +734,10 @@ function enemyBaseHp(kind: EnemyKind): number {
 			return Math.floor(RATTLER_HP * 0.7);
 		case "bouncer":
 			return Math.floor(RATTLER_HP * 1.5);
+		case "bigfoot":
+			// PF2 — between rattler (1.0×) and bighoss/heap-tier; tankier
+			// brawler than the baseline melee, lighter than the heavy tier.
+			return Math.floor(RATTLER_HP * 1.8);
 		default:
 			return RATTLER_HP;
 	}
