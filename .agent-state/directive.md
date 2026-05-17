@@ -1,6 +1,6 @@
 # Bone Buster — live work queue
 
-**Status:** ACTIVE
+**Status:** RELEASED
 **Branch:** one long-running perf/parked branch per slice. PRs squash-merge to main when their slice is fully verified + reviewers folded.
 **Authority chain:** DESIGN > ARCHITECTURE > DECISIONS > **PRD** > this file > ROADMAP.
 **Spec:** [`docs/PRD.md`](../docs/PRD.md) carries the user stories, surfaces, and acceptance bars. Each item below points at its PRD section for the why and the verifiable acceptance.
@@ -25,10 +25,7 @@ Mandate: drain everything — directive, PRD §Parked, residual perf wins surfac
 (empty — PA1 vendor-split + PA2 title-preload shipped via PR #66 using Rolldown's `advancedChunks.groups` API + Vike's `injectFilter` for font auto-preload suppression.)
 
 ### Lane B — PRD §Parked drain
-- [ ] PB2 Per-variant kill-popup names — e.g. "You busted a Plaguebeak (Stained-Cassock variant)". Surface: kill-confirmation UI; data: per-enemy variant tag already on spawn record. Small UX slice.
-- [ ] PB3 InstancedField migration — PropField + LargePropField + TrapField + NpcField + NatureField → InstancedGltfField, ~150 fewer arena draw calls per the PR #62 perf reviewer. Per-field notes in PRD §Parked: LampField needs split (per-lamp pointLight children); NpcField NOT a candidate (per-instance animation mixer); NatureField needs Mega_Nature.glb split into per-plant GLBs first. Use-case-enumeration pass required before opening code.
-- [ ] PB4 Slasher melee weapons — chainsaw (loud-attract), meat-hook (pull), axe (heavy-slow) as distinct damage-profile variants. Gameplay-design slice.
-- [ ] PB5 Ghost Hunting Tools layer — spirit box, EMF reader, UV flashlight, walkie-talkie, crucifix, tape recorder. Big gameplay-layer lift; brainstormed in `docs/REBRAND.md`. Last because biggest scope + needs design-doc pass before implementation.
+(empty — PB1/PB2/PB3/PB4/PB5 all shipped: PR #67 type rename, PR #68 kill banner, PR #70 InstancedMultiGltfField for prop/large-prop fields, PR #71 per-skin melee damage profiles, PR #72 EMF reader as the PB5 vertical slice. Follow-up ghost-hunting tools — spirit box / UV flashlight / crucifix — land as separate slices once the EMF shape proves out; see `docs/GHOST-HUNTING.md` for the slice plan.)
 
 ### Ship rules
 - One PR per lane item, squash-merged.
