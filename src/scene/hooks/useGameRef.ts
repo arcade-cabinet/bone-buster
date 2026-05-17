@@ -32,6 +32,7 @@ import type { FadeKind, GameRef, GameState } from "@views/Shell";
 import { GOING_BACK_BUDGET_MS } from "@views/Shell";
 import { LOOT_BONUSES, pickLootKind } from "@world/loot";
 import { useRef } from "react";
+import { flushSync } from "react-dom";
 
 /**
  * Per-pickup-kind action table. Lives in this module rather than in
@@ -41,7 +42,14 @@ import { useRef } from "react";
  */
 const AMMO_INCREMENT: Record<
 	PickupKind,
-	{ weapon: WeaponId; amount: number } | "health" | "flashlight" | "loot" | "emfReader"
+	| { weapon: WeaponId; amount: number }
+	| "health"
+	| "flashlight"
+	| "loot"
+	| "emfReader"
+	| "spiritBox"
+	| "uvFlashlight"
+	| "crucifix"
 > = {
 	health: "health",
 	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
@@ -57,18 +65,29 @@ const AMMO_INCREMENT: Record<
 	// weapon slot, no ammo: it's a passive detection tool consumed by
 	// the HUD chip.
 	emfReader: "emfReader",
+	// PC2 — Spirit box on-collect flips the ownership flag. Same passive
+	// tool shape as the EMF reader.
+	spiritBox: "spiritBox",
+	// PC3 — UV flashlight on-collect flips the ownership flag. Mounts
+	// the second purple SpotLight + drives the per-frame UV-cone reveal
+	// of uvHidden-tagged enemies.
+	uvFlashlight: "uvFlashlight",
+	// PC4 — Crucifix on-collect increments the inventory counter. The
+	// player can stack several across a run and drop them one at a time
+	// with key `9`.
+	crucifix: "crucifix",
 };
 
 export type UseGameRefDeps = Readonly<{
 	setState: React.Dispatch<React.SetStateAction<GameState>>;
-	triggerFadeRef: React.MutableRefObject<(kind: FadeKind, intensity?: number) => void>;
+	triggerFadeRef: React.RefObject<(kind: FadeKind, intensity?: number) => void>;
 	settings: BoneBusterSettings;
 	tuning: DifficultyTuning;
 	seed: number;
 	level: LevelChoice;
 }>;
 
-export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef> {
+export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 	const lastPlayerHitAt = useRef(0);
 	// Re-point on every render so callbacks always see current deps.
 	const depsRef = useRef(deps);
@@ -145,40 +164,53 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 			// to the original spawn. Level-clear fires on `onReachSpawn`.
 			// L2 — goal-collect drops chaingun + shotgun + flamethrower so the
 			// going-back fight has firepower (ref's "RealDoor drop" pattern).
-			setState((prev) => {
-				if (prev.status !== "playing") return prev;
-				if (prev.phase === "going_back") return prev;
-				// D3 — RealDoor drop grants chaingun + shotgun + flamethrower.
-				// Fire weaponAcquired for any the player didn't already
-				// own, with the same acquiredRef dedup gate as the pickup
-				// path. setState callback is the right place: we know
-				// `prev.phase !== "going_back"` so this only runs once
-				// per level, and the snapshot is reliable inside that
-				// single-callback window.
-				for (const w of ["chaingun", "shotgun", "flamethrower"] as const) {
-					if (!prev.ownedWeapons[w] && !acquiredRef.current.has(w)) {
-						acquiredRef.current.add(w);
-						dispatch({ type: "weaponAcquired", weapon: w });
+			//
+			// PT4 — dispatches buffered in the setState callback and flushed
+			// AFTER setState returns. Calling dispatch synchronously inside
+			// the updater fires listener setStates while React is mid-render
+			// of BoneBusterShell, producing the "Cannot update a component
+			// while rendering a different component" console.error.
+			//
+			// flushSync forces the updater to run before this call returns,
+			// so the buffer is guaranteed to be populated when read below.
+			// Without flushSync, React 19 batching may defer the updater
+			// past this dispatch loop and silently drop weaponAcquired
+			// events.
+			const toDispatch: Array<{ weapon: "chaingun" | "shotgun" | "flamethrower" }> = [];
+			flushSync(() => {
+				setState((prev) => {
+					if (prev.status !== "playing") return prev;
+					if (prev.phase === "going_back") return prev;
+					// D3 — RealDoor drop grants chaingun + shotgun + flamethrower.
+					// Fire weaponAcquired for any the player didn't already
+					// own, with the same acquiredRef dedup gate as the pickup
+					// path. Effects are buffered; the dispatch happens below.
+					for (const w of ["chaingun", "shotgun", "flamethrower"] as const) {
+						if (!prev.ownedWeapons[w] && !acquiredRef.current.has(w)) {
+							acquiredRef.current.add(w);
+							toDispatch.push({ weapon: w });
+						}
 					}
-				}
-				return {
-					...prev,
-					phase: "going_back",
-					// POL37 — going-back deadline. Countdown overlay reads this.
-					goingBackDeadlineMs: performance.now() + GOING_BACK_BUDGET_MS,
-					ownedWeapons: {
-						...prev.ownedWeapons,
-						chaingun: true,
-						shotgun: true,
-						flamethrower: true,
-					},
-					ammo: {
-						...prev.ammo,
-						shotgun: Math.max(prev.ammo.shotgun, WEAPONS.shotgun.pickupAmmo + 4),
-						flamethrower: Math.max(prev.ammo.flamethrower, WEAPONS.flamethrower.pickupAmmo + 10),
-					},
-				};
+					return {
+						...prev,
+						phase: "going_back",
+						// POL37 — going-back deadline. Countdown overlay reads this.
+						goingBackDeadlineMs: performance.now() + GOING_BACK_BUDGET_MS,
+						ownedWeapons: {
+							...prev.ownedWeapons,
+							chaingun: true,
+							shotgun: true,
+							flamethrower: true,
+						},
+						ammo: {
+							...prev.ammo,
+							shotgun: Math.max(prev.ammo.shotgun, WEAPONS.shotgun.pickupAmmo + 4),
+							flamethrower: Math.max(prev.ammo.flamethrower, WEAPONS.flamethrower.pickupAmmo + 10),
+						},
+					};
+				});
 			});
+			for (const ev of toDispatch) dispatch({ type: "weaponAcquired", weapon: ev.weapon });
 		},
 		onReachSpawn: () => {
 			const { setState, triggerFadeRef, settings } = depsRef.current;
@@ -213,75 +245,123 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 				},
 			}));
 		},
+		onConsumeCrucifix: () => {
+			// PC4 — atomic check-and-decrement. The functional updater isn't
+			// guaranteed to execute synchronously before setState returns
+			// under React 19 batching, so wrap in flushSync to force the
+			// `consumed` flag to settle before this function returns.
+			// Returning false signals "nothing in inventory, no-op the
+			// caller's placement" so Scene doesn't push a phantom entry.
+			let consumed = false;
+			flushSync(() => {
+				depsRef.current.setState((prev) => {
+					if (prev.crucifixes <= 0) return prev;
+					consumed = true;
+					return { ...prev, crucifixes: prev.crucifixes - 1 };
+				});
+			});
+			return consumed;
+		},
 		onCollectPickup: (kind) => {
 			const { setState, triggerFadeRef, seed } = depsRef.current;
 			// POL30 — fire pickup-collected event for PickupChip HUD overlay.
 			// Key pickups don't route here — they have onPickupKey + POL22.
 			dispatch({ type: "pickupCollected", kind });
 			const action = AMMO_INCREMENT[kind];
-			setState((prev) => {
-				if (action === "health") {
-					// L1 — +1 HP per pickup on the 0-9 scale.
-					return { ...prev, hp: Math.min(prev.maxHp, prev.hp + 1) };
-				}
-				if (action === "flashlight") {
-					triggerFadeRef.current("flash");
-					// POL28 — flashlight click-on sting (distinct from pickup chime).
-					playFlashlightClick();
-					dispatch({ type: "flashlightAcquired" });
-					return { ...prev, hasFlashlight: true };
-				}
-				if (action === "emfReader") {
-					// PB5 step-2 — passive tool pickup. No fade, no dedicated
-					// sting in step-2; the POL30 pickupCollected dispatch
-					// above already feeds the PickupChip slot. Future audio
-					// commit can layer in the Phasmo-style EMF click.
-					return { ...prev, hasEmfReader: true };
-				}
-				if (action === "loot") {
-					// COV12 step-2 — kind-specific bonus from pickLootKind(seed).
-					const lootKind = pickLootKind(seed);
-					if (lootKind === "bottles") {
-						// +LOOT_BONUSES.bottlesHp (potion stash) — clamp to maxHp.
-						return {
-							...prev,
-							hp: Math.min(prev.maxHp, prev.hp + LOOT_BONUSES.bottlesHp),
-						};
+			// PT4 — buffer dispatches that must fire AFTER setState. Calling
+			// dispatch inside the updater fires listener setStates while
+			// React is mid-render of the consumer (BoneBusterShell), producing
+			// the "Cannot update a component while rendering a different
+			// component" console.error. flushSync guarantees the buffer is
+			// populated before the dispatch loop below — without it, React
+			// 19 may defer the updater past the dispatch and drop events.
+			let dispatchFlashlight = false;
+			let dispatchWeapon: WeaponId | null = null;
+			flushSync(() => {
+				setState((prev) => {
+					if (action === "health") {
+						// L1 — +1 HP per pickup on the 0-9 scale.
+						return { ...prev, hp: Math.min(prev.maxHp, prev.hp + 1) };
 					}
-					if (lootKind === "books") {
-						// Knowledge → bonus ammo across both ranged weapons.
-						return {
-							...prev,
-							ammo: {
-								...prev.ammo,
-								chaingun: prev.ammo.chaingun + WEAPONS.chaingun.pickupAmmo,
-								shotgun: prev.ammo.shotgun + WEAPONS.shotgun.pickupAmmo,
-							},
-						};
+					if (action === "flashlight") {
+						triggerFadeRef.current("flash");
+						// POL28 — flashlight click-on sting (distinct from pickup chime).
+						playFlashlightClick();
+						dispatchFlashlight = true;
+						return { ...prev, hasFlashlight: true };
 					}
-					return { ...prev, score: prev.score + LOOT_BONUSES.treasureScore };
-				}
-				// D3 — first-time weapon acquisition fires a typed event for
-				// the PickupChip HUD slot's chip-brighten beat. Dedup
-				// gate is `acquiredRef.current` (a stable ref-tracked
-				// set) — `prev.ownedWeapons` can't be trusted because
-				// React batches multiple setState callbacks against the
-				// same snapshot, so two ammo pickups for the same weapon
-				// in the same tick would both see `prev.X === false`.
-				if (!acquiredRef.current.has(action.weapon)) {
-					acquiredRef.current.add(action.weapon);
-					dispatch({ type: "weaponAcquired", weapon: action.weapon });
-				}
-				return {
-					...prev,
-					ammo: {
-						...prev.ammo,
-						[action.weapon]: prev.ammo[action.weapon] + action.amount,
-					},
-					ownedWeapons: { ...prev.ownedWeapons, [action.weapon]: true },
-					weapon: prev.weapon === "pistol" ? action.weapon : prev.weapon,
-				};
+					if (action === "emfReader") {
+						// PB5 step-2 — passive tool pickup. No fade, no dedicated
+						// sting in step-2; the POL30 pickupCollected dispatch
+						// above already feeds the PickupChip slot. Future audio
+						// commit can layer in the Phasmo-style EMF click.
+						return { ...prev, hasEmfReader: true };
+					}
+					if (action === "spiritBox") {
+						// PC2 — same passive shape as the EMF reader; flips the
+						// ownership flag and lets the SpiritBoxBubble HUD slot
+						// subscribe. Audio sting deferred to the same future
+						// commit that adds the EMF click.
+						return { ...prev, hasSpiritBox: true };
+					}
+					if (action === "uvFlashlight") {
+						// PC3 — flip the UV flashlight flag. Mounts the second
+						// purple SpotLight in BoneBusterScene + drives the
+						// per-frame UV-cone visibility reveal of uvHidden enemies.
+						return { ...prev, hasUvFlashlight: true };
+					}
+					if (action === "crucifix") {
+						// PC4 — inventory counter, not a flag. Player can stack
+						// several across a run; key `9` consumes one at a time.
+						return { ...prev, crucifixes: prev.crucifixes + 1 };
+					}
+					if (action === "loot") {
+						// COV12 step-2 — kind-specific bonus from pickLootKind(seed).
+						const lootKind = pickLootKind(seed);
+						if (lootKind === "bottles") {
+							// +LOOT_BONUSES.bottlesHp (potion stash) — clamp to maxHp.
+							return {
+								...prev,
+								hp: Math.min(prev.maxHp, prev.hp + LOOT_BONUSES.bottlesHp),
+							};
+						}
+						if (lootKind === "books") {
+							// Knowledge → bonus ammo across both ranged weapons.
+							return {
+								...prev,
+								ammo: {
+									...prev.ammo,
+									chaingun: prev.ammo.chaingun + WEAPONS.chaingun.pickupAmmo,
+									shotgun: prev.ammo.shotgun + WEAPONS.shotgun.pickupAmmo,
+								},
+							};
+						}
+						return { ...prev, score: prev.score + LOOT_BONUSES.treasureScore };
+					}
+					// D3 — first-time weapon acquisition fires a typed event for
+					// the PickupChip HUD slot's chip-brighten beat. Dedup
+					// gate is `acquiredRef.current` (a stable ref-tracked
+					// set) — `prev.ownedWeapons` can't be trusted because
+					// React batches multiple setState callbacks against the
+					// same snapshot, so two ammo pickups for the same weapon
+					// in the same tick would both see `prev.X === false`.
+					if (!acquiredRef.current.has(action.weapon)) {
+						acquiredRef.current.add(action.weapon);
+						dispatchWeapon = action.weapon;
+					}
+					return {
+						...prev,
+						ammo: {
+							...prev.ammo,
+							[action.weapon]: prev.ammo[action.weapon] + action.amount,
+						},
+						ownedWeapons: { ...prev.ownedWeapons, [action.weapon]: true },
+						weapon: prev.weapon === "pistol" ? action.weapon : prev.weapon,
+					};
+				});
 			});
+			if (dispatchFlashlight) dispatch({ type: "flashlightAcquired" });
+			if (dispatchWeapon !== null) dispatch({ type: "weaponAcquired", weapon: dispatchWeapon });
 		},
 	});
 

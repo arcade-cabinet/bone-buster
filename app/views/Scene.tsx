@@ -70,11 +70,14 @@ import {
 	BarrelMesh,
 	BodyPartField,
 	BulletField,
+	CrucifixField,
 	DamageNumberField,
 	DebrisField,
 	DecalField,
 	EnemyHitFlash,
 	EnemyMesh,
+	EnemyUvBaseHide,
+	EnemyUvReveal,
 	ExitPortal,
 	ExitPortalApproach,
 	Flashlight,
@@ -97,6 +100,7 @@ import {
 	ShellEjectField,
 	TrapField,
 	TreasureChest,
+	UvFlashlight,
 	VehicleWreck,
 	WeaponSwapDip,
 	WeaponViewmodel,
@@ -104,8 +108,17 @@ import {
 import { tickEnemyLoop } from "../../src/scene/tick/enemyTickLoop";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
 import { createTimeScaleBus } from "../../src/scene/tick/timeScaleBus";
-import { pickEmfReading } from "../../src/world/ghostHunting";
+import { pickChaingunProfile } from "../../src/world/chaingunSkins";
+import {
+	CRUCIFIX_LIFETIME_MS,
+	type CrucifixInstance,
+	pickEmfReading,
+	pickSpiritBoxPhoneme,
+	SPIRIT_BOX_COOLDOWN_MS,
+	SPIRIT_BOX_TRIGGER_RADIUS,
+} from "../../src/world/ghostHunting";
 import { pickMeleeProfile } from "../../src/world/meleeSkins";
+import { pickPistolProfile } from "../../src/world/pistolSkins";
 
 type SceneProps = Readonly<{
 	map: BoneBusterMap;
@@ -124,6 +137,14 @@ type SceneProps = Readonly<{
 	// the per-frame nearest-enemy distance calc and dispatches no
 	// emfReading events; the HUD chip stays hidden.
 	hasEmfReader: boolean;
+	// PC2 — Spirit box ownership. When false, the Scene skips the
+	// per-frame nearest-enemy proximity check + cooldown tracking and
+	// dispatches no spiritBoxResponse events; the HUD bubble stays hidden.
+	hasSpiritBox: boolean;
+	// PC3 — UV flashlight ownership. When true, the UV SpotLight mounts
+	// and uvHidden enemies run the per-frame reveal check. When false,
+	// uvHidden enemies run a one-shot baseline-hide on mount.
+	hasUvFlashlight: boolean;
 }>;
 
 export function BoneBusterScene({
@@ -137,6 +158,8 @@ export function BoneBusterScene({
 	phase,
 	hasFlashlight,
 	hasEmfReader,
+	hasSpiritBox,
+	hasUvFlashlight,
 }: SceneProps) {
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
 	// E13 step-3 — per-archetype enemy mix. Remap spawn `kind`s through
@@ -218,6 +241,11 @@ export function BoneBusterScene({
 	// COV8 step-2 — per-map trap scatter (hazards + triggers per sector).
 	// Tick damage + lever-disarm-sector handled in the main per-frame loop.
 	const trapsRef = useRef<TrapInstance[]>(spawnTraps(map));
+	// PT1 — version counter bumped on every sector-disarm so TrapField
+	// re-memos its visible-traps filter (which drops disarmed non-trigger
+	// traps from the InstancedMultiGltfField instance buffer). The ref
+	// stores the latest count; the state pair drives React re-renders.
+	const [trapsDisarmedVersion, setTrapsDisarmedVersion] = useState(0);
 	// Per-trap last-tick timestamp so the player takes one damage pulse
 	// per TRAP_TICK_COOLDOWN_MS while overlapping a hazard.
 	const lastTrapTickAt = useRef<Map<number, number>>(new Map());
@@ -397,6 +425,49 @@ export function BoneBusterScene({
 		});
 	}, []);
 
+	// PC4 — active crucifix list. Mutated in-place by the
+	// `crucifixPlace` listener (push new) and the per-frame expiry
+	// pruner (filter out expired). useRef-backed so the per-tick
+	// reads + enemy-tick reads don't trigger React re-renders, and
+	// the CrucifixField re-render is gated by a counter ref + a
+	// setState bump from the listener.
+	const activeCrucifixesRef = useRef<CrucifixInstance[]>([]);
+	const crucifixIdCounterRef = useRef(0);
+	const [crucifixesVersion, setCrucifixesVersion] = useState(0);
+
+	useEffect(() => {
+		return addBoneBusterListener("crucifixPlace", () => {
+			if (!gameRef.current.onConsumeCrucifix()) return;
+			crucifixIdCounterRef.current += 1;
+			const now = performance.now();
+			activeCrucifixesRef.current = [
+				...activeCrucifixesRef.current,
+				{
+					id: crucifixIdCounterRef.current,
+					x: camera.position.x,
+					z: camera.position.z,
+					expiresAtMs: now + CRUCIFIX_LIFETIME_MS,
+				},
+			];
+			setCrucifixesVersion((v) => v + 1);
+		});
+	}, [camera, gameRef]);
+
+	// PC4 — per-frame expiry pruner. Runs in the same useFrame block
+	// as the EMF dispatch so the cost stays inside one tick. Bumps
+	// the version when entries drop so CrucifixField re-renders with
+	// the smaller list.
+	useFrame(() => {
+		const list = activeCrucifixesRef.current;
+		if (list.length === 0) return;
+		const now = performance.now();
+		const filtered = list.filter((c) => c.expiresAtMs > now);
+		if (filtered.length !== list.length) {
+			activeCrucifixesRef.current = filtered;
+			setCrucifixesVersion((v) => v + 1);
+		}
+	});
+
 	// E11 — push the per-map archetype to the ambient bed on mount.
 	// Each archetype shifts the drone's pitch + base volume so different
 	// runs sound distinct. The picker (E13) already chose the archetype;
@@ -567,6 +638,11 @@ export function BoneBusterScene({
 			trigger.disarmed = true;
 			const count = disarmSector(trapsRef.current, trigger.sectorId);
 			if (count > 1) playPickup();
+			// PT1 — bump the version so TrapField re-memos the visible
+			// filter and the disarmed hazards drop from the instanced
+			// buffer this render cycle (not on whatever next ambient
+			// render happens to fire).
+			setTrapsDisarmedVersion((v) => v + 1);
 		}
 		// Then check for hazard overlap (per-trap ticked damage).
 		const hazard = trapAt(trapsRef.current, { x: px, y: py }, TRAP_OVERLAP_RADIUS);
@@ -626,6 +702,7 @@ export function BoneBusterScene({
 			now,
 			dt,
 			timeScaleBus: timeScaleBusRef.current,
+			crucifixesRef: activeCrucifixesRef,
 		});
 
 		// Bullet integration — advance, check wall/player, retire dead bullets.
@@ -806,9 +883,15 @@ export function BoneBusterScene({
 	// the viewmodel's pickMeleeSkin so the visible weapon and the damage
 	// numbers stay in lockstep.
 	const meleeProfile = useMemo(() => pickMeleeProfile(map.seed), [map.seed]);
+	// PD1 — same pattern for the pistol skin: per-seed profile pairs
+	// with WeaponViewmodel's pickPistolSkin so viewmodel and damage
+	// numbers stay in lockstep.
+	const pistolProfile = useMemo(() => pickPistolProfile(map.seed), [map.seed]);
+	// PD3 — chaingun skin profile pairs with pickChaingunSkin.
+	const chaingunProfile = useMemo(() => pickChaingunProfile(map.seed), [map.seed]);
 
 	// ARCH2b — single-shot resolution moved to src/scene/tick/fireResolution.ts.
-	// The useEffect that wires `objexoom:fire` stays here (it owns the
+	// The useEffect that wires `bonebuster:fire` stays here (it owns the
 	// listener lifecycle); the body is one call into the pure helper.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: refs are mutable and shouldn't trigger re-subscribe; matches the imperative ref pattern.
 	useEffect(() => {
@@ -834,11 +917,25 @@ export function BoneBusterScene({
 				timeScaleBus: timeScaleBusRef.current,
 				explodeBarrel: (b) => explodeBarrelRef.current(b),
 				meleeProfile,
+				pistolProfile,
+				chaingunProfile,
 			});
 		};
 
 		return addBoneBusterListener("fire", onFire);
-	}, [active, camera, map, hasKey, gameRef, weapon, ammoRef, settings, meleeProfile]);
+	}, [
+		active,
+		camera,
+		map,
+		hasKey,
+		gameRef,
+		weapon,
+		ammoRef,
+		settings,
+		meleeProfile,
+		pistolProfile,
+		chaingunProfile,
+	]);
 
 	useFrame(() => {
 		if (!active || hasKey) return;
@@ -882,6 +979,35 @@ export function BoneBusterScene({
 		if (level === lastEmfLevelRef.current) return;
 		lastEmfLevelRef.current = level;
 		dispatch({ type: "emfReading", level });
+	});
+
+	// PC2 — Spirit-box per-frame proximity check + cooldown-gated
+	// response dispatch. Walks the same enemiesRef pool as the EMF
+	// dispatch above; when the nearest live enemy is within
+	// SPIRIT_BOX_TRIGGER_RADIUS tiles and the cooldown has expired,
+	// picks a deterministic phoneme keyed off (map.seed, triggerIndex)
+	// and emits the typed event. The HUD bubble subscribes; the audio
+	// sting (future commit) can subscribe to the same event.
+	const lastSpiritBoxTriggerAtRef = useRef(0);
+	const spiritBoxTriggerCountRef = useRef(0);
+	useFrame(() => {
+		if (!hasSpiritBox || !active) return;
+		const now = performance.now();
+		if (now - lastSpiritBoxTriggerAtRef.current < SPIRIT_BOX_COOLDOWN_MS) return;
+		const radiusSq = SPIRIT_BOX_TRIGGER_RADIUS * SPIRIT_BOX_TRIGGER_RADIUS;
+		let nearestSq = Number.POSITIVE_INFINITY;
+		for (const enemy of enemiesRef.current) {
+			if (enemy.dead) continue;
+			const ex = enemy.position.x - camera.position.x;
+			const ez = enemy.position.y - camera.position.z;
+			const d = ex * ex + ez * ez;
+			if (d < nearestSq) nearestSq = d;
+		}
+		if (nearestSq > radiusSq) return;
+		lastSpiritBoxTriggerAtRef.current = now;
+		const phoneme = pickSpiritBoxPhoneme(map.seed, spiritBoxTriggerCountRef.current);
+		spiritBoxTriggerCountRef.current += 1;
+		dispatch({ type: "spiritBoxResponse", phoneme });
 	});
 
 	// POL44 — muzzle-light decay at positive priority. The fire event
@@ -944,6 +1070,22 @@ export function BoneBusterScene({
 				shadow-camera-far={60}
 			/>
 			{hasFlashlight && <Flashlight />}
+			{/* PC3 — UV flashlight cone. Mounted alongside (not instead of)
+			    the white flashlight; the two lights coexist when the
+			    player owns both. */}
+			{hasUvFlashlight && <UvFlashlight />}
+			{/* PC4 — active crucifix placements. Re-renders when
+			    crucifixesVersion bumps (push on place / filter on
+			    expiry); the version is passed as a prop (not a key)
+			    so existing CrucifixMesh children — already keyed by
+			    `c.id` for stable identity — keep their accumulated
+			    yaw + fade state across additions/expirations. PT5
+			    review fold: a `key={crucifixesVersion}` would force
+			    every existing crucifix to remount on every placement,
+			    snapping rotations back to 0. Always mounted (no
+			    owner-gate) — empty list collapses to one Array.map. */}
+			<CrucifixField crucifixes={activeCrucifixesRef.current} version={crucifixesVersion} />
+
 			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.35]} />
 			{/* I11 — muzzle-flash point light. Lives at camera position,
 			    driven by useFrame so it can decay between renders. */}
@@ -1007,7 +1149,7 @@ export function BoneBusterScene({
 			{/* COV8 step-2 — trap scatter (0-2 hazards + 1 trigger per
 			    sector, archetype-biased). Tick damage + lever-disarm
 			    flow lives in the per-frame loop in BoneBusterScene. */}
-			<TrapField traps={trapsRef.current} />
+			<TrapField traps={trapsRef.current} disarmedVersion={trapsDisarmedVersion} />
 
 			{/* COV13 step-2 — library-archetype kitchen scatter.
 			    Empty on non-library archetypes. */}
@@ -1052,6 +1194,17 @@ export function BoneBusterScene({
 					    looks up the registered mesh via enemyMeshes, clones
 					    + modulates materials. Returns null. */}
 					<EnemyHitFlash enemy={enemy} meshLookup={enemyMeshes} />
+					{/* PC3 — UV reveal / baseline-hide slot. uvHidden enemies
+					    are invisible by default; UV flashlight cone reveals
+					    them per-frame. The two slots are mutually exclusive
+					    based on hasUvFlashlight so the no-tool path pays
+					    zero per-frame UV cost. */}
+					{enemy.uvHidden &&
+						(hasUvFlashlight ? (
+							<EnemyUvReveal enemy={enemy} meshLookup={enemyMeshes} />
+						) : (
+							<EnemyUvBaseHide enemy={enemy} meshLookup={enemyMeshes} />
+						))}
 				</group>
 			))}
 

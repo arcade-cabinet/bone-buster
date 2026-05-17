@@ -172,6 +172,21 @@ export function spawnTraps(map: BoneBusterMap): TrapInstance[] {
 }
 
 /**
+ * PT1 — render-visibility predicate for an instanced trap mesh.
+ *
+ * Hazards (spikes / blade / rolling) disappear once disarmed (the
+ * sector is now safe; the visual cue is the absence). Triggers
+ * (pressure plates) stay visible after disarm so the player sees
+ * the "I activated this" tell.
+ *
+ * Returned by `TrapField`'s instance filter; pinned by a unit test
+ * so the runtime contract can't drift silently.
+ */
+export function isTrapVisible(trap: Pick<TrapInstance, "disarmed" | "def">): boolean {
+	return !trap.disarmed || trap.def.kind === "trigger";
+}
+
+/**
  * Mark every trap in `sectorId` as disarmed. Called when the player
  * walks over a `trigger`-kind trap. Returns the count of newly-disarmed
  * traps for telemetry/sfx.

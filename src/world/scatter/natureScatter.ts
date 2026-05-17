@@ -1,18 +1,16 @@
 /**
- * COV11 step-2 — courtyard-archetype nature scatter.
+ * COV11 step-2 / PT2 — courtyard-archetype nature scatter.
  *
- * The COV11 step-1 pool is a single aggregate GLB (`Mega_Nature.glb`)
- * containing many bushes/trees/grass-tufts. Rather than extracting
- * individual sub-meshes (fragile — depends on the GLB's internal
- * node naming), this scatter places multiple SCALED-DOWN clones of
- * the full aggregate. Each clone shows ~4-6 nature items from the
- * aggregate, and varying yaw + scale per instance keeps them from
- * reading as obvious copy-pastes.
+ * PT2 — the COV11 step-1 path cloned the entire `Mega_Nature.glb`
+ * aggregate (31 plants laid out side-by-side) at every spawn site
+ * with a tight 0.15-0.32 scale to hide the bulk. The result was
+ * visually noisy (the same blob of nature copy-pasted per spawn) and
+ * O(N) full-pack clones per map. PT2 picks ONE plant per spawn via
+ * `pickNaturePlant(id, mapSeed)`, lifts the scale to a sensible
+ * single-plant range (0.6-1.4), and migrates the renderer to
+ * `InstancedMultiGltfField`.
  *
- * Fires only on courtyard-archetype maps (PRD §COV11 calls it out
- * as the outdoor archetype). 4-8 instances per sector — denser
- * than other scatters because the read is "outside, foliage
- * everywhere," not "set-dressing."
+ * Fires only on courtyard-archetype maps. 4-8 instances per sector.
  *
  * PRNG seed: `map.seed XOR 0x4E415455` ("NATU" tag) — diverges from
  * every other scatter sequence.
@@ -22,6 +20,7 @@ import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
 import { mulberry32 } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
+import { pickNaturePlant } from "@world/nature";
 
 const INSTANCES_PER_SECTOR_MIN = 4;
 const INSTANCES_PER_SECTOR_MAX = 8;
@@ -29,15 +28,21 @@ const SKIP_RADIUS = 3;
 const MIN_INSTANCE_SPACING = 1.5;
 const MAX_SAMPLE_ATTEMPTS = 12;
 const ID_STRIDE = 100;
-/** Scale range applied to each clone so they don't read as identical. */
-const SCALE_MIN = 0.15;
-const SCALE_MAX = 0.32;
+/**
+ * Scale range applied per single-plant instance. PT2 lifted these
+ * from 0.15-0.32 (which was sized for the full Mega_Nature aggregate)
+ * to 0.6-1.4 (which reads as a single plant at courtyard scale).
+ */
+const SCALE_MIN = 0.6;
+const SCALE_MAX = 1.4;
 
 export interface NatureInstance {
 	readonly id: number;
 	readonly position: Vec2;
 	readonly yaw: number;
 	readonly scale: number;
+	/** PT2 — deterministic per-instance plant pick (see pickNaturePlant). */
+	readonly url: string;
 }
 
 function bboxOf(verts: readonly Vec2[]): {
@@ -100,11 +105,13 @@ export function spawnNature(map: BoneBusterMap): NatureInstance[] {
 			}
 			if (accepted === null) continue;
 			placed.push(accepted);
+			const id = sector.id * ID_STRIDE + placed.length - 1;
 			out.push({
-				id: sector.id * ID_STRIDE + placed.length - 1,
+				id,
 				position: accepted,
 				yaw: rng() * Math.PI * 2,
 				scale: SCALE_MIN + rng() * (SCALE_MAX - SCALE_MIN),
+				url: pickNaturePlant(id, map.seed),
 			});
 		}
 	}

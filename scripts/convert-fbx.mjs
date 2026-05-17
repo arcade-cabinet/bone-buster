@@ -81,6 +81,42 @@ const JOBS = [
 		glb: "public/assets/models/weapons/slasher/melee_meathook.glb",
 		label: "meat hook",
 	},
+	// PC1 — Ghost Hunting Tools. Step-1 only promotes the EMF reader;
+	// the other tools land in PC2-PC4 (spirit box, UV flashlight,
+	// crucifix) so each viewmodel ships alongside the gameplay layer
+	// that consumes it.
+	{
+		fbx: "references/_extracted/psx-ght/EMF Reader/emfreader.fbx",
+		glb: "public/assets/models/tools/emf_reader.glb",
+		label: "EMF reader (PSX Ghost Hunting Tools)",
+	},
+	// PC2 — Spirit box. Cooldown-gated speech HUD overlay triggered
+	// when any live enemy is within 6 tiles. Viewmodel rendered as
+	// the floor pickup (no held-weapon slot in step-2; the GHT plan
+	// keeps tools passive until the dedicated tool-slot lane lands).
+	{
+		fbx: "references/_extracted/psx-ght/Spirit box/spiritbox.fbx",
+		glb: "public/assets/models/tools/spirit_box.glb",
+		label: "Spirit Box (PSX Ghost Hunting Tools)",
+	},
+	// PC3 — UV flashlight. Drives the UV-cone reveal of hidden-by-
+	// default enemy instances (tagged `uvHidden: true` at spawn). The
+	// viewmodel ships as both a floor pickup and a second SpotLight
+	// (purple) parallel to the existing white Flashlight.
+	{
+		fbx: "references/_extracted/psx-ght/UV Flashlight/uvflashlight.fbx",
+		glb: "public/assets/models/tools/uv_flashlight.glb",
+		label: "UV Flashlight (PSX Ghost Hunting Tools)",
+	},
+	// PC4 — Wood Crucifix. Placeable item; player picks one up (or
+	// stacks several) into a numeric inventory, drops it at the
+	// player position with key `9`, debuffs enemy spawn aggression
+	// in a fixed radius for CRUCIFIX_DEBUFF_DURATION_MS.
+	{
+		fbx: "references/_extracted/psx-ght/Wood Crucifix/crucifix.fbx",
+		glb: "public/assets/models/tools/crucifix.glb",
+		label: "Crucifix (PSX Ghost Hunting Tools)",
+	},
 ];
 
 function mtimeOrZero(path) {

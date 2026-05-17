@@ -1,6 +1,6 @@
 /**
  * ARCH2b — single-shot fire resolution, extracted from BoneBusterScene's
- * `objexoom:fire` event handler. Pure function over a context object
+ * `bonebuster:fire` event handler. Pure function over a context object
  * for the same reasons as ARCH2a's `tickEnemyLoop` (see that module).
  *
  * Behavior is byte-identical to the prior inline `onFire` body —
@@ -10,7 +10,7 @@
  * Side effects (all preserved):
  *   - Spends ammo via gameRef.current.onSpendAmmo.
  *   - Sets muzzleFlashUntil + muzzleColorRef for the per-frame light decay.
- *   - Emits one `objexoom:shellEject` per chaingun/shotgun pull.
+ *   - Emits one `bonebuster:shellEject` per chaingun/shotgun pull.
  *   - Per pellet: cast ray, find nearest enemy in cone, prefer barrel
  *     if closer; on barrel hit → damage + burst → explode if HP<=0.
  *     On enemy hit → damage + burst → on death: mesh.visible=false,
@@ -34,12 +34,14 @@ import type { CollisionContext } from "@engine/engine";
 import { type BoneBusterMap, castRayAny, type Enemy } from "@engine/engine";
 import { dispatch } from "@engine/events";
 import { applyVulnerabilityMultiplier } from "@engine/vulnerability";
-import { TILE } from "@shared/constants";
+import { PLAYER_RADIUS, TILE } from "@shared/constants";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import type { BoneBusterSettings } from "@store/settings";
 import type { GameRef, WeaponState } from "@views/Shell";
 import { type Barrel, pickRayBarrel } from "@world/barrels";
+import { type ChaingunProfile, DEFAULT_CHAINGUN_PROFILE } from "@world/chaingunSkins";
 import { DEFAULT_MELEE_PROFILE, type MeleeProfile } from "@world/meleeSkins";
+import { DEFAULT_PISTOL_PROFILE, type PistolProfile } from "@world/pistolSkins";
 import { pickRaySwitch, type Secret } from "@world/secrets";
 import * as THREE from "three";
 
@@ -94,6 +96,22 @@ export interface FireResolutionContext {
 	 * that don't yet plumb the profile keep working byte-identically.
 	 */
 	meleeProfile?: MeleeProfile;
+	/**
+	 * PD1 — per-run pistol profile resolved from level.seed via
+	 * `pickPistolProfile`. Multipliers compose against the base
+	 * `WEAPONS.pistol` spec (damage 25 / cooldown 250ms). Only applied
+	 * when `weapon === "pistol"`; other weapons read the base spec
+	 * unchanged. Optional with an identity fallback so callers that
+	 * don't yet plumb the profile keep working byte-identically.
+	 */
+	pistolProfile?: PistolProfile;
+	/**
+	 * PD3 — per-run chaingun profile resolved from level.seed via
+	 * `pickChaingunProfile`. Mirrors meleeProfile + pistolProfile;
+	 * other weapons read base spec unchanged. Optional fallback so
+	 * untouched callers keep working byte-identically.
+	 */
+	chaingunProfile?: ChaingunProfile;
 }
 
 export function resolveFire(ctx: FireResolutionContext): void {
@@ -118,18 +136,29 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		timeScaleBus,
 		explodeBarrel,
 		meleeProfile = DEFAULT_MELEE_PROFILE,
+		pistolProfile = DEFAULT_PISTOL_PROFILE,
+		chaingunProfile = DEFAULT_CHAINGUN_PROFILE,
 	} = ctx;
 
 	if (!active) return;
 	const spec = WEAPONS[weapon];
-	// PB4 — apply per-skin profile only on the melee swing; ranged
-	// weapons read base damage/cooldown unchanged. Multipliers are
-	// composed locally so the WEAPONS table stays the single source
-	// of truth for the base spec, and the per-skin deltas are visible
-	// at this call site.
-	const isMelee = weapon === "melee";
-	const effectiveCooldown = isMelee ? spec.cooldownMs * meleeProfile.cooldownMul : spec.cooldownMs;
-	const effectiveDamage = isMelee ? spec.damage * meleeProfile.damageMul : spec.damage;
+	// PB4 / PD1 / PD3 — apply per-skin profile on melee + pistol +
+	// chaingun; other weapons read base damage/cooldown unchanged.
+	// Multipliers compose locally so the WEAPONS table stays the
+	// single source of truth for the base spec, and the per-skin
+	// deltas are visible at this call site.
+	const skinProfile: { damageMul: number; cooldownMul: number } | null =
+		weapon === "melee"
+			? meleeProfile
+			: weapon === "pistol"
+				? pistolProfile
+				: weapon === "chaingun"
+					? chaingunProfile
+					: null;
+	const effectiveCooldown = skinProfile
+		? spec.cooldownMs * skinProfile.cooldownMul
+		: spec.cooldownMs;
+	const effectiveDamage = skinProfile ? spec.damage * skinProfile.damageMul : spec.damage;
 	if (now - lastFireAtRef.current < effectiveCooldown) return;
 
 	if (spec.ammoCostPerShot > 0) {
@@ -178,6 +207,22 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	// QW1 — reuse module-scope _forwardBase; set to camera-forward then normalize.
 	const forwardBase = _forwardBase.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
 	const origin = { x: camera.position.x, y: camera.position.z };
+
+	// SLA2 — chainsaw loud-attract. A melee skin with attractRadiusTiles
+	// > 0 flips any patrolling (fsmState === 0) enemy within radius to
+	// chase state on each swing. Mirrors the reference clone's "noisy
+	// weapon draws enemies" feel without coupling to the audio layer —
+	// the radius is gameplay state, the audio is the player's hint.
+	if (weapon === "melee" && (meleeProfile.attractRadiusTiles ?? 0) > 0) {
+		const r = (meleeProfile.attractRadiusTiles ?? 0) * TILE;
+		const r2 = r * r;
+		for (const enemy of enemiesRef.current) {
+			if (enemy.dead || enemy.fsmState !== 0) continue;
+			const dx = enemy.position.x - origin.x;
+			const dy = enemy.position.y - origin.y;
+			if (dx * dx + dy * dy <= r2) enemy.fsmState = 1;
+		}
+	}
 
 	// E8 step-2 — flamethrower emits a distinct directional cone stream
 	// once per trigger pull (not per pellet — the layered particle
@@ -281,6 +326,32 @@ export function resolveFire(ctx: FireResolutionContext): void {
 			// invariant and producing a UI/sim mismatch.
 			const totalDamage = Math.round(effectiveDamage * vulnMultiplier);
 			bestEnemy.hp -= totalDamage;
+			// SLA1 — meathook pull. Melee skin with negative knockbackMul
+			// pulls the hit enemy toward the player along the hit
+			// direction. Single-frame position nudge clamped so the
+			// enemy never overlaps the player; bosses are immune (a
+			// pulled boss telegraphs poorly + the boss-fight design
+			// expects the player to close the gap themselves).
+			if (
+				weapon === "melee" &&
+				meleeProfile.knockbackMul < 0 &&
+				bestEnemy.hp > 0 &&
+				bestEnemy.tier !== "boss"
+			) {
+				const dx = origin.x - bestEnemy.position.x;
+				const dy = origin.y - bestEnemy.position.y;
+				const dist = Math.hypot(dx, dy);
+				if (dist > 0) {
+					// Pull strength = |knockbackMul| × 1 tile.
+					const pullTiles = Math.abs(meleeProfile.knockbackMul);
+					const minDist = PLAYER_RADIUS + 0.5;
+					const pullDist = Math.min(pullTiles * TILE, Math.max(0, dist - minDist));
+					bestEnemy.position = {
+						x: bestEnemy.position.x + (dx / dist) * pullDist,
+						y: bestEnemy.position.y + (dy / dist) * pullDist,
+					};
+				}
+			}
 			// POL19 — non-killing-hit stagger window. Only set when the
 			// hit doesn't kill (the kill path uses POL12 hitstop + body-
 			// parts spawn instead — a dead enemy doesn't flinch). Bosses

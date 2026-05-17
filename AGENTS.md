@@ -186,7 +186,10 @@ harness before the feature.
 
 ## Long-running branch
 
-Active dev rides one long-running branch
-(`feat/bone-buster-game-buildout`) until the game is FULLY done. Zero
-PR churn. See [`DECISIONS.md` D8](./docs/DECISIONS.md#d8). Hotfixes
-and unrelated work still get focused PRs.
+One long-running branch per overhaul slice. The reviewer trio
+(code-review + security + simplification) runs locally per
+commit; findings fold forward into the next commit on the same
+branch. Push + open one PR per coherent slice — not per commit.
+See [`DECISIONS.md` §D12](./docs/DECISIONS.md#d12-per-item-feature-branches-off-latest-main-not-one-long-running-branch)
+(supersedes D8). Hotfixes and unrelated work still get focused
+PRs off latest `origin/main`.

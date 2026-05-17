@@ -60,7 +60,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 	const bobPhase = useRef(0);
 	const belowFloorSince = useRef<number | null>(null);
 
-	// I6 — camera shake. Increments on hit (via objexoom:shake event),
+	// I6 — camera shake. Increments on hit (via bonebuster:shake event),
 	// decays at `SHAKE_DECAY` per second, and jitters X+Z each frame.
 	const shakeRef = useRef(0);
 
@@ -120,7 +120,7 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 		};
 	}, [active, settings.mouseSensitivity]);
 
-	// H3 — Space (or mobile "objexoom:jump" event) triggers a jump if grounded.
+	// H3 — Space (or mobile "bonebuster:jump" event) triggers a jump if grounded.
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.code === "Space" && active && grounded.current) {
@@ -139,6 +139,21 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 			window.removeEventListener("keydown", onKey);
 			teardownJump();
 		};
+	}, [active]);
+
+	// PC4 — Key `9` dispatches `crucifixPlace`. Scene consumes the event,
+	// decrements state.crucifixes (if > 0), and pushes a new
+	// CrucifixInstance at the player's XZ. The PlayerController only
+	// owns the input → event translation; the gameplay state lives in
+	// Scene + useGameRef.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.code === "Digit9" && active) {
+				dispatch({ type: "crucifixPlace" });
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
 	}, [active]);
 
 	// Debug teleport (e2e harness).

@@ -76,7 +76,7 @@ export const SFX_CATEGORIES = {
 	doorTick: "uiFeedback",
 } as const satisfies Record<keyof typeof SFX_VOLUMES, keyof typeof SFX_BANDS>;
 
-export type MusicMood = "exploration" | "combat" | "going_back";
+export type MusicMood = "exploration" | "combat" | "going_back" | "boss";
 
 // Bus-init state. Howler doesn't need an async ensureContext call —
 // the AudioContext is created lazily on the first .play() and resumed
@@ -311,10 +311,6 @@ export function stopMusic() {
 }
 
 export function setMusicMood(mood: MusicMood) {
-	// The legacy sfx.ts MusicMood type was "exploration" | "combat" |
-	// "going_back". The new musicGraph adds "boss" as a 4th option;
-	// existing callers only ever pass the original three, but the
-	// new type is a superset so the call is type-compatible.
 	setMusicMoodImpl(mood);
 }
 

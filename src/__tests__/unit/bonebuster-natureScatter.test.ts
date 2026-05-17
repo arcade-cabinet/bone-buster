@@ -89,10 +89,21 @@ describe("COV11 step-2 — spawnNature invariants", () => {
 		}
 	});
 
-	it("scale is within [0.15, 0.32]", () => {
+	it("scale is within [0.6, 1.4] (PT2 single-plant scale range)", () => {
+		// COV11 step-1 used [0.15, 0.32] because each instance cloned the
+		// full Mega_Nature aggregate; PT2 picks one plant per instance
+		// and lifts the scale range to a single-plant courtyard read.
 		for (const inst of spawnNature(courtyardMap(2))) {
-			expect(inst.scale).toBeGreaterThanOrEqual(0.15);
-			expect(inst.scale).toBeLessThanOrEqual(0.32);
+			expect(inst.scale).toBeGreaterThanOrEqual(0.6);
+			expect(inst.scale).toBeLessThanOrEqual(1.4);
+		}
+	});
+
+	it("every instance carries a url from the PT2 nature plant pool", () => {
+		// PT2 — every NatureInstance picks a single plant URL via
+		// pickNaturePlant; the renderer groups by url for instancing.
+		for (const inst of spawnNature(courtyardMap(2))) {
+			expect(inst.url).toMatch(/\/assets\/models\/props\/nature\/[a-z][a-z0-9_]*\.glb$/);
 		}
 	});
 

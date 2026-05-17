@@ -166,6 +166,12 @@ export const BONE_PALETTE = {
 	accentDanger: "#E63946", // crimson — damage overlay, boss HP, GAME OVER
 	accentDiscovery: "#9D4EDD", // violet — key pickup, portal, secret
 	accentGain: "#06D6A0", // mint — health pickup, MISSION COMPLETE
+	// SLA5 — signal channels. Diegetic instrument colors for the
+	// ghost-hunting toolset; intentionally brighter than the
+	// accent.* palette so they read as "active scanner beam" rather
+	// than UI feedback.
+	signalUv: "#B366FF", // UV flashlight cone (Phasmo-style reference)
+	signalSpiritBox: "#7DD3FC", // spirit-box voice readout (cold sky)
 	// Brand surfaces — the Bone Buster wordmark identity
 	brandBone1: "#F4ECDC", // logo letter fill (light)
 	brandBone2: "#D9C5A0", // logo letter fill (mid)
@@ -208,6 +214,10 @@ export const ROLE = {
 		discovery: BONE_PALETTE.accentDiscovery,
 		gain: BONE_PALETTE.accentGain,
 	},
+	signal: {
+		uv: BONE_PALETTE.signalUv,
+		spiritBox: BONE_PALETTE.signalSpiritBox,
+	},
 	brand: {
 		bone1: BONE_PALETTE.brandBone1,
 		bone2: BONE_PALETTE.brandBone2,
@@ -225,6 +235,8 @@ export const ROLE = {
 	bgWall: BONE_PALETTE.surfaceElevated, // wall fill in sectors / corridors
 	bgPanel: BONE_PALETTE.surfaceElevated, // HUD card / menu card background
 	bgPanelAlpha: "rgba(26, 22, 32, 0.78)", // HUD card translucent (surface.elevated)
+	bgPanelAlphaDark: "rgba(0, 0, 0, 0.55)", // dimmer translucent — readout bubbles, tooltip backers
+	textShadowSoft: "rgba(0, 0, 0, 0.7)", // text-readability shadow on translucent backers
 
 	// Text — Bone Buster text tier
 	textPrimary: BONE_PALETTE.textPrimary,

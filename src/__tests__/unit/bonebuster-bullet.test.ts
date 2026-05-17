@@ -1,7 +1,7 @@
 import { ENEMY_BULLET_TTL_MS, generateMap, makeEnemyBullet, stepEnemyBullet } from "@engine/engine";
 import { describe, expect, it } from "vitest";
 
-describe("objexoom EnemyBullet (C2)", () => {
+describe("bonebuster EnemyBullet (C2)", () => {
 	const map = generateMap(12345);
 	const ctx = { doorOpen: false };
 

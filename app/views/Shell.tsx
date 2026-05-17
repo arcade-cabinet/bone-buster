@@ -89,6 +89,21 @@ export type GameState = {
 	// the EMF chip with a 1-5 stepwise readout of nearest-enemy
 	// proximity. Off by default; flips true on pickup.
 	hasEmfReader: boolean;
+	// PC2 — Spirit box ownership flag. When true, the SpiritBoxBubble
+	// HUD overlay listens for the `spiritBoxResponse` event and renders
+	// the deterministic phoneme for ~1s. Off by default; flips true on
+	// pickup.
+	hasSpiritBox: boolean;
+	// PC3 — UV flashlight ownership flag. When true, BoneBusterScene
+	// mounts the UvFlashlight component (purple SpotLight) and EnemyMesh
+	// runs the per-frame UV-cone reveal for uvHidden enemies. Off by
+	// default; flips true on pickup.
+	hasUvFlashlight: boolean;
+	// PC4 — Crucifix inventory counter. Increments on pickup, decrements
+	// when the player drops one via key `9`. Each placed crucifix
+	// suppresses enemy aggression in a fixed radius for
+	// CRUCIFIX_LIFETIME_MS. Resets to 0 on level transition.
+	crucifixes: number;
 	weapon: WeaponId;
 	ammo: Record<WeaponId, number>;
 	ownedWeapons: Record<WeaponId, boolean>;
@@ -131,6 +146,14 @@ export type GameRef = {
 	onReachSpawn(): void;
 	onSpendAmmo(weapon: WeaponId, amount: number): void;
 	onCollectPickup(kind: PickupKind): void;
+	/**
+	 * PC4 — Consume one crucifix from inventory. Returns `true` if
+	 * the inventory had ≥1 (the Scene proceeds with the placement)
+	 * and `false` if the inventory was empty (the Scene no-ops the
+	 * keypress so a player slapping `9` with zero inventory doesn't
+	 * accidentally place a phantom crucifix at the origin).
+	 */
+	onConsumeCrucifix(): boolean;
 };
 
 // BC5 — touch-mode auto-detection. Previously a single `(pointer:
@@ -348,6 +371,9 @@ export function BoneBusterShell() {
 		hasKey: false,
 		hasFlashlight: false,
 		hasEmfReader: false,
+		hasSpiritBox: false,
+		hasUvFlashlight: false,
+		crucifixes: 0,
 		weapon: "pistol",
 		ammo: baseAmmo(),
 		ownedWeapons: baseOwnedWeapons(),
@@ -448,6 +474,9 @@ export function BoneBusterShell() {
 			hasKey: false,
 			hasFlashlight: false,
 			hasEmfReader: false,
+			hasSpiritBox: false,
+			hasUvFlashlight: false,
+			crucifixes: 0,
 			weapon: "pistol",
 			ammo: baseAmmo(),
 			ownedWeapons: baseOwnedWeapons(),
@@ -575,17 +604,46 @@ export function BoneBusterShell() {
 		return () => window.clearInterval(interval);
 	}, [state.status, state.phase, state.goingBackDeadlineMs]);
 
+	// SLA3 — boss-music shift. Track live boss-encounter state via
+	// bossSpotted/bossDefeated channels. Any active boss takes
+	// precedence over the combat/exploration mood; going_back still
+	// wins (the going-back klaxon + library bed is the player's escape
+	// signal — boss music shouldn't override it).
+	const [bossActiveCount, setBossActiveCount] = useState(0);
+	useEffect(() => {
+		const offSpotted = addBoneBusterListener("bossSpotted", () => {
+			setBossActiveCount((n) => n + 1);
+		});
+		const offDefeated = addBoneBusterListener("bossDefeated", () => {
+			setBossActiveCount((n) => Math.max(0, n - 1));
+		});
+		return () => {
+			offSpotted();
+			offDefeated();
+		};
+	}, []);
+	// Reset the boss counter when leaving the level — a fresh map's
+	// bossSpotted dispatch shouldn't see a phantom count from the
+	// previous level. The `map.seed` dep is intentional: it's the
+	// trigger, not a body-read.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: map.seed is the trigger for the reset, not a body-read; biome's stricter inference would auto-fix to [] which breaks the level-transition reset.
+	useEffect(() => {
+		setBossActiveCount(0);
+	}, [map.seed]);
+
 	useEffect(() => {
 		if (!settings.soundEnabled) return;
 		if (state.status !== "playing") return;
 		if (state.phase === "going_back") {
 			setMusicMood("going_back");
+		} else if (bossActiveCount > 0) {
+			setMusicMood("boss");
 		} else if (state.hp < state.maxHp) {
 			setMusicMood("combat");
 		} else {
 			setMusicMood("exploration");
 		}
-	}, [settings.soundEnabled, state.status, state.phase, state.hp, state.maxHp]);
+	}, [settings.soundEnabled, state.status, state.phase, state.hp, state.maxHp, bossActiveCount]);
 
 	// H4 — fall-to-death: PlayerController dispatches this when the player
 	// has been below the local floor for longer than the grace window. Snap
@@ -677,6 +735,9 @@ export function BoneBusterShell() {
 				hasKey: false,
 				hasFlashlight: false,
 				hasEmfReader: false,
+				hasSpiritBox: false,
+				hasUvFlashlight: false,
+				crucifixes: 0,
 				weapon: "pistol",
 				ammo: baseAmmo(),
 				ownedWeapons: baseOwnedWeapons(),
@@ -936,6 +997,8 @@ export function BoneBusterShell() {
 									phase={state.phase}
 									hasFlashlight={state.hasFlashlight}
 									hasEmfReader={state.hasEmfReader}
+									hasSpiritBox={state.hasSpiritBox}
+									hasUvFlashlight={state.hasUvFlashlight}
 								/>
 							</Canvas>
 							<BoneBusterHUD

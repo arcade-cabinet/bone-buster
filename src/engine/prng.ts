@@ -57,3 +57,49 @@ export const RNG_TAGS = {
 } as const;
 
 export type RngTag = keyof typeof RNG_TAGS;
+
+// D19 — cosmetic PRNG (seedrandom alea). Disjoint from the canonical stream
+// above so cosmetic pools can grow without re-blessing canonical screenshots.
+// See docs/DECISIONS.md §D19.
+
+import seedrandom from "seedrandom";
+
+// 0xc0-prefixed tag space; disjoint from canonical RNG_TAGS (top < 0x55000000).
+// Append-only — changing a value breaks the cosmetic byte-stability pins.
+export const COSMETIC_TAGS = {
+	MELEE: 0xc04d454c,
+	PISTOL: 0xc0504953,
+	CHAINGUN: 0xc043484e,
+	PLANT: 0xc0504c4e,
+	PHONEME: 0xc0504e4d,
+	MISC: 0xc04d5343,
+} as const;
+
+export type CosmeticTag = keyof typeof COSMETIC_TAGS;
+
+export function cosmeticRng(mapSeed: number, tag: number): () => number {
+	return seedrandom.alea(`bb:${(mapSeed >>> 0).toString(16)}:${(tag >>> 0).toString(16)}`);
+}
+
+/** Per-instance cosmetic pick. `mapSeed === 0` → `pool[0]` (canonical baseline). */
+export function pickCosmetic<T>(
+	mapSeed: number,
+	tag: number,
+	instanceId: number,
+	pool: readonly T[],
+): T {
+	if (pool.length === 0) throw new Error("pickCosmetic: empty pool");
+	if (mapSeed === 0) return pool[0];
+	const rng = seedrandom.alea(
+		`bb:${(mapSeed >>> 0).toString(16)}:${(tag >>> 0).toString(16)}:${(instanceId >>> 0).toString(16)}`,
+	);
+	return pool[Math.floor(rng() * pool.length)];
+}
+
+/** Per-run cosmetic pick. `mapSeed === 0` → `pool[0]` (canonical baseline). */
+export function pickCosmeticOnce<T>(mapSeed: number, tag: number, pool: readonly T[]): T {
+	if (pool.length === 0) throw new Error("pickCosmeticOnce: empty pool");
+	if (mapSeed === 0) return pool[0];
+	const rng = cosmeticRng(mapSeed, tag);
+	return pool[Math.floor(rng() * pool.length)];
+}

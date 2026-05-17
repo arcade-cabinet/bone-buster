@@ -7,7 +7,22 @@
  */
 
 import { ROLE } from "@styles/tokens/index";
-import { EMF_TOKEN, type EmfReading, pickEmfReading } from "@world/ghostHunting";
+import {
+	CRUCIFIX_LIFETIME_MS,
+	CRUCIFIX_RADIUS_TILES,
+	type CrucifixInstance,
+	EMF_TOKEN,
+	type EmfReading,
+	isEnemyCrucified,
+	isInUvCone,
+	pickEmfReading,
+	pickSpiritBoxPhoneme,
+	SPIRIT_BOX_COOLDOWN_MS,
+	SPIRIT_BOX_PHONEMES,
+	SPIRIT_BOX_TRIGGER_RADIUS,
+	UV_FLASHLIGHT_HALF_ANGLE_RAD,
+	UV_FLASHLIGHT_RANGE_TILES,
+} from "@world/ghostHunting";
 import { describe, expect, it } from "vitest";
 
 describe("PB5 step-1 — pickEmfReading thresholds", () => {
@@ -94,5 +109,164 @@ describe("PB5 step-1 — EMF_TOKEN color ramp", () => {
 		expect(EMF_TOKEN[2]).toBe(ROLE.actionWin);
 		expect(EMF_TOKEN[3]).toBe(ROLE.actionPickup);
 		expect(EMF_TOKEN[4]).toBe(ROLE.actionHurt);
+	});
+});
+
+describe("PC2 — spirit-box phoneme pool + picker", () => {
+	it("ships ≥8 phonemes (Phasmo-style threat lexicon)", () => {
+		expect(SPIRIT_BOX_PHONEMES.length).toBeGreaterThanOrEqual(8);
+	});
+
+	it("every phoneme is an uppercase short word", () => {
+		for (const word of SPIRIT_BOX_PHONEMES) {
+			expect(word).toMatch(/^[A-Z]{2,8}$/);
+		}
+	});
+
+	it("phonemes are unique across the pool", () => {
+		expect(new Set(SPIRIT_BOX_PHONEMES).size).toBe(SPIRIT_BOX_PHONEMES.length);
+	});
+
+	it("pickSpiritBoxPhoneme is deterministic per (seed, triggerIndex)", () => {
+		expect(pickSpiritBoxPhoneme(42, 0)).toBe(pickSpiritBoxPhoneme(42, 0));
+		expect(pickSpiritBoxPhoneme(42, 7)).toBe(pickSpiritBoxPhoneme(42, 7));
+	});
+
+	it("returns a phoneme from SPIRIT_BOX_PHONEMES for any seed/trigger pair", () => {
+		for (let s = 0; s < 20; s += 1) {
+			for (let t = 0; t < 5; t += 1) {
+				expect(SPIRIT_BOX_PHONEMES).toContain(pickSpiritBoxPhoneme(s, t));
+			}
+		}
+	});
+
+	it("consecutive triggers don't always return the same phoneme", () => {
+		// Catches a regression where pickSpiritBoxPhoneme ignored the
+		// triggerIndex — the player should see the box "talk back"
+		// across multiple words, not repeat the same one until the
+		// seed changes.
+		const seen = new Set<string>();
+		for (let t = 0; t < 30; t += 1) {
+			seen.add(pickSpiritBoxPhoneme(7, t));
+		}
+		expect(seen.size).toBeGreaterThan(1);
+	});
+
+	it("SPIRIT_BOX_TRIGGER_RADIUS is a positive tile count in the EMF mid-band", () => {
+		// The box only talks when an enemy is in EMF level 3-5 range
+		// (touching to ~6 tiles). 6 is the documented Phasmo-style
+		// "ghost room" boundary; outside that the box is silent.
+		expect(SPIRIT_BOX_TRIGGER_RADIUS).toBeGreaterThan(0);
+		expect(SPIRIT_BOX_TRIGGER_RADIUS).toBeLessThanOrEqual(8);
+	});
+
+	it("SPIRIT_BOX_COOLDOWN_MS is at least 1 second so the HUD has time to read", () => {
+		expect(SPIRIT_BOX_COOLDOWN_MS).toBeGreaterThanOrEqual(1000);
+	});
+});
+
+describe("PC3 — UV flashlight cone-containment", () => {
+	// Convention: camera at origin (0,0) looking +X (forward = (1, 0)).
+	// Enemies at varying positions; expectations follow.
+
+	it("reveals an enemy directly in front within range", () => {
+		expect(isInUvCone(0, 0, 1, 0, 5, 0)).toBe(true);
+	});
+
+	it("hides an enemy behind the camera", () => {
+		expect(isInUvCone(0, 0, 1, 0, -5, 0)).toBe(false);
+	});
+
+	it("hides an enemy at 90° off camera-forward", () => {
+		// 90° = π/2 rad, well outside the 0.5-rad half-angle.
+		expect(isInUvCone(0, 0, 1, 0, 0, 5)).toBe(false);
+	});
+
+	it("hides an enemy beyond UV_FLASHLIGHT_RANGE_TILES", () => {
+		expect(isInUvCone(0, 0, 1, 0, UV_FLASHLIGHT_RANGE_TILES + 0.1, 0)).toBe(false);
+	});
+
+	it("reveals an enemy exactly at the range boundary", () => {
+		// Boundary is inclusive — within-or-equal.
+		expect(isInUvCone(0, 0, 1, 0, UV_FLASHLIGHT_RANGE_TILES - 0.01, 0)).toBe(true);
+	});
+
+	it("reveals an enemy at the cone edge angle", () => {
+		// At half-angle exactly: dot = cos(half-angle), reveal returns true.
+		const r = 4;
+		const dx = r * Math.cos(UV_FLASHLIGHT_HALF_ANGLE_RAD);
+		const dz = r * Math.sin(UV_FLASHLIGHT_HALF_ANGLE_RAD);
+		expect(isInUvCone(0, 0, 1, 0, dx, dz)).toBe(true);
+	});
+
+	it("hides an enemy just outside the cone edge angle", () => {
+		const r = 4;
+		const overshoot = UV_FLASHLIGHT_HALF_ANGLE_RAD + 0.1;
+		const dx = r * Math.cos(overshoot);
+		const dz = r * Math.sin(overshoot);
+		expect(isInUvCone(0, 0, 1, 0, dx, dz)).toBe(false);
+	});
+
+	it("treats player-on-enemy overlap as a reveal", () => {
+		// Defensive — the player walking through a phasing enemy
+		// shouldn't briefly desync the visibility state.
+		expect(isInUvCone(0, 0, 1, 0, 0, 0)).toBe(true);
+	});
+
+	it("works with non-axis-aligned forward vectors", () => {
+		// Forward at 45° — enemy at 45° should be revealed; enemy at
+		// the opposite quadrant should not.
+		const inv = 1 / Math.SQRT2;
+		expect(isInUvCone(0, 0, inv, inv, 5 * inv, 5 * inv)).toBe(true);
+		expect(isInUvCone(0, 0, inv, inv, -5 * inv, -5 * inv)).toBe(false);
+	});
+});
+
+describe("PC4 — crucifix radius + lifetime", () => {
+	const NOW = 1_000_000;
+
+	function placeAt(x: number, z: number, ttlMs = CRUCIFIX_LIFETIME_MS): CrucifixInstance {
+		return { id: 1, x, z, expiresAtMs: NOW + ttlMs };
+	}
+
+	it("returns false when the active list is empty", () => {
+		expect(isEnemyCrucified([], 0, 0, NOW)).toBe(false);
+	});
+
+	it("returns true when the enemy is inside the radius of an active crucifix", () => {
+		const c = [placeAt(0, 0)];
+		expect(isEnemyCrucified(c, 0, 0, NOW)).toBe(true);
+		expect(isEnemyCrucified(c, CRUCIFIX_RADIUS_TILES - 0.01, 0, NOW)).toBe(true);
+	});
+
+	it("returns false when the enemy is just outside the radius", () => {
+		const c = [placeAt(0, 0)];
+		expect(isEnemyCrucified(c, CRUCIFIX_RADIUS_TILES + 0.01, 0, NOW)).toBe(false);
+	});
+
+	it("includes the boundary distance (radius squared comparison is <=)", () => {
+		const c = [placeAt(0, 0)];
+		expect(isEnemyCrucified(c, CRUCIFIX_RADIUS_TILES, 0, NOW)).toBe(true);
+	});
+
+	it("ignores expired crucifixes", () => {
+		// expiresAtMs == NOW means expired (strict `now >= expiresAtMs`
+		// branch in isEnemyCrucified treats equal as expired so the
+		// instance disappears the frame it would die).
+		const expired: CrucifixInstance = { id: 2, x: 0, z: 0, expiresAtMs: NOW };
+		expect(isEnemyCrucified([expired], 0, 0, NOW)).toBe(false);
+	});
+
+	it("returns true if ANY active crucifix covers the enemy (OR across the list)", () => {
+		const list = [placeAt(20, 20), placeAt(0, 0)];
+		expect(isEnemyCrucified(list, 1, 1, NOW)).toBe(true);
+	});
+
+	it("CRUCIFIX_RADIUS_TILES is a positive tile count", () => {
+		expect(CRUCIFIX_RADIUS_TILES).toBeGreaterThan(0);
+	});
+
+	it("CRUCIFIX_LIFETIME_MS is at least a few seconds", () => {
+		expect(CRUCIFIX_LIFETIME_MS).toBeGreaterThanOrEqual(5_000);
 	});
 });

@@ -16,6 +16,7 @@ import {
 	isBlocking,
 	type MapSector,
 	newSectorCache,
+	pickUvHidden,
 	polygonContains,
 	rayHitsSegment,
 	resolveCollision,
@@ -27,7 +28,7 @@ import { describe, expect, it } from "vitest";
 
 const SEED = 0xdeadbeef;
 
-describe("objexoom engine — map generation", () => {
+describe("bonebuster engine — map generation", () => {
 	it("is deterministic for a given seed", () => {
 		const a = generateMap(SEED);
 		const b = generateMap(SEED);
@@ -111,7 +112,7 @@ describe("objexoom engine — map generation", () => {
 	});
 });
 
-describe("objexoom engine — collision + raycast", () => {
+describe("bonebuster engine — collision + raycast", () => {
 	const map = generateMap(SEED);
 
 	it("treats walls and closed doors as blocking", () => {
@@ -177,7 +178,7 @@ const square = (cx: number, cy: number, size: number): Vec2[] => [
 	{ x: cx - size, y: cy + size },
 ];
 
-describe("objexoom engine — sector containment + lookup", () => {
+describe("bonebuster engine — sector containment + lookup", () => {
 	it("polygonContains: square — interior in, exterior out", () => {
 		const verts = square(0, 0, 10);
 		expect(polygonContains({ x: 0, y: 0 }, verts)).toBe(true);
@@ -558,7 +559,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 // floor dispatch), H4 (out-of-bounds fall-to-death signal), H5 (negative
 // floor = lava), and H9 (goal hue index derivation). Components H6/H7/H8
 // are rendering-side and covered by browser/e2e tests.
-describe("objexoom engine — Section H (jump/fall/lava/heights)", () => {
+describe("bonebuster engine — Section H (jump/fall/lava/heights)", () => {
 	const sectorMap: BoneBusterSectorMap = {
 		kind: "sectors",
 		seed: 0,
@@ -648,5 +649,49 @@ describe("objexoom engine — Section H (jump/fall/lava/heights)", () => {
 		const a = (seed >>> 0) % 5;
 		const b = (seed >>> 0) % 5;
 		expect(a).toBe(b);
+	});
+});
+
+describe("PC3 — pickUvHidden", () => {
+	it("returns false for every spawnIndex when seed === 0 (canonical anchor)", () => {
+		// The canonical-screenshot pipeline pins refLevel(0) byte-for-
+		// byte. A uvHidden tag on the refLevel(0) enemies would render
+		// them invisible and break the screenshot. The seed=0
+		// special-case keeps the canonical screenshot stable.
+		for (let i = 0; i < 50; i += 1) {
+			expect(pickUvHidden(0, i)).toBe(false);
+		}
+	});
+
+	it("is deterministic per (seed, spawnIndex) pair", () => {
+		expect(pickUvHidden(42, 7)).toBe(pickUvHidden(42, 7));
+		expect(pickUvHidden(0xdeadbeef, 12)).toBe(pickUvHidden(0xdeadbeef, 12));
+	});
+
+	it("produces a non-empty subset of hides at non-zero seeds", () => {
+		// Property check: across a broad spawnIndex range at a
+		// procedural seed, the tagger fires SOMETIMES. A 100% false
+		// or 100% true result would indicate a broken mix.
+		let trueCount = 0;
+		for (let i = 0; i < 100; i += 1) {
+			if (pickUvHidden(0xabcdef, i)) trueCount += 1;
+		}
+		expect(trueCount).toBeGreaterThan(0);
+		expect(trueCount).toBeLessThan(100);
+	});
+
+	it("approximately matches the 1-in-8 target rate at scale", () => {
+		// 12.5% expected. Sample 8000 spawns and verify the rate
+		// is within ±3% — wide enough not to be flaky, tight enough
+		// to catch a regression where the modulo drifts.
+		let trueCount = 0;
+		for (let s = 1; s <= 100; s += 1) {
+			for (let i = 0; i < 80; i += 1) {
+				if (pickUvHidden(s, i)) trueCount += 1;
+			}
+		}
+		const rate = trueCount / 8000;
+		expect(rate).toBeGreaterThan(0.095);
+		expect(rate).toBeLessThan(0.155);
 	});
 });

@@ -1,5 +1,5 @@
 /**
- * ARCH1a — typed event-bus surface for the 14 `objexoom:*` channels.
+ * ARCH1a — typed event-bus surface for the 14 `bonebuster:*` channels.
  *
  * Co-exists with the existing untyped `window.dispatchEvent(new
  * CustomEvent(...))` call sites; ARCH1b migrates each call site
@@ -272,6 +272,29 @@ export interface EmfReadingEvent {
 	level: 0 | 1 | 2 | 3 | 4 | 5;
 }
 
+/**
+ * PC2 — spirit-box response. Dispatched from the Scene tick when
+ * (a) the player owns the spirit box, (b) a live enemy is within
+ * SPIRIT_BOX_TRIGGER_RADIUS tiles, and (c) the per-tick cooldown
+ * has expired. Carries the phoneme string (`pickSpiritBoxPhoneme`
+ * result) so the SpiritBoxBubble HUD slot just renders the
+ * payload — no Scene → HUD coupling beyond this event shape.
+ */
+export interface SpiritBoxResponseEvent {
+	type: "spiritBoxResponse";
+	phoneme: string;
+}
+
+/**
+ * PC4 — Player pressed `9` to place a crucifix. Scene listens for
+ * this, decrements `state.crucifixes`, and pushes a new
+ * CrucifixInstance into the active list. Key-input layer dispatches;
+ * the gameplay state owner consumes.
+ */
+export interface CrucifixPlaceEvent {
+	type: "crucifixPlace";
+}
+
 export type BoneBusterEvent =
 	| BurstEvent
 	| BodyPartsEvent
@@ -297,7 +320,9 @@ export type BoneBusterEvent =
 	| BossSpottedEvent
 	| BossDefeatedEvent
 	| EnemyKilledEvent
-	| EmfReadingEvent;
+	| EmfReadingEvent
+	| SpiritBoxResponseEvent
+	| CrucifixPlaceEvent;
 
 export type BoneBusterEventType = BoneBusterEvent["type"];
 
@@ -318,7 +343,7 @@ type DetailOf<E extends BoneBusterEvent> = Omit<E, "type">;
  */
 export function dispatch<E extends BoneBusterEvent>(event: E): void {
 	const { type, ...detail } = event;
-	const eventName = `objexoom:${type}`;
+	const eventName = `bonebuster:${type}`;
 	const customEvent = new CustomEvent(eventName, { detail });
 	window.dispatchEvent(customEvent);
 }
@@ -339,7 +364,7 @@ export function addBoneBusterListener<K extends BoneBusterEventType>(
 	type: K,
 	handler: (event: EventOf<K>) => void,
 ): () => void {
-	const eventName = `objexoom:${type}`;
+	const eventName = `bonebuster:${type}`;
 	const adapter = (e: Event) => {
 		const detail = (e as CustomEvent<DetailOf<EventOf<K>>>).detail;
 		// Reconstruct the full discriminated-union member from the wire detail.

@@ -3,7 +3,7 @@ import { getSectorAtPoint, isSectorMap } from "@engine/engine";
 import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
 
-describe("objexoom refLevel loader", () => {
+describe("bonebuster refLevel loader", () => {
 	for (let i = 0; i < 5; i += 1) {
 		const idx = i as RefLevelIndex;
 		describe(`level ${i + 1}`, () => {

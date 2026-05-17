@@ -48,6 +48,7 @@ import {
 } from "@shared/constants";
 import type { BoneBusterSettings } from "@store/settings";
 import type { GameRef } from "@views/Shell";
+import { type CrucifixInstance, isEnemyCrucified } from "@world/ghostHunting";
 import type * as THREE from "three";
 import type * as Yuka from "yuka";
 
@@ -89,6 +90,13 @@ export interface EnemyTickContext {
 	 * scaling can pass `undefined` (treated as scale = 1).
 	 */
 	timeScaleBus?: { getCombinedScale(nowMs: number): number };
+	/**
+	 * PC4 — active crucifix placements. When an enemy is within the
+	 * radius of any active crucifix, the FSM tick + bullet fire + melee
+	 * are short-circuited so the enemy stands passive until the crucifix
+	 * expires. Optional so legacy test contexts can omit it.
+	 */
+	crucifixesRef?: { current: readonly CrucifixInstance[] };
 }
 
 export function tickEnemyLoop(ctx: EnemyTickContext): void {
@@ -111,6 +119,7 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 		now,
 		dt: rawDt,
 		timeScaleBus,
+		crucifixesRef,
 	} = ctx;
 
 	// POL35 — combined time scale. The bus combines POL12 hitstop (0.05
@@ -145,6 +154,20 @@ export function tickEnemyLoop(ctx: EnemyTickContext): void {
 		const dyp = py - enemy.position.y;
 		const distToPlayer = Math.hypot(dxp, dyp);
 		if (distToPlayer === 0) continue;
+
+		// PC4 — crucifix gate. If the enemy stands within any active
+		// crucifix's radius, skip the entire AI tick: no FSM transition,
+		// no movement target, no bullet fire, no melee. The enemy is held
+		// in its current pose until the crucifix expires (Scene prunes
+		// expired entries before this tick runs).
+		if (
+			crucifixesRef !== undefined &&
+			isEnemyCrucified(crucifixesRef.current, enemy.position.x, enemy.position.y, now)
+		) {
+			const yukaEntity = yukaEntitiesRef.current.get(enemy.id);
+			if (yukaEntity) yukaEntity.position.set(enemy.position.x, 0, enemy.position.y);
+			continue;
+		}
 
 		const phaser = enemy.kind === "phaser";
 		const lastSeen = lastSeenRef.current.get(enemy.id) ?? -Infinity;

@@ -90,6 +90,47 @@ export const LARGE_PROPS: readonly LargePropDef[] = [
 		blocking: false,
 		blockingRadius: 0,
 	},
+	// PE4b — sewer-industrial additions from PSX Mega Pack II Large
+	// Props & Machinery. Extends the variant pool from 10 → 16. Each
+	// rolls in via the same deterministic hash picker as the existing
+	// entries; per-archetype steering is a later subsystem if/when
+	// the largeProps subsystem gains per-archetype scoping.
+	{
+		id: "chimney_a_2",
+		url: A("/assets/models/props/large/chimney_a_2.glb"),
+		blocking: false,
+		blockingRadius: 0,
+	},
+	{
+		id: "shipping_container_mx_2",
+		url: A("/assets/models/props/large/shipping_container_mx_2.glb"),
+		blocking: true,
+		blockingRadius: 0.9,
+	},
+	{
+		id: "storage_tank_mx_1",
+		url: A("/assets/models/props/large/storage_tank_mx_1.glb"),
+		blocking: true,
+		blockingRadius: 0.8,
+	},
+	{
+		id: "tank_system_mx_1",
+		url: A("/assets/models/props/large/tank_system_mx_1.glb"),
+		blocking: true,
+		blockingRadius: 1.0,
+	},
+	{
+		id: "wires_holder_hr_large_1",
+		url: A("/assets/models/props/large/wires_holder_hr_large_1.glb"),
+		blocking: false,
+		blockingRadius: 0,
+	},
+	{
+		id: "wires_hr_1",
+		url: A("/assets/models/props/large/wires_hr_1.glb"),
+		blocking: false,
+		blockingRadius: 0,
+	},
 ];
 
 /** Deterministic large-prop pick by hash. */

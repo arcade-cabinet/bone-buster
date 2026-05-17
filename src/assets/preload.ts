@@ -49,14 +49,19 @@ import { preloadLamps } from "../scene/entities/LampField";
 import { preloadLargeProps } from "../scene/entities/LargePropField";
 import { preloadNature } from "../scene/entities/NatureField";
 import { preloadNpcs } from "../scene/entities/NpcField";
-import { preloadLootPickups } from "../scene/entities/PickupMesh";
+import { preloadLootPickups, preloadToolPickups } from "../scene/entities/PickupMesh";
 import { preloadProps } from "../scene/entities/PropField";
 import { preloadDoors } from "../scene/entities/RealDoor";
 import { preloadTraps } from "../scene/entities/TrapField";
 import { preloadVehicleWrecks } from "../scene/entities/VehicleWreck";
 import { preloadWalls } from "../scene/map/MapGeometry";
 import { preloadSectorWalls } from "../scene/map/SectorMapGeometry";
-import { preloadMeleeSkins, preloadWeapons } from "../scene/viewmodel/WeaponViewmodel";
+import {
+	preloadChaingunSkins,
+	preloadMeleeSkins,
+	preloadPistolSkins,
+	preloadWeapons,
+} from "../scene/viewmodel/WeaponViewmodel";
 
 /**
  * Tier 1 — called at app boot from `BoneBusterShell` mount. The
@@ -67,6 +72,11 @@ import { preloadMeleeSkins, preloadWeapons } from "../scene/viewmodel/WeaponView
  */
 export function preloadTier1Critical(): void {
 	preloadWeapons();
+	// PD1 — pistol is the start weapon for every run, and the per-seed
+	// pistol skin pick happens at viewmodel mount before any other tier
+	// preloads. Loading the skin pool tier-1 prevents a first-frame
+	// stall when the seed lands on a non-default skin.
+	preloadPistolSkins();
 }
 
 /**
@@ -82,9 +92,11 @@ export function preloadTier2MapMount(): void {
 	preloadLamps();
 	preloadDoors();
 	preloadLootPickups();
+	preloadToolPickups();
 	preloadLargeProps();
 	preloadProps();
 	preloadMeleeSkins();
+	preloadChaingunSkins();
 }
 
 /**

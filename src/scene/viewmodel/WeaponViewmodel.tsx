@@ -4,7 +4,9 @@ import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import { ROLE } from "@styles/tokens/index";
+import { CHAINGUN_SKIN_URLS, pickChaingunSkin } from "@world/chaingunSkins";
 import { MELEE_SKIN_URLS, pickMeleeSkin } from "@world/meleeSkins";
+import { PISTOL_SKIN_URLS, pickPistolSkin } from "@world/pistolSkins";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
@@ -51,7 +53,7 @@ const VIEWMODEL_TARGET_LENGTH = 0.32;
  *  - position copies camera.position
  *  - quaternion copies camera.quaternion
  *  - translateX/Y/Z then offset to the screen-right hip pose per model
- *  - recoil adds a forward-then-back z-bounce on `objexoom:fire`
+ *  - recoil adds a forward-then-back z-bounce on `bonebuster:fire`
  *
  * GLB models come from `models.ts`. Each weapon has its own scale +
  * rotation tuned so the muzzle points along camera-forward (-Z).
@@ -110,7 +112,17 @@ export function WeaponViewmodel({
 	// with the per-seed picked skin so each run cycles through machete /
 	// axe / chainsaw / knife / meathook / cleaver / sword. Other weapons
 	// resolve to their single canonical URL.
-	const url = weapon === "melee" ? pickMeleeSkin(mapSeed) : model.url;
+	// COV9 / PD1 / PD3 — melee + pistol + chaingun slots resolve
+	// per-seed via their skin pools. Other weapons resolve to the
+	// single canonical URL.
+	const url =
+		weapon === "melee"
+			? pickMeleeSkin(mapSeed)
+			: weapon === "pistol"
+				? pickPistolSkin(mapSeed)
+				: weapon === "chaingun"
+					? pickChaingunSkin(mapSeed)
+					: model.url;
 	const gltf = useGLTF(url);
 	// Clone the cached GLTF scene per-mount: `useGLTF` shares the source
 	// tree across instances, so mutating `.material` on the original would
@@ -275,4 +287,14 @@ export function preloadWeapons(): void {
 // a tier-3 weapon (rare pickup) so this is fine to defer.
 export function preloadMeleeSkins(): void {
 	for (const url of MELEE_SKIN_URLS) useGLTF.preload(url);
+}
+// PD1 — every pistol skin variant is preloaded so per-seed swaps
+// don't stall the PISTOL viewmodel on level-change.
+export function preloadPistolSkins(): void {
+	for (const url of PISTOL_SKIN_URLS) useGLTF.preload(url);
+}
+// PD3 — every chaingun skin variant is preloaded. Chaingun is a
+// pickup weapon (not start-of-run) so this is tier-2 not tier-1.
+export function preloadChaingunSkins(): void {
+	for (const url of CHAINGUN_SKIN_URLS) useGLTF.preload(url);
 }

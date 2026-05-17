@@ -20,15 +20,15 @@ function captureBus() {
 	const events: CapturedEvent[] = [];
 	const listener = (e: Event) => {
 		const ce = e as CustomEvent;
-		events.push({ type: ce.type.replace(/^objexoom:/, ""), ...ce.detail });
+		events.push({ type: ce.type.replace(/^bonebuster:/, ""), ...ce.detail });
 	};
-	for (const t of ["objexoom:enemyKilled", "objexoom:bossDefeated"]) {
+	for (const t of ["bonebuster:enemyKilled", "bonebuster:bossDefeated"]) {
 		window.addEventListener(t, listener);
 	}
 	return {
 		events,
 		cleanup: () => {
-			for (const t of ["objexoom:enemyKilled", "objexoom:bossDefeated"]) {
+			for (const t of ["bonebuster:enemyKilled", "bonebuster:bossDefeated"]) {
 				window.removeEventListener(t, listener);
 			}
 		},

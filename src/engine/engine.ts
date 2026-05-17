@@ -1,4 +1,4 @@
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, RNG_TAGS } from "@engine/prng";
 import { PISTOL_MAX_RANGE, PLAYER_RADIUS, RATTLER_HP, TILE } from "@shared/constants";
 import type { PropArchetype } from "@world/scatter/propPool";
 
@@ -43,7 +43,12 @@ export type EnemyKind =
 	| "goliath"
 	| "swiney"
 	| "mrZ"
-	| "lupin";
+	| "lupin"
+	// PF2 — sole truly novel kind from the unwired horror-fantasy set
+	// per docs/audits/horror-fantasy-enemy-audit.md. Distinct fur-clad
+	// brawler silhouette; everything else in the unwired set is a skin
+	// variant on an existing kind.
+	| "bigfoot";
 
 export type EnemySpawn = Readonly<{
 	kind: EnemyKind;
@@ -67,6 +72,21 @@ export type PickupKind =
 	// detection only; doesn't replace any weapon or change damage. See
 	// `docs/GHOST-HUNTING.md` for the slice plan.
 	| "emfReader"
+	// PC2 — Spirit box pickup. Carrying it activates the SpiritBoxBubble
+	// HUD overlay: when any live enemy is within SPIRIT_BOX_TRIGGER_RADIUS
+	// tiles (6), the box plays a phoneme from the deterministic per-seed
+	// pool on a 2.5s cooldown. Passive — no weapon-slot interference.
+	| "spiritBox"
+	// PC3 — UV flashlight pickup. Carrying it mounts a second SpotLight
+	// (purple) parallel to the existing white Flashlight. Enemies tagged
+	// `uvHidden: true` at spawn render with mesh.visible = false until
+	// the UV cone contains them.
+	| "uvFlashlight"
+	// PC4 — Crucifix pickup. Increments the player's inventory counter
+	// (GameState.crucifixes) by 1 per pickup. Player can stack several
+	// across a run; pressing `9` drops one at the player's XZ as an
+	// active CrucifixInstance with CRUCIFIX_LIFETIME_MS expiry.
+	| "crucifix"
 	// COV12 step-2 — rare hero-tier bonus drop. Exactly one per map,
 	// placed at the centroid of the sector farthest from playerSpawn.
 	// On collect, dispatches a kind-specific bonus picked from the COV12
@@ -433,7 +453,7 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 		16,
 		Math.max(4, Math.round(baseEnemyCount * ARCHETYPE_ENEMY_MULTIPLIER[archetypeIdx])),
 	);
-	// Base trio placeholder. Production paths remap through
+	// Base trio stand-in. Production paths remap through
 	// `remapEnemyMix` (see app/views/Scene.tsx:141) before consuming
 	// `enemySpawns`, but cycle all three base kinds so any caller that
 	// reads the raw list (incl. tests + the bypass-remap pickup path)
@@ -479,9 +499,23 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	// so the tool reads as a discovery beat rather than a guaranteed
 	// every-map find.
 	const wantsEmf = (seed >>> 0) % 4 === 0;
+	// PC2 — Spirit box spawns on every 5th seed (offset from EMF's %4
+	// so the two tools don't co-spawn on every shared multiple). Same
+	// per-level ownership semantics as EMF.
+	const wantsSpiritBox = (seed >>> 0) % 5 === 0;
+	// PC3 — UV flashlight spawns on every 6th seed (offset from EMF
+	// and spirit box). Per-level ownership reset.
+	const wantsUv = (seed >>> 0) % 6 === 0;
+	// PC4 — Crucifix spawns on every 7th seed. Inventory counter
+	// resets per level alongside the other tool flags; the player
+	// re-builds a small crucifix stockpile on each eligible map.
+	const wantsCrucifix = (seed >>> 0) % 7 === 0;
 	const reserved: PickupKind[] = ["chaingunAmmo", "shotgunAmmo"];
 	if (wantsFlame) reserved.push("flamethrowerAmmo");
 	if (wantsEmf) reserved.push("emfReader");
+	if (wantsSpiritBox) reserved.push("spiritBox");
+	if (wantsUv) reserved.push("uvFlashlight");
+	if (wantsCrucifix) reserved.push("crucifix");
 	const pickupSpawns: PickupSpawn[] = pickupCandidates
 		.slice(0, pickupTotal)
 		.map((position, idx) => {
@@ -683,6 +717,15 @@ export type Enemy = {
 	 * 0 when not staggered.
 	 */
 	staggerUntil?: number;
+	/**
+	 * PC3 — UV-hidden tag. When true, EnemyMesh keeps mesh.visible = false
+	 * until the UV flashlight cone contains the enemy. Assigned at spawn
+	 * time via `pickUvHidden(seed, spawnIndex)` so the same seed always
+	 * hides the same enemies — keeps QA + canonical playtests reproducible.
+	 * Non-boss enemies only (bosses are always-visible — the reveal layer
+	 * shouldn't mask the goal-boss).
+	 */
+	uvHidden?: boolean;
 };
 
 function enemyBaseHp(kind: EnemyKind): number {
@@ -691,6 +734,10 @@ function enemyBaseHp(kind: EnemyKind): number {
 			return Math.floor(RATTLER_HP * 0.7);
 		case "bouncer":
 			return Math.floor(RATTLER_HP * 1.5);
+		case "bigfoot":
+			// PF2 — between rattler (1.0×) and bighoss/heap-tier; tankier
+			// brawler than the baseline melee, lighter than the heavy tier.
+			return Math.floor(RATTLER_HP * 1.8);
 		default:
 			return RATTLER_HP;
 	}
@@ -753,8 +800,23 @@ export function spawnEnemies(map: BoneBusterMap, spawnsOverride?: readonly Enemy
 			patrolBearing: bearing,
 			lastShotAt: 0,
 			...(isBoss ? { tier: "boss" as const } : {}),
+			// PC3 — UV-hidden tag, applied to ~1-in-8 non-boss enemies.
+			// Deterministic per (map.seed, spawnIndex) so the same seed
+			// always hides the same enemies. Bosses never hide — the
+			// goal-boss must remain visible without the UV reveal.
+			uvHidden: isBoss ? false : pickUvHidden(map.seed, i),
 		};
 	});
+}
+
+// PC3 — ~12.5% of non-boss enemies hide. `seed === 0` (refLevel anchor)
+// short-circuits to keep the canonical screenshot baseline. Routes through
+// canonical mulberry32 with the ENMX tag; spawnIndex is golden-ratio-mixed
+// before XOR so adjacent indices avalanche cleanly into the PRNG seed.
+export function pickUvHidden(seed: number, spawnIndex: number): boolean {
+	if (seed >>> 0 === 0) return false;
+	const mixed = ((seed >>> 0) ^ Math.imul(spawnIndex >>> 0, 0x9e3779b1) ^ RNG_TAGS.ENMX) >>> 0;
+	return mulberry32(mixed)() < 0.125;
 }
 
 export type Pickup = {

@@ -68,7 +68,7 @@ function timingsFor(ttlMs: number): { motion: number; settleEnd: number; ttl: nu
 }
 
 /**
- * I1 — body-part physics. Listens for `objexoom:bodyParts`
+ * I1 — body-part physics. Listens for `bonebuster:bodyParts`
  * (dispatched at every enemy death) and spawns 4-6 chunky shard meshes
  * at the death location. Each shard:
  *

@@ -7,7 +7,7 @@ import {
 } from "@store/runStats";
 import { describe, expect, it } from "vitest";
 
-describe("objexoom runStatsReducer (B2)", () => {
+describe("bonebuster runStatsReducer (B2)", () => {
 	it("makeInitialRunStats starts at zero", () => {
 		const stats = makeInitialRunStats(1000);
 		expect(stats.runStartAt).toBe(1000);
@@ -110,7 +110,7 @@ describe("objexoom runStatsReducer (B2)", () => {
 	});
 });
 
-describe("objexoom advanceLevel (B1/B4)", () => {
+describe("bonebuster advanceLevel (B1/B4)", () => {
 	it("ref levels advance 1→2→3→4 (cleared 0..3)", () => {
 		expect(advanceLevel(1, 0)).toBe(2);
 		expect(advanceLevel(2, 1)).toBe(3);
@@ -134,7 +134,7 @@ describe("objexoom advanceLevel (B1/B4)", () => {
 	});
 });
 
-describe("objexoom nextStatusAfterTransition (PT1E)", () => {
+describe("bonebuster nextStatusAfterTransition (PT1E)", () => {
 	it("returns 'playing' when there's a next level in the campaign", () => {
 		expect(nextStatusAfterTransition(1, 0)).toBe("playing");
 		expect(nextStatusAfterTransition(2, 1)).toBe("playing");

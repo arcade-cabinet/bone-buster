@@ -1,3 +1,5 @@
+import { pickEnemySkin } from "@assets/models";
+import type { EnemyKind } from "@engine/engine";
 import { addBoneBusterListener } from "@engine/events";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE } from "@styles/tokens/index";
 import { AnimatePresence, motion } from "framer-motion";
@@ -14,10 +16,12 @@ import { useEffect, useState } from "react";
  * surface — that beat is the celebratory ✦ card, distinct from the
  * per-mob ticker.
  *
- * Variant flavor names are deliberately NOT in scope yet (the PRD
- * §Parked entry suggested e.g. "PLAGUEBEAK (STAINED-CASSOCK)" but
- * variant identity is picked at render-time in the GLB loader and
- * isn't on the Enemy record — that plumbing is its own slice).
+ * SLA4 — variant flavor names. Multi-skin rosters in `src/assets/models.ts`
+ * carry an optional `flavorName` per non-canonical skin (e.g. JESTER →
+ * CLOAKED, HEAP → MUSCULAR). The banner derives the variant from the
+ * enemyId via `pickEnemySkin` and renders "BUSTED A <KIND> (<FLAVOR>)"
+ * when the skin has a flavor; rosters without a flavor or single-skin
+ * kinds keep the bare "BUSTED A <KIND>" output.
  */
 
 const DISPLAY_NAMES: Record<string, string> = {
@@ -47,13 +51,18 @@ const DISPLAY_NAMES: Record<string, string> = {
 	lupin: "LUPIN",
 };
 
+function bannerLabel(kind: string, flavor: string | null): string {
+	const kindLabel = DISPLAY_NAMES[kind] ?? kind.toUpperCase();
+	return flavor ? `BUSTED A ${kindLabel} (${flavor})` : `BUSTED A ${kindLabel}`;
+}
+
 const HOLD_MS = 900;
 // Kills within this window stack into the same banner instead of
 // re-mounting one banner per shot. 240ms = three frames at 12.5fps,
 // covers a chaingun burst comfortably.
 const STACK_WINDOW_MS = 240;
 
-type Banner = { id: number; count: number; firstKind: string };
+type Banner = { id: number; count: number; firstKind: string; firstFlavor: string | null };
 
 export function KillBanner() {
 	const [banner, setBanner] = useState<Banner | null>(null);
@@ -78,13 +87,20 @@ export function KillBanner() {
 					id: inFlight.id,
 					count: inFlight.count + 1,
 					firstKind: inFlight.firstKind,
+					firstFlavor: inFlight.firstFlavor,
 				};
 				setBanner(inFlight);
 				return;
 			}
 			counter += 1;
 			lastTs = now;
-			inFlight = { id: counter, count: 1, firstKind: evt.kind };
+			const skin = pickEnemySkin(evt.kind as EnemyKind, evt.enemyId);
+			inFlight = {
+				id: counter,
+				count: 1,
+				firstKind: evt.kind,
+				firstFlavor: skin.flavorName ?? null,
+			};
 			setBanner(inFlight);
 			// Clear the in-flight reference once the hold window expires so
 			// the next kill after a quiet period opens a fresh banner.
@@ -104,7 +120,7 @@ export function KillBanner() {
 	const label = banner
 		? banner.count > 1
 			? `BUSTED ${banner.count}`
-			: `BUSTED A ${DISPLAY_NAMES[banner.firstKind] ?? banner.firstKind.toUpperCase()}`
+			: bannerLabel(banner.firstKind, banner.firstFlavor)
 		: "";
 
 	return (

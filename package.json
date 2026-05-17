@@ -81,6 +81,7 @@
 		"postprocessing": "^6.39.1",
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5",
+		"seedrandom": "^3.0.5",
 		"three": "^0.184.0",
 		"three-stdlib": "^2.36.1",
 		"yuka": "^0.7.8"
@@ -99,6 +100,7 @@
 		"@types/node": "^25.8.0",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
+		"@types/seedrandom": "^3.0.8",
 		"@types/three": "^0.184.0",
 		"@vitejs/plugin-react": "^6.0.2",
 		"@vitest/browser": "^4.1.3",

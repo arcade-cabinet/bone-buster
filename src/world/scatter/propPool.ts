@@ -167,6 +167,210 @@ export const PROP_CATALOGUE = {
 		url: A("/assets/models/props/scatter/saw_blade_1.glb"),
 		blocking: false,
 	},
+	// PE1 — Mansion_PSX scatter additions for the library archetype.
+	// Standalone-readable items only (columns, windows, door frames,
+	// short wall sections). The full Mansion pack (big walls, roofs,
+	// moldings) is structural assembly and doesn't fit the per-prop
+	// scatter pool — wiring those would need a separate archetype-
+	// structural slice.
+	mansionColumn: {
+		id: "mansion_column",
+		url: A("/assets/models/props/scatter/library/mansion_column.glb"),
+		blocking: true,
+	},
+	mansionWindow: {
+		id: "mansion_window",
+		url: A("/assets/models/props/scatter/library/mansion_window.glb"),
+		blocking: false,
+	},
+	mansionDoorFrame: {
+		id: "mansion_door_frame",
+		url: A("/assets/models/props/scatter/library/mansion_door_frame.glb"),
+		blocking: true,
+	},
+	mansionSmallWall: {
+		id: "mansion_small_wall",
+		url: A("/assets/models/props/scatter/library/mansion_small_wall.glb"),
+		blocking: true,
+	},
+	// PE2 — PSX-Farm Assets scatter additions for the courtyard
+	// archetype. Subset chosen for standalone readability in the
+	// existing per-prop scatter pool (apples / haybales / barrel /
+	// basket / fences / carrots / birdhouse). Blocking flags follow
+	// the silhouette: fences + barrels block, small items don't.
+	farmApple: {
+		id: "farm_apple",
+		url: A("/assets/models/props/scatter/courtyard/farm_apple.glb"),
+		blocking: false,
+	},
+	farmCarrot: {
+		id: "farm_carrot",
+		url: A("/assets/models/props/scatter/courtyard/farm_carrot.glb"),
+		blocking: false,
+	},
+	farmHaybale1: {
+		id: "farm_haybale_1",
+		url: A("/assets/models/props/scatter/courtyard/farm_haybale_1.glb"),
+		blocking: true,
+	},
+	farmHaybale2: {
+		id: "farm_haybale_2",
+		url: A("/assets/models/props/scatter/courtyard/farm_haybale_2.glb"),
+		blocking: true,
+	},
+	farmBarrel: {
+		id: "farm_barrel",
+		url: A("/assets/models/props/scatter/courtyard/farm_barrel.glb"),
+		blocking: true,
+	},
+	farmBasket: {
+		id: "farm_basket",
+		url: A("/assets/models/props/scatter/courtyard/farm_basket.glb"),
+		blocking: false,
+	},
+	farmFenceShort: {
+		id: "farm_fence_short",
+		url: A("/assets/models/props/scatter/courtyard/farm_fence_short.glb"),
+		blocking: true,
+	},
+	farmFenceMedium: {
+		id: "farm_fence_medium",
+		url: A("/assets/models/props/scatter/courtyard/farm_fence_medium.glb"),
+		blocking: true,
+	},
+	farmBirdhouse: {
+		id: "farm_birdhouse",
+		url: A("/assets/models/props/scatter/courtyard/farm_birdhouse.glb"),
+		blocking: false,
+	},
+	// PE3 — PSX-Electrical scatter additions for the sewer archetype.
+	// Pipes / valve / machinery read as industrial scenery and replace
+	// the corridor-flavored stand-ins previously serving sewer.
+	electricalValve: {
+		id: "electrical_valve",
+		url: A("/assets/models/props/scatter/sewer/electrical_valve.glb"),
+		blocking: false,
+	},
+	electricalPipeAngled: {
+		id: "electrical_pipe_angled",
+		url: A("/assets/models/props/scatter/sewer/electrical_pipe_angled.glb"),
+		blocking: true,
+	},
+	electricalPipeV1: {
+		id: "electrical_pipe_v1",
+		url: A("/assets/models/props/scatter/sewer/electrical_pipe_v1.glb"),
+		blocking: true,
+	},
+	electricalPipeV2: {
+		id: "electrical_pipe_v2",
+		url: A("/assets/models/props/scatter/sewer/electrical_pipe_v2.glb"),
+		blocking: true,
+	},
+	electricalPipeCurve: {
+		id: "electrical_pipe_v1_curve",
+		url: A("/assets/models/props/scatter/sewer/electrical_pipe_v1_curve.glb"),
+		blocking: true,
+	},
+	electricalMachinery1: {
+		id: "electrical_machinery_1",
+		url: A("/assets/models/props/scatter/sewer/electrical_machinery_1.glb"),
+		blocking: true,
+	},
+	electricalMachinery3: {
+		id: "electrical_machinery_3",
+		url: A("/assets/models/props/scatter/sewer/electrical_machinery_3.glb"),
+		blocking: true,
+	},
+	electricalMachinery5: {
+		id: "electrical_machinery_5",
+		url: A("/assets/models/props/scatter/sewer/electrical_machinery_5.glb"),
+		blocking: true,
+	},
+	// PE4a — corridor scatter additions from PSX Mega Pack II Props.
+	// "Abandoned hallway / loading bay" identity: crates, hanging
+	// shelves, small handheld items, scattered hardware.
+	corridorCrate3: {
+		id: "corridor_wooden_crate_3",
+		url: A("/assets/models/props/scatter/corridor/wooden_crate_3.glb"),
+		blocking: true,
+	},
+	corridorHangingShelf: {
+		id: "corridor_hanging_shelf_mx_1",
+		url: A("/assets/models/props/scatter/corridor/hanging_shelf_mx_1.glb"),
+		blocking: false,
+	},
+	corridorHandheldRadio: {
+		id: "corridor_handheld_fm_radio",
+		url: A("/assets/models/props/scatter/corridor/handheld_fm_radio.glb"),
+		blocking: false,
+	},
+	corridorFishingHook: {
+		id: "corridor_fishing_hook",
+		url: A("/assets/models/props/scatter/corridor/fishing_hook.glb"),
+		blocking: false,
+	},
+	corridorBallBearing: {
+		id: "corridor_ball_bearing_large",
+		url: A("/assets/models/props/scatter/corridor/ball_bearing_large.glb"),
+		blocking: false,
+	},
+	corridorShelf5: {
+		id: "corridor_shelf_mx_5",
+		url: A("/assets/models/props/scatter/corridor/shelf_mx_5.glb"),
+		blocking: true,
+	},
+	corridorPipeE: {
+		id: "corridor_pipe_e_1",
+		url: A("/assets/models/props/scatter/corridor/pipe_e_1.glb"),
+		blocking: true,
+	},
+	corridorMailbox: {
+		id: "corridor_mail_box_mx_1_1",
+		url: A("/assets/models/props/scatter/corridor/mail_box_mx_1_1.glb"),
+		blocking: true,
+	},
+	corridorJamJar: {
+		id: "corridor_jam_jar_medium",
+		url: A("/assets/models/props/scatter/corridor/jam_jar_medium.glb"),
+		blocking: false,
+	},
+	// PE4c — arena scatter additions from PSX Mega Pack II Debris & Misc.
+	// "After the fight" identity: bricks, debris piles, gravel.
+	arenaBrick1: {
+		id: "arena_brick_mx_1",
+		url: A("/assets/models/props/scatter/arena/brick_mx_1.glb"),
+		blocking: false,
+	},
+	arenaBrick2: {
+		id: "arena_brick_mx_2",
+		url: A("/assets/models/props/scatter/arena/brick_mx_2.glb"),
+		blocking: false,
+	},
+	arenaDebrisBricks1: {
+		id: "arena_debris_bricks_mx_1",
+		url: A("/assets/models/props/scatter/arena/debris_bricks_mx_1.glb"),
+		blocking: false,
+	},
+	arenaDebrisBricks2: {
+		id: "arena_debris_bricks_mx_2",
+		url: A("/assets/models/props/scatter/arena/debris_bricks_mx_2.glb"),
+		blocking: false,
+	},
+	arenaBricksStacked1: {
+		id: "arena_bricks_stacked_mx_1",
+		url: A("/assets/models/props/scatter/arena/bricks_stacked_mx_1.glb"),
+		blocking: true,
+	},
+	arenaGravel1: {
+		id: "arena_gravel_pile_hr_1",
+		url: A("/assets/models/props/scatter/arena/gravel_pile_hr_1.glb"),
+		blocking: false,
+	},
+	arenaGravel2: {
+		id: "arena_gravel_pile_hr_2",
+		url: A("/assets/models/props/scatter/arena/gravel_pile_hr_2.glb"),
+		blocking: false,
+	},
 } as const satisfies Record<string, PropDef>;
 
 /**
@@ -191,6 +395,16 @@ export const POOLS: Record<PropArchetype, readonly PropDef[]> = {
 		PROP_CATALOGUE.pipe1,
 		PROP_CATALOGUE.scrapMetal,
 		PROP_CATALOGUE.toolbox,
+		// PE4a — abandoned-hallway scatter additions from PSX Mega Pack II.
+		PROP_CATALOGUE.corridorCrate3,
+		PROP_CATALOGUE.corridorHangingShelf,
+		PROP_CATALOGUE.corridorHandheldRadio,
+		PROP_CATALOGUE.corridorFishingHook,
+		PROP_CATALOGUE.corridorBallBearing,
+		PROP_CATALOGUE.corridorShelf5,
+		PROP_CATALOGUE.corridorPipeE,
+		PROP_CATALOGUE.corridorMailbox,
+		PROP_CATALOGUE.corridorJamJar,
 	],
 	arena: [
 		PROP_CATALOGUE.cementBag,
@@ -204,6 +418,14 @@ export const POOLS: Record<PropArchetype, readonly PropDef[]> = {
 		PROP_CATALOGUE.woodCrate2,
 		PROP_CATALOGUE.woodPlank1,
 		PROP_CATALOGUE.woodPlank2,
+		// PE4c — "after the fight" debris additions from PSX Mega Pack II.
+		PROP_CATALOGUE.arenaBrick1,
+		PROP_CATALOGUE.arenaBrick2,
+		PROP_CATALOGUE.arenaDebrisBricks1,
+		PROP_CATALOGUE.arenaDebrisBricks2,
+		PROP_CATALOGUE.arenaBricksStacked1,
+		PROP_CATALOGUE.arenaGravel1,
+		PROP_CATALOGUE.arenaGravel2,
 	],
 	courtyard: [
 		PROP_CATALOGUE.bench,
@@ -217,6 +439,16 @@ export const POOLS: Record<PropArchetype, readonly PropDef[]> = {
 		PROP_CATALOGUE.woodPlank2,
 		PROP_CATALOGUE.bucket2,
 		PROP_CATALOGUE.cardboardBox1,
+		// PE2 — PSX-Farm Assets additions for outdoor courtyard identity.
+		PROP_CATALOGUE.farmApple,
+		PROP_CATALOGUE.farmCarrot,
+		PROP_CATALOGUE.farmHaybale1,
+		PROP_CATALOGUE.farmHaybale2,
+		PROP_CATALOGUE.farmBarrel,
+		PROP_CATALOGUE.farmBasket,
+		PROP_CATALOGUE.farmFenceShort,
+		PROP_CATALOGUE.farmFenceMedium,
+		PROP_CATALOGUE.farmBirdhouse,
 	],
 	sewer: [
 		PROP_CATALOGUE.bucket1,
@@ -229,6 +461,16 @@ export const POOLS: Record<PropArchetype, readonly PropDef[]> = {
 		PROP_CATALOGUE.scrapMetal,
 		PROP_CATALOGUE.gear3,
 		PROP_CATALOGUE.bucket2,
+		// PE3 — PSX-Electrical additions for archetype-true industrial
+		// scenery (pipes / valve / machinery / curved fittings).
+		PROP_CATALOGUE.electricalValve,
+		PROP_CATALOGUE.electricalPipeAngled,
+		PROP_CATALOGUE.electricalPipeV1,
+		PROP_CATALOGUE.electricalPipeV2,
+		PROP_CATALOGUE.electricalPipeCurve,
+		PROP_CATALOGUE.electricalMachinery1,
+		PROP_CATALOGUE.electricalMachinery3,
+		PROP_CATALOGUE.electricalMachinery5,
 	],
 	library: [
 		PROP_CATALOGUE.bench,
@@ -241,6 +483,11 @@ export const POOLS: Record<PropArchetype, readonly PropDef[]> = {
 		PROP_CATALOGUE.cardboardBox2,
 		PROP_CATALOGUE.paintCan,
 		PROP_CATALOGUE.toolbox,
+		// PE1 — Mansion_PSX additions read as "old reading-room" décor.
+		PROP_CATALOGUE.mansionColumn,
+		PROP_CATALOGUE.mansionWindow,
+		PROP_CATALOGUE.mansionDoorFrame,
+		PROP_CATALOGUE.mansionSmallWall,
 	],
 };
 

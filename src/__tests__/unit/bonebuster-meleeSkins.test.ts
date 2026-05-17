@@ -2,7 +2,12 @@
  * COV9 step-1 — melee skin roster contract.
  */
 
-import { MELEE_SKIN_URLS, pickMeleeSkin } from "@world/meleeSkins";
+import {
+	MELEE_PROFILES,
+	MELEE_SKIN_URLS,
+	pickMeleeSkin,
+	profileForMeleeSkin,
+} from "@world/meleeSkins";
 import { describe, expect, it } from "vitest";
 
 describe("COV9 — melee skin roster", () => {
@@ -16,7 +21,7 @@ describe("COV9 — melee skin roster", () => {
 
 	it("every URL resolves to /assets/models/weapons/slasher/melee_*.glb", () => {
 		for (const url of MELEE_SKIN_URLS) {
-			expect(url).toMatch(/\/assets\/models\/weapons\/slasher\/melee_[a-z]+\.glb$/);
+			expect(url).toMatch(/\/assets\/models\/weapons\/slasher\/melee_[a-z][a-z0-9_]*\.glb$/);
 		}
 	});
 
@@ -40,9 +45,10 @@ describe("COV9 — pickMeleeSkin", () => {
 		}
 	});
 
-	it("all skins reachable across seeds 0..N-1", () => {
+	it("all skins reachable across a sufficient seed range", () => {
+		// D19 cosmetic stream — see pistolSkins test for the same rationale.
 		const seen = new Set<string>();
-		for (let s = 0; s < MELEE_SKIN_URLS.length; s += 1) {
+		for (let s = 0; s < 500; s += 1) {
 			seen.add(pickMeleeSkin(s));
 		}
 		expect(seen.size).toBe(MELEE_SKIN_URLS.length);
@@ -50,5 +56,37 @@ describe("COV9 — pickMeleeSkin", () => {
 
 	it("handles negative seeds via unsigned-right-shift", () => {
 		expect(MELEE_SKIN_URLS).toContain(pickMeleeSkin(-1));
+	});
+});
+
+describe("SLA1 — meathook knockback profile", () => {
+	it("meathook (index 4) is the only skin with negative knockbackMul", () => {
+		const meathookUrl = MELEE_SKIN_URLS[4];
+		expect(meathookUrl).toMatch(/melee_meathook\.glb$/);
+		expect(MELEE_PROFILES[meathookUrl].knockbackMul).toBe(-1);
+		for (const [url, profile] of Object.entries(MELEE_PROFILES)) {
+			if (url === meathookUrl) continue;
+			expect(profile.knockbackMul).toBeGreaterThanOrEqual(0);
+		}
+	});
+
+	it("default profile knockbackMul is identity (1)", () => {
+		expect(profileForMeleeSkin("unknown://nope.glb").knockbackMul).toBe(1);
+	});
+});
+
+describe("SLA2 — chainsaw loud-attract profile", () => {
+	it("chainsaw (index 2) has attractRadiusTiles > 0", () => {
+		const chainsawUrl = MELEE_SKIN_URLS[2];
+		expect(chainsawUrl).toMatch(/melee_chainsaw\.glb$/);
+		expect(MELEE_PROFILES[chainsawUrl].attractRadiusTiles).toBeGreaterThan(0);
+	});
+
+	it("every non-chainsaw skin is silent (undefined or 0)", () => {
+		const chainsawUrl = MELEE_SKIN_URLS[2];
+		for (const [url, profile] of Object.entries(MELEE_PROFILES)) {
+			if (url === chainsawUrl) continue;
+			expect(profile.attractRadiusTiles ?? 0).toBe(0);
+		}
 	});
 });
