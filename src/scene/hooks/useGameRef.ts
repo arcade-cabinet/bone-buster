@@ -47,6 +47,7 @@ const AMMO_INCREMENT: Record<
 	| "loot"
 	| "emfReader"
 	| "spiritBox"
+	| "uvFlashlight"
 > = {
 	health: "health",
 	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
@@ -65,6 +66,10 @@ const AMMO_INCREMENT: Record<
 	// PC2 — Spirit box on-collect flips the ownership flag. Same passive
 	// tool shape as the EMF reader.
 	spiritBox: "spiritBox",
+	// PC3 — UV flashlight on-collect flips the ownership flag. Mounts
+	// the second purple SpotLight + drives the per-frame UV-cone reveal
+	// of uvHidden-tagged enemies.
+	uvFlashlight: "uvFlashlight",
 };
 
 export type UseGameRefDeps = Readonly<{
@@ -252,6 +257,12 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 					// subscribe. Audio sting deferred to the same future
 					// commit that adds the EMF click.
 					return { ...prev, hasSpiritBox: true };
+				}
+				if (action === "uvFlashlight") {
+					// PC3 — flip the UV flashlight flag. Mounts the second
+					// purple SpotLight in BoneBusterScene + drives the
+					// per-frame UV-cone visibility reveal of uvHidden enemies.
+					return { ...prev, hasUvFlashlight: true };
 				}
 				if (action === "loot") {
 					// COV12 step-2 — kind-specific bonus from pickLootKind(seed).

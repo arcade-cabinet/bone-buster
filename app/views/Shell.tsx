@@ -94,6 +94,11 @@ export type GameState = {
 	// the deterministic phoneme for ~1s. Off by default; flips true on
 	// pickup.
 	hasSpiritBox: boolean;
+	// PC3 — UV flashlight ownership flag. When true, BoneBusterScene
+	// mounts the UvFlashlight component (purple SpotLight) and EnemyMesh
+	// runs the per-frame UV-cone reveal for uvHidden enemies. Off by
+	// default; flips true on pickup.
+	hasUvFlashlight: boolean;
 	weapon: WeaponId;
 	ammo: Record<WeaponId, number>;
 	ownedWeapons: Record<WeaponId, boolean>;
@@ -354,6 +359,7 @@ export function BoneBusterShell() {
 		hasFlashlight: false,
 		hasEmfReader: false,
 		hasSpiritBox: false,
+		hasUvFlashlight: false,
 		weapon: "pistol",
 		ammo: baseAmmo(),
 		ownedWeapons: baseOwnedWeapons(),
@@ -455,6 +461,7 @@ export function BoneBusterShell() {
 			hasFlashlight: false,
 			hasEmfReader: false,
 			hasSpiritBox: false,
+			hasUvFlashlight: false,
 			weapon: "pistol",
 			ammo: baseAmmo(),
 			ownedWeapons: baseOwnedWeapons(),
@@ -685,6 +692,7 @@ export function BoneBusterShell() {
 				hasFlashlight: false,
 				hasEmfReader: false,
 				hasSpiritBox: false,
+				hasUvFlashlight: false,
 				weapon: "pistol",
 				ammo: baseAmmo(),
 				ownedWeapons: baseOwnedWeapons(),
@@ -945,6 +953,7 @@ export function BoneBusterShell() {
 									hasFlashlight={state.hasFlashlight}
 									hasEmfReader={state.hasEmfReader}
 									hasSpiritBox={state.hasSpiritBox}
+									hasUvFlashlight={state.hasUvFlashlight}
 								/>
 							</Canvas>
 							<BoneBusterHUD

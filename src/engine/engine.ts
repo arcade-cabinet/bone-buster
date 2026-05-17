@@ -72,6 +72,11 @@ export type PickupKind =
 	// tiles (6), the box plays a phoneme from the deterministic per-seed
 	// pool on a 2.5s cooldown. Passive — no weapon-slot interference.
 	| "spiritBox"
+	// PC3 — UV flashlight pickup. Carrying it mounts a second SpotLight
+	// (purple) parallel to the existing white Flashlight. Enemies tagged
+	// `uvHidden: true` at spawn render with mesh.visible = false until
+	// the UV cone contains them.
+	| "uvFlashlight"
 	// COV12 step-2 — rare hero-tier bonus drop. Exactly one per map,
 	// placed at the centroid of the sector farthest from playerSpawn.
 	// On collect, dispatches a kind-specific bonus picked from the COV12
@@ -488,10 +493,14 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	// so the two tools don't co-spawn on every shared multiple). Same
 	// per-level ownership semantics as EMF.
 	const wantsSpiritBox = (seed >>> 0) % 5 === 0;
+	// PC3 — UV flashlight spawns on every 6th seed (offset from EMF
+	// and spirit box). Per-level ownership reset.
+	const wantsUv = (seed >>> 0) % 6 === 0;
 	const reserved: PickupKind[] = ["chaingunAmmo", "shotgunAmmo"];
 	if (wantsFlame) reserved.push("flamethrowerAmmo");
 	if (wantsEmf) reserved.push("emfReader");
 	if (wantsSpiritBox) reserved.push("spiritBox");
+	if (wantsUv) reserved.push("uvFlashlight");
 	const pickupSpawns: PickupSpawn[] = pickupCandidates
 		.slice(0, pickupTotal)
 		.map((position, idx) => {
@@ -693,6 +702,15 @@ export type Enemy = {
 	 * 0 when not staggered.
 	 */
 	staggerUntil?: number;
+	/**
+	 * PC3 — UV-hidden tag. When true, EnemyMesh keeps mesh.visible = false
+	 * until the UV flashlight cone contains the enemy. Assigned at spawn
+	 * time via `pickUvHidden(seed, spawnIndex)` so the same seed always
+	 * hides the same enemies — keeps QA + canonical playtests reproducible.
+	 * Non-boss enemies only (bosses are always-visible — the reveal layer
+	 * shouldn't mask the goal-boss).
+	 */
+	uvHidden?: boolean;
 };
 
 function enemyBaseHp(kind: EnemyKind): number {
@@ -763,8 +781,33 @@ export function spawnEnemies(map: BoneBusterMap, spawnsOverride?: readonly Enemy
 			patrolBearing: bearing,
 			lastShotAt: 0,
 			...(isBoss ? { tier: "boss" as const } : {}),
+			// PC3 — UV-hidden tag, applied to ~1-in-8 non-boss enemies.
+			// Deterministic per (map.seed, spawnIndex) so the same seed
+			// always hides the same enemies. Bosses never hide — the
+			// goal-boss must remain visible without the UV reveal.
+			uvHidden: isBoss ? false : pickUvHidden(map.seed, i),
 		};
 	});
+}
+
+/**
+ * PC3 — deterministic per-spawn UV-hidden assignment. ~12.5% (1/8)
+ * of non-boss enemies hide; the rest render normally. XOR-mixed
+ * with the same Mulberry-style constant the spirit-box picker uses
+ * so the distribution is reproducible across seeds.
+ *
+ * Special case: `seed === 0` (refLevel anchor) returns false for
+ * every spawnIndex. The canonical screenshot pipeline pins
+ * refLevel(0) byte-for-byte; if pickUvHidden could tag an enemy
+ * there, the baseline-hide slot would mark it invisible and the
+ * screenshot would diverge. The UV-reveal mechanic only kicks in
+ * on procedural maps (seed > 0) per the canonical-byte-stability
+ * pattern documented in the user's memory.
+ */
+export function pickUvHidden(seed: number, spawnIndex: number): boolean {
+	if (seed >>> 0 === 0) return false;
+	const mixed = ((seed >>> 0) ^ ((spawnIndex >>> 0) * 0x9e3779b1)) >>> 0;
+	return mixed % 8 === 0;
 }
 
 export type Pickup = {

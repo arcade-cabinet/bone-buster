@@ -99,6 +99,15 @@ const JOBS = [
 		glb: "public/assets/models/tools/spirit_box.glb",
 		label: "Spirit Box (PSX Ghost Hunting Tools)",
 	},
+	// PC3 — UV flashlight. Drives the UV-cone reveal of hidden-by-
+	// default enemy instances (tagged `uvHidden: true` at spawn). The
+	// viewmodel ships as both a floor pickup and a second SpotLight
+	// (purple) parallel to the existing white Flashlight.
+	{
+		fbx: "references/_extracted/psx-ght/UV Flashlight/uvflashlight.fbx",
+		glb: "public/assets/models/tools/uv_flashlight.glb",
+		label: "UV Flashlight (PSX Ghost Hunting Tools)",
+	},
 ];
 
 function mtimeOrZero(path) {

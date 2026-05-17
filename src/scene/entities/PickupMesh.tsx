@@ -253,6 +253,7 @@ export function PickupMesh({
 			)}
 			{pickup.kind === "emfReader" && <EmfReaderPickupMesh />}
 			{pickup.kind === "spiritBox" && <SpiritBoxPickupMesh />}
+			{pickup.kind === "uvFlashlight" && <UvFlashlightPickupMesh />}
 		</group>
 	);
 }
@@ -312,6 +313,20 @@ function EmfReaderPickupMesh() {
  */
 function SpiritBoxPickupMesh() {
 	const gltf = useGLTF(TOOL_URLS.spiritBox);
+	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
+	return (
+		<group scale={[0.5, 0.5, 0.5]}>
+			<primitive object={cloned} />
+		</group>
+	);
+}
+
+/**
+ * PC3 — UV flashlight pickup body. Same GLB + SkeletonUtils.clone
+ * pattern; rendered slightly larger to read as a held tool.
+ */
+function UvFlashlightPickupMesh() {
+	const gltf = useGLTF(TOOL_URLS.uvFlashlight);
 	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
 	return (
 		<group scale={[0.5, 0.5, 0.5]}>

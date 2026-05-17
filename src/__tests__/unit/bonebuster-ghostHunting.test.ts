@@ -10,11 +10,14 @@ import { ROLE } from "@styles/tokens/index";
 import {
 	EMF_TOKEN,
 	type EmfReading,
+	isInUvCone,
 	pickEmfReading,
 	pickSpiritBoxPhoneme,
 	SPIRIT_BOX_COOLDOWN_MS,
 	SPIRIT_BOX_PHONEMES,
 	SPIRIT_BOX_TRIGGER_RADIUS,
+	UV_FLASHLIGHT_HALF_ANGLE_RAD,
+	UV_FLASHLIGHT_RANGE_TILES,
 } from "@world/ghostHunting";
 import { describe, expect, it } from "vitest";
 
@@ -155,5 +158,62 @@ describe("PC2 — spirit-box phoneme pool + picker", () => {
 
 	it("SPIRIT_BOX_COOLDOWN_MS is at least 1 second so the HUD has time to read", () => {
 		expect(SPIRIT_BOX_COOLDOWN_MS).toBeGreaterThanOrEqual(1000);
+	});
+});
+
+describe("PC3 — UV flashlight cone-containment", () => {
+	// Convention: camera at origin (0,0) looking +X (forward = (1, 0)).
+	// Enemies at varying positions; expectations follow.
+
+	it("reveals an enemy directly in front within range", () => {
+		expect(isInUvCone(0, 0, 1, 0, 5, 0)).toBe(true);
+	});
+
+	it("hides an enemy behind the camera", () => {
+		expect(isInUvCone(0, 0, 1, 0, -5, 0)).toBe(false);
+	});
+
+	it("hides an enemy at 90° off camera-forward", () => {
+		// 90° = π/2 rad, well outside the 0.5-rad half-angle.
+		expect(isInUvCone(0, 0, 1, 0, 0, 5)).toBe(false);
+	});
+
+	it("hides an enemy beyond UV_FLASHLIGHT_RANGE_TILES", () => {
+		expect(isInUvCone(0, 0, 1, 0, UV_FLASHLIGHT_RANGE_TILES + 0.1, 0)).toBe(false);
+	});
+
+	it("reveals an enemy exactly at the range boundary", () => {
+		// Boundary is inclusive — within-or-equal.
+		expect(isInUvCone(0, 0, 1, 0, UV_FLASHLIGHT_RANGE_TILES - 0.01, 0)).toBe(true);
+	});
+
+	it("reveals an enemy at the cone edge angle", () => {
+		// At half-angle exactly: dot = cos(half-angle), reveal returns true.
+		const r = 4;
+		const dx = r * Math.cos(UV_FLASHLIGHT_HALF_ANGLE_RAD);
+		const dz = r * Math.sin(UV_FLASHLIGHT_HALF_ANGLE_RAD);
+		expect(isInUvCone(0, 0, 1, 0, dx, dz)).toBe(true);
+	});
+
+	it("hides an enemy just outside the cone edge angle", () => {
+		const r = 4;
+		const overshoot = UV_FLASHLIGHT_HALF_ANGLE_RAD + 0.1;
+		const dx = r * Math.cos(overshoot);
+		const dz = r * Math.sin(overshoot);
+		expect(isInUvCone(0, 0, 1, 0, dx, dz)).toBe(false);
+	});
+
+	it("treats player-on-enemy overlap as a reveal", () => {
+		// Defensive — the player walking through a phasing enemy
+		// shouldn't briefly desync the visibility state.
+		expect(isInUvCone(0, 0, 1, 0, 0, 0)).toBe(true);
+	});
+
+	it("works with non-axis-aligned forward vectors", () => {
+		// Forward at 45° — enemy at 45° should be revealed; enemy at
+		// the opposite quadrant should not.
+		const inv = 1 / Math.SQRT2;
+		expect(isInUvCone(0, 0, inv, inv, 5 * inv, 5 * inv)).toBe(true);
+		expect(isInUvCone(0, 0, inv, inv, -5 * inv, -5 * inv)).toBe(false);
 	});
 });

@@ -132,3 +132,48 @@ export function pickSpiritBoxPhoneme(seed: number, triggerIndex: number): string
 	const idx = (mixed >>> 0) % SPIRIT_BOX_PHONEMES.length;
 	return SPIRIT_BOX_PHONEMES[idx];
 }
+
+/**
+ * PC3 — UV flashlight tuning constants. The cone matches the existing
+ * Flashlight (POL28) shape so the two lights occupy the same on-screen
+ * footprint — the player navigates with one, reveals with the other.
+ */
+export const UV_FLASHLIGHT_RANGE_TILES = 12;
+export const UV_FLASHLIGHT_HALF_ANGLE_RAD = 0.5;
+
+/**
+ * UV-cone containment check. Pure function exported for unit testing
+ * the reveal contract without spinning up r3f.
+ *
+ * Returns true iff the enemy is inside the UV cone:
+ *   1. Within UV_FLASHLIGHT_RANGE_TILES of the camera (Euclidean).
+ *   2. Forward of the camera (dot product with forward > 0).
+ *   3. Angular offset from camera-forward <= UV_FLASHLIGHT_HALF_ANGLE_RAD.
+ *
+ * All inputs are 2D (XZ plane); enemies live on the ground plane so
+ * cone visibility is dominated by the horizontal angle. The pitch
+ * axis is intentionally ignored — a player looking up/down still
+ * sees a horizontally-aligned UV cone in the playing field.
+ */
+export function isInUvCone(
+	cameraX: number,
+	cameraZ: number,
+	forwardX: number,
+	forwardZ: number,
+	targetX: number,
+	targetZ: number,
+): boolean {
+	const dx = targetX - cameraX;
+	const dz = targetZ - cameraZ;
+	const distSq = dx * dx + dz * dz;
+	if (distSq > UV_FLASHLIGHT_RANGE_TILES * UV_FLASHLIGHT_RANGE_TILES) return false;
+	// 1e-6 epsilon — camera at the same XZ as the enemy is treated as
+	// "inside the cone" (player standing on the enemy is a trivial reveal).
+	if (distSq < 1e-6) return true;
+	const dist = Math.sqrt(distSq);
+	// Normalize the offset; forward is assumed unit-length.
+	const dot = (dx * forwardX + dz * forwardZ) / dist;
+	if (dot <= 0) return false; // behind the camera
+	// dot = cos(angle); reveal iff angle <= half-angle.
+	return dot >= Math.cos(UV_FLASHLIGHT_HALF_ANGLE_RAD);
+}

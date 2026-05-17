@@ -75,6 +75,8 @@ import {
 	DecalField,
 	EnemyHitFlash,
 	EnemyMesh,
+	EnemyUvBaseHide,
+	EnemyUvReveal,
 	ExitPortal,
 	ExitPortalApproach,
 	Flashlight,
@@ -97,6 +99,7 @@ import {
 	ShellEjectField,
 	TrapField,
 	TreasureChest,
+	UvFlashlight,
 	VehicleWreck,
 	WeaponSwapDip,
 	WeaponViewmodel,
@@ -133,6 +136,10 @@ type SceneProps = Readonly<{
 	// per-frame nearest-enemy proximity check + cooldown tracking and
 	// dispatches no spiritBoxResponse events; the HUD bubble stays hidden.
 	hasSpiritBox: boolean;
+	// PC3 — UV flashlight ownership. When true, the UV SpotLight mounts
+	// and uvHidden enemies run the per-frame reveal check. When false,
+	// uvHidden enemies run a one-shot baseline-hide on mount.
+	hasUvFlashlight: boolean;
 }>;
 
 export function BoneBusterScene({
@@ -147,6 +154,7 @@ export function BoneBusterScene({
 	hasFlashlight,
 	hasEmfReader,
 	hasSpiritBox,
+	hasUvFlashlight,
 }: SceneProps) {
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
 	// E13 step-3 — per-archetype enemy mix. Remap spawn `kind`s through
@@ -983,6 +991,10 @@ export function BoneBusterScene({
 				shadow-camera-far={60}
 			/>
 			{hasFlashlight && <Flashlight />}
+			{/* PC3 — UV flashlight cone. Mounted alongside (not instead of)
+			    the white flashlight; the two lights coexist when the
+			    player owns both. */}
+			{hasUvFlashlight && <UvFlashlight />}
 			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.35]} />
 			{/* I11 — muzzle-flash point light. Lives at camera position,
 			    driven by useFrame so it can decay between renders. */}
@@ -1091,6 +1103,17 @@ export function BoneBusterScene({
 					    looks up the registered mesh via enemyMeshes, clones
 					    + modulates materials. Returns null. */}
 					<EnemyHitFlash enemy={enemy} meshLookup={enemyMeshes} />
+					{/* PC3 — UV reveal / baseline-hide slot. uvHidden enemies
+					    are invisible by default; UV flashlight cone reveals
+					    them per-frame. The two slots are mutually exclusive
+					    based on hasUvFlashlight so the no-tool path pays
+					    zero per-frame UV cost. */}
+					{enemy.uvHidden &&
+						(hasUvFlashlight ? (
+							<EnemyUvReveal enemy={enemy} meshLookup={enemyMeshes} />
+						) : (
+							<EnemyUvBaseHide enemy={enemy} meshLookup={enemyMeshes} />
+						))}
 				</group>
 			))}
 
