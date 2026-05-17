@@ -24,7 +24,6 @@ Reference-asset drain (Lanes C/D/E/F) drained via PR #75 (20 commits: PC1-4 + PD
 Already migrated (PB3 series): PropField, LargePropField, DebrisField, KitchenField.
 Remaining candidates (per PRD Parked note + reality-check):
 
-- [ ] PT3 LampField split — per-lamp pointLight children make naive instancing wrong; the lit subset needs scene-graph children for the lights, the unlit set can instance. Refactor into LampLitField (per-mount lights) + LampUnlitField (InstancedMultiGltfField). Defer past PT1.
 
 PT1 is the first concrete code slice. PT2 needs an asset-pipeline step; PT3 needs an architectural decomposition. Both belong in the queue but PT1 unblocks the simplest perf win.
 
