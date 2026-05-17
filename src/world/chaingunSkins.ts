@@ -22,6 +22,13 @@ export const CHAINGUN_SKIN_URLS: readonly string[] = [
 	A("/assets/models/weapons/chaingun.glb"), // canonical (seed=0)
 	A("/assets/models/weapons/chaingun-skins/chaingun_uzi.glb"),
 	A("/assets/models/weapons/chaingun-skins/chaingun_flamethrower.glb"),
+	// PD3b — Stylized Guns 3D Models PRO scene-split additions. Three
+	// distinct SMG/automatic silhouettes (AK-47, MAC-10, MGD PM-9).
+	// Append-only at indices 3..5 to preserve seed=0 / seed=1 / seed=2
+	// canonical screenshot byte-stability.
+	A("/assets/models/weapons/chaingun-skins/chaingun_ak47.glb"),
+	A("/assets/models/weapons/chaingun-skins/chaingun_mac10.glb"),
+	A("/assets/models/weapons/chaingun-skins/chaingun_pm9.glb"),
 ];
 
 export function pickChaingunSkin(seed: number): string {
@@ -57,6 +64,14 @@ export const CHAINGUN_PROFILES: Readonly<Record<string, ChaingunProfile>> = {
 	[CHAINGUN_SKIN_URLS[0]]: DEFAULT_CHAINGUN_PROFILE, // canonical
 	[CHAINGUN_SKIN_URLS[1]]: { damageMul: 0.85, cooldownMul: 0.85 }, // uzi
 	[CHAINGUN_SKIN_URLS[2]]: { damageMul: 1.3, cooldownMul: 1.25 }, // flamethrower
+	// PD3b additions. AK-47 = punchier rifle (+10% damage, +10%
+	// cooldown — feel reads as "heavy controlled bursts"). MAC-10 =
+	// faster cyclic SMG (-10% damage, -20% cooldown). PM-9 = balanced
+	// pistol-style auto (identity damage, +5% cooldown — slight
+	// trigger discipline).
+	[CHAINGUN_SKIN_URLS[3]]: { damageMul: 1.1, cooldownMul: 1.1 }, // ak47
+	[CHAINGUN_SKIN_URLS[4]]: { damageMul: 0.9, cooldownMul: 0.8 }, // mac10
+	[CHAINGUN_SKIN_URLS[5]]: { damageMul: 1.0, cooldownMul: 1.05 }, // pm9
 };
 
 export function profileForChaingunSkin(url: string): ChaingunProfile {

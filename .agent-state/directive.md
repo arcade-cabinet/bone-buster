@@ -29,7 +29,6 @@ Builds on PR #72's EMF vertical. Each slice opens its own PR. Asset extraction l
 
 Pattern-match PB4's per-skin profile architecture for the ranged + extra-melee assets. Each slice = (a) wire the URL pool, (b) extend the profile table, (c) pick deterministic per-run, (d) contract test.
 
-- [ ] PD3b Stylized Guns scene-split — Blender scene-split for `references/Stylized Guns 3D Models PRO.zip` (single combined FBX → 3-5 individual GLBs). Append-extends `CHAINGUN_SKIN_URLS` from 3 → 6-8 entries. Pure asset-pipeline slice; identity profile on canonical seed still pinned via existing PD3 contract test.
 
 ### Lane E — Per-archetype scenery packs
 
