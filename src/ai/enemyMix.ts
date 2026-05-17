@@ -62,6 +62,7 @@ const ALL_KINDS: readonly EnemyKind[] = [
 	"swiney",
 	"mrZ",
 	"lupin",
+	"bigfoot",
 ];
 
 function normalize(weights: Readonly<Partial<Record<EnemyKind, number>>>): EnemyMixTable {
@@ -102,6 +103,10 @@ export const ENEMY_MIX_TABLES: Readonly<Record<PropArchetype, EnemyMixTable>> = 
 		bouncer: 2,
 		heap: 1,
 		heap2: 1,
+		// PF3 — bigfoot accent in arena (low weight; the brawler fits
+		// the heavy-tier arena identity but the headline tanks should
+		// still dominate the silhouette).
+		bigfoot: 1,
 	}),
 	courtyard: normalize({
 		lupin: 4,
@@ -110,6 +115,9 @@ export const ENEMY_MIX_TABLES: Readonly<Record<PropArchetype, EnemyMixTable>> = 
 		rattler: 2,
 		jester: 1,
 		dolly: 1,
+		// PF3 — bigfoot reads as "creature lurking in the trees"; the
+		// courtyard's outdoor identity is its natural primary habitat.
+		bigfoot: 3,
 	}),
 	sewer: normalize({
 		grub: 4,

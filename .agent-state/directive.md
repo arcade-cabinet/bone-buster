@@ -46,7 +46,6 @@ Pattern-match PB4's per-skin profile architecture for the ranged + extra-melee a
 
 `references/_extracted/psx/psx-horror-fantasy-megapack/` carries 23 enemy GLBs; current `EnemyKind` union has 24 entries, ~10 of which point at horror-fantasy GLBs. The unwired 13 (bigfoot, alien_invader, anomaly_monster, !NEW Abomination2, multiple clowns) are candidates for new variants of existing kinds or net-new kinds.
 
-- [ ] PF3 Spawn-table integration — extend `src/ai/enemyMix.ts` to include `bigfoot` in courtyard (primary) + arena (low-weight). Canonical archetype screenshot refresh; mobile-perf regression check stays green.
 
 ### Ship rules
 

@@ -121,7 +121,7 @@ describe("D5 — remapEnemyMix", () => {
 		}
 	});
 
-	it("output kinds are always members of the 24-kind union", () => {
+	it("output kinds are always members of the 25-kind union", () => {
 		const valid: ReadonlySet<EnemyKind> = new Set([
 			"rattler",
 			"phaser",
@@ -147,6 +147,8 @@ describe("D5 — remapEnemyMix", () => {
 			"swiney",
 			"mrZ",
 			"lupin",
+			// PF2 — 25th kind added (bigfoot).
+			"bigfoot",
 		]);
 		const spawns = makeSpawns(50);
 		for (const archetype of ARCHETYPE_NAMES) {
@@ -156,15 +158,15 @@ describe("D5 — remapEnemyMix", () => {
 		}
 	});
 
-	it("D5 acceptance — all 23 non-devil kinds reachable across 100 seeds × 5 archetypes", () => {
-		// The PRD acceptance says "Browser smoke test loads each
-		// archetype + asserts 24 distinct kinds reachable across 100
-		// seeds." We can satisfy the reachability half here at the
-		// unit-test level without a browser: same remap function,
-		// same archetype tables, same PRNG.
-		// `devil` is excluded — it's boss-tier and intentionally
-		// outside the regular mix; reachability via a boss-gate path
-		// is a future concern.
+	it("D5 + PF3 acceptance — 22 of 25 non-devil kinds reachable across 100 seeds × 5 archetypes", () => {
+		// PF3 added `bigfoot` (kind #25) with arena + courtyard weights;
+		// reachable count rises from 21 to 22. Three kinds remain
+		// unreachable by procedural remap:
+		//   - `devil` — boss-room gated (intentional)
+		//   - `bloodphaser` — reserved for future archetype placement
+		//   - `oneye` — reserved for future archetype placement
+		// 100 seeds × 5 archetypes × 50 spawns = 25,000 draws is
+		// plenty for every weighted kind to land at least once.
 		const spawns = makeSpawns(50);
 		const reached = new Set<EnemyKind>();
 		for (let seed = 1; seed <= 100; seed += 1) {
@@ -174,18 +176,8 @@ describe("D5 — remapEnemyMix", () => {
 				}
 			}
 		}
-		// Expect exactly 21 of 24 reachable kinds. Three are NOT in any
-		// per-archetype ENEMY_MIX_TABLES entry and are therefore
-		// unreachable by the procedural remap:
-		//   - `devil` — boss-room gated (intentional)
-		//   - `bloodphaser` — reserved for future archetype placement
-		//   - `oneye` — reserved for future archetype placement
-		// 100 seeds × 5 archetypes × 50 spawns = 25,000 draws is
-		// plenty for every kind that's in a mix table to land at
-		// least once. If a tail-weight kind suddenly stops landing,
-		// the test FAILs (regression catch).
 		for (const k of ["devil", "bloodphaser", "oneye"] as const) reached.delete(k);
-		expect(reached.size).toBe(21);
+		expect(reached.size).toBe(22);
 	});
 
 	it("empty spawn list passes through without error for every archetype", () => {
