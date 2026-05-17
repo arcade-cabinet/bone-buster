@@ -62,15 +62,8 @@ These are good ideas with no acceptance gate yet.
   EMF reader + placeable crucifix all shipped (PC1–PC4). Open
   follow-ups: tape-recorder cue capture, walkie-talkie squelch
   audio, ghost-trail particle layer.
-- Per-enemy-variant flavor names in kill-confirmation popup
-  ("You busted a Plaguebeak (Stained-Cassock variant)").
 - Bespoke commissioned logo — current SVG re-letter with
   Bungee/Inline/Shade is good enough for ship.
-- Slasher melee weapons as distinct damage-profile variants
-  beyond the current cooldown/damage table: chainsaw
-  loud-attract, meat-hook pull, axe heavy-slow.
-- Per-archetype boss-music shift on devil spawn (musicGraph
-  already supports it; needs trigger plumbing).
 - Mobile-perf CI gate — currently label-gated; promote to
   required-status when the Pixel 5a-class baseline stabilizes.
 
