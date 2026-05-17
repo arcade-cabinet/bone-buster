@@ -243,6 +243,49 @@ export const PROP_CATALOGUE = {
 		url: A("/assets/models/props/scatter/courtyard/farm_birdhouse.glb"),
 		blocking: false,
 	},
+	// PE3 — PSX-Electrical scatter additions for the sewer archetype.
+	// Pipes / valve / machinery read as industrial scenery and replace
+	// the corridor-flavored placeholders previously serving sewer.
+	electricalValve: {
+		id: "electrical_valve",
+		url: A("/assets/models/props/scatter/sewer/electrical_valve.glb"),
+		blocking: false,
+	},
+	electricalPipeAngled: {
+		id: "electrical_pipe_angled",
+		url: A("/assets/models/props/scatter/sewer/electrical_pipe_angled.glb"),
+		blocking: true,
+	},
+	electricalPipeV1: {
+		id: "electrical_pipe_v1",
+		url: A("/assets/models/props/scatter/sewer/electrical_pipe_v1.glb"),
+		blocking: true,
+	},
+	electricalPipeV2: {
+		id: "electrical_pipe_v2",
+		url: A("/assets/models/props/scatter/sewer/electrical_pipe_v2.glb"),
+		blocking: true,
+	},
+	electricalPipeCurve: {
+		id: "electrical_pipe_v1_curve",
+		url: A("/assets/models/props/scatter/sewer/electrical_pipe_v1_curve.glb"),
+		blocking: true,
+	},
+	electricalMachinery1: {
+		id: "electrical_machinery_1",
+		url: A("/assets/models/props/scatter/sewer/electrical_machinery_1.glb"),
+		blocking: true,
+	},
+	electricalMachinery3: {
+		id: "electrical_machinery_3",
+		url: A("/assets/models/props/scatter/sewer/electrical_machinery_3.glb"),
+		blocking: true,
+	},
+	electricalMachinery5: {
+		id: "electrical_machinery_5",
+		url: A("/assets/models/props/scatter/sewer/electrical_machinery_5.glb"),
+		blocking: true,
+	},
 } as const satisfies Record<string, PropDef>;
 
 /**
@@ -315,6 +358,16 @@ export const POOLS: Record<PropArchetype, readonly PropDef[]> = {
 		PROP_CATALOGUE.scrapMetal,
 		PROP_CATALOGUE.gear3,
 		PROP_CATALOGUE.bucket2,
+		// PE3 — PSX-Electrical additions for archetype-true industrial
+		// scenery (pipes / valve / machinery / curved fittings).
+		PROP_CATALOGUE.electricalValve,
+		PROP_CATALOGUE.electricalPipeAngled,
+		PROP_CATALOGUE.electricalPipeV1,
+		PROP_CATALOGUE.electricalPipeV2,
+		PROP_CATALOGUE.electricalPipeCurve,
+		PROP_CATALOGUE.electricalMachinery1,
+		PROP_CATALOGUE.electricalMachinery3,
+		PROP_CATALOGUE.electricalMachinery5,
 	],
 	library: [
 		PROP_CATALOGUE.bench,

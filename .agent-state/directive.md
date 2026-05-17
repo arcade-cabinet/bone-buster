@@ -35,7 +35,6 @@ Pattern-match PB4's per-skin profile architecture for the ranged + extra-melee a
 
 `references/_extracted/psx/psx-mega-pack-ii-v1-8/` carries 549 GLBs; the per-archetype scatter pools currently reference ~30. Wire the obvious archetype matches first. Each slice = inventory pass (Bash + Blender preview) → assign per-archetype prop GLBs → extend `PROP_CATALOGUE` / archetype prop pool → re-bake canonical archetype screenshot.
 
-- [ ] PE3 Sewer archetype — wire `references/_extracted/psx/psx-electrical/PSX-Electrical/Assets/` (pipes, valves, machinery — 10 GLBs) into sewer-archetype propScatter. Replaces the current corridor-flavored placeholders in sewer with archetype-true industrial scenery.
 - [ ] PE4 Mega Pack II ingest pass — 549 GLBs is too large for one slice. Architectural step before any code: inventory pass via Bash + Blender previews to bucket the pack into archetype buckets, then per-archetype follow-up slices land as PE4a..PE4n. Step-1 produces `docs/MEGA-PACK-II-INVENTORY.md` with per-archetype assignments + "ideas this asset gave me" list. No code in PE4 step-1.
 
 ### Lane F — Unwired horror-fantasy enemies
