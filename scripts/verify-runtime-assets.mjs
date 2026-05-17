@@ -33,6 +33,8 @@ const SOURCE_FILES = [
 	resolve(root, "src/world/debris.ts"),
 	resolve(root, "src/world/largeProps.ts"),
 	resolve(root, "src/world/meleeSkins.ts"),
+	resolve(root, "src/world/pistolSkins.ts"),
+	resolve(root, "src/world/tools.ts"),
 	resolve(root, "src/world/vehicles.ts"),
 	resolve(root, "src/world/kitchen.ts"),
 	resolve(root, "src/world/loot.ts"),

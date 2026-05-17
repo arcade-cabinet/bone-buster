@@ -41,6 +41,7 @@ vi.mock("../../scene/map/SectorMapGeometry", () => ({ preloadSectorWalls: vi.fn(
 vi.mock("../../scene/viewmodel/WeaponViewmodel", () => ({
 	preloadWeapons: vi.fn(),
 	preloadMeleeSkins: vi.fn(),
+	preloadPistolSkins: vi.fn(),
 }));
 
 // Imported AFTER the mock setup so the orchestrator's own
@@ -63,7 +64,11 @@ import { preloadTraps } from "../../scene/entities/TrapField";
 import { preloadVehicleWrecks } from "../../scene/entities/VehicleWreck";
 import { preloadWalls } from "../../scene/map/MapGeometry";
 import { preloadSectorWalls } from "../../scene/map/SectorMapGeometry";
-import { preloadMeleeSkins, preloadWeapons } from "../../scene/viewmodel/WeaponViewmodel";
+import {
+	preloadMeleeSkins,
+	preloadPistolSkins,
+	preloadWeapons,
+} from "../../scene/viewmodel/WeaponViewmodel";
 
 /** All spies in one place so tier-membership assertions can
  * verify both inclusion AND exclusion (a tier-2 delegate must
@@ -71,6 +76,7 @@ import { preloadMeleeSkins, preloadWeapons } from "../../scene/viewmodel/WeaponV
 const ALL_SPIES = {
 	preloadWeapons,
 	preloadMeleeSkins,
+	preloadPistolSkins,
 	preloadWalls,
 	preloadSectorWalls,
 	preloadFloorTiles,
@@ -110,10 +116,10 @@ function assertCalled(expected: ReadonlyArray<keyof typeof ALL_SPIES>): void {
 }
 
 describe("A4 — tiered preload orchestrator", () => {
-	it("tier 1 calls only preloadWeapons (pistol viewmodel)", () => {
+	it("tier 1 calls preloadWeapons + preloadPistolSkins (pistol viewmodel + per-seed skin pool)", () => {
 		resetAllSpies();
 		preloadTier1Critical();
-		assertCalled(["preloadWeapons"]);
+		assertCalled(["preloadWeapons", "preloadPistolSkins"]);
 	});
 
 	it("tier 2 calls every map-mount delegate", () => {
@@ -152,13 +158,15 @@ describe("A4 — tiered preload orchestrator", () => {
 	it("tier 1 does NOT trigger any tier-2 or tier-3 delegate (membership exclusion)", () => {
 		resetAllSpies();
 		preloadTier1Critical();
-		// Pull the tier-1 entry out and verify everything else stays
-		// untouched.
-		const t1Only = preloadWeapons as ReturnType<typeof vi.fn>;
-		expect(t1Only).toHaveBeenCalledOnce();
+		// Tier-1 entries only.
+		const tier1 = new Set(["preloadWeapons", "preloadPistolSkins"]);
 		for (const [name, fn] of Object.entries(ALL_SPIES)) {
-			if (name === "preloadWeapons") continue;
-			expect(fn as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+			const spy = fn as ReturnType<typeof vi.fn>;
+			if (tier1.has(name)) {
+				expect(spy, `${name} should fire in tier-1`).toHaveBeenCalledOnce();
+			} else {
+				expect(spy, `${name} should NOT fire in tier-1`).not.toHaveBeenCalled();
+			}
 		}
 	});
 
@@ -167,6 +175,7 @@ describe("A4 — tiered preload orchestrator", () => {
 		preloadTier1Critical();
 		preloadTier1Critical();
 		expect(preloadWeapons).toHaveBeenCalledTimes(2);
+		expect(preloadPistolSkins).toHaveBeenCalledTimes(2);
 	});
 
 	it("exports preloadTier1Critical / preloadTier2MapMount / preloadTier3Deferred as functions", () => {

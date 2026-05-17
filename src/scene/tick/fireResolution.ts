@@ -40,6 +40,7 @@ import type { BoneBusterSettings } from "@store/settings";
 import type { GameRef, WeaponState } from "@views/Shell";
 import { type Barrel, pickRayBarrel } from "@world/barrels";
 import { DEFAULT_MELEE_PROFILE, type MeleeProfile } from "@world/meleeSkins";
+import { DEFAULT_PISTOL_PROFILE, type PistolProfile } from "@world/pistolSkins";
 import { pickRaySwitch, type Secret } from "@world/secrets";
 import * as THREE from "three";
 
@@ -94,6 +95,15 @@ export interface FireResolutionContext {
 	 * that don't yet plumb the profile keep working byte-identically.
 	 */
 	meleeProfile?: MeleeProfile;
+	/**
+	 * PD1 — per-run pistol profile resolved from level.seed via
+	 * `pickPistolProfile`. Multipliers compose against the base
+	 * `WEAPONS.pistol` spec (damage 25 / cooldown 250ms). Only applied
+	 * when `weapon === "pistol"`; other weapons read the base spec
+	 * unchanged. Optional with an identity fallback so callers that
+	 * don't yet plumb the profile keep working byte-identically.
+	 */
+	pistolProfile?: PistolProfile;
 }
 
 export function resolveFire(ctx: FireResolutionContext): void {
@@ -118,18 +128,28 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		timeScaleBus,
 		explodeBarrel,
 		meleeProfile = DEFAULT_MELEE_PROFILE,
+		pistolProfile = DEFAULT_PISTOL_PROFILE,
 	} = ctx;
 
 	if (!active) return;
 	const spec = WEAPONS[weapon];
-	// PB4 — apply per-skin profile only on the melee swing; ranged
-	// weapons read base damage/cooldown unchanged. Multipliers are
-	// composed locally so the WEAPONS table stays the single source
-	// of truth for the base spec, and the per-skin deltas are visible
-	// at this call site.
+	// PB4 / PD1 — apply per-skin profile on melee + pistol; other
+	// weapons read base damage/cooldown unchanged. Multipliers compose
+	// locally so the WEAPONS table stays the single source of truth
+	// for the base spec, and the per-skin deltas are visible at this
+	// call site.
 	const isMelee = weapon === "melee";
-	const effectiveCooldown = isMelee ? spec.cooldownMs * meleeProfile.cooldownMul : spec.cooldownMs;
-	const effectiveDamage = isMelee ? spec.damage * meleeProfile.damageMul : spec.damage;
+	const isPistol = weapon === "pistol";
+	const effectiveCooldown = isMelee
+		? spec.cooldownMs * meleeProfile.cooldownMul
+		: isPistol
+			? spec.cooldownMs * pistolProfile.cooldownMul
+			: spec.cooldownMs;
+	const effectiveDamage = isMelee
+		? spec.damage * meleeProfile.damageMul
+		: isPistol
+			? spec.damage * pistolProfile.damageMul
+			: spec.damage;
 	if (now - lastFireAtRef.current < effectiveCooldown) return;
 
 	if (spec.ammoCostPerShot > 0) {

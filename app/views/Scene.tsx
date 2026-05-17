@@ -117,6 +117,7 @@ import {
 	SPIRIT_BOX_TRIGGER_RADIUS,
 } from "../../src/world/ghostHunting";
 import { pickMeleeProfile } from "../../src/world/meleeSkins";
+import { pickPistolProfile } from "../../src/world/pistolSkins";
 
 type SceneProps = Readonly<{
 	map: BoneBusterMap;
@@ -871,6 +872,10 @@ export function BoneBusterScene({
 	// the viewmodel's pickMeleeSkin so the visible weapon and the damage
 	// numbers stay in lockstep.
 	const meleeProfile = useMemo(() => pickMeleeProfile(map.seed), [map.seed]);
+	// PD1 — same pattern for the pistol skin: per-seed profile pairs
+	// with WeaponViewmodel's pickPistolSkin so viewmodel and damage
+	// numbers stay in lockstep.
+	const pistolProfile = useMemo(() => pickPistolProfile(map.seed), [map.seed]);
 
 	// ARCH2b — single-shot resolution moved to src/scene/tick/fireResolution.ts.
 	// The useEffect that wires `objexoom:fire` stays here (it owns the
@@ -899,11 +904,23 @@ export function BoneBusterScene({
 				timeScaleBus: timeScaleBusRef.current,
 				explodeBarrel: (b) => explodeBarrelRef.current(b),
 				meleeProfile,
+				pistolProfile,
 			});
 		};
 
 		return addBoneBusterListener("fire", onFire);
-	}, [active, camera, map, hasKey, gameRef, weapon, ammoRef, settings, meleeProfile]);
+	}, [
+		active,
+		camera,
+		map,
+		hasKey,
+		gameRef,
+		weapon,
+		ammoRef,
+		settings,
+		meleeProfile,
+		pistolProfile,
+	]);
 
 	useFrame(() => {
 		if (!active || hasKey) return;

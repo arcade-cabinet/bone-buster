@@ -5,6 +5,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import { ROLE } from "@styles/tokens/index";
 import { MELEE_SKIN_URLS, pickMeleeSkin } from "@world/meleeSkins";
+import { PISTOL_SKIN_URLS, pickPistolSkin } from "@world/pistolSkins";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
@@ -110,7 +111,14 @@ export function WeaponViewmodel({
 	// with the per-seed picked skin so each run cycles through machete /
 	// axe / chainsaw / knife / meathook / cleaver / sword. Other weapons
 	// resolve to their single canonical URL.
-	const url = weapon === "melee" ? pickMeleeSkin(mapSeed) : model.url;
+	// COV9 / PD1 — melee + pistol slots resolve per-seed via their skin
+	// pools. Other weapons resolve to their single canonical URL.
+	const url =
+		weapon === "melee"
+			? pickMeleeSkin(mapSeed)
+			: weapon === "pistol"
+				? pickPistolSkin(mapSeed)
+				: model.url;
 	const gltf = useGLTF(url);
 	// Clone the cached GLTF scene per-mount: `useGLTF` shares the source
 	// tree across instances, so mutating `.material` on the original would
@@ -275,4 +283,9 @@ export function preloadWeapons(): void {
 // a tier-3 weapon (rare pickup) so this is fine to defer.
 export function preloadMeleeSkins(): void {
 	for (const url of MELEE_SKIN_URLS) useGLTF.preload(url);
+}
+// PD1 — every pistol skin variant is preloaded so per-seed swaps
+// don't stall the PISTOL viewmodel on level-change.
+export function preloadPistolSkins(): void {
+	for (const url of PISTOL_SKIN_URLS) useGLTF.preload(url);
 }
