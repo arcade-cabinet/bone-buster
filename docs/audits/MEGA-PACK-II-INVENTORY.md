@@ -73,27 +73,19 @@ as "after the fight" so debris fits its visual register exactly.
 Target: extends `POOLS.arena` (currently 11 → ~17-18).
 Estimated wired count: **6-8** GLBs.
 
-### PE4d — Light Sources extension across archetypes
-Source: `FBX/Light Sources/` (10 candidates — 5 lamp models × on/off
-pairs).
-Pull: all 5 lamp models. Extend `src/world/lampScatter.ts` to allow
-per-archetype lamp model picks rather than the single current model.
-Cross-archetype: corridor + sewer get the industrial lamps; library
-gets the more decorative variants.
-NOT a scatter slice — lamp scatter is its own subsystem.
-Estimated wired count: **5** new lamp models, paired with on/off.
+### PE4d / PE4e / PE4f — ALREADY SHIPPED
 
-### PE4e — Doors & Gates extension
-Source: `FBX/Doors & Gates/` (6 candidates).
-Pull: door_hr_6/8/12/13/14 + gate_1. Extends `src/world/doors.ts`
-door model pool so per-room doors read as variants instead of one
-canonical model.
-NOT a scatter slice. Door subsystem extension.
+Verified during the PE4d-f staging pass: `lampScatter.ts` (COV1)
+already wires all 5 lamp models × on/off pairs, `doors.ts` (COV7)
+already wires the 6 door + gate variants, and `decals.ts` (COV6)
+already wires all 12 graffiti + posters. The PE4d/e/f items were
+in the directive based on the inventory's original "what's
+available?" pass; they were already drained in earlier slices
+(COV1 / COV6 / COV7) — the inventory pass had stale awareness of
+those completions.
 
-### PE4f — Decal field extension
-Source: `FBX/Decals/` (12 candidates — graffiti + posters).
-Pull: all 12. Extends `src/world/decals.ts`.
-NOT a scatter slice. Decal subsystem extension.
+No further work for D / E / F lanes; pruned from directive without
+new commits beyond the pruning commit itself.
 
 ### PE4g — Modular Structures (DEFERRED beyond PE4)
 Source: `FBX/Modular Structures/` (210 candidates).
