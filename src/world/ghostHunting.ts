@@ -119,15 +119,7 @@ export const SPIRIT_BOX_TRIGGER_RADIUS = 6;
  */
 export const SPIRIT_BOX_COOLDOWN_MS = 2_500;
 
-/**
- * Pick the next phoneme via the D19 cosmetic stream. `seed` is the level
- * seed (so a given run plays the same sequence) keyed alongside the
- * per-trigger index so consecutive triggers don't return the same word.
- *
- * `seed === 0` short-circuits to `SPIRIT_BOX_PHONEMES[0]` for every
- * triggerIndex so seed=0 canonical screenshots / canonical-run replays
- * stay byte-stable.
- */
+// D19 cosmetic per-trigger pick. seed=0 → phoneme[0] (canonical baseline).
 export function pickSpiritBoxPhoneme(seed: number, triggerIndex: number): string {
 	return pickCosmetic(seed, COSMETIC_TAGS.PHONEME, triggerIndex, SPIRIT_BOX_PHONEMES);
 }

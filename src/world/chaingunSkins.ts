@@ -32,11 +32,7 @@ export const CHAINGUN_SKIN_URLS: readonly string[] = [
 	A("/assets/models/weapons/chaingun-skins/chaingun_pm9.glb"),
 ];
 
-/**
- * Deterministic per-run chaingun skin pick via the D19 cosmetic stream.
- * `pickChaingunSkin(0)` short-circuits to `CHAINGUN_SKIN_URLS[0]` (canonical
- * chaingun.glb) so the seed=0 screenshot battery stays byte-stable.
- */
+// D19 cosmetic pick. seed=0 → canonical chaingun.glb (canonical baseline).
 export function pickChaingunSkin(seed: number): string {
 	return pickCosmeticOnce(seed, COSMETIC_TAGS.CHAINGUN, CHAINGUN_SKIN_URLS);
 }

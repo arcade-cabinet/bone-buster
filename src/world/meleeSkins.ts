@@ -51,11 +51,7 @@ export const MELEE_SKIN_URLS: readonly string[] = [
 	A("/assets/models/weapons/slasher/melee_knife_5.glb"),
 ];
 
-/**
- * Deterministic per-run melee skin pick via the D19 cosmetic stream.
- * `pickMeleeSkin(0)` short-circuits to `MELEE_SKIN_URLS[0]` (machete — the
- * E1 default) so the canonical seed=0 screenshot battery stays byte-stable.
- */
+// D19 cosmetic pick. seed=0 → machete (canonical baseline).
 export function pickMeleeSkin(seed: number): string {
 	return pickCosmeticOnce(seed, COSMETIC_TAGS.MELEE, MELEE_SKIN_URLS);
 }

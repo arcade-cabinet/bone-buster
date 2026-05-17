@@ -891,7 +891,7 @@ export function BoneBusterScene({
 	const chaingunProfile = useMemo(() => pickChaingunProfile(map.seed), [map.seed]);
 
 	// ARCH2b — single-shot resolution moved to src/scene/tick/fireResolution.ts.
-	// The useEffect that wires `objexoom:fire` stays here (it owns the
+	// The useEffect that wires `bonebuster:fire` stays here (it owns the
 	// listener lifecycle); the body is one call into the pure helper.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: refs are mutable and shouldn't trigger re-subscribe; matches the imperative ref pattern.
 	useEffect(() => {

@@ -64,17 +64,7 @@ export const NATURE_PLANT_URLS: readonly string[] = [
 	A("/assets/models/props/nature/blue_flowers_2.glb"),
 ];
 
-/**
- * Deterministic per-instance plant pick via the D19 cosmetic stream.
- *
- * Routes through `pickCosmetic(mapSeed, PLANT_TAG, instanceId, pool)`.
- * Adjacent instance ids on the same map yield different plants (alea
- * avalanche); the same `(instanceId, mapSeed)` pair always picks the
- * same plant.
- *
- * `mapSeed === 0` short-circuits to `NATURE_PLANT_URLS[0]` for all
- * instanceIds so the seed=0 canonical screenshot stays byte-stable.
- */
+// D19 cosmetic per-instance pick. mapSeed=0 → plant[0] (canonical baseline).
 export function pickNaturePlant(instanceId: number, mapSeed: number): string {
 	return pickCosmetic(mapSeed, COSMETIC_TAGS.PLANT, instanceId, NATURE_PLANT_URLS);
 }

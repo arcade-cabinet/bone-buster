@@ -318,7 +318,7 @@ export function BoneBusterHUD({
 }
 
 // E12/PA16 — only mounts when ?bonebusterDebug is in the URL. Listens to
-// the `objexoom:fpsUpdate` event dispatched from inside the Canvas and
+// the `bonebuster:fpsUpdate` event dispatched from inside the Canvas and
 // renders a tiny FPS + DPR readout in the bottom-left corner.
 // OBS2 — perf budget thresholds. If draw-calls or triangles
 // exceed these for 3 consecutive report windows, the readout

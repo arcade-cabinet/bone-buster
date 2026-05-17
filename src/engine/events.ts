@@ -6,10 +6,6 @@
  * incrementally. Once the migration completes, this module is the
  * sole entry-point for cross-component event traffic.
  *
- * R8 — channel prefix renamed `objexoom:` → `bonebuster:`. The
- * prefix only ever existed as a string fragment in dispatch/listen
- * calls; no on-disk artifacts persist the old name.
- *
  * Channel classification (per directive ARCH1b):
  *   - particle / fanout broadcast    — multi-consumer; stay as window events
  *       burst        damage / pickup / playerHit / explode bursts (ParticleBurstField)

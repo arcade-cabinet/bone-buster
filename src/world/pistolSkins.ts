@@ -23,13 +23,7 @@ export const PISTOL_SKIN_URLS: readonly string[] = [
 	A("/assets/models/weapons/pistol-skins/pistol_allegiance.glb"),
 ];
 
-/**
- * Deterministic per-run pistol skin pick. Routes through the D19
- * cosmetic-stream API: `pickCosmeticOnce(seed, PISTOL_TAG, pool)`. Index 0
- * (USP-S) is the canonical baseline; `pickPistolSkin(0)` short-circuits
- * via D19 to `PISTOL_SKIN_URLS[0]` so the canonical screenshot battery
- * stays byte-stable.
- */
+// D19 cosmetic pick. seed=0 → USP (canonical baseline).
 export function pickPistolSkin(seed: number): string {
 	return pickCosmeticOnce(seed, COSMETIC_TAGS.PISTOL, PISTOL_SKIN_URLS);
 }
