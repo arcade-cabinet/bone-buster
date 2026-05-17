@@ -9,6 +9,22 @@ domain: history
 
 All notable changes to this project will be documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Conventional Commits](https://www.conventionalcommits.org).
 
+## [0.5.0](https://github.com/arcade-cabinet/bone-buster/compare/v0.4.1...v0.5.0) (2026-05-17)
+
+
+### Features
+
+* **ghost-hunting:** EMF reader pickup + HUD chip (PRD §Parked PB5) ([#72](https://github.com/arcade-cabinet/bone-buster/issues/72)) ([7b79118](https://github.com/arcade-cabinet/bone-buster/commit/7b791189a1c82a62f3b46b8e7bcf5f7fe4a56580))
+* **hud:** non-boss enemy-kill banner with burst-stacking (PB2) ([#68](https://github.com/arcade-cabinet/bone-buster/issues/68)) ([3be0f24](https://github.com/arcade-cabinet/bone-buster/commit/3be0f24e73978fa8a9ff16369d13be510d24e7df))
+* reference-asset drain (Lanes C/D/E/F) + InstancedField perf + D19 dual-PRNG + R8 rebrand ([#75](https://github.com/arcade-cabinet/bone-buster/issues/75)) ([bbb860a](https://github.com/arcade-cabinet/bone-buster/commit/bbb860a0beadd4a855bbb81e5cdafbaaa9ad0dac))
+* **weapons:** per-skin melee damage profiles (PRD §Parked PB4) ([#71](https://github.com/arcade-cabinet/bone-buster/issues/71)) ([4e133ca](https://github.com/arcade-cabinet/bone-buster/commit/4e133ca1881beaa37aa549e44d0ce0a8ff44f790))
+
+
+### Performance Improvements
+
+* **bundle:** split vendor chunks via advancedChunks + cull woff2 auto-preload ([#66](https://github.com/arcade-cabinet/bone-buster/issues/66)) ([4ffbd92](https://github.com/arcade-cabinet/bone-buster/commit/4ffbd92f0cf56f9eb3f6cc5c29ca5345a6246787))
+* **scene:** InstancedMultiGltfField + migrate Prop/LargeProp fields (PB3) ([#70](https://github.com/arcade-cabinet/bone-buster/issues/70)) ([8847a62](https://github.com/arcade-cabinet/bone-buster/commit/8847a62e8952b3d5b4dfac6a9db0f38e6e594129))
+
 ## [0.4.1](https://github.com/arcade-cabinet/bone-buster/compare/v0.4.0...v0.4.1) (2026-05-16)
 
 
