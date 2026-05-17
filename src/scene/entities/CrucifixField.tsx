@@ -94,11 +94,12 @@ function CrucifixMesh({ crucifix }: { crucifix: CrucifixInstance }) {
 		const opacity = remaining < FADE_MS ? remaining / FADE_MS : 1;
 		group.traverse((obj) => {
 			const m = obj as THREE.Mesh;
-			if (!m.isMesh) return;
-			const mat = m.material as THREE.Material & { opacity?: number; transparent?: boolean };
-			if (!mat) return;
-			mat.transparent = true;
-			mat.opacity = opacity;
+			if (!m.isMesh || !m.material) return;
+			const mats = Array.isArray(m.material) ? m.material : [m.material];
+			for (const mat of mats) {
+				mat.transparent = true;
+				mat.opacity = opacity;
+			}
 		});
 	});
 

@@ -32,6 +32,7 @@ import type { FadeKind, GameRef, GameState } from "@views/Shell";
 import { GOING_BACK_BUDGET_MS } from "@views/Shell";
 import { LOOT_BONUSES, pickLootKind } from "@world/loot";
 import { useRef } from "react";
+import { flushSync } from "react-dom";
 
 /**
  * Per-pickup-kind action table. Lives in this module rather than in
@@ -240,17 +241,19 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 			}));
 		},
 		onConsumeCrucifix: () => {
-			// PC4 — atomic check-and-decrement. The setState callback can
-			// see a stale snapshot under React batching, so we read the
-			// CURRENT inventory via a one-shot synchronous getter (we
-			// flip the boolean before any react-batched callback fires).
+			// PC4 — atomic check-and-decrement. The functional updater isn't
+			// guaranteed to execute synchronously before setState returns
+			// under React 19 batching, so wrap in flushSync to force the
+			// `consumed` flag to settle before this function returns.
 			// Returning false signals "nothing in inventory, no-op the
 			// caller's placement" so Scene doesn't push a phantom entry.
 			let consumed = false;
-			depsRef.current.setState((prev) => {
-				if (prev.crucifixes <= 0) return prev;
-				consumed = true;
-				return { ...prev, crucifixes: prev.crucifixes - 1 };
+			flushSync(() => {
+				depsRef.current.setState((prev) => {
+					if (prev.crucifixes <= 0) return prev;
+					consumed = true;
+					return { ...prev, crucifixes: prev.crucifixes - 1 };
+				});
 			});
 			return consumed;
 		},
