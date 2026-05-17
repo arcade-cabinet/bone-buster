@@ -1,41 +1,45 @@
 import { useGLTF } from "@react-three/drei";
-import { NATURE_MEGA_PACK_URL } from "@world/nature";
+import { groupByUrl, InstancedMultiGltfField } from "@scene/render/InstancedField";
+import { NATURE_PLANT_URLS } from "@world/nature";
 import type { NatureInstance } from "@world/scatter/natureScatter";
 import { useMemo } from "react";
-import { SkeletonUtils } from "three-stdlib";
 
 /**
- * COV11 step-2 — courtyard-archetype nature scatter renderer.
+ * COV11 step-2 / PT2 — courtyard-archetype nature scatter renderer.
  *
- * Each NatureInstance gets a scaled-down SkeletonUtils.clone of the
- * Mega_Nature.glb aggregate. Per-instance yaw + scale variance keeps
- * the clones from reading as identical copy-pastes.
+ * PT2 — migrated from `SkeletonUtils.clone(Mega_Nature.glb)` per
+ * instance (which dropped the entire 31-plant aggregate at every
+ * spawn site) to per-plant InstancedMultiGltfField. Each
+ * `NatureInstance` carries its own `url` (deterministic per id +
+ * mapSeed via `pickNaturePlant`); we group by url and emit one
+ * InstancedMultiGltfField per group. The renderer collapses N
+ * instances of the same plant URL into a single InstancedMesh per
+ * sub-mesh per draw call.
+ *
+ * Draw-call delta: pre-PT2 = N×31×subMeshes per courtyard. Post-PT2
+ * = min(N, 31)×subMeshes per courtyard (roughly N×subMeshes for the
+ * typical courtyard density of 4-8 instances × 5 sectors).
  */
+const MAX_PER_BATCH = 32;
+
 export function NatureField({ instances }: { instances: readonly NatureInstance[] }) {
+	const groups = useMemo(() => groupByUrl(instances, (inst) => inst.url), [instances]);
+
 	return (
 		<>
-			{instances.map((inst) => (
-				<NatureMesh key={inst.id} inst={inst} />
+			{groups.map(([url, items]) => (
+				<InstancedMultiGltfField
+					key={url}
+					url={url}
+					instances={items}
+					maxInstances={MAX_PER_BATCH}
+				/>
 			))}
 		</>
 	);
 }
 
-function NatureMesh({ inst }: { inst: NatureInstance }) {
-	const gltf = useGLTF(NATURE_MEGA_PACK_URL);
-	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
-	return (
-		<group
-			position={[inst.position.x, 0, inst.position.y]}
-			rotation={[0, inst.yaw, 0]}
-			scale={[inst.scale, inst.scale, inst.scale]}
-		>
-			<primitive object={cloned} />
-		</group>
-	);
-}
-
 // A4 — tier 3 (deferred). Nature scatter is courtyard-archetype only.
 export function preloadNature(): void {
-	useGLTF.preload(NATURE_MEGA_PACK_URL);
+	for (const url of NATURE_PLANT_URLS) useGLTF.preload(url);
 }
