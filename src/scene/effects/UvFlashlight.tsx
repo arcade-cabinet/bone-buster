@@ -1,4 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
+import { ROLE } from "@styles/tokens/index";
 import { UV_FLASHLIGHT_HALF_ANGLE_RAD, UV_FLASHLIGHT_RANGE_TILES } from "@world/ghostHunting";
 import { useRef } from "react";
 import * as THREE from "three";
@@ -20,10 +21,9 @@ import * as THREE from "three";
  * cone-tracking pattern as Flashlight.
  */
 const FORWARD_BASE = new THREE.Vector3(0, 0, -1);
-// scale-step: PSX-era violet kept inline (no ROLE entry for "UV" yet —
-// the token PR adding a `signal` scale family is its own follow-up;
-// this hex is the Phasmo UV-light reference color).
-const UV_COLOR = "#b366ff";
+// SLA5 — UV cone color routes through ROLE.signal.uv (Phasmo-style
+// reference violet), promoted from inline hex into the
+// design-token surface so a future palette tweak edits one place.
 const UV_BASE_INTENSITY = 1.2;
 
 export function UvFlashlight() {
@@ -56,7 +56,7 @@ export function UvFlashlight() {
 				angle={UV_FLASHLIGHT_HALF_ANGLE_RAD}
 				penumbra={0.4}
 				decay={1.6}
-				color={UV_COLOR}
+				color={ROLE.signal.uv}
 				// No castShadow — UV pass is a reveal beam, not a
 				// shadow-casting source. Skipping shadows also halves
 				// per-frame cost on the second SpotLight.

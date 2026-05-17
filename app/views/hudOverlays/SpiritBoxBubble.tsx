@@ -87,14 +87,14 @@ export function SpiritBoxBubble() {
 						style={{
 							padding: "6px 14px",
 							borderRadius: 4,
-							background: "rgba(0,0,0,0.55)",
-							border: `1px solid ${ROLE.accent.discovery}`,
+							background: ROLE.bgPanelAlphaDark,
+							border: `1px solid ${ROLE.signal.spiritBox}`,
 							fontFamily: FONT_FAMILY.display,
 							fontSize: "var(--obx-hud-fs-readout, 14px)",
 							fontWeight: FONT_WEIGHT.regular,
 							letterSpacing: LETTER_SPACING.display,
-							color: ROLE.accent.discovery,
-							textShadow: "0 0 4px rgba(0,0,0,0.7)",
+							color: ROLE.signal.spiritBox,
+							textShadow: `0 0 4px ${ROLE.textShadowSoft}`,
 						}}
 					>
 						{bubble.phoneme}

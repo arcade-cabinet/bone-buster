@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 const HEX = /^#[0-9a-f]{6}$/i;
 
 describe("Bone palette (PRD §R2)", () => {
-	it("BONE_PALETTE carries the 14 named anchors", () => {
+	it("BONE_PALETTE carries the 16 named anchors (14 R2 + 2 SLA5 signal)", () => {
 		const keys = Object.keys(BONE_PALETTE).sort();
 		expect(keys).toEqual([
 			"accentDanger",
@@ -25,6 +25,8 @@ describe("Bone palette (PRD §R2)", () => {
 			"brandBone1",
 			"brandBone2",
 			"brandBone3",
+			"signalSpiritBox",
+			"signalUv",
 			"surfaceBase",
 			"surfaceDeep",
 			"surfaceElevated",
