@@ -52,6 +52,7 @@ five archetypes (`corridor` / `arena` / `courtyard` / `sewer` /
 `library`) and the per-slice ID that will land it.
 
 ### PE4a — Props subset for corridor (industrial residential)
+
 Source: `FBX/Props/` (137 candidates).
 Pull: small handheld items, paint cans, tools, cleaning supplies,
 crates that read as "abandoned hallway / loading bay" clutter.
@@ -59,6 +60,7 @@ Target: extends `POOLS.corridor` (currently 11 entries → ~20).
 Estimated wired count: **8-10** GLBs.
 
 ### PE4b — Large Props & Machinery for sewer (industrial drag)
+
 Source: `FBX/Large Props & Machinery/` (52 candidates).
 Pull: pipe variants (already partially served by PE3 — coordinate
 to avoid duplicate silhouettes), shipping containers, distillery,
@@ -67,6 +69,7 @@ Target: extends `POOLS.sewer` (currently 18 → ~25-28).
 Estimated wired count: **6-8** GLBs.
 
 ### PE4c — Debris & Misc for arena (rubble identity)
+
 Source: `FBX/Debris & Misc/` (34 candidates).
 Pull: brick piles, gravel, debris stacks. The arena archetype reads
 as "after the fight" so debris fits its visual register exactly.
