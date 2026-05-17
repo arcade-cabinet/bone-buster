@@ -29,7 +29,7 @@ Builds on PR #72's EMF vertical. Each slice opens its own PR. Asset extraction l
 
 Pattern-match PB4's per-skin profile architecture for the ranged + extra-melee assets. Each slice = (a) wire the URL pool, (b) extend the profile table, (c) pick deterministic per-run, (d) contract test.
 
-- [ ] PD3 Chaingun skin pool — wire `psx/uzi/Uzi/Assets/Uzi.glb` (canonical) + `psx/psx-flamethrower/PSX-Flamethrower/Flamethrower.glb` (variant) + the `Stylized Guns 3D Models PRO.zip` extraction (single combined FBX — needs Blender scene-split into 3-5 individual GLBs). `CHAINGUN_SKIN_URLS` + `CHAINGUN_PROFILES`. Identity profile on canonical seed.
+- [ ] PD3b Stylized Guns scene-split — Blender scene-split for `references/Stylized Guns 3D Models PRO.zip` (single combined FBX → 3-5 individual GLBs). Append-extends `CHAINGUN_SKIN_URLS` from 3 → 6-8 entries. Pure asset-pipeline slice; identity profile on canonical seed still pinned via existing PD3 contract test.
 
 ### Lane E — Per-archetype scenery packs
 

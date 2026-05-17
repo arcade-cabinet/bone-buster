@@ -57,6 +57,7 @@ import { preloadVehicleWrecks } from "../scene/entities/VehicleWreck";
 import { preloadWalls } from "../scene/map/MapGeometry";
 import { preloadSectorWalls } from "../scene/map/SectorMapGeometry";
 import {
+	preloadChaingunSkins,
 	preloadMeleeSkins,
 	preloadPistolSkins,
 	preloadWeapons,
@@ -95,6 +96,7 @@ export function preloadTier2MapMount(): void {
 	preloadLargeProps();
 	preloadProps();
 	preloadMeleeSkins();
+	preloadChaingunSkins();
 }
 
 /**

@@ -4,6 +4,7 @@ import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import { ROLE } from "@styles/tokens/index";
+import { CHAINGUN_SKIN_URLS, pickChaingunSkin } from "@world/chaingunSkins";
 import { MELEE_SKIN_URLS, pickMeleeSkin } from "@world/meleeSkins";
 import { PISTOL_SKIN_URLS, pickPistolSkin } from "@world/pistolSkins";
 import { useEffect, useMemo, useRef } from "react";
@@ -111,14 +112,17 @@ export function WeaponViewmodel({
 	// with the per-seed picked skin so each run cycles through machete /
 	// axe / chainsaw / knife / meathook / cleaver / sword. Other weapons
 	// resolve to their single canonical URL.
-	// COV9 / PD1 — melee + pistol slots resolve per-seed via their skin
-	// pools. Other weapons resolve to their single canonical URL.
+	// COV9 / PD1 / PD3 — melee + pistol + chaingun slots resolve
+	// per-seed via their skin pools. Other weapons resolve to the
+	// single canonical URL.
 	const url =
 		weapon === "melee"
 			? pickMeleeSkin(mapSeed)
 			: weapon === "pistol"
 				? pickPistolSkin(mapSeed)
-				: model.url;
+				: weapon === "chaingun"
+					? pickChaingunSkin(mapSeed)
+					: model.url;
 	const gltf = useGLTF(url);
 	// Clone the cached GLTF scene per-mount: `useGLTF` shares the source
 	// tree across instances, so mutating `.material` on the original would
@@ -288,4 +292,9 @@ export function preloadMeleeSkins(): void {
 // don't stall the PISTOL viewmodel on level-change.
 export function preloadPistolSkins(): void {
 	for (const url of PISTOL_SKIN_URLS) useGLTF.preload(url);
+}
+// PD3 — every chaingun skin variant is preloaded. Chaingun is a
+// pickup weapon (not start-of-run) so this is tier-2 not tier-1.
+export function preloadChaingunSkins(): void {
+	for (const url of CHAINGUN_SKIN_URLS) useGLTF.preload(url);
 }

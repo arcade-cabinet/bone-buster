@@ -42,6 +42,7 @@ vi.mock("../../scene/viewmodel/WeaponViewmodel", () => ({
 	preloadWeapons: vi.fn(),
 	preloadMeleeSkins: vi.fn(),
 	preloadPistolSkins: vi.fn(),
+	preloadChaingunSkins: vi.fn(),
 }));
 
 // Imported AFTER the mock setup so the orchestrator's own
@@ -65,6 +66,7 @@ import { preloadVehicleWrecks } from "../../scene/entities/VehicleWreck";
 import { preloadWalls } from "../../scene/map/MapGeometry";
 import { preloadSectorWalls } from "../../scene/map/SectorMapGeometry";
 import {
+	preloadChaingunSkins,
 	preloadMeleeSkins,
 	preloadPistolSkins,
 	preloadWeapons,
@@ -77,6 +79,7 @@ const ALL_SPIES = {
 	preloadWeapons,
 	preloadMeleeSkins,
 	preloadPistolSkins,
+	preloadChaingunSkins,
 	preloadWalls,
 	preloadSectorWalls,
 	preloadFloorTiles,
@@ -138,6 +141,7 @@ describe("A4 — tiered preload orchestrator", () => {
 			"preloadLargeProps",
 			"preloadProps",
 			"preloadMeleeSkins",
+			"preloadChaingunSkins",
 		]);
 	});
 

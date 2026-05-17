@@ -108,6 +108,7 @@ import {
 import { tickEnemyLoop } from "../../src/scene/tick/enemyTickLoop";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
 import { createTimeScaleBus } from "../../src/scene/tick/timeScaleBus";
+import { pickChaingunProfile } from "../../src/world/chaingunSkins";
 import {
 	CRUCIFIX_LIFETIME_MS,
 	type CrucifixInstance,
@@ -876,6 +877,8 @@ export function BoneBusterScene({
 	// with WeaponViewmodel's pickPistolSkin so viewmodel and damage
 	// numbers stay in lockstep.
 	const pistolProfile = useMemo(() => pickPistolProfile(map.seed), [map.seed]);
+	// PD3 — chaingun skin profile pairs with pickChaingunSkin.
+	const chaingunProfile = useMemo(() => pickChaingunProfile(map.seed), [map.seed]);
 
 	// ARCH2b — single-shot resolution moved to src/scene/tick/fireResolution.ts.
 	// The useEffect that wires `objexoom:fire` stays here (it owns the
@@ -905,6 +908,7 @@ export function BoneBusterScene({
 				explodeBarrel: (b) => explodeBarrelRef.current(b),
 				meleeProfile,
 				pistolProfile,
+				chaingunProfile,
 			});
 		};
 
@@ -920,6 +924,7 @@ export function BoneBusterScene({
 		settings,
 		meleeProfile,
 		pistolProfile,
+		chaingunProfile,
 	]);
 
 	useFrame(() => {

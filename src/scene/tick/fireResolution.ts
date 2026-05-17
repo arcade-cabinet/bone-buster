@@ -39,6 +39,7 @@ import { WEAPONS, type WeaponId } from "@shared/weapons";
 import type { BoneBusterSettings } from "@store/settings";
 import type { GameRef, WeaponState } from "@views/Shell";
 import { type Barrel, pickRayBarrel } from "@world/barrels";
+import { type ChaingunProfile, DEFAULT_CHAINGUN_PROFILE } from "@world/chaingunSkins";
 import { DEFAULT_MELEE_PROFILE, type MeleeProfile } from "@world/meleeSkins";
 import { DEFAULT_PISTOL_PROFILE, type PistolProfile } from "@world/pistolSkins";
 import { pickRaySwitch, type Secret } from "@world/secrets";
@@ -104,6 +105,13 @@ export interface FireResolutionContext {
 	 * don't yet plumb the profile keep working byte-identically.
 	 */
 	pistolProfile?: PistolProfile;
+	/**
+	 * PD3 — per-run chaingun profile resolved from level.seed via
+	 * `pickChaingunProfile`. Mirrors meleeProfile + pistolProfile;
+	 * other weapons read base spec unchanged. Optional fallback so
+	 * untouched callers keep working byte-identically.
+	 */
+	chaingunProfile?: ChaingunProfile;
 }
 
 export function resolveFire(ctx: FireResolutionContext): void {
@@ -129,27 +137,28 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		explodeBarrel,
 		meleeProfile = DEFAULT_MELEE_PROFILE,
 		pistolProfile = DEFAULT_PISTOL_PROFILE,
+		chaingunProfile = DEFAULT_CHAINGUN_PROFILE,
 	} = ctx;
 
 	if (!active) return;
 	const spec = WEAPONS[weapon];
-	// PB4 / PD1 — apply per-skin profile on melee + pistol; other
-	// weapons read base damage/cooldown unchanged. Multipliers compose
-	// locally so the WEAPONS table stays the single source of truth
-	// for the base spec, and the per-skin deltas are visible at this
-	// call site.
-	const isMelee = weapon === "melee";
-	const isPistol = weapon === "pistol";
-	const effectiveCooldown = isMelee
-		? spec.cooldownMs * meleeProfile.cooldownMul
-		: isPistol
-			? spec.cooldownMs * pistolProfile.cooldownMul
-			: spec.cooldownMs;
-	const effectiveDamage = isMelee
-		? spec.damage * meleeProfile.damageMul
-		: isPistol
-			? spec.damage * pistolProfile.damageMul
-			: spec.damage;
+	// PB4 / PD1 / PD3 — apply per-skin profile on melee + pistol +
+	// chaingun; other weapons read base damage/cooldown unchanged.
+	// Multipliers compose locally so the WEAPONS table stays the
+	// single source of truth for the base spec, and the per-skin
+	// deltas are visible at this call site.
+	const skinProfile: { damageMul: number; cooldownMul: number } | null =
+		weapon === "melee"
+			? meleeProfile
+			: weapon === "pistol"
+				? pistolProfile
+				: weapon === "chaingun"
+					? chaingunProfile
+					: null;
+	const effectiveCooldown = skinProfile
+		? spec.cooldownMs * skinProfile.cooldownMul
+		: spec.cooldownMs;
+	const effectiveDamage = skinProfile ? spec.damage * skinProfile.damageMul : spec.damage;
 	if (now - lastFireAtRef.current < effectiveCooldown) return;
 
 	if (spec.ammoCostPerShot > 0) {
