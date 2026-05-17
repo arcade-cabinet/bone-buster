@@ -40,9 +40,10 @@ describe("COV9 — pickMeleeSkin", () => {
 		}
 	});
 
-	it("all skins reachable across seeds 0..N-1", () => {
+	it("all skins reachable across a sufficient seed range", () => {
+		// D19 cosmetic stream — see pistolSkins test for the same rationale.
 		const seen = new Set<string>();
-		for (let s = 0; s < MELEE_SKIN_URLS.length; s += 1) {
+		for (let s = 0; s < 500; s += 1) {
 			seen.add(pickMeleeSkin(s));
 		}
 		expect(seen.size).toBe(MELEE_SKIN_URLS.length);

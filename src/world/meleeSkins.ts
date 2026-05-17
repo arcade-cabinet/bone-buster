@@ -30,6 +30,7 @@
  */
 
 import { A } from "@assets/assetUrl";
+import { COSMETIC_TAGS, pickCosmeticOnce } from "@engine/prng";
 
 export const MELEE_SKIN_URLS: readonly string[] = [
 	A("/assets/models/weapons/slasher/melee_machete.glb"), // E1 default — canonical (seed=0)
@@ -51,14 +52,12 @@ export const MELEE_SKIN_URLS: readonly string[] = [
 ];
 
 /**
- * Deterministic per-run melee skin pick. Uses unsigned right-shift
- * so negative seeds are safe. Index 0 (`melee_machete`) is the E1
- * default — `pickMeleeSkin(0)` returns it for back-compat with the
- * existing canonical screenshots.
+ * Deterministic per-run melee skin pick via the D19 cosmetic stream.
+ * `pickMeleeSkin(0)` short-circuits to `MELEE_SKIN_URLS[0]` (machete — the
+ * E1 default) so the canonical seed=0 screenshot battery stays byte-stable.
  */
 export function pickMeleeSkin(seed: number): string {
-	const idx = (seed >>> 0) % MELEE_SKIN_URLS.length;
-	return MELEE_SKIN_URLS[idx];
+	return pickCosmeticOnce(seed, COSMETIC_TAGS.MELEE, MELEE_SKIN_URLS);
 }
 
 /**

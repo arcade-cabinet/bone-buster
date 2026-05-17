@@ -54,9 +54,13 @@ describe("PD1 — pickPistolSkin", () => {
 		}
 	});
 
-	it("all skins reachable across seeds 0..N-1", () => {
+	it("all skins reachable across a sufficient seed range", () => {
+		// Under D19's cosmetic stream (alea-backed), seed→pool isn't a clean
+		// modulo bijection — adjacent seeds may collide. Widen the range to
+		// 200 seeds; every entry MUST be reachable somewhere in that span or
+		// the cosmetic distribution is broken.
 		const seen = new Set<string>();
-		for (let s = 0; s < PISTOL_SKIN_URLS.length; s += 1) {
+		for (let s = 0; s < 200; s += 1) {
 			seen.add(pickPistolSkin(s));
 		}
 		expect(seen.size).toBe(PISTOL_SKIN_URLS.length);

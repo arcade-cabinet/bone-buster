@@ -14,6 +14,7 @@
  */
 
 import { A } from "@assets/assetUrl";
+import { COSMETIC_TAGS, pickCosmeticOnce } from "@engine/prng";
 
 export const PISTOL_SKIN_URLS: readonly string[] = [
 	A("/assets/models/weapons/pistol-skins/pistol_usp.glb"), // identity (canonical)
@@ -23,14 +24,14 @@ export const PISTOL_SKIN_URLS: readonly string[] = [
 ];
 
 /**
- * Deterministic per-run pistol skin pick. Unsigned right-shift so
- * negative seeds are safe. Index 0 (USP-S) is the canonical baseline;
- * `pickPistolSkin(0)` MUST return it so the canonical screenshot
- * battery stays byte-stable.
+ * Deterministic per-run pistol skin pick. Routes through the D19
+ * cosmetic-stream API: `pickCosmeticOnce(seed, PISTOL_TAG, pool)`. Index 0
+ * (USP-S) is the canonical baseline; `pickPistolSkin(0)` short-circuits
+ * via D19 to `PISTOL_SKIN_URLS[0]` so the canonical screenshot battery
+ * stays byte-stable.
  */
 export function pickPistolSkin(seed: number): string {
-	const idx = (seed >>> 0) % PISTOL_SKIN_URLS.length;
-	return PISTOL_SKIN_URLS[idx];
+	return pickCosmeticOnce(seed, COSMETIC_TAGS.PISTOL, PISTOL_SKIN_URLS);
 }
 
 /**

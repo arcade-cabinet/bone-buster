@@ -20,6 +20,7 @@
  */
 
 import { A } from "@assets/assetUrl";
+import { COSMETIC_TAGS, pickCosmetic } from "@engine/prng";
 
 export const NATURE_MEGA_PACK_URL: string = A("/assets/models/props/nature/Mega_Nature.glb");
 
@@ -64,16 +65,16 @@ export const NATURE_PLANT_URLS: readonly string[] = [
 ];
 
 /**
- * Deterministic plant pick by combined `(instanceId, mapSeed)`
- * hash. Adjacent instance ids on the same map yield different
- * plants (variety per courtyard); the same instance id across map
- * reloads with the same seed always picks the same plant
- * (reproducibility for QA + canonical screenshots).
+ * Deterministic per-instance plant pick via the D19 cosmetic stream.
  *
- * Uses an XOR-mixed Mulberry-style constant so adjacent ids don't
- * cluster on the same plant.
+ * Routes through `pickCosmetic(mapSeed, PLANT_TAG, instanceId, pool)`.
+ * Adjacent instance ids on the same map yield different plants (alea
+ * avalanche); the same `(instanceId, mapSeed)` pair always picks the
+ * same plant.
+ *
+ * `mapSeed === 0` short-circuits to `NATURE_PLANT_URLS[0]` for all
+ * instanceIds so the seed=0 canonical screenshot stays byte-stable.
  */
 export function pickNaturePlant(instanceId: number, mapSeed: number): string {
-	const mixed = ((instanceId >>> 0) ^ ((mapSeed >>> 0) * 0x9e3779b1)) >>> 0;
-	return NATURE_PLANT_URLS[mixed % NATURE_PLANT_URLS.length];
+	return pickCosmetic(mapSeed, COSMETIC_TAGS.PLANT, instanceId, NATURE_PLANT_URLS);
 }

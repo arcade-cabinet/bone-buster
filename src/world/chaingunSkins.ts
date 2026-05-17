@@ -17,23 +17,28 @@
  */
 
 import { A } from "@assets/assetUrl";
+import { COSMETIC_TAGS, pickCosmeticOnce } from "@engine/prng";
 
 export const CHAINGUN_SKIN_URLS: readonly string[] = [
 	A("/assets/models/weapons/chaingun.glb"), // canonical (seed=0)
 	A("/assets/models/weapons/chaingun-skins/chaingun_uzi.glb"),
 	A("/assets/models/weapons/chaingun-skins/chaingun_flamethrower.glb"),
-	// PD3b — Stylized Guns 3D Models PRO scene-split additions. Three
-	// distinct SMG/automatic silhouettes (AK-47, MAC-10, MGD PM-9).
-	// Append-only at indices 3..5 to preserve seed=0 / seed=1 / seed=2
-	// canonical screenshot byte-stability.
+	// PD3b — Stylized Guns 3D Models PRO scene-split additions. Append-only
+	// at indices 3..5; under D19 (cosmetic stream) only the seed=0 baseline
+	// is byte-locked (short-circuit to index 0). Non-zero seeds re-roll
+	// through the alea stream — pool growth no longer needs index-stability.
 	A("/assets/models/weapons/chaingun-skins/chaingun_ak47.glb"),
 	A("/assets/models/weapons/chaingun-skins/chaingun_mac10.glb"),
 	A("/assets/models/weapons/chaingun-skins/chaingun_pm9.glb"),
 ];
 
+/**
+ * Deterministic per-run chaingun skin pick via the D19 cosmetic stream.
+ * `pickChaingunSkin(0)` short-circuits to `CHAINGUN_SKIN_URLS[0]` (canonical
+ * chaingun.glb) so the seed=0 screenshot battery stays byte-stable.
+ */
 export function pickChaingunSkin(seed: number): string {
-	const idx = (seed >>> 0) % CHAINGUN_SKIN_URLS.length;
-	return CHAINGUN_SKIN_URLS[idx];
+	return pickCosmeticOnce(seed, COSMETIC_TAGS.CHAINGUN, CHAINGUN_SKIN_URLS);
 }
 
 export type ChaingunProfile = Readonly<{

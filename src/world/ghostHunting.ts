@@ -13,6 +13,7 @@
  * HUD slot. Distance is in tiles.
  */
 
+import { COSMETIC_TAGS, pickCosmetic } from "@engine/prng";
 import { ROLE } from "@styles/tokens/index";
 
 export type EmfReading = 0 | 1 | 2 | 3 | 4 | 5;
@@ -119,18 +120,16 @@ export const SPIRIT_BOX_TRIGGER_RADIUS = 6;
 export const SPIRIT_BOX_COOLDOWN_MS = 2_500;
 
 /**
- * Pick the next phoneme. `seed` is the level seed (so a given run
- * plays the same sequence) XORed with a per-trigger frame index
- * so consecutive triggers don't always return the same word.
+ * Pick the next phoneme via the D19 cosmetic stream. `seed` is the level
+ * seed (so a given run plays the same sequence) keyed alongside the
+ * per-trigger index so consecutive triggers don't return the same word.
  *
- * Determinism: at fixed seed, `pickSpiritBoxPhoneme(seed, n)`
- * returns the same phoneme for every n. The XOR keeps the
- * distribution well-spread across the pool.
+ * `seed === 0` short-circuits to `SPIRIT_BOX_PHONEMES[0]` for every
+ * triggerIndex so seed=0 canonical screenshots / canonical-run replays
+ * stay byte-stable.
  */
 export function pickSpiritBoxPhoneme(seed: number, triggerIndex: number): string {
-	const mixed = (seed >>> 0) ^ ((triggerIndex >>> 0) * 0x9e3779b1);
-	const idx = (mixed >>> 0) % SPIRIT_BOX_PHONEMES.length;
-	return SPIRIT_BOX_PHONEMES[idx];
+	return pickCosmetic(seed, COSMETIC_TAGS.PHONEME, triggerIndex, SPIRIT_BOX_PHONEMES);
 }
 
 /**

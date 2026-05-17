@@ -1,4 +1,4 @@
-import { mulberry32 } from "@engine/prng";
+import { COSMETIC_TAGS, cosmeticRng, mulberry32 } from "@engine/prng";
 import { PISTOL_MAX_RANGE, PLAYER_RADIUS, RATTLER_HP, TILE } from "@shared/constants";
 import type { PropArchetype } from "@world/scatter/propPool";
 
@@ -810,23 +810,22 @@ export function spawnEnemies(map: BoneBusterMap, spawnsOverride?: readonly Enemy
 }
 
 /**
- * PC3 — deterministic per-spawn UV-hidden assignment. ~12.5% (1/8)
- * of non-boss enemies hide; the rest render normally. XOR-mixed
- * with the same Mulberry-style constant the spirit-box picker uses
- * so the distribution is reproducible across seeds.
+ * PC3 — deterministic per-spawn UV-hidden assignment via the D19 cosmetic
+ * stream. ~12.5% (1/8) of non-boss enemies hide; the rest render normally.
  *
- * Special case: `seed === 0` (refLevel anchor) returns false for
- * every spawnIndex. The canonical screenshot pipeline pins
- * refLevel(0) byte-for-byte; if pickUvHidden could tag an enemy
- * there, the baseline-hide slot would mark it invisible and the
- * screenshot would diverge. The UV-reveal mechanic only kicks in
- * on procedural maps (seed > 0) per the canonical-byte-stability
- * pattern documented in the user's memory.
+ * Special case: `seed === 0` (refLevel anchor) returns false for every
+ * spawnIndex. The canonical screenshot pipeline pins refLevel(0)
+ * byte-for-byte; if pickUvHidden could tag an enemy there, the baseline
+ * slot would mark it invisible and the screenshot would diverge. The UV-
+ * reveal mechanic only kicks in on procedural maps (seed > 0).
  */
 export function pickUvHidden(seed: number, spawnIndex: number): boolean {
 	if (seed >>> 0 === 0) return false;
-	const mixed = ((seed >>> 0) ^ ((spawnIndex >>> 0) * 0x9e3779b1)) >>> 0;
-	return mixed % 8 === 0;
+	// Cosmetic-stream roll. Derive a per-(seed, spawnIndex) alea stream by
+	// folding spawnIndex into the seed before tagging; first output < 0.125
+	// = 12.5% hidden probability.
+	const rng = cosmeticRng((seed >>> 0) ^ (spawnIndex >>> 0), COSMETIC_TAGS.MISC);
+	return rng() < 0.125;
 }
 
 export type Pickup = {

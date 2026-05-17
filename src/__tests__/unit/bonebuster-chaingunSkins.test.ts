@@ -54,9 +54,10 @@ describe("PD3 — pickChaingunSkin", () => {
 		}
 	});
 
-	it("all skins reachable across seeds 0..N-1", () => {
+	it("all skins reachable across a sufficient seed range", () => {
+		// D19 cosmetic stream — see pistolSkins test for the same rationale.
 		const seen = new Set<string>();
-		for (let s = 0; s < CHAINGUN_SKIN_URLS.length; s += 1) {
+		for (let s = 0; s < 200; s += 1) {
 			seen.add(pickChaingunSkin(s));
 		}
 		expect(seen.size).toBe(CHAINGUN_SKIN_URLS.length);
