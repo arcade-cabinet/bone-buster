@@ -19,10 +19,13 @@
 
 ## Queue
 
-(empty — PR #75 covers the full overhaul; awaiting review-merge.)
+(empty — overhaul + v0.5.0 shipped + live Pages deploy verified end-to-end.)
 
 ## Closeout notes
 
+- Pages-deploy live-verify script drives past landing → skill → level → in-game — PR #77, 2026-05-17.
+- SLA1–SLA5 slasher gameplay (meathook pull, chainsaw aggro, boss music, flavor names, signal tokens) — PR #75 follow-up, 2026-05-17.
+- v0.5.0 released + GitHub Pages deploy verified visually — 2026-05-17.
 - D19 dual-PRNG + R8 rebrand follow-up — PR #75, 4 commits 2026-05-17.
 - Reference-asset drain (Lanes C/D/E/F) + InstancedField perf — PR #75, 26 commits 2026-05-16.
 - PB1–PB5 + PA1–PA2 — PRs #66, #67, #68, #70, #71, #72, #73.
