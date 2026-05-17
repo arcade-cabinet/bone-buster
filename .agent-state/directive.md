@@ -29,7 +29,6 @@ Builds on PR #72's EMF vertical. Each slice opens its own PR. Asset extraction l
 
 Pattern-match PB4's per-skin profile architecture for the ranged + extra-melee assets. Each slice = (a) wire the URL pool, (b) extend the profile table, (c) pick deterministic per-run, (d) contract test.
 
-- [ ] PD2 Melee skin expansion — wire `psx/psx-baseball-bat/PSX-Baseball_Bat/Baseball-Bat_V3.glb` + `psx/katana/Katana/Katana.glb` + the 5 `psx/psx-knives/PSX-Knives/FBX/Knife_*.glb` into `MELEE_SKIN_URLS` (raising count from 7 to 14). Extend `MELEE_PROFILES` with per-skin tuning. Baseball bat = wide-arc heavy (1.3× damage, 1.2× cooldown); Katana = balanced upgrade (1.15× damage, 0.95× cooldown); Knife_1..5 = visually-distinct variants of the existing knife profile (0.55× damage, 0.57× cooldown, identity profile). Canonical machete (seed 0) stays identity profile so screenshots are byte-stable.
 - [ ] PD3 Chaingun skin pool — wire `psx/uzi/Uzi/Assets/Uzi.glb` (canonical) + `psx/psx-flamethrower/PSX-Flamethrower/Flamethrower.glb` (variant) + the `Stylized Guns 3D Models PRO.zip` extraction (single combined FBX — needs Blender scene-split into 3-5 individual GLBs). `CHAINGUN_SKIN_URLS` + `CHAINGUN_PROFILES`. Identity profile on canonical seed.
 
 ### Lane E — Per-archetype scenery packs

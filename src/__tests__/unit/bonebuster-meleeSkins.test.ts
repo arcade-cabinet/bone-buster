@@ -16,7 +16,7 @@ describe("COV9 — melee skin roster", () => {
 
 	it("every URL resolves to /assets/models/weapons/slasher/melee_*.glb", () => {
 		for (const url of MELEE_SKIN_URLS) {
-			expect(url).toMatch(/\/assets\/models\/weapons\/slasher\/melee_[a-z]+\.glb$/);
+			expect(url).toMatch(/\/assets\/models\/weapons\/slasher\/melee_[a-z][a-z0-9_]*\.glb$/);
 		}
 	});
 

@@ -2,11 +2,18 @@
  * COV9 step-1 — melee variant cycling.
  *
  * E1 shipped the BLADE slot with a single machete viewmodel. COV9
- * extends it to a 7-skin roster cycled per-run via `pickMeleeSkin
- * (level.seed)`. The set covers the slasher pack's 5 originals
- * (axe / chainsaw / knife / machete / meathook) plus two loose
- * additions (cleaver / sword) — every entry reads cleanly at
- * FPS scale with the existing rotation/offset.
+ * extended it to 7 skins; PD2 grows the roster to 14 by appending
+ * the baseball bat, katana, and 5 knife variants from the unwired
+ * references/ extractions. The set covers the slasher pack's 5
+ * originals (axe / chainsaw / knife / machete / meathook), two
+ * loose additions (cleaver / sword), and the PD2 additions
+ * (baseball bat / katana / knife_1..5) — every entry reads cleanly
+ * at FPS scale with the existing rotation/offset.
+ *
+ * Append-only ordering: index 0 (machete) MUST stay the E1 default
+ * because every canonical screenshot pinned at seed=0 expects it.
+ * PD2 additions land at indices 7..13 to preserve seed=N invariants
+ * for the COV9 roster.
  *
  * Step-1 ships the URL pool + picker. The WeaponViewmodel/models.ts
  * wiring swap (passing the picked URL into WEAPON_MODELS.melee at
@@ -25,13 +32,22 @@
 import { A } from "@assets/assetUrl";
 
 export const MELEE_SKIN_URLS: readonly string[] = [
-	A("/assets/models/weapons/slasher/melee_machete.glb"), // E1 default
+	A("/assets/models/weapons/slasher/melee_machete.glb"), // E1 default — canonical (seed=0)
 	A("/assets/models/weapons/slasher/melee_axe.glb"),
 	A("/assets/models/weapons/slasher/melee_chainsaw.glb"),
 	A("/assets/models/weapons/slasher/melee_knife.glb"),
 	A("/assets/models/weapons/slasher/melee_meathook.glb"),
 	A("/assets/models/weapons/slasher/melee_cleaver.glb"),
 	A("/assets/models/weapons/slasher/melee_sword.glb"),
+	// PD2 — additions. Append-only to preserve index 0 (machete) +
+	// every existing index for byte-stability of canonical screenshots.
+	A("/assets/models/weapons/slasher/melee_baseball_bat.glb"),
+	A("/assets/models/weapons/slasher/melee_katana.glb"),
+	A("/assets/models/weapons/slasher/melee_knife_1.glb"),
+	A("/assets/models/weapons/slasher/melee_knife_2.glb"),
+	A("/assets/models/weapons/slasher/melee_knife_3.glb"),
+	A("/assets/models/weapons/slasher/melee_knife_4.glb"),
+	A("/assets/models/weapons/slasher/melee_knife_5.glb"),
 ];
 
 /**
@@ -107,6 +123,18 @@ export const MELEE_PROFILES: Readonly<Record<string, MeleeProfile>> = {
 	[MELEE_SKIN_URLS[4]]: { damageMul: 1, cooldownMul: 1, knockbackMul: -1 }, // meathook (pull)
 	[MELEE_SKIN_URLS[5]]: { damageMul: 1.27, cooldownMul: 1.2, knockbackMul: 1 }, // cleaver
 	[MELEE_SKIN_URLS[6]]: { damageMul: 1.1, cooldownMul: 0.9, knockbackMul: 1 }, // sword
+	// PD2 — additions. Baseball bat = wide-arc heavy (+30% damage,
+	// +20% cooldown). Katana = balanced upgrade (+15% damage, -5%
+	// cooldown). Knife_1..5 = visually-distinct knife variants sharing
+	// the base knife profile (0.55× / 0.57×) — players see a different
+	// blade silhouette, identical mechanics.
+	[MELEE_SKIN_URLS[7]]: { damageMul: 1.3, cooldownMul: 1.2, knockbackMul: 1 }, // baseball bat
+	[MELEE_SKIN_URLS[8]]: { damageMul: 1.15, cooldownMul: 0.95, knockbackMul: 1 }, // katana
+	[MELEE_SKIN_URLS[9]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_1
+	[MELEE_SKIN_URLS[10]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_2
+	[MELEE_SKIN_URLS[11]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_3
+	[MELEE_SKIN_URLS[12]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_4
+	[MELEE_SKIN_URLS[13]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_5
 };
 
 /**
