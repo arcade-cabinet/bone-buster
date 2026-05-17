@@ -40,6 +40,13 @@ export type EnemySkin = {
 	 * pose with a slight idle bob.
 	 */
 	anims: EnemyAnimSet;
+	/**
+	 * SLA4 — optional variant flavor name shown in the kill banner as
+	 * "(VARIANT)" suffix. Skins WITHOUT a flavorName render as the bare
+	 * kind name. Multi-skin rosters set this per entry so the player
+	 * sees specific variants in the kill ticker.
+	 */
+	flavorName?: string;
 };
 
 /** Per-kind roster of visual skins — variant picked by enemy.id. */
@@ -120,6 +127,7 @@ const RATTLER_SKINS: EnemySkin[] = [
 			hit: "Idle",
 			death: "Die",
 		},
+		flavorName: "SEWERFIEND",
 	},
 	{
 		// Horned creature — wide static silhouette, no anims (procedural bob).
@@ -128,6 +136,7 @@ const RATTLER_SKINS: EnemySkin[] = [
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
+		flavorName: "HORNED",
 	},
 	{
 		// Nun — narrow vertical silhouette, no anims.
@@ -136,6 +145,7 @@ const RATTLER_SKINS: EnemySkin[] = [
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
+		flavorName: "CASSOCK",
 	},
 ];
 
@@ -164,6 +174,7 @@ const BOUNCER_SKINS: EnemySkin[] = [
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
+		flavorName: "BEAK",
 	},
 	{
 		// Elk demon — same mixamo collapse; static render for now.
@@ -172,6 +183,7 @@ const BOUNCER_SKINS: EnemySkin[] = [
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
+		flavorName: "ANTLERED",
 	},
 	{
 		url: A("/assets/models/enemies/horror/abomination.glb"),
@@ -179,6 +191,7 @@ const BOUNCER_SKINS: EnemySkin[] = [
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
+		flavorName: "ABOMINATION",
 	},
 	{
 		url: A("/assets/models/enemies/horror/abomination2.glb"),
@@ -186,6 +199,7 @@ const BOUNCER_SKINS: EnemySkin[] = [
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
+		flavorName: "STUNTED",
 	},
 	{
 		url: A("/assets/models/enemies/horror/anomaly.glb"),
@@ -193,6 +207,7 @@ const BOUNCER_SKINS: EnemySkin[] = [
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
+		flavorName: "ANOMALY",
 	},
 	{
 		url: A("/assets/models/enemies/horror/clown_1.glb"),
@@ -200,6 +215,7 @@ const BOUNCER_SKINS: EnemySkin[] = [
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
+		flavorName: "JESTER",
 	},
 	{
 		url: A("/assets/models/enemies/horror/clown_3.glb"),
@@ -207,6 +223,7 @@ const BOUNCER_SKINS: EnemySkin[] = [
 		yawOffsetRad: 0,
 		floorOffset: 0,
 		anims: NO_ANIMS,
+		flavorName: "GRINNER",
 	},
 ];
 
@@ -233,6 +250,7 @@ const PHASER_SKINS: EnemySkin[] = [
 		yawOffsetRad: 0,
 		floorOffset: 0.6,
 		anims: NO_ANIMS,
+		flavorName: "INVADER",
 	},
 ];
 
@@ -258,7 +276,14 @@ function singleSkinModel(urlPath: string, heightTiles: number, floorOffset = 0):
 // any code that reads .url/.heightTiles directly); the full roster
 // drives per-spawn variant cycling.
 function multiSkinModel(
-	skins: ReadonlyArray<Readonly<{ urlPath: string; heightTiles: number; floorOffset?: number }>>,
+	skins: ReadonlyArray<
+		Readonly<{
+			urlPath: string;
+			heightTiles: number;
+			floorOffset?: number;
+			flavorName?: string;
+		}>
+	>,
 ): EnemyModel {
 	const roster: EnemySkin[] = skins.map((s) => ({
 		url: A(s.urlPath),
@@ -266,6 +291,7 @@ function multiSkinModel(
 		yawOffsetRad: 0,
 		floorOffset: s.floorOffset ?? 0,
 		anims: NO_ANIMS,
+		flavorName: s.flavorName,
 	}));
 	return { ...roster[0], roster };
 }
@@ -281,7 +307,11 @@ export const ENEMY_MODELS: Record<EnemyKind, EnemyModel> = {
 	// PF2b — jester roster includes the cloaked clown variant.
 	jester: multiSkinModel([
 		{ urlPath: "/assets/models/enemies/horror/clown_1.glb", heightTiles: 1.5 },
-		{ urlPath: "/assets/models/enemies/horror/clown_2.glb", heightTiles: 1.5 },
+		{
+			urlPath: "/assets/models/enemies/horror/clown_2.glb",
+			heightTiles: 1.5,
+			flavorName: "CLOAKED",
+		},
 	]),
 	reverend: singleSkinModel("/assets/models/enemies/horror/nun.glb", 1.8),
 	stagged: singleSkinModel("/assets/models/enemies/horror/elk_demon.glb", 1.9),
@@ -290,7 +320,11 @@ export const ENEMY_MODELS: Record<EnemyKind, EnemyModel> = {
 	// PF2b — heap roster gains the muscular abomination variant.
 	heap: multiSkinModel([
 		{ urlPath: "/assets/models/enemies/horror/abomination.glb", heightTiles: 1.7 },
-		{ urlPath: "/assets/models/enemies/horror/abomination_muscular.glb", heightTiles: 1.8 },
+		{
+			urlPath: "/assets/models/enemies/horror/abomination_muscular.glb",
+			heightTiles: 1.8,
+			flavorName: "MUSCULAR",
+		},
 	]),
 	heap2: singleSkinModel("/assets/models/enemies/horror/abomination2.glb", 1.4),
 	gorehead: singleSkinModel("/assets/models/enemies/horror/horned.glb", 1.7),
@@ -307,7 +341,11 @@ export const ENEMY_MODELS: Record<EnemyKind, EnemyModel> = {
 	// PF2b — oneye roster gains the eyenoid variant (eyehead pack).
 	oneye: multiSkinModel([
 		{ urlPath: "/assets/models/enemies/horror/oneye.glb", heightTiles: 1.7 },
-		{ urlPath: "/assets/models/enemies/horror/eyenoid.glb", heightTiles: 1.7 },
+		{
+			urlPath: "/assets/models/enemies/horror/eyenoid.glb",
+			heightTiles: 1.7,
+			flavorName: "EYENOID",
+		},
 	]),
 	goliath: singleSkinModel("/assets/models/enemies/horror/goliath.glb", 2.1),
 	swiney: singleSkinModel("/assets/models/enemies/horror/swiney.glb", 1.3),
