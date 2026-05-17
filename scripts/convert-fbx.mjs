@@ -81,6 +81,15 @@ const JOBS = [
 		glb: "public/assets/models/weapons/slasher/melee_meathook.glb",
 		label: "meat hook",
 	},
+	// PC1 — Ghost Hunting Tools. Step-1 only promotes the EMF reader;
+	// the other tools land in PC2-PC4 (spirit box, UV flashlight,
+	// crucifix) so each viewmodel ships alongside the gameplay layer
+	// that consumes it.
+	{
+		fbx: "references/_extracted/psx-ght/EMF Reader/emfreader.fbx",
+		glb: "public/assets/models/tools/emf_reader.glb",
+		label: "EMF reader (PSX Ghost Hunting Tools)",
+	},
 ];
 
 function mtimeOrZero(path) {

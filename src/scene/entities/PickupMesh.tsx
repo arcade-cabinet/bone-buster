@@ -3,6 +3,7 @@ import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { BONE_BUSTER_PALETTE, ROLE } from "@styles/tokens/index";
 import { LOOT_URL_LIST, LOOT_URLS, type LootKind, pickLootKind } from "@world/loot";
+import { TOOL_URL_LIST, TOOL_URLS } from "@world/tools";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
@@ -250,37 +251,7 @@ export function PickupMesh({
 					</mesh>
 				</group>
 			)}
-			{pickup.kind === "emfReader" && (
-				/* PB5 step-2 — EMF reader: handheld brick with a green
-				   indicator strip. Renders as a small dark-grey rectangular
-				   prism with three stacked emissive bars on the front face
-				   so it reads as an LED bar-graph from across a room.
-				   Body uses ROLE.sceneWeaponMetalDark (the same neutral
-				   used for chaingun / shotgun bodies so the reader reads
-				   as the same material family). Indicator bars use
-				   ROLE.actionWin (mint gain — matches EMF_TOKEN's "active
-				   signal" tier in the HUD chip). */
-				<group>
-					<mesh>
-						<boxGeometry args={[0.2, 0.3, 0.08]} />
-						<meshStandardMaterial
-							color={ROLE.sceneWeaponMetalDark}
-							metalness={0.5}
-							roughness={0.6}
-						/>
-					</mesh>
-					{[-0.06, 0, 0.06].map((y) => (
-						<mesh key={y} position={[0, y, 0.045]}>
-							<boxGeometry args={[0.14, 0.03, 0.005]} />
-							<meshStandardMaterial
-								color={ROLE.actionWin}
-								emissive={ROLE.actionWin}
-								emissiveIntensity={1.6}
-							/>
-						</mesh>
-					))}
-				</group>
-			)}
+			{pickup.kind === "emfReader" && <EmfReaderPickupMesh />}
 		</group>
 	);
 }
@@ -308,4 +279,37 @@ function LootPickupMesh({ lootKind }: { lootKind: LootKind }) {
 // the far-centroid — visible by the time the player explores.
 export function preloadLootPickups(): void {
 	for (const url of LOOT_URL_LIST) useGLTF.preload(url);
+}
+
+/**
+ * PC1 — EMF reader pickup body. Renders the PSX Ghost Hunting Tools
+ * `emf_reader.glb` (converted from the FBX source via
+ * `pnpm assets:fbx-to-glb`). Scale tuned so the device reads as a
+ * handheld scanner alongside other floor pickups; SkeletonUtils.clone
+ * for the standard per-mount tree-isolation pattern (matches
+ * LootPickupMesh's approach).
+ *
+ * Pre-PC1 this rendered as a procedural dark-grey brick with three
+ * stacked green emissive bars (PB5 step-2 placeholder). The procedural
+ * fallback is deleted alongside this swap — the asset is the source
+ * of truth now.
+ */
+function EmfReaderPickupMesh() {
+	const gltf = useGLTF(TOOL_URLS.emfReader);
+	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
+	return (
+		<group scale={[0.4, 0.4, 0.4]}>
+			<primitive object={cloned} />
+		</group>
+	);
+}
+
+/**
+ * PC1 — tier 2 (map-mount). EMF reader spawns on every 4th seed
+ * (engine.ts §wantsEmf); preloading at tier 2 keeps the first
+ * eligible map from stalling on the GLB fetch when the pickup mesh
+ * first mounts.
+ */
+export function preloadToolPickups(): void {
+	for (const url of TOOL_URL_LIST) useGLTF.preload(url);
 }

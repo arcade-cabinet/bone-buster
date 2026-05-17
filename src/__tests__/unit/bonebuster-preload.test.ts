@@ -28,7 +28,10 @@ vi.mock("../../scene/entities/LampField", () => ({ preloadLamps: vi.fn() }));
 vi.mock("../../scene/entities/LargePropField", () => ({ preloadLargeProps: vi.fn() }));
 vi.mock("../../scene/entities/NatureField", () => ({ preloadNature: vi.fn() }));
 vi.mock("../../scene/entities/NpcField", () => ({ preloadNpcs: vi.fn() }));
-vi.mock("../../scene/entities/PickupMesh", () => ({ preloadLootPickups: vi.fn() }));
+vi.mock("../../scene/entities/PickupMesh", () => ({
+	preloadLootPickups: vi.fn(),
+	preloadToolPickups: vi.fn(),
+}));
 vi.mock("../../scene/entities/PropField", () => ({ preloadProps: vi.fn() }));
 vi.mock("../../scene/entities/RealDoor", () => ({ preloadDoors: vi.fn() }));
 vi.mock("../../scene/entities/TrapField", () => ({ preloadTraps: vi.fn() }));
@@ -53,7 +56,7 @@ import { preloadLamps } from "../../scene/entities/LampField";
 import { preloadLargeProps } from "../../scene/entities/LargePropField";
 import { preloadNature } from "../../scene/entities/NatureField";
 import { preloadNpcs } from "../../scene/entities/NpcField";
-import { preloadLootPickups } from "../../scene/entities/PickupMesh";
+import { preloadLootPickups, preloadToolPickups } from "../../scene/entities/PickupMesh";
 import { preloadProps } from "../../scene/entities/PropField";
 import { preloadDoors } from "../../scene/entities/RealDoor";
 import { preloadTraps } from "../../scene/entities/TrapField";
@@ -76,6 +79,7 @@ const ALL_SPIES = {
 	preloadLamps,
 	preloadDoors,
 	preloadLootPickups,
+	preloadToolPickups,
 	preloadLargeProps,
 	preloadProps,
 	preloadDecals,
@@ -124,6 +128,7 @@ describe("A4 — tiered preload orchestrator", () => {
 			"preloadLamps",
 			"preloadDoors",
 			"preloadLootPickups",
+			"preloadToolPickups",
 			"preloadLargeProps",
 			"preloadProps",
 			"preloadMeleeSkins",

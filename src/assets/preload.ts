@@ -49,7 +49,7 @@ import { preloadLamps } from "../scene/entities/LampField";
 import { preloadLargeProps } from "../scene/entities/LargePropField";
 import { preloadNature } from "../scene/entities/NatureField";
 import { preloadNpcs } from "../scene/entities/NpcField";
-import { preloadLootPickups } from "../scene/entities/PickupMesh";
+import { preloadLootPickups, preloadToolPickups } from "../scene/entities/PickupMesh";
 import { preloadProps } from "../scene/entities/PropField";
 import { preloadDoors } from "../scene/entities/RealDoor";
 import { preloadTraps } from "../scene/entities/TrapField";
@@ -82,6 +82,7 @@ export function preloadTier2MapMount(): void {
 	preloadLamps();
 	preloadDoors();
 	preloadLootPickups();
+	preloadToolPickups();
 	preloadLargeProps();
 	preloadProps();
 	preloadMeleeSkins();
