@@ -604,17 +604,46 @@ export function BoneBusterShell() {
 		return () => window.clearInterval(interval);
 	}, [state.status, state.phase, state.goingBackDeadlineMs]);
 
+	// SLA3 — boss-music shift. Track live boss-encounter state via
+	// bossSpotted/bossDefeated channels. Any active boss takes
+	// precedence over the combat/exploration mood; going_back still
+	// wins (the going-back klaxon + library bed is the player's escape
+	// signal — boss music shouldn't override it).
+	const [bossActiveCount, setBossActiveCount] = useState(0);
+	useEffect(() => {
+		const offSpotted = addBoneBusterListener("bossSpotted", () => {
+			setBossActiveCount((n) => n + 1);
+		});
+		const offDefeated = addBoneBusterListener("bossDefeated", () => {
+			setBossActiveCount((n) => Math.max(0, n - 1));
+		});
+		return () => {
+			offSpotted();
+			offDefeated();
+		};
+	}, []);
+	// Reset the boss counter when leaving the level — a fresh map's
+	// bossSpotted dispatch shouldn't see a phantom count from the
+	// previous level. The `map.seed` dep is intentional: it's the
+	// trigger, not a body-read.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: map.seed is the trigger for the reset, not a body-read; biome's stricter inference would auto-fix to [] which breaks the level-transition reset.
+	useEffect(() => {
+		setBossActiveCount(0);
+	}, [map.seed]);
+
 	useEffect(() => {
 		if (!settings.soundEnabled) return;
 		if (state.status !== "playing") return;
 		if (state.phase === "going_back") {
 			setMusicMood("going_back");
+		} else if (bossActiveCount > 0) {
+			setMusicMood("boss");
 		} else if (state.hp < state.maxHp) {
 			setMusicMood("combat");
 		} else {
 			setMusicMood("exploration");
 		}
-	}, [settings.soundEnabled, state.status, state.phase, state.hp, state.maxHp]);
+	}, [settings.soundEnabled, state.status, state.phase, state.hp, state.maxHp, bossActiveCount]);
 
 	// H4 — fall-to-death: PlayerController dispatches this when the player
 	// has been below the local floor for longer than the grace window. Snap
