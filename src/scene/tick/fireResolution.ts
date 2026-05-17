@@ -253,7 +253,11 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		// E5 — barrel hit-test wins ties over enemies.
 		const barrelHit = pickRayBarrel(origin, dir2, barrelsRef.current, bestDist);
 		if (barrelHit && barrelHit.dist <= bestDist) {
-			barrelHit.barrel.hp -= effectiveDamage;
+			// PB4 — effectiveDamage is `spec.damage × profile.damageMul`
+			// and may be a non-integer (e.g. 55 × 0.73 = 40.15 for the
+			// chainsaw skin). Round before subtracting so the integer-HP
+			// invariant the rest of the sim depends on is preserved.
+			barrelHit.barrel.hp -= Math.round(effectiveDamage);
 			dispatch({
 				type: "burst",
 				x: barrelHit.barrel.position.x,
@@ -270,7 +274,13 @@ export function resolveFire(ctx: FireResolutionContext): void {
 			// (kind, weapon) yields 1.5×; every other combo yields 1.0×
 			// so the base spec.damage is the floor.
 			const vulnMultiplier = applyVulnerabilityMultiplier(bestEnemy.kind, weapon);
-			bestEnemy.hp -= effectiveDamage * vulnMultiplier;
+			// PB4 — compute the integer total ONCE so the HP debit and
+			// the floating-number dispatch carry the same number. Without
+			// rounding here, the visual readout would show 40.15 but the
+			// HP would silently absorb the float, breaking the integer-HP
+			// invariant and producing a UI/sim mismatch.
+			const totalDamage = Math.round(effectiveDamage * vulnMultiplier);
+			bestEnemy.hp -= totalDamage;
 			// POL19 — non-killing-hit stagger window. Only set when the
 			// hit doesn't kill (the kill path uses POL12 hitstop + body-
 			// parts spawn instead — a dead enemy doesn't flinch). Bosses
@@ -295,7 +305,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 				type: "damageNumber",
 				x: bestEnemy.position.x,
 				y: bestEnemy.position.y,
-				amount: effectiveDamage,
+				amount: totalDamage,
 				killed: bestEnemy.hp <= 0,
 				enemyId: bestEnemy.id,
 			});

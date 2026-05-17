@@ -63,10 +63,14 @@ export type MeleeProfile = Readonly<{
 	/** Final swing cooldown = base × cooldownMul. <1 = faster, >1 = slower. */
 	cooldownMul: number;
 	/**
-	 * Forward-looking — knockback impulse multiplier applied at hit
-	 * time. Negative values pull the target toward the player (meathook
-	 * gameplay quirk). Step-1 of PB4 does not consume this field; the
-	 * step-2 fireResolution wire-in does.
+	 * Reserved for future use — knockback impulse multiplier applied at
+	 * hit time. Negative values pull the target toward the player
+	 * (meathook gameplay quirk). Neither PB4 step-1 nor step-2 consumes
+	 * this field: the swing-resolution path doesn't yet have a knockback
+	 * apply site, and adding one requires a player-mass / impulse system
+	 * the current sim doesn't have. The field lives in the table shape
+	 * now so the eventual gameplay-design follow-up doesn't have to
+	 * rework the schema.
 	 */
 	knockbackMul: number;
 }>;
