@@ -193,6 +193,56 @@ export const PROP_CATALOGUE = {
 		url: A("/assets/models/props/scatter/library/mansion_small_wall.glb"),
 		blocking: true,
 	},
+	// PE2 — PSX-Farm Assets scatter additions for the courtyard
+	// archetype. Subset chosen for standalone readability in the
+	// existing per-prop scatter pool (apples / haybales / barrel /
+	// basket / fences / carrots / birdhouse). Blocking flags follow
+	// the silhouette: fences + barrels block, small items don't.
+	farmApple: {
+		id: "farm_apple",
+		url: A("/assets/models/props/scatter/courtyard/farm_apple.glb"),
+		blocking: false,
+	},
+	farmCarrot: {
+		id: "farm_carrot",
+		url: A("/assets/models/props/scatter/courtyard/farm_carrot.glb"),
+		blocking: false,
+	},
+	farmHaybale1: {
+		id: "farm_haybale_1",
+		url: A("/assets/models/props/scatter/courtyard/farm_haybale_1.glb"),
+		blocking: true,
+	},
+	farmHaybale2: {
+		id: "farm_haybale_2",
+		url: A("/assets/models/props/scatter/courtyard/farm_haybale_2.glb"),
+		blocking: true,
+	},
+	farmBarrel: {
+		id: "farm_barrel",
+		url: A("/assets/models/props/scatter/courtyard/farm_barrel.glb"),
+		blocking: true,
+	},
+	farmBasket: {
+		id: "farm_basket",
+		url: A("/assets/models/props/scatter/courtyard/farm_basket.glb"),
+		blocking: false,
+	},
+	farmFenceShort: {
+		id: "farm_fence_short",
+		url: A("/assets/models/props/scatter/courtyard/farm_fence_short.glb"),
+		blocking: true,
+	},
+	farmFenceMedium: {
+		id: "farm_fence_medium",
+		url: A("/assets/models/props/scatter/courtyard/farm_fence_medium.glb"),
+		blocking: true,
+	},
+	farmBirdhouse: {
+		id: "farm_birdhouse",
+		url: A("/assets/models/props/scatter/courtyard/farm_birdhouse.glb"),
+		blocking: false,
+	},
 } as const satisfies Record<string, PropDef>;
 
 /**
@@ -243,6 +293,16 @@ export const POOLS: Record<PropArchetype, readonly PropDef[]> = {
 		PROP_CATALOGUE.woodPlank2,
 		PROP_CATALOGUE.bucket2,
 		PROP_CATALOGUE.cardboardBox1,
+		// PE2 — PSX-Farm Assets additions for outdoor courtyard identity.
+		PROP_CATALOGUE.farmApple,
+		PROP_CATALOGUE.farmCarrot,
+		PROP_CATALOGUE.farmHaybale1,
+		PROP_CATALOGUE.farmHaybale2,
+		PROP_CATALOGUE.farmBarrel,
+		PROP_CATALOGUE.farmBasket,
+		PROP_CATALOGUE.farmFenceShort,
+		PROP_CATALOGUE.farmFenceMedium,
+		PROP_CATALOGUE.farmBirdhouse,
 	],
 	sewer: [
 		PROP_CATALOGUE.bucket1,
