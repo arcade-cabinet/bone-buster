@@ -253,6 +253,23 @@ function singleSkinModel(urlPath: string, heightTiles: number, floorOffset = 0):
 	return { ...skin, roster: [skin] };
 }
 
+// PF2b — helper for multi-skin variants. First entry is the canonical
+// silhouette (returned as the EnemyModel base spec for back-compat with
+// any code that reads .url/.heightTiles directly); the full roster
+// drives per-spawn variant cycling.
+function multiSkinModel(
+	skins: ReadonlyArray<Readonly<{ urlPath: string; heightTiles: number; floorOffset?: number }>>,
+): EnemyModel {
+	const roster: EnemySkin[] = skins.map((s) => ({
+		url: A(s.urlPath),
+		heightTiles: s.heightTiles,
+		yawOffsetRad: 0,
+		floorOffset: s.floorOffset ?? 0,
+		anims: NO_ANIMS,
+	}));
+	return { ...roster[0], roster };
+}
+
 export const ENEMY_MODELS: Record<EnemyKind, EnemyModel> = {
 	// Base 3 — keep full skin rosters.
 	rattler: { ...RATTLER_SKINS[0], roster: RATTLER_SKINS },
@@ -261,12 +278,20 @@ export const ENEMY_MODELS: Record<EnemyKind, EnemyModel> = {
 	// 9 promotions — point at the existing roster GLBs that previously
 	// rendered as cosmetic skin variants of the base 3.
 	plaguebeak: singleSkinModel("/assets/models/enemies/horror/plague_doctor.glb", 1.8),
-	jester: singleSkinModel("/assets/models/enemies/horror/clown_1.glb", 1.5),
+	// PF2b — jester roster includes the cloaked clown variant.
+	jester: multiSkinModel([
+		{ urlPath: "/assets/models/enemies/horror/clown_1.glb", heightTiles: 1.5 },
+		{ urlPath: "/assets/models/enemies/horror/clown_2.glb", heightTiles: 1.5 },
+	]),
 	reverend: singleSkinModel("/assets/models/enemies/horror/nun.glb", 1.8),
 	stagged: singleSkinModel("/assets/models/enemies/horror/elk_demon.glb", 1.9),
 	grub: singleSkinModel("/assets/models/enemies/horror/sewerfiend.glb", 1.5),
 	signal: singleSkinModel("/assets/models/enemies/horror/alien.glb", 1.6, 0.6),
-	heap: singleSkinModel("/assets/models/enemies/horror/abomination.glb", 1.7),
+	// PF2b — heap roster gains the muscular abomination variant.
+	heap: multiSkinModel([
+		{ urlPath: "/assets/models/enemies/horror/abomination.glb", heightTiles: 1.7 },
+		{ urlPath: "/assets/models/enemies/horror/abomination_muscular.glb", heightTiles: 1.8 },
+	]),
 	heap2: singleSkinModel("/assets/models/enemies/horror/abomination2.glb", 1.4),
 	gorehead: singleSkinModel("/assets/models/enemies/horror/horned.glb", 1.7),
 	// 12 new extracts — promoted from references/_extracted/psx/
@@ -279,7 +304,11 @@ export const ENEMY_MODELS: Record<EnemyKind, EnemyModel> = {
 	devil: singleSkinModel("/assets/models/enemies/horror/devil.glb", 2.4),
 	dolly: singleSkinModel("/assets/models/enemies/horror/dolly.glb", 1.0),
 	gawker: singleSkinModel("/assets/models/enemies/horror/gawker.glb", 1.4),
-	oneye: singleSkinModel("/assets/models/enemies/horror/oneye.glb", 1.7),
+	// PF2b — oneye roster gains the eyenoid variant (eyehead pack).
+	oneye: multiSkinModel([
+		{ urlPath: "/assets/models/enemies/horror/oneye.glb", heightTiles: 1.7 },
+		{ urlPath: "/assets/models/enemies/horror/eyenoid.glb", heightTiles: 1.7 },
+	]),
 	goliath: singleSkinModel("/assets/models/enemies/horror/goliath.glb", 2.1),
 	swiney: singleSkinModel("/assets/models/enemies/horror/swiney.glb", 1.3),
 	mrZ: singleSkinModel("/assets/models/enemies/horror/mrZ.glb", 1.7),
