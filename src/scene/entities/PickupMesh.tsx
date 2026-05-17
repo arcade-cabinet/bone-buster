@@ -254,6 +254,7 @@ export function PickupMesh({
 			{pickup.kind === "emfReader" && <EmfReaderPickupMesh />}
 			{pickup.kind === "spiritBox" && <SpiritBoxPickupMesh />}
 			{pickup.kind === "uvFlashlight" && <UvFlashlightPickupMesh />}
+			{pickup.kind === "crucifix" && <CrucifixPickupMesh />}
 		</group>
 	);
 }
@@ -330,6 +331,21 @@ function UvFlashlightPickupMesh() {
 	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
 	return (
 		<group scale={[0.5, 0.5, 0.5]}>
+			<primitive object={cloned} />
+		</group>
+	);
+}
+
+/**
+ * PC4 — Crucifix pickup body. Same GLB + SkeletonUtils.clone pattern.
+ * Smaller scale than the EMF reader / spirit box because the crucifix
+ * is a one-handed implement.
+ */
+function CrucifixPickupMesh() {
+	const gltf = useGLTF(TOOL_URLS.crucifix);
+	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
+	return (
+		<group scale={[0.45, 0.45, 0.45]}>
 			<primitive object={cloned} />
 		</group>
 	);

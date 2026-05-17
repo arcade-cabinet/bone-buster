@@ -48,6 +48,7 @@ const AMMO_INCREMENT: Record<
 	| "emfReader"
 	| "spiritBox"
 	| "uvFlashlight"
+	| "crucifix"
 > = {
 	health: "health",
 	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
@@ -70,6 +71,10 @@ const AMMO_INCREMENT: Record<
 	// the second purple SpotLight + drives the per-frame UV-cone reveal
 	// of uvHidden-tagged enemies.
 	uvFlashlight: "uvFlashlight",
+	// PC4 — Crucifix on-collect increments the inventory counter. The
+	// player can stack several across a run and drop them one at a time
+	// with key `9`.
+	crucifix: "crucifix",
 };
 
 export type UseGameRefDeps = Readonly<{
@@ -226,6 +231,21 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 				},
 			}));
 		},
+		onConsumeCrucifix: () => {
+			// PC4 — atomic check-and-decrement. The setState callback can
+			// see a stale snapshot under React batching, so we read the
+			// CURRENT inventory via a one-shot synchronous getter (we
+			// flip the boolean before any react-batched callback fires).
+			// Returning false signals "nothing in inventory, no-op the
+			// caller's placement" so Scene doesn't push a phantom entry.
+			let consumed = false;
+			depsRef.current.setState((prev) => {
+				if (prev.crucifixes <= 0) return prev;
+				consumed = true;
+				return { ...prev, crucifixes: prev.crucifixes - 1 };
+			});
+			return consumed;
+		},
 		onCollectPickup: (kind) => {
 			const { setState, triggerFadeRef, seed } = depsRef.current;
 			// POL30 — fire pickup-collected event for PickupChip HUD overlay.
@@ -263,6 +283,11 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 					// purple SpotLight in BoneBusterScene + drives the
 					// per-frame UV-cone visibility reveal of uvHidden enemies.
 					return { ...prev, hasUvFlashlight: true };
+				}
+				if (action === "crucifix") {
+					// PC4 — inventory counter, not a flag. Player can stack
+					// several across a run; key `9` consumes one at a time.
+					return { ...prev, crucifixes: prev.crucifixes + 1 };
 				}
 				if (action === "loot") {
 					// COV12 step-2 — kind-specific bonus from pickLootKind(seed).

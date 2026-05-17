@@ -25,8 +25,6 @@ Mandate: drain unwired assets in `references/` and `references/_extracted/`. 798
 
 Builds on PR #72's EMF vertical. Each slice opens its own PR. Asset extraction lands first because every subsequent tool needs viewmodels from the same zip.
 
-- [ ] PC4 Crucifix (GHT §step-5) — placeable item pool. New `pickup: "crucifix"` + `GameState.crucifixes: number` inventory counter + key `9` to drop one at player position. New `CrucifixField` scene component renders active crucifixes; an `engine.ts` `crucifixDebuff` map applies a fixed-radius enemy-spawn debuff for 10s before despawning. Most architecture-heavy slice; lands last per the GHT plan.
-
 ### Lane D — Unused weapon-pack variants (mirrors PB4)
 
 Pattern-match PB4's per-skin profile architecture for the ranged + extra-melee assets. Each slice = (a) wire the URL pool, (b) extend the profile table, (c) pick deterministic per-run, (d) contract test.

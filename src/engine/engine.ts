@@ -77,6 +77,11 @@ export type PickupKind =
 	// `uvHidden: true` at spawn render with mesh.visible = false until
 	// the UV cone contains them.
 	| "uvFlashlight"
+	// PC4 — Crucifix pickup. Increments the player's inventory counter
+	// (GameState.crucifixes) by 1 per pickup. Player can stack several
+	// across a run; pressing `9` drops one at the player's XZ as an
+	// active CrucifixInstance with CRUCIFIX_LIFETIME_MS expiry.
+	| "crucifix"
 	// COV12 step-2 — rare hero-tier bonus drop. Exactly one per map,
 	// placed at the centroid of the sector farthest from playerSpawn.
 	// On collect, dispatches a kind-specific bonus picked from the COV12
@@ -496,11 +501,16 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	// PC3 — UV flashlight spawns on every 6th seed (offset from EMF
 	// and spirit box). Per-level ownership reset.
 	const wantsUv = (seed >>> 0) % 6 === 0;
+	// PC4 — Crucifix spawns on every 7th seed. Inventory counter
+	// resets per level alongside the other tool flags; the player
+	// re-builds a small crucifix stockpile on each eligible map.
+	const wantsCrucifix = (seed >>> 0) % 7 === 0;
 	const reserved: PickupKind[] = ["chaingunAmmo", "shotgunAmmo"];
 	if (wantsFlame) reserved.push("flamethrowerAmmo");
 	if (wantsEmf) reserved.push("emfReader");
 	if (wantsSpiritBox) reserved.push("spiritBox");
 	if (wantsUv) reserved.push("uvFlashlight");
+	if (wantsCrucifix) reserved.push("crucifix");
 	const pickupSpawns: PickupSpawn[] = pickupCandidates
 		.slice(0, pickupTotal)
 		.map((position, idx) => {

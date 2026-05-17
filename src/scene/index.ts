@@ -15,6 +15,7 @@ export { ReturnToSpawnBearingWriter } from "./effects/ReturnToSpawnBearingWriter
 export { ShellEjectField } from "./effects/ShellEjectField";
 export { UvFlashlight } from "./effects/UvFlashlight";
 export { BarrelMesh } from "./entities/BarrelMesh";
+export { CrucifixField } from "./entities/CrucifixField";
 export { DebrisField } from "./entities/DebrisField";
 export { DecalField } from "./entities/DecalField";
 export { EnemyHitFlash } from "./entities/EnemyHitFlash";

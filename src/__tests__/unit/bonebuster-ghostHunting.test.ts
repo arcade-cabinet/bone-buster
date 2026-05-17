@@ -8,8 +8,12 @@
 
 import { ROLE } from "@styles/tokens/index";
 import {
+	CRUCIFIX_LIFETIME_MS,
+	CRUCIFIX_RADIUS_TILES,
+	type CrucifixInstance,
 	EMF_TOKEN,
 	type EmfReading,
+	isEnemyCrucified,
 	isInUvCone,
 	pickEmfReading,
 	pickSpiritBoxPhoneme,
@@ -215,5 +219,54 @@ describe("PC3 — UV flashlight cone-containment", () => {
 		const inv = 1 / Math.SQRT2;
 		expect(isInUvCone(0, 0, inv, inv, 5 * inv, 5 * inv)).toBe(true);
 		expect(isInUvCone(0, 0, inv, inv, -5 * inv, -5 * inv)).toBe(false);
+	});
+});
+
+describe("PC4 — crucifix radius + lifetime", () => {
+	const NOW = 1_000_000;
+
+	function placeAt(x: number, z: number, ttlMs = CRUCIFIX_LIFETIME_MS): CrucifixInstance {
+		return { id: 1, x, z, expiresAtMs: NOW + ttlMs };
+	}
+
+	it("returns false when the active list is empty", () => {
+		expect(isEnemyCrucified([], 0, 0, NOW)).toBe(false);
+	});
+
+	it("returns true when the enemy is inside the radius of an active crucifix", () => {
+		const c = [placeAt(0, 0)];
+		expect(isEnemyCrucified(c, 0, 0, NOW)).toBe(true);
+		expect(isEnemyCrucified(c, CRUCIFIX_RADIUS_TILES - 0.01, 0, NOW)).toBe(true);
+	});
+
+	it("returns false when the enemy is just outside the radius", () => {
+		const c = [placeAt(0, 0)];
+		expect(isEnemyCrucified(c, CRUCIFIX_RADIUS_TILES + 0.01, 0, NOW)).toBe(false);
+	});
+
+	it("includes the boundary distance (radius squared comparison is <=)", () => {
+		const c = [placeAt(0, 0)];
+		expect(isEnemyCrucified(c, CRUCIFIX_RADIUS_TILES, 0, NOW)).toBe(true);
+	});
+
+	it("ignores expired crucifixes", () => {
+		// expiresAtMs == NOW means expired (strict `now >= expiresAtMs`
+		// branch in isEnemyCrucified treats equal as expired so the
+		// instance disappears the frame it would die).
+		const expired: CrucifixInstance = { id: 2, x: 0, z: 0, expiresAtMs: NOW };
+		expect(isEnemyCrucified([expired], 0, 0, NOW)).toBe(false);
+	});
+
+	it("returns true if ANY active crucifix covers the enemy (OR across the list)", () => {
+		const list = [placeAt(20, 20), placeAt(0, 0)];
+		expect(isEnemyCrucified(list, 1, 1, NOW)).toBe(true);
+	});
+
+	it("CRUCIFIX_RADIUS_TILES is a positive tile count", () => {
+		expect(CRUCIFIX_RADIUS_TILES).toBeGreaterThan(0);
+	});
+
+	it("CRUCIFIX_LIFETIME_MS is at least a few seconds", () => {
+		expect(CRUCIFIX_LIFETIME_MS).toBeGreaterThanOrEqual(5_000);
 	});
 });

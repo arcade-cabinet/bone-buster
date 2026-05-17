@@ -141,6 +141,21 @@ export function PlayerController({ map, active, hasKey, settings }: Props) {
 		};
 	}, [active]);
 
+	// PC4 — Key `9` dispatches `crucifixPlace`. Scene consumes the event,
+	// decrements state.crucifixes (if > 0), and pushes a new
+	// CrucifixInstance at the player's XZ. The PlayerController only
+	// owns the input → event translation; the gameplay state lives in
+	// Scene + useGameRef.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.code === "Digit9" && active) {
+				dispatch({ type: "crucifixPlace" });
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [active]);
+
 	// Debug teleport (e2e harness).
 	useEffect(() => {
 		return addBoneBusterListener("teleport", ({ x, y, yaw: newYaw }) => {

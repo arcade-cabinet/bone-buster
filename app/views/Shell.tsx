@@ -99,6 +99,11 @@ export type GameState = {
 	// runs the per-frame UV-cone reveal for uvHidden enemies. Off by
 	// default; flips true on pickup.
 	hasUvFlashlight: boolean;
+	// PC4 — Crucifix inventory counter. Increments on pickup, decrements
+	// when the player drops one via key `9`. Each placed crucifix
+	// suppresses enemy aggression in a fixed radius for
+	// CRUCIFIX_LIFETIME_MS. Resets to 0 on level transition.
+	crucifixes: number;
 	weapon: WeaponId;
 	ammo: Record<WeaponId, number>;
 	ownedWeapons: Record<WeaponId, boolean>;
@@ -141,6 +146,14 @@ export type GameRef = {
 	onReachSpawn(): void;
 	onSpendAmmo(weapon: WeaponId, amount: number): void;
 	onCollectPickup(kind: PickupKind): void;
+	/**
+	 * PC4 — Consume one crucifix from inventory. Returns `true` if
+	 * the inventory had ≥1 (the Scene proceeds with the placement)
+	 * and `false` if the inventory was empty (the Scene no-ops the
+	 * keypress so a player slapping `9` with zero inventory doesn't
+	 * accidentally place a phantom crucifix at the origin).
+	 */
+	onConsumeCrucifix(): boolean;
 };
 
 // BC5 — touch-mode auto-detection. Previously a single `(pointer:
@@ -360,6 +373,7 @@ export function BoneBusterShell() {
 		hasEmfReader: false,
 		hasSpiritBox: false,
 		hasUvFlashlight: false,
+		crucifixes: 0,
 		weapon: "pistol",
 		ammo: baseAmmo(),
 		ownedWeapons: baseOwnedWeapons(),
@@ -462,6 +476,7 @@ export function BoneBusterShell() {
 			hasEmfReader: false,
 			hasSpiritBox: false,
 			hasUvFlashlight: false,
+			crucifixes: 0,
 			weapon: "pistol",
 			ammo: baseAmmo(),
 			ownedWeapons: baseOwnedWeapons(),
@@ -693,6 +708,7 @@ export function BoneBusterShell() {
 				hasEmfReader: false,
 				hasSpiritBox: false,
 				hasUvFlashlight: false,
+				crucifixes: 0,
 				weapon: "pistol",
 				ammo: baseAmmo(),
 				ownedWeapons: baseOwnedWeapons(),

@@ -108,6 +108,15 @@ const JOBS = [
 		glb: "public/assets/models/tools/uv_flashlight.glb",
 		label: "UV Flashlight (PSX Ghost Hunting Tools)",
 	},
+	// PC4 — Wood Crucifix. Placeable item; player picks one up (or
+	// stacks several) into a numeric inventory, drops it at the
+	// player position with key `9`, debuffs enemy spawn aggression
+	// in a fixed radius for CRUCIFIX_DEBUFF_DURATION_MS.
+	{
+		fbx: "references/_extracted/psx-ght/Wood Crucifix/crucifix.fbx",
+		glb: "public/assets/models/tools/crucifix.glb",
+		label: "Crucifix (PSX Ghost Hunting Tools)",
+	},
 ];
 
 function mtimeOrZero(path) {

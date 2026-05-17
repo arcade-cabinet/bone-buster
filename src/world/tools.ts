@@ -18,6 +18,7 @@ export const TOOL_URLS = {
 	emfReader: A("/assets/models/tools/emf_reader.glb"),
 	spiritBox: A("/assets/models/tools/spirit_box.glb"),
 	uvFlashlight: A("/assets/models/tools/uv_flashlight.glb"),
+	crucifix: A("/assets/models/tools/crucifix.glb"),
 } as const;
 
 export type ToolUrlKey = keyof typeof TOOL_URLS;

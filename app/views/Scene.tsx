@@ -70,6 +70,7 @@ import {
 	BarrelMesh,
 	BodyPartField,
 	BulletField,
+	CrucifixField,
 	DamageNumberField,
 	DebrisField,
 	DecalField,
@@ -108,6 +109,8 @@ import { tickEnemyLoop } from "../../src/scene/tick/enemyTickLoop";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
 import { createTimeScaleBus } from "../../src/scene/tick/timeScaleBus";
 import {
+	CRUCIFIX_LIFETIME_MS,
+	type CrucifixInstance,
 	pickEmfReading,
 	pickSpiritBoxPhoneme,
 	SPIRIT_BOX_COOLDOWN_MS,
@@ -415,6 +418,49 @@ export function BoneBusterScene({
 		});
 	}, []);
 
+	// PC4 — active crucifix list. Mutated in-place by the
+	// `crucifixPlace` listener (push new) and the per-frame expiry
+	// pruner (filter out expired). useRef-backed so the per-tick
+	// reads + enemy-tick reads don't trigger React re-renders, and
+	// the CrucifixField re-render is gated by a counter ref + a
+	// setState bump from the listener.
+	const activeCrucifixesRef = useRef<CrucifixInstance[]>([]);
+	const crucifixIdCounterRef = useRef(0);
+	const [crucifixesVersion, setCrucifixesVersion] = useState(0);
+
+	useEffect(() => {
+		return addBoneBusterListener("crucifixPlace", () => {
+			if (!gameRef.current.onConsumeCrucifix()) return;
+			crucifixIdCounterRef.current += 1;
+			const now = performance.now();
+			activeCrucifixesRef.current = [
+				...activeCrucifixesRef.current,
+				{
+					id: crucifixIdCounterRef.current,
+					x: camera.position.x,
+					z: camera.position.z,
+					expiresAtMs: now + CRUCIFIX_LIFETIME_MS,
+				},
+			];
+			setCrucifixesVersion((v) => v + 1);
+		});
+	}, [camera, gameRef]);
+
+	// PC4 — per-frame expiry pruner. Runs in the same useFrame block
+	// as the EMF dispatch so the cost stays inside one tick. Bumps
+	// the version when entries drop so CrucifixField re-renders with
+	// the smaller list.
+	useFrame(() => {
+		const list = activeCrucifixesRef.current;
+		if (list.length === 0) return;
+		const now = performance.now();
+		const filtered = list.filter((c) => c.expiresAtMs > now);
+		if (filtered.length !== list.length) {
+			activeCrucifixesRef.current = filtered;
+			setCrucifixesVersion((v) => v + 1);
+		}
+	});
+
 	// E11 — push the per-map archetype to the ambient bed on mount.
 	// Each archetype shifts the drone's pitch + base volume so different
 	// runs sound distinct. The picker (E13) already chose the archetype;
@@ -644,6 +690,7 @@ export function BoneBusterScene({
 			now,
 			dt,
 			timeScaleBus: timeScaleBusRef.current,
+			crucifixesRef: activeCrucifixesRef,
 		});
 
 		// Bullet integration — advance, check wall/player, retire dead bullets.
@@ -995,6 +1042,13 @@ export function BoneBusterScene({
 			    the white flashlight; the two lights coexist when the
 			    player owns both. */}
 			{hasUvFlashlight && <UvFlashlight />}
+			{/* PC4 — active crucifix placements. Re-renders when
+			    crucifixesVersion bumps (push on place / filter on
+			    expiry). Always mounted (no owner-gate) — the list is
+			    empty when no crucifix is active, so the cost collapses
+			    to a single empty Array.map. */}
+			<CrucifixField crucifixes={activeCrucifixesRef.current} key={crucifixesVersion} />
+
 			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.35]} />
 			{/* I11 — muzzle-flash point light. Lives at camera position,
 			    driven by useFrame so it can decay between renders. */}

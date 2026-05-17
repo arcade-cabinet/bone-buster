@@ -285,6 +285,16 @@ export interface SpiritBoxResponseEvent {
 	phoneme: string;
 }
 
+/**
+ * PC4 — Player pressed `9` to place a crucifix. Scene listens for
+ * this, decrements `state.crucifixes`, and pushes a new
+ * CrucifixInstance into the active list. Key-input layer dispatches;
+ * the gameplay state owner consumes.
+ */
+export interface CrucifixPlaceEvent {
+	type: "crucifixPlace";
+}
+
 export type BoneBusterEvent =
 	| BurstEvent
 	| BodyPartsEvent
@@ -311,7 +321,8 @@ export type BoneBusterEvent =
 	| BossDefeatedEvent
 	| EnemyKilledEvent
 	| EmfReadingEvent
-	| SpiritBoxResponseEvent;
+	| SpiritBoxResponseEvent
+	| CrucifixPlaceEvent;
 
 export type BoneBusterEventType = BoneBusterEvent["type"];
 

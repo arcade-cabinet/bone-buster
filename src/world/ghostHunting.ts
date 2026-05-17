@@ -177,3 +177,52 @@ export function isInUvCone(
 	// dot = cos(angle); reveal iff angle <= half-angle.
 	return dot >= Math.cos(UV_FLASHLIGHT_HALF_ANGLE_RAD);
 }
+
+/**
+ * PC4 — crucifix tuning. Effect radius (tiles) within which enemy
+ * AI's "aggression" — the player-chase + attack windows — is
+ * suppressed. Lifetime (ms) before the placed crucifix despawns.
+ *
+ * Numbers loosely modeled after Phasmo's crucifix mechanic (~3m
+ * effect radius, ~10s lifetime). Tile = 1 world unit per the canon.
+ */
+export const CRUCIFIX_RADIUS_TILES = 4;
+export const CRUCIFIX_LIFETIME_MS = 10_000;
+
+/**
+ * Active crucifix instance. Placed at the player's XZ on use; despawns
+ * after CRUCIFIX_LIFETIME_MS. The enemy tick reads the active list
+ * and skips its "chase" branch for any enemy within
+ * CRUCIFIX_RADIUS_TILES of an active crucifix.
+ */
+export interface CrucifixInstance {
+	id: number;
+	x: number;
+	z: number;
+	expiresAtMs: number;
+}
+
+/**
+ * Returns true iff (enemyX, enemyZ) is within CRUCIFIX_RADIUS_TILES
+ * of ANY of the currently-active crucifixes. `now` lets the helper
+ * filter expired entries without forcing the caller to prune the
+ * list first; the per-frame enemy tick can pass `performance.now()`
+ * once and let the helper handle the lifetime check.
+ *
+ * Exported pure so tests can pin the contract without a scene.
+ */
+export function isEnemyCrucified(
+	crucifixes: readonly CrucifixInstance[],
+	enemyX: number,
+	enemyZ: number,
+	now: number,
+): boolean {
+	const rSq = CRUCIFIX_RADIUS_TILES * CRUCIFIX_RADIUS_TILES;
+	for (const c of crucifixes) {
+		if (now >= c.expiresAtMs) continue;
+		const dx = enemyX - c.x;
+		const dz = enemyZ - c.z;
+		if (dx * dx + dz * dz <= rSq) return true;
+	}
+	return false;
+}
