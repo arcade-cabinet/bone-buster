@@ -34,7 +34,7 @@ import type { CollisionContext } from "@engine/engine";
 import { type BoneBusterMap, castRayAny, type Enemy } from "@engine/engine";
 import { dispatch } from "@engine/events";
 import { applyVulnerabilityMultiplier } from "@engine/vulnerability";
-import { TILE } from "@shared/constants";
+import { PLAYER_RADIUS, TILE } from "@shared/constants";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import type { BoneBusterSettings } from "@store/settings";
 import type { GameRef, WeaponState } from "@views/Shell";
@@ -208,6 +208,22 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	const forwardBase = _forwardBase.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
 	const origin = { x: camera.position.x, y: camera.position.z };
 
+	// SLA2 — chainsaw loud-attract. A melee skin with attractRadiusTiles
+	// > 0 flips any patrolling (fsmState === 0) enemy within radius to
+	// chase state on each swing. Mirrors the reference clone's "noisy
+	// weapon draws enemies" feel without coupling to the audio layer —
+	// the radius is gameplay state, the audio is the player's hint.
+	if (weapon === "melee" && (meleeProfile.attractRadiusTiles ?? 0) > 0) {
+		const r = (meleeProfile.attractRadiusTiles ?? 0) * TILE;
+		const r2 = r * r;
+		for (const enemy of enemiesRef.current) {
+			if (enemy.dead || enemy.fsmState !== 0) continue;
+			const dx = enemy.position.x - origin.x;
+			const dy = enemy.position.y - origin.y;
+			if (dx * dx + dy * dy <= r2) enemy.fsmState = 1;
+		}
+	}
+
 	// E8 step-2 — flamethrower emits a distinct directional cone stream
 	// once per trigger pull (not per pellet — the layered particle
 	// effect in ParticleBurstField already spreads with its own spread
@@ -310,6 +326,32 @@ export function resolveFire(ctx: FireResolutionContext): void {
 			// invariant and producing a UI/sim mismatch.
 			const totalDamage = Math.round(effectiveDamage * vulnMultiplier);
 			bestEnemy.hp -= totalDamage;
+			// SLA1 — meathook pull. Melee skin with negative knockbackMul
+			// pulls the hit enemy toward the player along the hit
+			// direction. Single-frame position nudge clamped so the
+			// enemy never overlaps the player; bosses are immune (a
+			// pulled boss telegraphs poorly + the boss-fight design
+			// expects the player to close the gap themselves).
+			if (
+				weapon === "melee" &&
+				meleeProfile.knockbackMul < 0 &&
+				bestEnemy.hp > 0 &&
+				bestEnemy.tier !== "boss"
+			) {
+				const dx = origin.x - bestEnemy.position.x;
+				const dy = origin.y - bestEnemy.position.y;
+				const dist = Math.hypot(dx, dy);
+				if (dist > 0) {
+					// Pull strength = |knockbackMul| × 1 tile.
+					const pullTiles = Math.abs(meleeProfile.knockbackMul);
+					const minDist = PLAYER_RADIUS + 0.5;
+					const pullDist = Math.min(pullTiles * TILE, Math.max(0, dist - minDist));
+					bestEnemy.position = {
+						x: bestEnemy.position.x + (dx / dist) * pullDist,
+						y: bestEnemy.position.y + (dy / dist) * pullDist,
+					};
+				}
+			}
 			// POL19 — non-killing-hit stagger window. Only set when the
 			// hit doesn't kill (the kill path uses POL12 hitstop + body-
 			// parts spawn instead — a dead enemy doesn't flinch). Bosses

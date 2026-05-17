@@ -74,14 +74,18 @@ export type MeleeProfile = Readonly<{
 	/** Final swing cooldown = base × cooldownMul. <1 = faster, >1 = slower. */
 	cooldownMul: number;
 	/**
-	 * Reserved for future use — knockback impulse multiplier applied at
-	 * hit time. Negative values pull the target toward the player
-	 * (meathook gameplay quirk). Neither PB4 step-1 nor step-2 consumes
-	 * this field: the swing-resolution path doesn't yet have a knockback
-	 * apply site, and adding one requires a player-mass / impulse system
-	 * the current sim doesn't have. The field lives in the table shape
-	 * now so the eventual gameplay-design follow-up doesn't have to
-	 * rework the schema.
+	 * SLA2 — loud-attract aggro radius in tiles. Every swing flips any
+	 * patrolling enemy within this radius to chase state. 0 (or omitted)
+	 * = silent (the default for every skin except chainsaw). Honored by
+	 * fireResolution.ts on melee swing.
+	 */
+	attractRadiusTiles?: number;
+	/**
+	 * SLA1 — knockback impulse multiplier. Positive values are reserved
+	 * for push-away (no current skin uses it). Negative values pull the
+	 * target toward the player: meathook (-1.0) lurches the enemy ~1
+	 * tile closer on hit. Honored by fireResolution.ts on melee hit;
+	 * bosses are immune.
 	 */
 	knockbackMul: number;
 }>;
@@ -101,9 +105,8 @@ export const DEFAULT_MELEE_PROFILE: MeleeProfile = {
  *              on this.
  *   axe      — heavy-slow. -33% swing rate, +50% damage.
  *   chainsaw — fast-loud. +43% swing rate (cooldown 420→294ms), -27%
- *              damage. The "loud-attract" property in the directive
- *              is realised by the audio/AI layer in step-2; this
- *              table only owns the damage/timing dimensions.
+ *              damage. Loud-attract: every swing flips patrolling
+ *              enemies within 8 tiles to chase (SLA2).
  *   knife    — fastest, weakest. +75% swing rate, -45% damage.
  *   meathook — identity damage/timing, but a pull-style knockback
  *              (-1.0 = full impulse toward player).
@@ -113,7 +116,12 @@ export const DEFAULT_MELEE_PROFILE: MeleeProfile = {
 export const MELEE_PROFILES: Readonly<Record<string, MeleeProfile>> = {
 	[MELEE_SKIN_URLS[0]]: DEFAULT_MELEE_PROFILE, // machete (E1 default)
 	[MELEE_SKIN_URLS[1]]: { damageMul: 1.5, cooldownMul: 1.5, knockbackMul: 1 }, // axe
-	[MELEE_SKIN_URLS[2]]: { damageMul: 0.73, cooldownMul: 0.7, knockbackMul: 1 }, // chainsaw
+	[MELEE_SKIN_URLS[2]]: {
+		damageMul: 0.73,
+		cooldownMul: 0.7,
+		knockbackMul: 1,
+		attractRadiusTiles: 8,
+	}, // chainsaw
 	[MELEE_SKIN_URLS[3]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife
 	[MELEE_SKIN_URLS[4]]: { damageMul: 1, cooldownMul: 1, knockbackMul: -1 }, // meathook (pull)
 	[MELEE_SKIN_URLS[5]]: { damageMul: 1.27, cooldownMul: 1.2, knockbackMul: 1 }, // cleaver
