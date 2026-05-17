@@ -80,14 +80,14 @@ const AMMO_INCREMENT: Record<
 
 export type UseGameRefDeps = Readonly<{
 	setState: React.Dispatch<React.SetStateAction<GameState>>;
-	triggerFadeRef: React.MutableRefObject<(kind: FadeKind, intensity?: number) => void>;
+	triggerFadeRef: React.RefObject<(kind: FadeKind, intensity?: number) => void>;
 	settings: BoneBusterSettings;
 	tuning: DifficultyTuning;
 	seed: number;
 	level: LevelChoice;
 }>;
 
-export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef> {
+export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 	const lastPlayerHitAt = useRef(0);
 	// Re-point on every render so callbacks always see current deps.
 	const depsRef = useRef(deps);
