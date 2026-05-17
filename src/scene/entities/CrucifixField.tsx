@@ -78,7 +78,7 @@ function CrucifixMesh({ crucifix }: { crucifix: CrucifixInstance }) {
 	}, [cloned]);
 	const groupRef = useRef<THREE.Group | null>(null);
 
-	useFrame(() => {
+	useFrame((_, delta) => {
 		const group = groupRef.current;
 		if (!group) return;
 		const now = performance.now();
@@ -87,8 +87,9 @@ function CrucifixMesh({ crucifix }: { crucifix: CrucifixInstance }) {
 			group.visible = false;
 			return;
 		}
-		// Slow yaw spin so the crucifix reads as active.
-		group.rotation.y += 0.012;
+		// Slow yaw spin so the crucifix reads as active. 0.012 rad per
+		// 60fps frame = ~0.72 rad/sec; framerate-independent.
+		group.rotation.y += 0.72 * delta;
 		// Fade alpha over the last FADE_MS of lifetime.
 		const FADE_MS = 1_500;
 		const opacity = remaining < FADE_MS ? remaining / FADE_MS : 1;
