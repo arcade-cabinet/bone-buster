@@ -17,24 +17,14 @@
 5. Flip `[ ]` → `[x]` in the same commit; **delete the item from this file** in the next forward-going commit (per the prune-shipped-from-directive rule).
 6. Push + open one PR per coherent slice (lane completion or larger), not per commit (per the no-pr-per-commit rule).
 
-## Queue — InstancedField perf drain (user-directed 2026-05-16, continued)
+## Queue
 
-Reference-asset drain (Lanes C/D/E/F) drained via PR #75 (20 commits: PC1-4 + PD1-3+PD3b + PE1-3+PE4a-c + PF1-3). PRD `Parked` carries the next perf slice: migrate remaining per-instance `<primitive>` scatter fields to `InstancedGltfField` / `InstancedMultiGltfField` so per-instance draw calls collapse to one per (url, sub-mesh).
-
-Already migrated (PB3 series): PropField, LargePropField, DebrisField, KitchenField.
-Remaining candidates (per PRD Parked note + reality-check):
-
-
-PT1 is the first concrete code slice. PT2 needs an asset-pipeline step; PT3 needs an architectural decomposition. Both belong in the queue but PT1 unblocks the simplest perf win.
-
-### Ship rules
-- Reviewer trio dispatched locally per commit; findings folded forward.
-- Canonical screenshot byte-stability stays the gate: refLevel(0) MUST NOT change. Trap visibility is per-spawn-position so seed=0 layout must match pre-migration pixel output.
-- Prune from this file in the commit that closes the item.
+(empty — PR #75 covers the full overhaul; awaiting review-merge.)
 
 ## Closeout notes
 
-- Reference-asset drain (Lanes C/D/E/F) — PR #75, 20 commits 2026-05-16.
+- D19 dual-PRNG + R8 rebrand follow-up — PR #75, 4 commits 2026-05-17.
+- Reference-asset drain (Lanes C/D/E/F) + InstancedField perf — PR #75, 26 commits 2026-05-16.
 - PB1–PB5 + PA1–PA2 — PRs #66, #67, #68, #70, #71, #72, #73.
 - ARCHETYPE INTERLEAVE drained — commits `a4daceb` through `be4e4af`.
 - MIGRATE lane (M4 + M5) cut as non-applicable — GitHub redirect handles it.
