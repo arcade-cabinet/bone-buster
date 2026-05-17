@@ -1,4 +1,4 @@
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, RNG_TAGS } from "@engine/prng";
 import { PISTOL_MAX_RANGE, PLAYER_RADIUS, RATTLER_HP, TILE } from "@shared/constants";
 import type { PropArchetype } from "@world/scatter/propPool";
 
@@ -810,11 +810,13 @@ export function spawnEnemies(map: BoneBusterMap, spawnsOverride?: readonly Enemy
 }
 
 // PC3 — ~12.5% of non-boss enemies hide. `seed === 0` (refLevel anchor)
-// short-circuits to keep the canonical screenshot baseline.
+// short-circuits to keep the canonical screenshot baseline. Routes through
+// canonical mulberry32 with the ENMX tag; spawnIndex is golden-ratio-mixed
+// before XOR so adjacent indices avalanche cleanly into the PRNG seed.
 export function pickUvHidden(seed: number, spawnIndex: number): boolean {
 	if (seed >>> 0 === 0) return false;
-	const mixed = ((seed >>> 0) ^ ((spawnIndex >>> 0) * 0x9e3779b1)) >>> 0;
-	return mixed % 8 === 0;
+	const mixed = ((seed >>> 0) ^ Math.imul(spawnIndex >>> 0, 0x9e3779b1) ^ RNG_TAGS.ENMX) >>> 0;
+	return mulberry32(mixed)() < 0.125;
 }
 
 export type Pickup = {
