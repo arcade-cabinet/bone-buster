@@ -39,7 +39,7 @@ const MAX_MOTES = 280;
 const MOTE_GEOMETRY = /*@__PURE__*/ new THREE.SphereGeometry(1, 6, 6);
 
 /**
- * D4/D5 + POL16 — particle bursts. Listens for `objexoom:burst` events:
+ * D4/D5 + POL16 — particle bursts. Listens for `bonebuster:burst` events:
  *
  *   pickup    → 8  amber motes (unchanged)
  *   playerHit → 30 red    motes (unchanged)

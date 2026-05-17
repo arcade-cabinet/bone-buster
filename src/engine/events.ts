@@ -1,10 +1,14 @@
 /**
- * ARCH1a — typed event-bus surface for the 14 `objexoom:*` channels.
+ * ARCH1a — typed event-bus surface for the 14 `bonebuster:*` channels.
  *
  * Co-exists with the existing untyped `window.dispatchEvent(new
  * CustomEvent(...))` call sites; ARCH1b migrates each call site
  * incrementally. Once the migration completes, this module is the
  * sole entry-point for cross-component event traffic.
+ *
+ * R8 — channel prefix renamed `objexoom:` → `bonebuster:`. The
+ * prefix only ever existed as a string fragment in dispatch/listen
+ * calls; no on-disk artifacts persist the old name.
  *
  * Channel classification (per directive ARCH1b):
  *   - particle / fanout broadcast    — multi-consumer; stay as window events
@@ -343,7 +347,7 @@ type DetailOf<E extends BoneBusterEvent> = Omit<E, "type">;
  */
 export function dispatch<E extends BoneBusterEvent>(event: E): void {
 	const { type, ...detail } = event;
-	const eventName = `objexoom:${type}`;
+	const eventName = `bonebuster:${type}`;
 	const customEvent = new CustomEvent(eventName, { detail });
 	window.dispatchEvent(customEvent);
 }
@@ -364,7 +368,7 @@ export function addBoneBusterListener<K extends BoneBusterEventType>(
 	type: K,
 	handler: (event: EventOf<K>) => void,
 ): () => void {
-	const eventName = `objexoom:${type}`;
+	const eventName = `bonebuster:${type}`;
 	const adapter = (e: Event) => {
 		const detail = (e as CustomEvent<DetailOf<EventOf<K>>>).detail;
 		// Reconstruct the full discriminated-union member from the wire detail.

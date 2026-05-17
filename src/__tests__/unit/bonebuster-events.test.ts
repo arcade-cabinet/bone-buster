@@ -73,7 +73,7 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 	});
 
 	it("wire format: CustomEvent.detail omits the discriminator `type`", () => {
-		// The discriminator lives in the event NAME (`objexoom:burst`),
+		// The discriminator lives in the event NAME (`bonebuster:burst`),
 		// not the detail payload. Existing untyped consumers read
 		// `e.detail.x` directly — leaking a `type` field into detail
 		// would shadow that contract.
@@ -81,15 +81,15 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 		const adapter = (e: Event) => {
 			captured = (e as CustomEvent).detail;
 		};
-		window.addEventListener("objexoom:burst", adapter);
+		window.addEventListener("bonebuster:burst", adapter);
 		dispatch({ type: "burst", x: 5, y: 6, kind: "explode" });
-		window.removeEventListener("objexoom:burst", adapter);
+		window.removeEventListener("bonebuster:burst", adapter);
 		expect(captured).toEqual({ x: 5, y: 6, kind: "explode" });
 		expect(captured).not.toHaveProperty("type");
 	});
 
 	it("backward compatibility: typed dispatch reaches untyped window listener", () => {
-		// Existing untyped sites use `window.addEventListener("objexoom:X", h)`
+		// Existing untyped sites use `window.addEventListener("bonebuster:X", h)`
 		// and read `e.detail.foo`. Typed dispatch must keep that shape so
 		// ARCH1b can migrate call sites incrementally without flipping
 		// every consumer in lockstep.
@@ -97,7 +97,7 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 		const adapter = (e: Event) => {
 			detail = (e as CustomEvent).detail;
 		};
-		window.addEventListener("objexoom:shellEject", adapter);
+		window.addEventListener("bonebuster:shellEject", adapter);
 		const evt: BoneBusterEvent = {
 			type: "shellEject",
 			x: 1,
@@ -109,7 +109,7 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 			scale: 0.6,
 		};
 		dispatch(evt);
-		window.removeEventListener("objexoom:shellEject", adapter);
+		window.removeEventListener("bonebuster:shellEject", adapter);
 		expect(detail).toEqual({ x: 1, y: 2, z: 3, vx: 0.1, vy: 0.2, vz: 0.3, scale: 0.6 });
 	});
 
@@ -120,7 +120,7 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 		const received: BurstEvent[] = [];
 		const teardown = addBoneBusterListener("burst", (e) => received.push(e));
 		window.dispatchEvent(
-			new CustomEvent("objexoom:burst", {
+			new CustomEvent("bonebuster:burst", {
 				detail: { x: 9, y: 8, kind: "playerHit" },
 			}),
 		);

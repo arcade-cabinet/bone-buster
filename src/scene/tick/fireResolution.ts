@@ -1,6 +1,6 @@
 /**
  * ARCH2b — single-shot fire resolution, extracted from BoneBusterScene's
- * `objexoom:fire` event handler. Pure function over a context object
+ * `bonebuster:fire` event handler. Pure function over a context object
  * for the same reasons as ARCH2a's `tickEnemyLoop` (see that module).
  *
  * Behavior is byte-identical to the prior inline `onFire` body —
@@ -10,7 +10,7 @@
  * Side effects (all preserved):
  *   - Spends ammo via gameRef.current.onSpendAmmo.
  *   - Sets muzzleFlashUntil + muzzleColorRef for the per-frame light decay.
- *   - Emits one `objexoom:shellEject` per chaingun/shotgun pull.
+ *   - Emits one `bonebuster:shellEject` per chaingun/shotgun pull.
  *   - Per pellet: cast ray, find nearest enemy in cone, prefer barrel
  *     if closer; on barrel hit → damage + burst → explode if HP<=0.
  *     On enemy hit → damage + burst → on death: mesh.visible=false,

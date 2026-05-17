@@ -11,7 +11,7 @@
 import { getMusicLoadProgress, panForPosition } from "@audio/sfx";
 import { describe, expect, it } from "vitest";
 
-describe("objexoom sfx — panForPosition", () => {
+describe("bonebuster sfx — panForPosition", () => {
 	const camera = { x: 0, y: 0, yaw: 0 };
 
 	it("enemy directly ahead (-y at yaw 0) → ~0 pan (centered)", () => {

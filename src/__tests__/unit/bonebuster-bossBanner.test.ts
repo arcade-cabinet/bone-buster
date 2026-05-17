@@ -21,15 +21,15 @@ function captureBus() {
 	const events: CapturedEvent[] = [];
 	const listener = (e: Event) => {
 		const ce = e as CustomEvent;
-		events.push({ type: ce.type.replace(/^objexoom:/, ""), ...ce.detail });
+		events.push({ type: ce.type.replace(/^bonebuster:/, ""), ...ce.detail });
 	};
-	for (const t of ["objexoom:bossSpotted", "objexoom:bossDefeated"]) {
+	for (const t of ["bonebuster:bossSpotted", "bonebuster:bossDefeated"]) {
 		window.addEventListener(t, listener);
 	}
 	return {
 		events,
 		cleanup: () => {
-			for (const t of ["objexoom:bossSpotted", "objexoom:bossDefeated"]) {
+			for (const t of ["bonebuster:bossSpotted", "bonebuster:bossDefeated"]) {
 				window.removeEventListener(t, listener);
 			}
 		},

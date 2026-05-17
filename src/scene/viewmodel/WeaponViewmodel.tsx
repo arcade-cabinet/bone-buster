@@ -53,7 +53,7 @@ const VIEWMODEL_TARGET_LENGTH = 0.32;
  *  - position copies camera.position
  *  - quaternion copies camera.quaternion
  *  - translateX/Y/Z then offset to the screen-right hip pose per model
- *  - recoil adds a forward-then-back z-bounce on `objexoom:fire`
+ *  - recoil adds a forward-then-back z-bounce on `bonebuster:fire`
  *
  * GLB models come from `models.ts`. Each weapon has its own scale +
  * rotation tuned so the muzzle points along camera-forward (-Z).

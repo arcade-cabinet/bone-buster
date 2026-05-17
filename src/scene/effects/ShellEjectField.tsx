@@ -33,7 +33,7 @@ const SHELL_TTL_MS = 4000;
 const MAX_SHELLS = 80;
 
 /**
- * I10 / PA9b — weapon shell ejection. Listens for `objexoom:shellEject`
+ * I10 / PA9b — weapon shell ejection. Listens for `bonebuster:shellEject`
  * events (dispatched by the fire handler on shotgun AND chaingun
  * shots) and spawns one brass-tipped cylinder shell at the eject
  * point. Each shell has random spin, gravity, a single ground bounce,

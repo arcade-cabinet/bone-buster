@@ -13,7 +13,7 @@ const ORDER: readonly Difficulty[] = [
 	"nightmare",
 ];
 
-describe("objexoom settings — DIFFICULTY_TUNING", () => {
+describe("bonebuster settings — DIFFICULTY_TUNING", () => {
 	it("covers all five DOOM difficulty registers", () => {
 		for (const d of ORDER) expect(DIFFICULTY_TUNING[d]).toBeTruthy();
 	});
@@ -52,7 +52,7 @@ describe("objexoom settings — DIFFICULTY_TUNING", () => {
 
 // I4 — verifies the ManyEnemies expansion formula directly so a refactor
 // of the bitwise floor or PI factor breaks loudly.
-describe("objexoom settings — I4 ManyEnemies formula", () => {
+describe("bonebuster settings — I4 ManyEnemies formula", () => {
 	const formula = (difficultyIdx: number, count: number): number =>
 		(difficultyIdx * 5 + 5 + count * Math.PI) | 0;
 

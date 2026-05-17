@@ -3,7 +3,7 @@ import type { LevelChoice } from "@store/settings";
 import { buildMap } from "@world/buildMap";
 import { describe, expect, it } from "vitest";
 
-describe("objexoom buildMap (A6)", () => {
+describe("bonebuster buildMap (A6)", () => {
 	it("level='procedural' returns a deterministic grid map", () => {
 		const a = buildMap(12345, "procedural");
 		const b = buildMap(12345, "procedural");

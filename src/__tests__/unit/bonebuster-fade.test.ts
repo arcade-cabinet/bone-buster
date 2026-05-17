@@ -14,7 +14,7 @@ import { computeFadePeak, FADE_COLOR_BY_KIND, FADE_PEAK_BY_KIND } from "@shared/
 import type { FadeKind } from "@views/Shell";
 import { describe, expect, it } from "vitest";
 
-describe("objexoom J9 — fade trigger derivations", () => {
+describe("bonebuster J9 — fade trigger derivations", () => {
 	it("each kind maps to a defined (non-empty) CSS color", () => {
 		for (const k of Object.keys(FADE_COLOR_BY_KIND) as FadeKind[]) {
 			expect(FADE_COLOR_BY_KIND[k]).toBeTruthy();

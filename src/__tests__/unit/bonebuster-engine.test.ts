@@ -28,7 +28,7 @@ import { describe, expect, it } from "vitest";
 
 const SEED = 0xdeadbeef;
 
-describe("objexoom engine — map generation", () => {
+describe("bonebuster engine — map generation", () => {
 	it("is deterministic for a given seed", () => {
 		const a = generateMap(SEED);
 		const b = generateMap(SEED);
@@ -112,7 +112,7 @@ describe("objexoom engine — map generation", () => {
 	});
 });
 
-describe("objexoom engine — collision + raycast", () => {
+describe("bonebuster engine — collision + raycast", () => {
 	const map = generateMap(SEED);
 
 	it("treats walls and closed doors as blocking", () => {
@@ -178,7 +178,7 @@ const square = (cx: number, cy: number, size: number): Vec2[] => [
 	{ x: cx - size, y: cy + size },
 ];
 
-describe("objexoom engine — sector containment + lookup", () => {
+describe("bonebuster engine — sector containment + lookup", () => {
 	it("polygonContains: square — interior in, exterior out", () => {
 		const verts = square(0, 0, 10);
 		expect(polygonContains({ x: 0, y: 0 }, verts)).toBe(true);
@@ -559,7 +559,7 @@ describe("objexoom engine — sector containment + lookup", () => {
 // floor dispatch), H4 (out-of-bounds fall-to-death signal), H5 (negative
 // floor = lava), and H9 (goal hue index derivation). Components H6/H7/H8
 // are rendering-side and covered by browser/e2e tests.
-describe("objexoom engine — Section H (jump/fall/lava/heights)", () => {
+describe("bonebuster engine — Section H (jump/fall/lava/heights)", () => {
 	const sectorMap: BoneBusterSectorMap = {
 		kind: "sectors",
 		seed: 0,
