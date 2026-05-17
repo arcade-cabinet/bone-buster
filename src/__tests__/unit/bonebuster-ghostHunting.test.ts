@@ -6,6 +6,7 @@
  * separate commits with their own tests.
  */
 
+import { ROLE } from "@styles/tokens/index";
 import { EMF_TOKEN, type EmfReading, pickEmfReading } from "@world/ghostHunting";
 import { describe, expect, it } from "vitest";
 
@@ -66,15 +67,32 @@ describe("PB5 step-1 — pickEmfReading thresholds", () => {
 describe("PB5 step-1 — EMF_TOKEN color ramp", () => {
 	it("has a token for every reading 0..5", () => {
 		for (const lvl of [0, 1, 2, 3, 4, 5] as EmfReading[]) {
-			expect(EMF_TOKEN[lvl]).toMatch(/^[a-z]+\.\d+$/);
+			// Every entry must be a non-empty string — the resolved
+			// shape (hex / rgba / linear-gradient) depends on the
+			// underlying ROLE token, so the structural check is loose.
+			// The semantic identity assertions below pin the mapping.
+			expect(typeof EMF_TOKEN[lvl]).toBe("string");
+			expect(EMF_TOKEN[lvl].length).toBeGreaterThan(0);
 		}
 	});
 
-	it("0 (no signal) is keyed off the bone scale (neutral)", () => {
-		expect(EMF_TOKEN[0]).toMatch(/^bone\./);
+	it("0 (no signal) resolves through ROLE.textMuted", () => {
+		expect(EMF_TOKEN[0]).toBe(ROLE.textMuted);
 	});
 
-	it("5 (touching) is keyed off the blood scale (urgent)", () => {
-		expect(EMF_TOKEN[5]).toMatch(/^blood\./);
+	it("5 (touching) resolves through ROLE.actionFire (urgent)", () => {
+		expect(EMF_TOKEN[5]).toBe(ROLE.actionFire);
+	});
+
+	it("middle bands escalate gain → pickup → warning → fire", () => {
+		// PB5 fold — semantic ramp pinned to existing ROLE tokens.
+		// Any future re-keying of the chip ramp has to update both
+		// EMF_TOKEN and this test in lockstep — protects against
+		// silent drift between the design intent (low = passive, high
+		// = urgent) and the actual rendered color.
+		expect(EMF_TOKEN[1]).toBe(ROLE.brand.bone3);
+		expect(EMF_TOKEN[2]).toBe(ROLE.actionWin);
+		expect(EMF_TOKEN[3]).toBe(ROLE.actionPickup);
+		expect(EMF_TOKEN[4]).toBe(ROLE.actionHurt);
 	});
 });

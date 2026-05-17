@@ -44,27 +44,42 @@ system is naming the actual users / triggers / lifecycle moments:
    that masks-in a hidden enemy variant. Lifecycle: acquired →
    toggle (key 6) → cone-visibility check per enemy per frame.
    Storage: same shape as the existing POL28 flashlight slot.
-5. **Crucifix (step-5)**: placeable item dropped at player position
+4. **Crucifix (step-5)**: placeable item dropped at player position
    on use; emits a fixed-radius enemy-spawn debuff for N seconds.
    Lifecycle: acquired (one in inventory) → place → countdown →
    despawn. Storage: a small list of active crucifix instances on
    `GameState` with positions + expiry timestamps.
 
-## Step-1 — EMF reader
+## Step-1 — EMF reader (shipped)
 
-The minimum slice that proves the loop:
+The minimum slice that proves the loop. Shipped surfaces (post
+step-1 + step-2):
 
-- New `GameState.ghostHuntingTools.emf: boolean` ownership flag.
-- `pickup: 'emf'` added to the PickupKind union; world spawns one
-  EMF reader at refLevel(0) so the canonical screenshot keeps the
-  proof-of-presence pickup visible.
-- HUD chip slot under the existing keys/score line: shows "EMF 1"
-  through "EMF 5" as a stepwise color ramp keyed off proximity to
-  nearest live enemy. Hidden when EMF flag is false.
+- `GameState.hasEmfReader: boolean` ownership flag (flat on
+  GameState, mirroring `hasFlashlight` — no nested
+  `ghostHuntingTools` namespace; the slice plan above kept the door
+  open for future tools but the wire-in didn't yet need a sub-tree).
+- `pickup: "emfReader"` (camelCase) added to the PickupKind union.
+  The reader spawns procedurally on every 4th seed
+  (`seed % 4 === 0`) — NOT in `refLevel(0)`, so the canonical
+  refLevel screenshots stay byte-identical to pre-PB5. Procedural
+  spawn path adds `emfReader` to the reserved-pickup list in
+  `engine.ts` alongside chaingun/shotgun/flamethrower ammo.
+- HUD chip mounts top-center (NOT under keys/score — visibility
+  benefits from being above the kill-banner zone) when
+  `state.hasEmfReader` is true. Renders "EMF N" plus a 5-bar
+  stepwise readout. Color ramp pulls from `EMF_TOKEN` which
+  resolves through ROLE tokens (textMuted → bone3 → actionWin →
+  actionPickup → actionHurt → actionFire) so palette tweaks
+  ripple through both the chip and the contract test.
 - Distance thresholds match Phasmo's "EMF 5 = within touching
-  distance" semantic: <2 tiles = 5, <4 = 4, <8 = 3, <16 = 2, else 1
-  (when any enemy exists on map).
-- Unit test: `pickEmfReading(distance)` deterministic mapping.
+  distance" semantic: <2 tiles = 5, <4 = 4, <8 = 3, <16 = 2,
+  else 1 (when any enemy exists on map; `Infinity` returns 0).
+- Unit tests: `pickEmfReading(distance)` threshold table +
+  monotonicity property + `EMF_TOKEN` ROLE-identity assertions.
+- Per-frame Scene tick is gated on `hasEmfReader`, throttled to
+  100 ms (≈10 Hz), and skips re-dispatches when the level didn't
+  change — so the HUD subscription stays cheap.
 
 Out of scope for step-1: no asset wire-in (the EMF reader is a HUD
 chip, not a held weapon — the existing slasher pack doesn't need an

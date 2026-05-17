@@ -1,5 +1,6 @@
 import { addBoneBusterListener } from "@engine/events";
-import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING } from "@styles/tokens/index";
+import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE } from "@styles/tokens/index";
+import { EMF_TOKEN, type EmfReading } from "@world/ghostHunting";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -16,18 +17,28 @@ import { useEffect, useState } from "react";
  * which only happens when the player doesn't own the reader OR no
  * live enemies exist on the map). Always-rendered framer-motion
  * `animate` updates keep the bars in sync without remounting.
+ *
+ * PB5 CR fold — color ramp now sources from `EMF_TOKEN` in
+ * `@world/ghostHunting`, which resolves through ROLE tokens. The
+ * chip is a thin renderer over the token-mapped values so palette
+ * tweaks in `app/styles/tokens/colors.ts` ripple through both the
+ * runtime and the contract test without code edits.
  */
 
 const BAR_COUNT = 5;
 
-// PSX-style color ramp: cool green for low (passive observer), warm
-// amber for mid (something's nearby), red for high (touching). Inline
-// hex values because the design-token scale doesn't expose green; the
-// token PR for a `signal` scale is its own follow-up.
-const RAMP: readonly string[] = ["#2e7d32", "#558b2f", "#f9a825", "#ef6c00", "#c62828"];
+// Bars 1..5 take the corresponding EMF_TOKEN entry. Off-state bar
+// color uses ROLE.brand.bone3 at low alpha (set on the motion.div).
+const BAR_COLOR_FOR_LEVEL = [
+	EMF_TOKEN[1],
+	EMF_TOKEN[2],
+	EMF_TOKEN[3],
+	EMF_TOKEN[4],
+	EMF_TOKEN[5],
+] as const;
 
 export function EmfChip() {
-	const [level, setLevel] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+	const [level, setLevel] = useState<EmfReading>(0);
 
 	useEffect(() => {
 		return addBoneBusterListener("emfReading", (evt) => {
@@ -59,7 +70,10 @@ export function EmfChip() {
 					fontSize: "var(--obx-hud-fs-label, 11px)",
 					fontWeight: FONT_WEIGHT.regular,
 					letterSpacing: LETTER_SPACING.hudLabel,
-					color: RAMP[level - 1],
+					color: EMF_TOKEN[level],
+					// scale-step: black text-shadow at low alpha for legibility
+					// against light HUD bands. Tokens don't carry shadow specs,
+					// so the raw rgba is inlined here as a presentation detail.
 					textShadow: "0 0 4px rgba(0,0,0,0.7)",
 				}}
 			>
@@ -72,7 +86,7 @@ export function EmfChip() {
 						key={i}
 						animate={{
 							opacity: i < level ? 1 : 0.18,
-							backgroundColor: i < level ? RAMP[i] : "#3a3a3a",
+							backgroundColor: i < level ? BAR_COLOR_FOR_LEVEL[i] : ROLE.brand.bone3,
 						}}
 						transition={{ duration: 0.08 }}
 						style={{

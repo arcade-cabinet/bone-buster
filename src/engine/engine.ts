@@ -472,9 +472,12 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	);
 	const wantsFlame = (seed >>> 0) % 3 === 0;
 	// PB5 step-2 — EMF reader spawns on every 4th seed (seed%4==0). One
-	// per map; once-picked-up the flag persists for the rest of the run.
-	// Keeping the cadence sparse so the tool reads as a discovery beat
-	// rather than a guaranteed every-map find.
+	// per map. Ownership resets on level transition — Shell.tsx
+	// re-initializes hasEmfReader: false alongside hasFlashlight at
+	// every new map / new run / respawn site, so the player re-acquires
+	// the reader on each EMF-eligible level. Keeping the cadence sparse
+	// so the tool reads as a discovery beat rather than a guaranteed
+	// every-map find.
 	const wantsEmf = (seed >>> 0) % 4 === 0;
 	const reserved: PickupKind[] = ["chaingunAmmo", "shotgunAmmo"];
 	if (wantsFlame) reserved.push("flamethrowerAmmo");

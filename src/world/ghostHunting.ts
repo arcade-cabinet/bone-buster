@@ -13,6 +13,8 @@
  * HUD slot. Distance is in tiles.
  */
 
+import { ROLE } from "@styles/tokens/index";
+
 export type EmfReading = 0 | 1 | 2 | 3 | 4 | 5;
 
 /**
@@ -43,15 +45,30 @@ export function pickEmfReading(distanceTiles: number): EmfReading {
 }
 
 /**
- * Tailwind-friendly token name for each reading; consumed by the
- * HUD chip's color ramp. Kept here (not in the chip component) so
- * the visual ramp is testable without a render harness.
+ * ROLE-token color ramp for the EMF chip readout. Resolves each
+ * reading 0..5 to an existing semantic token rather than a raw hex
+ * so palette tweaks in `app/styles/tokens/colors.ts` ripple through
+ * the chip without code edits.
+ *
+ * Mapping rationale:
+ *   0 → muted text (hidden / no signal, but the chip is gated on
+ *       hasEmfReader before render so this branch only fires
+ *       transiently between maps)
+ *   1 → bone.bone3 (cool / passive, baseline blip)
+ *   2 → actionWin (mint gain — discovery beat, "something detected")
+ *   3 → actionPickup (amber — "nearby")
+ *   4 → actionHurt (warning amber — "closer than you want")
+ *   5 → actionFire (crimson — "touching distance, run")
+ *
+ * Exported (not in-lined into EmfChip) so the contract test can pin
+ * the mapping without spinning up a render harness, and so the chip
+ * stays a thin renderer over the token-resolved values.
  */
 export const EMF_TOKEN: Readonly<Record<EmfReading, string>> = {
-	0: "bone.500", // hidden / no signal
-	1: "bone.300",
-	2: "warning.400",
-	3: "warning.500",
-	4: "blood.500",
-	5: "blood.600",
+	0: ROLE.textMuted,
+	1: ROLE.brand.bone3,
+	2: ROLE.actionWin,
+	3: ROLE.actionPickup,
+	4: ROLE.actionHurt,
+	5: ROLE.actionFire,
 };
