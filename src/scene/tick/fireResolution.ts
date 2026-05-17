@@ -39,6 +39,7 @@ import { WEAPONS, type WeaponId } from "@shared/weapons";
 import type { BoneBusterSettings } from "@store/settings";
 import type { GameRef, WeaponState } from "@views/Shell";
 import { type Barrel, pickRayBarrel } from "@world/barrels";
+import { DEFAULT_MELEE_PROFILE, type MeleeProfile } from "@world/meleeSkins";
 import { pickRaySwitch, type Secret } from "@world/secrets";
 import * as THREE from "three";
 
@@ -83,6 +84,16 @@ export interface FireResolutionContext {
 		reserve(id: "hitstop" | "key-acquire", scale: number, untilMs: number): void;
 	};
 	explodeBarrel: (barrel: Barrel) => void;
+	/**
+	 * PB4 step-2 — per-run melee profile resolved from level.seed via
+	 * `pickMeleeProfile`. Multipliers compose against the base
+	 * WEAPONS.melee spec (damage 55 / cooldown 420ms) so the canonical
+	 * machete (identity profile) preserves the existing balance. Only
+	 * applied when `weapon === "melee"`; ranged weapons read the base
+	 * spec unchanged. Optional with an identity fallback so callers
+	 * that don't yet plumb the profile keep working byte-identically.
+	 */
+	meleeProfile?: MeleeProfile;
 }
 
 export function resolveFire(ctx: FireResolutionContext): void {
@@ -106,11 +117,20 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		muzzleIntensityScaleRef,
 		timeScaleBus,
 		explodeBarrel,
+		meleeProfile = DEFAULT_MELEE_PROFILE,
 	} = ctx;
 
 	if (!active) return;
 	const spec = WEAPONS[weapon];
-	if (now - lastFireAtRef.current < spec.cooldownMs) return;
+	// PB4 — apply per-skin profile only on the melee swing; ranged
+	// weapons read base damage/cooldown unchanged. Multipliers are
+	// composed locally so the WEAPONS table stays the single source
+	// of truth for the base spec, and the per-skin deltas are visible
+	// at this call site.
+	const isMelee = weapon === "melee";
+	const effectiveCooldown = isMelee ? spec.cooldownMs * meleeProfile.cooldownMul : spec.cooldownMs;
+	const effectiveDamage = isMelee ? spec.damage * meleeProfile.damageMul : spec.damage;
+	if (now - lastFireAtRef.current < effectiveCooldown) return;
 
 	if (spec.ammoCostPerShot > 0) {
 		const remaining = ammoRef.current.ammo[weapon];
@@ -233,7 +253,11 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		// E5 — barrel hit-test wins ties over enemies.
 		const barrelHit = pickRayBarrel(origin, dir2, barrelsRef.current, bestDist);
 		if (barrelHit && barrelHit.dist <= bestDist) {
-			barrelHit.barrel.hp -= spec.damage;
+			// PB4 — effectiveDamage is `spec.damage × profile.damageMul`
+			// and may be a non-integer (e.g. 55 × 0.73 = 40.15 for the
+			// chainsaw skin). Round before subtracting so the integer-HP
+			// invariant the rest of the sim depends on is preserved.
+			barrelHit.barrel.hp -= Math.round(effectiveDamage);
 			dispatch({
 				type: "burst",
 				x: barrelHit.barrel.position.x,
@@ -250,7 +274,13 @@ export function resolveFire(ctx: FireResolutionContext): void {
 			// (kind, weapon) yields 1.5×; every other combo yields 1.0×
 			// so the base spec.damage is the floor.
 			const vulnMultiplier = applyVulnerabilityMultiplier(bestEnemy.kind, weapon);
-			bestEnemy.hp -= spec.damage * vulnMultiplier;
+			// PB4 — compute the integer total ONCE so the HP debit and
+			// the floating-number dispatch carry the same number. Without
+			// rounding here, the visual readout would show 40.15 but the
+			// HP would silently absorb the float, breaking the integer-HP
+			// invariant and producing a UI/sim mismatch.
+			const totalDamage = Math.round(effectiveDamage * vulnMultiplier);
+			bestEnemy.hp -= totalDamage;
 			// POL19 — non-killing-hit stagger window. Only set when the
 			// hit doesn't kill (the kill path uses POL12 hitstop + body-
 			// parts spawn instead — a dead enemy doesn't flinch). Bosses
@@ -275,7 +305,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 				type: "damageNumber",
 				x: bestEnemy.position.x,
 				y: bestEnemy.position.y,
-				amount: spec.damage,
+				amount: totalDamage,
 				killed: bestEnemy.hp <= 0,
 				enemyId: bestEnemy.id,
 			});
