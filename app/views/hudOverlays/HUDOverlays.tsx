@@ -9,6 +9,7 @@ import { MissionCompleteCeremony } from "@views/hudOverlays/MissionCompleteCerem
 import { PauseOverlay } from "@views/hudOverlays/PauseOverlay";
 import { PickupChip } from "@views/hudOverlays/PickupChip";
 import { SecretFoundFlash } from "@views/hudOverlays/SecretFoundFlash";
+import { SpiritBoxBubble } from "@views/hudOverlays/SpiritBoxBubble";
 import type { GameState, LevelPhase } from "@views/Shell";
 
 /**
@@ -29,6 +30,7 @@ import type { GameState, LevelPhase } from "@views/Shell";
  *   - BossBanner               (event: bossSpotted/bossDefeated) POL36
  *   - KillBanner                (event: enemyKilled, non-boss)   PB2
  *   - EmfChip                   (event: emfReading, owner-gated) PB5
+ *   - SpiritBoxBubble           (event: spiritBoxResponse, owner-gated) PC2
  */
 export function HUDOverlays({
 	phase,
@@ -64,6 +66,7 @@ export function HUDOverlays({
 			<BossBanner />
 			<KillBanner />
 			{state.hasEmfReader && <EmfChip />}
+			{state.hasSpiritBox && <SpiritBoxBubble />}
 		</>
 	);
 }

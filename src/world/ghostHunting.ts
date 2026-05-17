@@ -72,3 +72,63 @@ export const EMF_TOKEN: Readonly<Record<EmfReading, string>> = {
 	4: ROLE.actionHurt,
 	5: ROLE.actionFire,
 };
+
+/**
+ * PC2 — spirit box phoneme pool. Phasmophobia-style single-word
+ * "voice" responses the box plays when prompted near a ghost. Bone
+ * Buster picks one deterministically from the (seed, frameIndex)
+ * pair on every trigger, so a given seed plays the same sequence
+ * — keeps the spirit-box flavor reproducible for QA + canonical
+ * playtests without per-event randomness.
+ *
+ * The lexicon leans on threat words (the ghosts in Bone Buster are
+ * straight aggressive, not investigative); each one fits the
+ * one-second display + audio sting the HUD overlay paints.
+ */
+export const SPIRIT_BOX_PHONEMES: readonly string[] = [
+	"BURN",
+	"LEAVE",
+	"NEAR",
+	"BLOOD",
+	"BONE",
+	"RUN",
+	"DARK",
+	"COLD",
+	"HUNT",
+	"WATCH",
+	"DEAD",
+	"HURT",
+];
+
+/**
+ * Spirit-box trigger radius. The box only emits a response when
+ * the nearest live enemy is within 6 tiles — outside that range,
+ * the box is silent (matches Phasmo's "ghost room only"
+ * convention). Same units as `pickEmfReading`'s distance arg
+ * (tiles, 1 tile = 1 world unit).
+ */
+export const SPIRIT_BOX_TRIGGER_RADIUS = 6;
+
+/**
+ * Trigger-cooldown — minimum ms between two spirit-box responses.
+ * The Scene tick gates the trigger on this so the box doesn't
+ * spam phonemes every frame the player is within radius.
+ * Tuned at 2.5s so the player has time to read the previous word
+ * before the next one lands.
+ */
+export const SPIRIT_BOX_COOLDOWN_MS = 2_500;
+
+/**
+ * Pick the next phoneme. `seed` is the level seed (so a given run
+ * plays the same sequence) XORed with a per-trigger frame index
+ * so consecutive triggers don't always return the same word.
+ *
+ * Determinism: at fixed seed, `pickSpiritBoxPhoneme(seed, n)`
+ * returns the same phoneme for every n. The XOR keeps the
+ * distribution well-spread across the pool.
+ */
+export function pickSpiritBoxPhoneme(seed: number, triggerIndex: number): string {
+	const mixed = (seed >>> 0) ^ ((triggerIndex >>> 0) * 0x9e3779b1);
+	const idx = (mixed >>> 0) % SPIRIT_BOX_PHONEMES.length;
+	return SPIRIT_BOX_PHONEMES[idx];
+}

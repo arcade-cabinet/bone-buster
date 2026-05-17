@@ -7,7 +7,15 @@
  */
 
 import { ROLE } from "@styles/tokens/index";
-import { EMF_TOKEN, type EmfReading, pickEmfReading } from "@world/ghostHunting";
+import {
+	EMF_TOKEN,
+	type EmfReading,
+	pickEmfReading,
+	pickSpiritBoxPhoneme,
+	SPIRIT_BOX_COOLDOWN_MS,
+	SPIRIT_BOX_PHONEMES,
+	SPIRIT_BOX_TRIGGER_RADIUS,
+} from "@world/ghostHunting";
 import { describe, expect, it } from "vitest";
 
 describe("PB5 step-1 — pickEmfReading thresholds", () => {
@@ -94,5 +102,58 @@ describe("PB5 step-1 — EMF_TOKEN color ramp", () => {
 		expect(EMF_TOKEN[2]).toBe(ROLE.actionWin);
 		expect(EMF_TOKEN[3]).toBe(ROLE.actionPickup);
 		expect(EMF_TOKEN[4]).toBe(ROLE.actionHurt);
+	});
+});
+
+describe("PC2 — spirit-box phoneme pool + picker", () => {
+	it("ships ≥8 phonemes (Phasmo-style threat lexicon)", () => {
+		expect(SPIRIT_BOX_PHONEMES.length).toBeGreaterThanOrEqual(8);
+	});
+
+	it("every phoneme is an uppercase short word", () => {
+		for (const word of SPIRIT_BOX_PHONEMES) {
+			expect(word).toMatch(/^[A-Z]{2,8}$/);
+		}
+	});
+
+	it("phonemes are unique across the pool", () => {
+		expect(new Set(SPIRIT_BOX_PHONEMES).size).toBe(SPIRIT_BOX_PHONEMES.length);
+	});
+
+	it("pickSpiritBoxPhoneme is deterministic per (seed, triggerIndex)", () => {
+		expect(pickSpiritBoxPhoneme(42, 0)).toBe(pickSpiritBoxPhoneme(42, 0));
+		expect(pickSpiritBoxPhoneme(42, 7)).toBe(pickSpiritBoxPhoneme(42, 7));
+	});
+
+	it("returns a phoneme from SPIRIT_BOX_PHONEMES for any seed/trigger pair", () => {
+		for (let s = 0; s < 20; s += 1) {
+			for (let t = 0; t < 5; t += 1) {
+				expect(SPIRIT_BOX_PHONEMES).toContain(pickSpiritBoxPhoneme(s, t));
+			}
+		}
+	});
+
+	it("consecutive triggers don't always return the same phoneme", () => {
+		// Catches a regression where pickSpiritBoxPhoneme ignored the
+		// triggerIndex — the player should see the box "talk back"
+		// across multiple words, not repeat the same one until the
+		// seed changes.
+		const seen = new Set<string>();
+		for (let t = 0; t < 30; t += 1) {
+			seen.add(pickSpiritBoxPhoneme(7, t));
+		}
+		expect(seen.size).toBeGreaterThan(1);
+	});
+
+	it("SPIRIT_BOX_TRIGGER_RADIUS is a positive tile count in the EMF mid-band", () => {
+		// The box only talks when an enemy is in EMF level 3-5 range
+		// (touching to ~6 tiles). 6 is the documented Phasmo-style
+		// "ghost room" boundary; outside that the box is silent.
+		expect(SPIRIT_BOX_TRIGGER_RADIUS).toBeGreaterThan(0);
+		expect(SPIRIT_BOX_TRIGGER_RADIUS).toBeLessThanOrEqual(8);
+	});
+
+	it("SPIRIT_BOX_COOLDOWN_MS is at least 1 second so the HUD has time to read", () => {
+		expect(SPIRIT_BOX_COOLDOWN_MS).toBeGreaterThanOrEqual(1000);
 	});
 });

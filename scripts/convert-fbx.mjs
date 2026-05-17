@@ -90,6 +90,15 @@ const JOBS = [
 		glb: "public/assets/models/tools/emf_reader.glb",
 		label: "EMF reader (PSX Ghost Hunting Tools)",
 	},
+	// PC2 — Spirit box. Cooldown-gated speech HUD overlay triggered
+	// when any live enemy is within 6 tiles. Viewmodel rendered as
+	// the floor pickup (no held-weapon slot in step-2; the GHT plan
+	// keeps tools passive until the dedicated tool-slot lane lands).
+	{
+		fbx: "references/_extracted/psx-ght/Spirit box/spiritbox.fbx",
+		glb: "public/assets/models/tools/spirit_box.glb",
+		label: "Spirit Box (PSX Ghost Hunting Tools)",
+	},
 ];
 
 function mtimeOrZero(path) {

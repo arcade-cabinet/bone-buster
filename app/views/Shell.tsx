@@ -89,6 +89,11 @@ export type GameState = {
 	// the EMF chip with a 1-5 stepwise readout of nearest-enemy
 	// proximity. Off by default; flips true on pickup.
 	hasEmfReader: boolean;
+	// PC2 — Spirit box ownership flag. When true, the SpiritBoxBubble
+	// HUD overlay listens for the `spiritBoxResponse` event and renders
+	// the deterministic phoneme for ~1s. Off by default; flips true on
+	// pickup.
+	hasSpiritBox: boolean;
 	weapon: WeaponId;
 	ammo: Record<WeaponId, number>;
 	ownedWeapons: Record<WeaponId, boolean>;
@@ -348,6 +353,7 @@ export function BoneBusterShell() {
 		hasKey: false,
 		hasFlashlight: false,
 		hasEmfReader: false,
+		hasSpiritBox: false,
 		weapon: "pistol",
 		ammo: baseAmmo(),
 		ownedWeapons: baseOwnedWeapons(),
@@ -448,6 +454,7 @@ export function BoneBusterShell() {
 			hasKey: false,
 			hasFlashlight: false,
 			hasEmfReader: false,
+			hasSpiritBox: false,
 			weapon: "pistol",
 			ammo: baseAmmo(),
 			ownedWeapons: baseOwnedWeapons(),
@@ -677,6 +684,7 @@ export function BoneBusterShell() {
 				hasKey: false,
 				hasFlashlight: false,
 				hasEmfReader: false,
+				hasSpiritBox: false,
 				weapon: "pistol",
 				ammo: baseAmmo(),
 				ownedWeapons: baseOwnedWeapons(),
@@ -936,6 +944,7 @@ export function BoneBusterShell() {
 									phase={state.phase}
 									hasFlashlight={state.hasFlashlight}
 									hasEmfReader={state.hasEmfReader}
+									hasSpiritBox={state.hasSpiritBox}
 								/>
 							</Canvas>
 							<BoneBusterHUD

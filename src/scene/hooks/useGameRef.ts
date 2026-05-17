@@ -41,7 +41,12 @@ import { useRef } from "react";
  */
 const AMMO_INCREMENT: Record<
 	PickupKind,
-	{ weapon: WeaponId; amount: number } | "health" | "flashlight" | "loot" | "emfReader"
+	| { weapon: WeaponId; amount: number }
+	| "health"
+	| "flashlight"
+	| "loot"
+	| "emfReader"
+	| "spiritBox"
 > = {
 	health: "health",
 	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
@@ -57,6 +62,9 @@ const AMMO_INCREMENT: Record<
 	// weapon slot, no ammo: it's a passive detection tool consumed by
 	// the HUD chip.
 	emfReader: "emfReader",
+	// PC2 — Spirit box on-collect flips the ownership flag. Same passive
+	// tool shape as the EMF reader.
+	spiritBox: "spiritBox",
 };
 
 export type UseGameRefDeps = Readonly<{
@@ -237,6 +245,13 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 					// above already feeds the PickupChip slot. Future audio
 					// commit can layer in the Phasmo-style EMF click.
 					return { ...prev, hasEmfReader: true };
+				}
+				if (action === "spiritBox") {
+					// PC2 — same passive shape as the EMF reader; flips the
+					// ownership flag and lets the SpiritBoxBubble HUD slot
+					// subscribe. Audio sting deferred to the same future
+					// commit that adds the EMF click.
+					return { ...prev, hasSpiritBox: true };
 				}
 				if (action === "loot") {
 					// COV12 step-2 — kind-specific bonus from pickLootKind(seed).

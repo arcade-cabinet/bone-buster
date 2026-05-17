@@ -272,6 +272,19 @@ export interface EmfReadingEvent {
 	level: 0 | 1 | 2 | 3 | 4 | 5;
 }
 
+/**
+ * PC2 — spirit-box response. Dispatched from the Scene tick when
+ * (a) the player owns the spirit box, (b) a live enemy is within
+ * SPIRIT_BOX_TRIGGER_RADIUS tiles, and (c) the per-tick cooldown
+ * has expired. Carries the phoneme string (`pickSpiritBoxPhoneme`
+ * result) so the SpiritBoxBubble HUD slot just renders the
+ * payload — no Scene → HUD coupling beyond this event shape.
+ */
+export interface SpiritBoxResponseEvent {
+	type: "spiritBoxResponse";
+	phoneme: string;
+}
+
 export type BoneBusterEvent =
 	| BurstEvent
 	| BodyPartsEvent
@@ -297,7 +310,8 @@ export type BoneBusterEvent =
 	| BossSpottedEvent
 	| BossDefeatedEvent
 	| EnemyKilledEvent
-	| EmfReadingEvent;
+	| EmfReadingEvent
+	| SpiritBoxResponseEvent;
 
 export type BoneBusterEventType = BoneBusterEvent["type"];
 

@@ -67,6 +67,11 @@ export type PickupKind =
 	// detection only; doesn't replace any weapon or change damage. See
 	// `docs/GHOST-HUNTING.md` for the slice plan.
 	| "emfReader"
+	// PC2 — Spirit box pickup. Carrying it activates the SpiritBoxBubble
+	// HUD overlay: when any live enemy is within SPIRIT_BOX_TRIGGER_RADIUS
+	// tiles (6), the box plays a phoneme from the deterministic per-seed
+	// pool on a 2.5s cooldown. Passive — no weapon-slot interference.
+	| "spiritBox"
 	// COV12 step-2 — rare hero-tier bonus drop. Exactly one per map,
 	// placed at the centroid of the sector farthest from playerSpawn.
 	// On collect, dispatches a kind-specific bonus picked from the COV12
@@ -479,9 +484,14 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	// so the tool reads as a discovery beat rather than a guaranteed
 	// every-map find.
 	const wantsEmf = (seed >>> 0) % 4 === 0;
+	// PC2 — Spirit box spawns on every 5th seed (offset from EMF's %4
+	// so the two tools don't co-spawn on every shared multiple). Same
+	// per-level ownership semantics as EMF.
+	const wantsSpiritBox = (seed >>> 0) % 5 === 0;
 	const reserved: PickupKind[] = ["chaingunAmmo", "shotgunAmmo"];
 	if (wantsFlame) reserved.push("flamethrowerAmmo");
 	if (wantsEmf) reserved.push("emfReader");
+	if (wantsSpiritBox) reserved.push("spiritBox");
 	const pickupSpawns: PickupSpawn[] = pickupCandidates
 		.slice(0, pickupTotal)
 		.map((position, idx) => {

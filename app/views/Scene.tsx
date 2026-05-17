@@ -104,7 +104,12 @@ import {
 import { tickEnemyLoop } from "../../src/scene/tick/enemyTickLoop";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
 import { createTimeScaleBus } from "../../src/scene/tick/timeScaleBus";
-import { pickEmfReading } from "../../src/world/ghostHunting";
+import {
+	pickEmfReading,
+	pickSpiritBoxPhoneme,
+	SPIRIT_BOX_COOLDOWN_MS,
+	SPIRIT_BOX_TRIGGER_RADIUS,
+} from "../../src/world/ghostHunting";
 import { pickMeleeProfile } from "../../src/world/meleeSkins";
 
 type SceneProps = Readonly<{
@@ -124,6 +129,10 @@ type SceneProps = Readonly<{
 	// the per-frame nearest-enemy distance calc and dispatches no
 	// emfReading events; the HUD chip stays hidden.
 	hasEmfReader: boolean;
+	// PC2 — Spirit box ownership. When false, the Scene skips the
+	// per-frame nearest-enemy proximity check + cooldown tracking and
+	// dispatches no spiritBoxResponse events; the HUD bubble stays hidden.
+	hasSpiritBox: boolean;
 }>;
 
 export function BoneBusterScene({
@@ -137,6 +146,7 @@ export function BoneBusterScene({
 	phase,
 	hasFlashlight,
 	hasEmfReader,
+	hasSpiritBox,
 }: SceneProps) {
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
 	// E13 step-3 — per-archetype enemy mix. Remap spawn `kind`s through
@@ -882,6 +892,35 @@ export function BoneBusterScene({
 		if (level === lastEmfLevelRef.current) return;
 		lastEmfLevelRef.current = level;
 		dispatch({ type: "emfReading", level });
+	});
+
+	// PC2 — Spirit-box per-frame proximity check + cooldown-gated
+	// response dispatch. Walks the same enemiesRef pool as the EMF
+	// dispatch above; when the nearest live enemy is within
+	// SPIRIT_BOX_TRIGGER_RADIUS tiles and the cooldown has expired,
+	// picks a deterministic phoneme keyed off (map.seed, triggerIndex)
+	// and emits the typed event. The HUD bubble subscribes; the audio
+	// sting (future commit) can subscribe to the same event.
+	const lastSpiritBoxTriggerAtRef = useRef(0);
+	const spiritBoxTriggerCountRef = useRef(0);
+	useFrame(() => {
+		if (!hasSpiritBox || !active) return;
+		const now = performance.now();
+		if (now - lastSpiritBoxTriggerAtRef.current < SPIRIT_BOX_COOLDOWN_MS) return;
+		const radiusSq = SPIRIT_BOX_TRIGGER_RADIUS * SPIRIT_BOX_TRIGGER_RADIUS;
+		let nearestSq = Number.POSITIVE_INFINITY;
+		for (const enemy of enemiesRef.current) {
+			if (enemy.dead) continue;
+			const ex = enemy.position.x - camera.position.x;
+			const ez = enemy.position.y - camera.position.z;
+			const d = ex * ex + ez * ez;
+			if (d < nearestSq) nearestSq = d;
+		}
+		if (nearestSq > radiusSq) return;
+		lastSpiritBoxTriggerAtRef.current = now;
+		const phoneme = pickSpiritBoxPhoneme(map.seed, spiritBoxTriggerCountRef.current);
+		spiritBoxTriggerCountRef.current += 1;
+		dispatch({ type: "spiritBoxResponse", phoneme });
 	});
 
 	// POL44 — muzzle-light decay at positive priority. The fire event

@@ -252,6 +252,7 @@ export function PickupMesh({
 				</group>
 			)}
 			{pickup.kind === "emfReader" && <EmfReaderPickupMesh />}
+			{pickup.kind === "spiritBox" && <SpiritBoxPickupMesh />}
 		</group>
 	);
 }
@@ -299,6 +300,21 @@ function EmfReaderPickupMesh() {
 	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
 	return (
 		<group scale={[0.4, 0.4, 0.4]}>
+			<primitive object={cloned} />
+		</group>
+	);
+}
+
+/**
+ * PC2 — Spirit box pickup body. Same useGLTF + SkeletonUtils.clone
+ * pattern as EmfReaderPickupMesh; slightly larger scale because the
+ * spirit box GLB ships smaller than the EMF reader.
+ */
+function SpiritBoxPickupMesh() {
+	const gltf = useGLTF(TOOL_URLS.spiritBox);
+	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
+	return (
+		<group scale={[0.5, 0.5, 0.5]}>
 			<primitive object={cloned} />
 		</group>
 	);
