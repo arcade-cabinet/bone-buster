@@ -211,6 +211,8 @@ loader call sites are bugs (will 404 in gh-pages). See
 
 - One commit per logical change.
 - Never amend a pushed commit.
-- Long-running branch is `feat/bone-buster-game-buildout`; small
-  unrelated fixes still get focused PRs.
+- One long-running branch per overhaul slice (current:
+  `feat/ght-emf-asset`); reviewer trio runs locally per commit,
+  findings fold forward, push + open PR only when the slice is
+  fully done. See `docs/DECISIONS.md` §D12 (supersedes D8).
 - Tag releases via release-please, not by hand.
