@@ -2,7 +2,7 @@ import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { CRUCIFIX_LIFETIME_MS, type CrucifixInstance } from "@world/ghostHunting";
 import { TOOL_URLS } from "@world/tools";
-import { useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 
@@ -30,10 +30,38 @@ export function CrucifixField({ crucifixes }: { crucifixes: readonly CrucifixIns
 
 function CrucifixMesh({ crucifix }: { crucifix: CrucifixInstance }) {
 	const gltf = useGLTF(TOOL_URLS.crucifix);
-	const cloned = useRef<THREE.Object3D | null>(null);
-	if (cloned.current === null) {
-		cloned.current = SkeletonUtils.clone(gltf.scene);
-	}
+	// PC4 review fix — `SkeletonUtils.clone(scene)` clones the scene
+	// graph but materials remain SHARED references across every clone
+	// AND across other consumers of the same GLB (e.g. the crucifix
+	// pickup mesh). Mutating `material.opacity` per-frame would fade
+	// every crucifix and pickup simultaneously. We deep-clone the
+	// material per mesh node so the per-instance fade is isolated.
+	const cloned = useMemo(() => {
+		const root = SkeletonUtils.clone(gltf.scene);
+		root.traverse((obj) => {
+			const mesh = obj as THREE.Mesh;
+			if (!mesh.isMesh || !mesh.material) return;
+			if (Array.isArray(mesh.material)) {
+				mesh.material = mesh.material.map((m) => m.clone());
+			} else {
+				mesh.material = mesh.material.clone();
+			}
+		});
+		return root;
+	}, [gltf.scene]);
+	// Dispose the per-instance cloned materials on unmount so the GPU
+	// doesn't leak material entries across the typical 10-15s crucifix
+	// lifetime × N placements per run.
+	useEffect(() => {
+		return () => {
+			cloned.traverse((obj) => {
+				const mesh = obj as THREE.Mesh;
+				if (!mesh.isMesh || !mesh.material) return;
+				const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+				for (const m of mats) m.dispose();
+			});
+		};
+	}, [cloned]);
 	const groupRef = useRef<THREE.Group | null>(null);
 
 	useFrame(() => {
@@ -62,7 +90,7 @@ function CrucifixMesh({ crucifix }: { crucifix: CrucifixInstance }) {
 
 	return (
 		<group ref={groupRef} position={[crucifix.x, 0.4, crucifix.z]} scale={[0.6, 0.6, 0.6]}>
-			<primitive object={cloned.current} />
+			<primitive object={cloned} />
 		</group>
 	);
 }

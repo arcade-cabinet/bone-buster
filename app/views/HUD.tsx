@@ -270,7 +270,7 @@ export function BoneBusterHUD({
 
 			<div style={crosshairStyle} />
 
-			{state.status === "playing" && touchMode && <TouchControls />}
+			{state.status === "playing" && touchMode && <TouchControls state={state} />}
 
 			{/* PT4A — prepend movement hint so a new player who clicks
 			    NEW GAME doesn't stand still wondering how to walk. */}
@@ -438,13 +438,56 @@ function formatRunStats(state: GameState): string {
 const STICK_RADIUS = 56;
 const STICK_KNOB = 28;
 
-function TouchControls() {
+function TouchControls({ state }: { state: GameState }) {
 	return (
 		<>
 			<VirtualStick channel="move" anchor="left" ariaLabel="Move" />
 			<VirtualStick channel="look" anchor="right" ariaLabel="Aim" />
 			<FireButton />
+			{state.crucifixes > 0 && <CrucifixButton count={state.crucifixes} />}
 		</>
+	);
+}
+
+function CrucifixButton({ count }: { count: number }) {
+	const place = useCallback(() => {
+		// PC4 — same event channel keyboard Digit9 dispatches; the
+		// Scene listener handles placement deterministically regardless
+		// of input source.
+		dispatch({ type: "crucifixPlace" });
+	}, []);
+	return (
+		<button
+			type="button"
+			aria-label={`Place crucifix (${count} remaining)`}
+			onPointerDown={(e) => {
+				e.preventDefault();
+				place();
+			}}
+			style={{
+				position: "absolute",
+				right: "calc(24px + var(--obx-safe-right, 0px))",
+				bottom: `calc(${STICK_RADIUS * 2 + 130}px + var(--obx-safe-bottom, 0px))`,
+				width: 56,
+				height: 56,
+				borderRadius: "50%",
+				border: `2px solid ${ROLE.accentCool}`,
+				background: ROLE.bgPanelAlpha,
+				color: ROLE.textHighContrast,
+				fontFamily: FONT_FAMILY.display,
+				fontWeight: FONT_WEIGHT.regular,
+				fontSize: 11,
+				letterSpacing: LETTER_SPACING.display,
+				pointerEvents: "auto",
+				touchAction: "none",
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				lineHeight: 1,
+			}}
+		>
+			✚ {count}
+		</button>
 	);
 }
 

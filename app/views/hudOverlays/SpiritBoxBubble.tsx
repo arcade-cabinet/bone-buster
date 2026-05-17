@@ -36,12 +36,18 @@ export function SpiritBoxBubble() {
 	useEffect(() => {
 		let counter = 0;
 		let activeId = 0;
+		// Track outstanding timer handles so unmount cancels them. The
+		// `if (activeId === id)` guard inside the callback handles the
+		// stale-state case; tracking handles avoids a fire-after-unmount
+		// warning and a phantom setBubble queued behind the unmount.
+		const pending = new Set<number>();
 		const off = addBoneBusterListener("spiritBoxResponse", (evt) => {
 			counter += 1;
 			const id = counter;
 			activeId = id;
 			setBubble({ id, phoneme: evt.phoneme });
-			window.setTimeout(() => {
+			const handle = window.setTimeout(() => {
+				pending.delete(handle);
 				// Only clear if a newer bubble hasn't replaced us — guards
 				// against a fast-firing run dispatching two phonemes in
 				// the HOLD_MS window (cooldown is 2.5s so this shouldn't
@@ -49,8 +55,13 @@ export function SpiritBoxBubble() {
 				// code).
 				if (activeId === id) setBubble(null);
 			}, HOLD_MS);
+			pending.add(handle);
 		});
-		return off;
+		return () => {
+			off();
+			for (const h of pending) window.clearTimeout(h);
+			pending.clear();
+		};
 	}, []);
 
 	return (
