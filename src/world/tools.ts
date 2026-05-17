@@ -2,10 +2,9 @@
  * PC1 — Ghost Hunting Tools asset URL registry.
  *
  * Owns the URLs of the PSX Ghost Hunting Tools Release pack's
- * viewmodels. Step-1 (this commit) only wires the EMF reader, used
- * by the pickup mesh + the eventual viewmodel slot in a future
- * commit. PC2/PC3/PC4 extend this registry with spirit box / UV
- * flashlight / crucifix as those tools land.
+ * viewmodels: EMF reader (PC1), spirit box (PC2), UV flashlight
+ * (PC3), placeable crucifix (PC4). All four tools are wired into
+ * the pickup + viewmodel systems.
  *
  * Kept separate from `src/assets/models.ts` (which carries weapon /
  * prop / door GLB urls) so the tool layer stays distinct from the

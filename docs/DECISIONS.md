@@ -406,7 +406,7 @@ PRNG usage in Bone Buster is split into two streams with **separate engines, sep
 | Stream | Engine | API | Seed-derivation | Byte-stability contract |
 |---|---|---|---|---|
 | **CANONICAL** | `mulberry32` (existing, frozen) | `mulberry32(seed ^ RNG_TAGS.<TAG>)` from `@engine/prng` | `mapSeed ^ RNG_TAGS.<TAG>` per system | Locked. Seed=0 outputs pin every canonical screenshot. Adding a tag is allowed; changing a tag value or the algorithm is forbidden. |
-| **COSMETIC** | `seedrandom` (alea variant, npm `seedrandom@3.0.5`) | `cosmeticRng(seed, COSMETIC_TAGS.<TAG>)` from `@engine/prng` | `mapSeed ^ COSMETIC_TAGS.<TAG>` per system, OR `runSeed ^ COSMETIC_TAGS.<TAG>` for per-session flavor | Locked **per (tag, seed) pair captured in the byte-stability test**. Pool order is append-only — index 0 must remain the canonical baseline so `cosmeticRng(0, T)` reproduces the canonical seed=0 screenshot. Re-deriving cosmetic from a new run-flavor seed at runtime is allowed; the screenshots simply pin the `seed=mapSeed` case. |
+| **COSMETIC** | `seedrandom` (alea variant, npm `seedrandom@3.0.5`) | `cosmeticRng(seed, COSMETIC_TAGS.<TAG>)` from `@engine/prng` | alea string seed: `bb:${seed.toString(16)}:${tag.toString(16)}` (or `:${instanceId.toString(16)}` for per-instance picks). `seed` is `mapSeed` for screenshot-stable picks, OR `runSeed` for per-session flavor — the same alea contract applies either way. | Locked **per (tag, seed) pair captured in the byte-stability test**. Pool order is append-only — index 0 must remain the canonical baseline. `seed === 0` short-circuits in `pickCosmetic`/`pickCosmeticOnce` to `pool[0]` so the canonical seed=0 screenshot stays byte-identical regardless of cosmetic pool growth. |
 
 **Why two streams:**
 

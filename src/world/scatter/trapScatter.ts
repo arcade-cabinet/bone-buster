@@ -172,11 +172,6 @@ export function spawnTraps(map: BoneBusterMap): TrapInstance[] {
 }
 
 /**
- * Mark every trap in `sectorId` as disarmed. Called when the player
- * walks over a `trigger`-kind trap. Returns the count of newly-disarmed
- * traps for telemetry/sfx.
- */
-/**
  * PT1 — render-visibility predicate for an instanced trap mesh.
  *
  * Hazards (spikes / blade / rolling) disappear once disarmed (the
@@ -191,6 +186,11 @@ export function isTrapVisible(trap: Pick<TrapInstance, "disarmed" | "def">): boo
 	return !trap.disarmed || trap.def.kind === "trigger";
 }
 
+/**
+ * Mark every trap in `sectorId` as disarmed. Called when the player
+ * walks over a `trigger`-kind trap. Returns the count of newly-disarmed
+ * traps for telemetry/sfx.
+ */
 export function disarmSector(traps: TrapInstance[], sectorId: number): number {
 	let count = 0;
 	for (const t of traps) {
