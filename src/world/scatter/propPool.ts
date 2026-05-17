@@ -167,6 +167,32 @@ export const PROP_CATALOGUE = {
 		url: A("/assets/models/props/scatter/saw_blade_1.glb"),
 		blocking: false,
 	},
+	// PE1 — Mansion_PSX scatter additions for the library archetype.
+	// Standalone-readable items only (columns, windows, door frames,
+	// short wall sections). The full Mansion pack (big walls, roofs,
+	// moldings) is structural assembly and doesn't fit the per-prop
+	// scatter pool — wiring those would need a separate archetype-
+	// structural slice.
+	mansionColumn: {
+		id: "mansion_column",
+		url: A("/assets/models/props/scatter/library/mansion_column.glb"),
+		blocking: true,
+	},
+	mansionWindow: {
+		id: "mansion_window",
+		url: A("/assets/models/props/scatter/library/mansion_window.glb"),
+		blocking: false,
+	},
+	mansionDoorFrame: {
+		id: "mansion_door_frame",
+		url: A("/assets/models/props/scatter/library/mansion_door_frame.glb"),
+		blocking: true,
+	},
+	mansionSmallWall: {
+		id: "mansion_small_wall",
+		url: A("/assets/models/props/scatter/library/mansion_small_wall.glb"),
+		blocking: true,
+	},
 } as const satisfies Record<string, PropDef>;
 
 /**
@@ -241,6 +267,11 @@ export const POOLS: Record<PropArchetype, readonly PropDef[]> = {
 		PROP_CATALOGUE.cardboardBox2,
 		PROP_CATALOGUE.paintCan,
 		PROP_CATALOGUE.toolbox,
+		// PE1 — Mansion_PSX additions read as "old reading-room" décor.
+		PROP_CATALOGUE.mansionColumn,
+		PROP_CATALOGUE.mansionWindow,
+		PROP_CATALOGUE.mansionDoorFrame,
+		PROP_CATALOGUE.mansionSmallWall,
 	],
 };
 

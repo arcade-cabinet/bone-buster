@@ -13,14 +13,21 @@ import { ALL_PROPS, POOLS, PROP_ARCHETYPES, PROP_CATALOGUE } from "@world/scatte
 import { describe, expect, it } from "vitest";
 
 describe("COV4 — prop catalogue", () => {
-	it("ships exactly 30 unique props (≥10 satisfies acceptance; pinned to catch accidental deletions)", () => {
-		expect(ALL_PROPS.length).toBe(30);
+	it("ships exactly 34 unique props (≥10 satisfies acceptance; pinned to catch accidental deletions)", () => {
+		// COV4 shipped 30; PE1 added 4 mansion props for the library
+		// archetype (column, window, door frame, small wall). Future
+		// archetype-scenery slices grow this number — every growth
+		// updates the expected count to keep the regression contract
+		// strict.
+		expect(ALL_PROPS.length).toBe(34);
 		expect(ALL_PROPS.length).toBeGreaterThanOrEqual(10);
 	});
 
 	it("every prop URL routes through assetUrl.A() (BASE_URL-aware)", () => {
+		// Props live under /assets/models/props/scatter/ with optional
+		// per-archetype subfolders (PE1 added /scatter/library/...).
 		for (const prop of ALL_PROPS) {
-			expect(prop.url).toMatch(/\/assets\/models\/props\/scatter\/[a-z0-9_]+\.glb$/);
+			expect(prop.url).toMatch(/\/assets\/models\/props\/scatter\/([a-z0-9_]+\/)?[a-z0-9_]+\.glb$/);
 		}
 	});
 
