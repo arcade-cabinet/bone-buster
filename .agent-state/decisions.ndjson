@@ -182,3 +182,5 @@
 {"ts":"2026-05-16T22:32:38.892Z","sha":"b5cf7d2f3a16500f9af1d92f32235f510679519b","subject":"perf(prerender): adopt Vike + wire Lighthouse CI gate (#64)","decision":null,"why":null,"resolves":[],"overrides":[],"source":"gh-pr-merge"}
 {"ts":"2026-05-16T22:34:31.824Z","sha":"22d87cf92a465d17edf0ed7b0b180e1ba5c41815","subject":"chore(main): release 0.4.1 (#65)","decision":null,"why":null,"resolves":[],"overrides":[],"source":"gh-pr-merge"}
 {"ts":"2026-05-17T01:54:00.319Z","sha":"6888855bcd3f328f314d1522075dcf9a4a9d5c75","subject":"chore(directive): queue reference-asset drain — Lanes C, D, E, F (#74)","decision":null,"why":null,"resolves":[],"overrides":[],"source":"gh-pr-merge"}
+{"ts":"2026-05-17T21:31:28.553Z","sha":"bbb860a0beadd4a855bbb81e5cdafbaaa9ad0dac","subject":"feat: reference-asset drain (Lanes C/D/E/F) + InstancedField perf + D19 dual-PRNG + R8 rebrand (#75)","decision":null,"why":null,"resolves":[],"overrides":[],"source":"gh-pr-merge"}
+{"ts":"2026-05-17T21:32:21.499Z","sha":"f0721dd53e050058b4e767a97db4154b5d8489fc","subject":"chore(main): release 0.5.0 (#69)","decision":null,"why":null,"resolves":[],"overrides":[],"source":"gh-pr-merge"}
