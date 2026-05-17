@@ -396,6 +396,47 @@ Source: `src/platform/persistence/createDatabase.ts`, `src/platform/persistence/
 
 ---
 
+## D19 — Dual-PRNG architecture: canonical mulberry32 + cosmetic seedrandom (alea)
+
+**Status:** Locked.
+**Date:** 2026-05-17
+
+PRNG usage in Bone Buster is split into two streams with **separate engines, separate seed-derivation, separate byte-stability contracts**:
+
+| Stream | Engine | API | Seed-derivation | Byte-stability contract |
+|---|---|---|---|---|
+| **CANONICAL** | `mulberry32` (existing, frozen) | `mulberry32(seed ^ RNG_TAGS.<TAG>)` from `@engine/prng` | `mapSeed ^ RNG_TAGS.<TAG>` per system | Locked. Seed=0 outputs pin every canonical screenshot. Adding a tag is allowed; changing a tag value or the algorithm is forbidden. |
+| **COSMETIC** | `seedrandom` (alea variant, npm `seedrandom@3.0.5`) | `cosmeticRng(seed, COSMETIC_TAGS.<TAG>)` from `@engine/prng` | `mapSeed ^ COSMETIC_TAGS.<TAG>` per system, OR `runSeed ^ COSMETIC_TAGS.<TAG>` for per-session flavor | Locked **per (tag, seed) pair captured in the byte-stability test**. Pool order is append-only — index 0 must remain the canonical baseline so `cosmeticRng(0, T)` reproduces the canonical seed=0 screenshot. Re-deriving cosmetic from a new run-flavor seed at runtime is allowed; the screenshots simply pin the `seed=mapSeed` case. |
+
+**Why two streams:**
+
+The world-shape PRNG (archetype, scatter, AI mix) MUST stay byte-identical across releases — seed=0 corridor screenshots are the canonical regression gate. But the cosmetic PRNG (skin pickers, phoneme picks, per-instance plant choice) wants different properties: better statistical spread, append-friendly pool growth, ability to vary independently from world-shape if the run flavor wants it.
+
+Before D19, three sites in the cosmetic category (`nature.ts:77`, `ghostHunting.ts:131`, `engine.ts:828`) used an ad-hoc `(seed ^ index * 0x9e3779b1) >>> 0` XOR hash to avoid going through `mulberry32` — because `mulberry32(mapSeed ^ TAG)` and then `% pool.length` would couple the cosmetic stream to the world-shape stream's first output, making it impossible to grow a skin pool without breaking byte-stability. Three skin pickers (melee, pistol, chaingun) and `pickNaturePlant` worked around this with hand-rolled `(seed >>> 0) % POOL.length`, which makes pool growth ALWAYS break byte-stability.
+
+D19 routes all cosmetic picks through `seedrandom` with per-system tags, so:
+
+- The canonical stream stays byte-identical and frozen.
+- Cosmetic pool growth no longer breaks canonical screenshots (the cosmetic stream's seed=0 output is its own pinned contract, separate from the world-shape contract).
+- The deferred CodeRabbit "use canonical mulberry32" suggestions get a proper answer: cosmetic uses a different engine *because* coupling it to world-shape was the original bug.
+
+**seedrandom (alea) specifically because:**
+
+- `seedrandom`'s alea variant is a well-known, audited PRNG with a 30-year provenance (Johannes Baagøe, 2010; npm package since 2014).
+- Pure JS, no native deps, tree-shakes cleanly, 4kb min+gzip.
+- Statistically superior to mulberry32 for the cosmetic use case (longer period, better avalanche under correlated seeds).
+- Supports string seeds directly (`alea("nature:42:cosmetic")`) so per-instance derivation doesn't require manual XOR-mixing.
+
+**Rejected:**
+
+- *Single PRNG for both streams.* — the original architecture. Coupling makes pool growth break screenshots; we hit this exact issue across three commits in PR #75.
+- *Crypto-strength PRNG (`crypto.getRandomValues`).* — not deterministic; can't reproduce a run from a seed.
+- *xoshiro128++ / pcg32.* — same statistical class as seedrandom but no canonical npm package; rolling our own is a fresh byte-stability risk.
+
+**Source:** `src/engine/prng.ts:60+` (cosmetic-stream API), `src/__tests__/unit/bonebuster-prng-cosmetic.test.ts` (byte-stability pins), `package.json` (`seedrandom` dep).
+
+---
+
 ## Decisions log conventions
 
 - One section per decision, with a short slug (`## D11 — short title`).
