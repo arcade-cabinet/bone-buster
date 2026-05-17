@@ -334,6 +334,43 @@ export const PROP_CATALOGUE = {
 		url: A("/assets/models/props/scatter/corridor/jam_jar_medium.glb"),
 		blocking: false,
 	},
+	// PE4c — arena scatter additions from PSX Mega Pack II Debris & Misc.
+	// "After the fight" identity: bricks, debris piles, gravel.
+	arenaBrick1: {
+		id: "arena_brick_mx_1",
+		url: A("/assets/models/props/scatter/arena/brick_mx_1.glb"),
+		blocking: false,
+	},
+	arenaBrick2: {
+		id: "arena_brick_mx_2",
+		url: A("/assets/models/props/scatter/arena/brick_mx_2.glb"),
+		blocking: false,
+	},
+	arenaDebrisBricks1: {
+		id: "arena_debris_bricks_mx_1",
+		url: A("/assets/models/props/scatter/arena/debris_bricks_mx_1.glb"),
+		blocking: false,
+	},
+	arenaDebrisBricks2: {
+		id: "arena_debris_bricks_mx_2",
+		url: A("/assets/models/props/scatter/arena/debris_bricks_mx_2.glb"),
+		blocking: false,
+	},
+	arenaBricksStacked1: {
+		id: "arena_bricks_stacked_mx_1",
+		url: A("/assets/models/props/scatter/arena/bricks_stacked_mx_1.glb"),
+		blocking: true,
+	},
+	arenaGravel1: {
+		id: "arena_gravel_pile_hr_1",
+		url: A("/assets/models/props/scatter/arena/gravel_pile_hr_1.glb"),
+		blocking: false,
+	},
+	arenaGravel2: {
+		id: "arena_gravel_pile_hr_2",
+		url: A("/assets/models/props/scatter/arena/gravel_pile_hr_2.glb"),
+		blocking: false,
+	},
 } as const satisfies Record<string, PropDef>;
 
 /**
@@ -381,6 +418,14 @@ export const POOLS: Record<PropArchetype, readonly PropDef[]> = {
 		PROP_CATALOGUE.woodCrate2,
 		PROP_CATALOGUE.woodPlank1,
 		PROP_CATALOGUE.woodPlank2,
+		// PE4c — "after the fight" debris additions from PSX Mega Pack II.
+		PROP_CATALOGUE.arenaBrick1,
+		PROP_CATALOGUE.arenaBrick2,
+		PROP_CATALOGUE.arenaDebrisBricks1,
+		PROP_CATALOGUE.arenaDebrisBricks2,
+		PROP_CATALOGUE.arenaBricksStacked1,
+		PROP_CATALOGUE.arenaGravel1,
+		PROP_CATALOGUE.arenaGravel2,
 	],
 	courtyard: [
 		PROP_CATALOGUE.bench,

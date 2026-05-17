@@ -13,13 +13,13 @@ import { ALL_PROPS, POOLS, PROP_ARCHETYPES, PROP_CATALOGUE } from "@world/scatte
 import { describe, expect, it } from "vitest";
 
 describe("COV4 — prop catalogue", () => {
-	it("ships exactly 60 unique props (≥10 satisfies acceptance; pinned to catch accidental deletions)", () => {
-		// COV4 shipped 30; PE1 added 4 mansion (library); PE2 added 9
-		// farm (courtyard); PE3 added 8 electrical (sewer); PE4a added
-		// 9 abandoned-hallway items (corridor). Future archetype-scenery
-		// slices grow this number — every growth updates the expected
-		// count to keep the regression contract strict.
-		expect(ALL_PROPS.length).toBe(60);
+	it("ships exactly 67 unique props (≥10 satisfies acceptance; pinned to catch accidental deletions)", () => {
+		// COV4 shipped 30; PE1 added 4 (library); PE2 added 9 (courtyard);
+		// PE3 added 8 (sewer); PE4a added 9 (corridor); PE4c added 7
+		// (arena debris). Future archetype-scenery slices grow this
+		// number — every growth updates the expected count to keep the
+		// regression contract strict.
+		expect(ALL_PROPS.length).toBe(67);
 		expect(ALL_PROPS.length).toBeGreaterThanOrEqual(10);
 	});
 
