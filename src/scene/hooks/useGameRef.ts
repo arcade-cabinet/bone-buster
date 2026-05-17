@@ -163,20 +163,24 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 			// to the original spawn. Level-clear fires on `onReachSpawn`.
 			// L2 — goal-collect drops chaingun + shotgun + flamethrower so the
 			// going-back fight has firepower (ref's "RealDoor drop" pattern).
+			//
+			// PT4 — dispatches buffered in the setState callback and flushed
+			// AFTER setState returns. Calling dispatch synchronously inside
+			// the updater fires listener setStates while React is mid-render
+			// of BoneBusterShell, producing the "Cannot update a component
+			// while rendering a different component" console.error.
+			const toDispatch: Array<{ weapon: "chaingun" | "shotgun" | "flamethrower" }> = [];
 			setState((prev) => {
 				if (prev.status !== "playing") return prev;
 				if (prev.phase === "going_back") return prev;
 				// D3 — RealDoor drop grants chaingun + shotgun + flamethrower.
 				// Fire weaponAcquired for any the player didn't already
 				// own, with the same acquiredRef dedup gate as the pickup
-				// path. setState callback is the right place: we know
-				// `prev.phase !== "going_back"` so this only runs once
-				// per level, and the snapshot is reliable inside that
-				// single-callback window.
+				// path. Effects are buffered; the dispatch happens below.
 				for (const w of ["chaingun", "shotgun", "flamethrower"] as const) {
 					if (!prev.ownedWeapons[w] && !acquiredRef.current.has(w)) {
 						acquiredRef.current.add(w);
-						dispatch({ type: "weaponAcquired", weapon: w });
+						toDispatch.push({ weapon: w });
 					}
 				}
 				return {
@@ -197,6 +201,10 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 					},
 				};
 			});
+			// PT4 — flush buffered weaponAcquired events outside the
+			// updater so listener setStates don't fire during BoneBusterShell's
+			// render commit.
+			for (const ev of toDispatch) dispatch({ type: "weaponAcquired", weapon: ev.weapon });
 		},
 		onReachSpawn: () => {
 			const { setState, triggerFadeRef, settings } = depsRef.current;
@@ -252,6 +260,13 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 			// Key pickups don't route here — they have onPickupKey + POL22.
 			dispatch({ type: "pickupCollected", kind });
 			const action = AMMO_INCREMENT[kind];
+			// PT4 — buffer dispatches that must fire AFTER setState. Calling
+			// dispatch inside the updater fires listener setStates while
+			// React is mid-render of the consumer (BoneBusterShell), producing
+			// the "Cannot update a component while rendering a different
+			// component" console.error.
+			let dispatchFlashlight = false;
+			let dispatchWeapon: WeaponId | null = null;
 			setState((prev) => {
 				if (action === "health") {
 					// L1 — +1 HP per pickup on the 0-9 scale.
@@ -261,7 +276,7 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 					triggerFadeRef.current("flash");
 					// POL28 — flashlight click-on sting (distinct from pickup chime).
 					playFlashlightClick();
-					dispatch({ type: "flashlightAcquired" });
+					dispatchFlashlight = true;
 					return { ...prev, hasFlashlight: true };
 				}
 				if (action === "emfReader") {
@@ -321,7 +336,7 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 				// in the same tick would both see `prev.X === false`.
 				if (!acquiredRef.current.has(action.weapon)) {
 					acquiredRef.current.add(action.weapon);
-					dispatch({ type: "weaponAcquired", weapon: action.weapon });
+					dispatchWeapon = action.weapon;
 				}
 				return {
 					...prev,
@@ -333,6 +348,9 @@ export function useGameRef(deps: UseGameRefDeps): React.MutableRefObject<GameRef
 					weapon: prev.weapon === "pistol" ? action.weapon : prev.weapon,
 				};
 			});
+			// PT4 — flush buffered events outside the updater.
+			if (dispatchFlashlight) dispatch({ type: "flashlightAcquired" });
+			if (dispatchWeapon !== null) dispatch({ type: "weaponAcquired", weapon: dispatchWeapon });
 		},
 	});
 
