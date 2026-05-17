@@ -35,7 +35,12 @@ Pattern-match PB4's per-skin profile architecture for the ranged + extra-melee a
 
 `references/_extracted/psx/psx-mega-pack-ii-v1-8/` carries 549 GLBs; the per-archetype scatter pools currently reference ~30. Wire the obvious archetype matches first. Each slice = inventory pass (Bash + Blender preview) → assign per-archetype prop GLBs → extend `PROP_CATALOGUE` / archetype prop pool → re-bake canonical archetype screenshot.
 
-- [ ] PE4 Mega Pack II ingest pass — 549 GLBs is too large for one slice. Architectural step before any code: inventory pass via Bash + Blender previews to bucket the pack into archetype buckets, then per-archetype follow-up slices land as PE4a..PE4n. Step-1 produces `docs/MEGA-PACK-II-INVENTORY.md` with per-archetype assignments + "ideas this asset gave me" list. No code in PE4 step-1.
+- [ ] PE4a Corridor props subset — pull ~8-10 GLBs from `FBX/Props/` (137 candidates) that read as "abandoned hallway / loading bay" clutter. Extends `POOLS.corridor` 11 → ~20. Identity bump for the archetype most starved of archetype-true scatter today.
+- [ ] PE4b Sewer industrial props — pull ~6-8 from `FBX/Large Props & Machinery/` (shipping containers, distillery, chimneys, complementary pipe variants). Coordinate with PE3 to avoid duplicate silhouettes. Extends `POOLS.sewer` 18 → ~25-28.
+- [ ] PE4c Arena debris subset — pull ~6-8 from `FBX/Debris & Misc/` (brick piles, gravel, debris stacks). The arena reads as "after the fight" so debris matches identity. Extends `POOLS.arena` 11 → ~17-18.
+- [ ] PE4d Light Sources cross-archetype — wire all 5 `FBX/Light Sources/` lamp models (each with on/off pair) into `src/world/lampScatter.ts`. NOT scatter — lamp subsystem extension. Per-archetype lamp model picks rather than the single current model.
+- [ ] PE4e Doors & Gates extension — wire 6 `FBX/Doors & Gates/` (door_hr_6/8/12/13/14 + gate_1) into `src/world/doors.ts` door model pool. Per-room doors as variants instead of one canonical model.
+- [ ] PE4f Decal field extension — wire 12 `FBX/Decals/` (graffiti + posters) into `src/world/decals.ts`.
 
 ### Lane F — Unwired horror-fantasy enemies
 
