@@ -286,6 +286,54 @@ export const PROP_CATALOGUE = {
 		url: A("/assets/models/props/scatter/sewer/electrical_machinery_5.glb"),
 		blocking: true,
 	},
+	// PE4a — corridor scatter additions from PSX Mega Pack II Props.
+	// "Abandoned hallway / loading bay" identity: crates, hanging
+	// shelves, small handheld items, scattered hardware.
+	corridorCrate3: {
+		id: "corridor_wooden_crate_3",
+		url: A("/assets/models/props/scatter/corridor/wooden_crate_3.glb"),
+		blocking: true,
+	},
+	corridorHangingShelf: {
+		id: "corridor_hanging_shelf_mx_1",
+		url: A("/assets/models/props/scatter/corridor/hanging_shelf_mx_1.glb"),
+		blocking: false,
+	},
+	corridorHandheldRadio: {
+		id: "corridor_handheld_fm_radio",
+		url: A("/assets/models/props/scatter/corridor/handheld_fm_radio.glb"),
+		blocking: false,
+	},
+	corridorFishingHook: {
+		id: "corridor_fishing_hook",
+		url: A("/assets/models/props/scatter/corridor/fishing_hook.glb"),
+		blocking: false,
+	},
+	corridorBallBearing: {
+		id: "corridor_ball_bearing_large",
+		url: A("/assets/models/props/scatter/corridor/ball_bearing_large.glb"),
+		blocking: false,
+	},
+	corridorShelf5: {
+		id: "corridor_shelf_mx_5",
+		url: A("/assets/models/props/scatter/corridor/shelf_mx_5.glb"),
+		blocking: true,
+	},
+	corridorPipeE: {
+		id: "corridor_pipe_e_1",
+		url: A("/assets/models/props/scatter/corridor/pipe_e_1.glb"),
+		blocking: true,
+	},
+	corridorMailbox: {
+		id: "corridor_mail_box_mx_1_1",
+		url: A("/assets/models/props/scatter/corridor/mail_box_mx_1_1.glb"),
+		blocking: true,
+	},
+	corridorJamJar: {
+		id: "corridor_jam_jar_medium",
+		url: A("/assets/models/props/scatter/corridor/jam_jar_medium.glb"),
+		blocking: false,
+	},
 } as const satisfies Record<string, PropDef>;
 
 /**
@@ -310,6 +358,16 @@ export const POOLS: Record<PropArchetype, readonly PropDef[]> = {
 		PROP_CATALOGUE.pipe1,
 		PROP_CATALOGUE.scrapMetal,
 		PROP_CATALOGUE.toolbox,
+		// PE4a — abandoned-hallway scatter additions from PSX Mega Pack II.
+		PROP_CATALOGUE.corridorCrate3,
+		PROP_CATALOGUE.corridorHangingShelf,
+		PROP_CATALOGUE.corridorHandheldRadio,
+		PROP_CATALOGUE.corridorFishingHook,
+		PROP_CATALOGUE.corridorBallBearing,
+		PROP_CATALOGUE.corridorShelf5,
+		PROP_CATALOGUE.corridorPipeE,
+		PROP_CATALOGUE.corridorMailbox,
+		PROP_CATALOGUE.corridorJamJar,
 	],
 	arena: [
 		PROP_CATALOGUE.cementBag,

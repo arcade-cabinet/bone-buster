@@ -35,7 +35,6 @@ Pattern-match PB4's per-skin profile architecture for the ranged + extra-melee a
 
 `references/_extracted/psx/psx-mega-pack-ii-v1-8/` carries 549 GLBs; the per-archetype scatter pools currently reference ~30. Wire the obvious archetype matches first. Each slice = inventory pass (Bash + Blender preview) → assign per-archetype prop GLBs → extend `PROP_CATALOGUE` / archetype prop pool → re-bake canonical archetype screenshot.
 
-- [ ] PE4a Corridor props subset — pull ~8-10 GLBs from `FBX/Props/` (137 candidates) that read as "abandoned hallway / loading bay" clutter. Extends `POOLS.corridor` 11 → ~20. Identity bump for the archetype most starved of archetype-true scatter today.
 - [ ] PE4b Sewer industrial props — pull ~6-8 from `FBX/Large Props & Machinery/` (shipping containers, distillery, chimneys, complementary pipe variants). Coordinate with PE3 to avoid duplicate silhouettes. Extends `POOLS.sewer` 18 → ~25-28.
 - [ ] PE4c Arena debris subset — pull ~6-8 from `FBX/Debris & Misc/` (brick piles, gravel, debris stacks). The arena reads as "after the fight" so debris matches identity. Extends `POOLS.arena` 11 → ~17-18.
 - [ ] PE4d Light Sources cross-archetype — wire all 5 `FBX/Light Sources/` lamp models (each with on/off pair) into `src/world/lampScatter.ts`. NOT scatter — lamp subsystem extension. Per-archetype lamp model picks rather than the single current model.
