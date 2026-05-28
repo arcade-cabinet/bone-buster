@@ -59,22 +59,16 @@ import * as THREE from "three";
 import type * as Yuka from "yuka";
 import {
 	AdaptiveResolution,
-	BarrelMesh,
 	BodyPartField,
 	BulletField,
 	CrucifixField,
 	DamageNumberField,
-	EnemyHitFlash,
-	EnemyMesh,
-	EnemyUvBaseHide,
-	EnemyUvReveal,
 	ExitPortal,
 	ExitPortalApproach,
 	Flashlight,
 	KeyMarker,
 	MapGeometry,
 	ParticleBurstField,
-	PickupMesh,
 	PostprocessingChain,
 	RealDoor,
 	ReturnToSpawnBearingWriter,
@@ -85,6 +79,7 @@ import {
 	WeaponSwapDip,
 	WeaponViewmodel,
 } from "../../src/scene";
+import { EntityMeshes } from "../../src/scene/fields/EntityMeshes";
 import { ScatterFields } from "../../src/scene/fields/ScatterFields";
 import { tickEnemyLoop } from "../../src/scene/tick/enemyTickLoop";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
@@ -1146,56 +1141,19 @@ export function BoneBusterScene({
 				mapSeedNum={mapSeedNum}
 			/>
 
-			{enemiesRef.current.map((enemy) => (
-				<group key={enemy.id}>
-					<EnemyMesh
-						enemy={enemy}
-						register={(group) => {
-							if (group) enemyMeshes.current.set(enemy.id, group);
-							else enemyMeshes.current.delete(enemy.id);
-						}}
-					/>
-					{/* POL19 — hit-flash slot. Sibling to EnemyMesh per
-					    docs/SLOT-ARCHITECTURE.md. Reads enemy.staggerUntil,
-					    looks up the registered mesh via enemyMeshes, clones
-					    + modulates materials. Returns null. */}
-					<EnemyHitFlash enemy={enemy} meshLookup={enemyMeshes} />
-					{/* PC3 — UV reveal / baseline-hide slot. uvHidden enemies
-					    are invisible by default; UV flashlight cone reveals
-					    them per-frame. The two slots are mutually exclusive
-					    based on hasUvFlashlight so the no-tool path pays
-					    zero per-frame UV cost. */}
-					{enemy.uvHidden &&
-						(hasUvFlashlight ? (
-							<EnemyUvReveal enemy={enemy} meshLookup={enemyMeshes} />
-						) : (
-							<EnemyUvBaseHide enemy={enemy} meshLookup={enemyMeshes} />
-						))}
-				</group>
-			))}
-
-			{pickupsRef.current.map((pickup) => (
-				<PickupMesh
-					key={pickup.id}
-					pickup={pickup}
-					mapSeed={mapSeedNum}
-					register={(group) => {
-						if (group) pickupMeshes.current.set(pickup.id, group);
-						else pickupMeshes.current.delete(pickup.id);
-					}}
-				/>
-			))}
-
-			{barrelsRef.current.map((barrel) => (
-				<BarrelMesh
-					key={barrel.id}
-					barrel={barrel}
-					register={(group) => {
-						if (group) barrelMeshes.current.set(barrel.id, group);
-						else barrelMeshes.current.delete(barrel.id);
-					}}
-				/>
-			))}
+			{/* CR-H1scene — dynamic-entity mesh cluster (enemies + hit-flash
+			    + UV slots, pickups, barrels). Each registers its group into
+			    the parent-owned lookup map the per-frame tick addresses. */}
+			<EntityMeshes
+				enemies={enemiesRef.current}
+				enemyMeshes={enemyMeshes}
+				hasUvFlashlight={hasUvFlashlight}
+				pickups={pickupsRef.current}
+				pickupMeshes={pickupMeshes}
+				barrels={barrelsRef.current}
+				barrelMeshes={barrelMeshes}
+				mapSeedNum={mapSeedNum}
+			/>
 
 			<BulletField bulletsRef={bulletsRef} register={bulletMeshes} />
 			<ParticleBurstField />
