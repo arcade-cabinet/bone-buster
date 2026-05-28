@@ -92,12 +92,23 @@ jobs:
         # Playwright's webServer config auto-launches `pnpm dev` on :5191
         # (reuseExistingServer is false under CI) and waits for it, so no
         # explicit server/build step is needed here.
+        #
+        # CR-C2 — the committed baselines are `-chromium-darwin` (generated on
+        # macOS). Playwright defaults `--update-snapshots` to "missing", so on
+        # the Linux runner the absent `-chromium-linux` baselines are CREATED
+        # on first run (uploaded below for a maintainer to commit) while any
+        # PRESENT baseline still gates pixel drift. Real render crashes/hangs
+        # still fail the job. Once the Linux goldens are committed this becomes
+        # a full drift gate on CI too.
         run: pnpm test:e2e:screenshots && pnpm test:e2e:archetype-screenshots
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: e2e-screenshots
-          path: docs/assets/screenshots/
+          path: |
+            docs/assets/screenshots/
+            tests/e2e/screenshots.spec.ts-snapshots/
+            tests/e2e/archetypeScreenshots.spec.ts-snapshots/
 
   # Lighthouse — Core Web Vitals gate on the prerendered bundle.
   # Runs three Lighthouse passes against the static `dist/client/` build
