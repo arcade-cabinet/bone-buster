@@ -46,13 +46,35 @@ async function waitForFrames(page: Page, frameCount: number): Promise<void> {
 	await page.evaluate(
 		(n) =>
 			new Promise<void>((resolve) => {
+				// CR-rAF — drive on requestAnimationFrame, but DON'T hang if rAF
+				// stalls. During a level transition the R3F <Canvas> unmounts and
+				// the WebGL context is torn down + rebuilt; on the CI headless-GL
+				// backend rAF callbacks stop firing for that window, so a pure
+				// rAF loop waits forever for ticks that never come (the 6-level
+				// "mission complete" playthrough hung past 120s on CI while
+				// passing in ~27s locally). Each frame races rAF against a
+				// ~16ms setTimeout fallback so a paused rAF can't stall the
+				// countdown — whichever fires first advances one frame.
 				let remaining = n;
-				const tick = () => {
+				const step = () => {
 					remaining -= 1;
-					if (remaining <= 0) resolve();
-					else requestAnimationFrame(tick);
+					if (remaining <= 0) {
+						resolve();
+						return;
+					}
+					schedule();
 				};
-				requestAnimationFrame(tick);
+				const schedule = () => {
+					let done = false;
+					const once = () => {
+						if (done) return;
+						done = true;
+						step();
+					};
+					requestAnimationFrame(once);
+					setTimeout(once, 32); // fallback: ~2 frame budgets
+				};
+				schedule();
 			}),
 		frameCount,
 	);
@@ -251,19 +273,14 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 	});
 
 	test("05 mission complete — full run cleared", async () => {
-		// This pose drives 6 sequential level-clears (kill→key→win→teleport,
-		// 54 waitForFrames each). Locally it completes in ~27s, but on the CI
-		// headless GL backend the per-level `requestAnimationFrame` cadence
-		// stalls across the async transition sequence and the loop never
-		// advances (hangs past 120s). The other 4 canonical poses + all 5
-		// per-archetype poses are deterministic single-frame captures and DO
-		// gate CI. This multi-transition playthrough capture is verified
-		// locally only until the CI rAF-cadence stall is root-caused —
-		// explicitly skipped on CI, NOT silently dropped.
-		test.skip(
-			!!process.env.CI,
-			"6-level playthrough stalls on CI headless GL rAF cadence; verified locally",
-		);
+		// CR-rAF FIXED — this pose drives 6 sequential level-clears
+		// (kill→key→win→teleport, 54 waitForFrames each). It previously hung
+		// past 120s on CI because waitForFrames waited on a requestAnimationFrame
+		// that stalls while the <Canvas> WebGL context is torn down + rebuilt
+		// mid-transition on the headless-GL backend. waitForFrames now races rAF
+		// against a setTimeout fallback (see its impl), so the countdown advances
+		// even when rAF is paused. The CI skip is removed; it gates CI again.
+		// The 120s budget stays — it's a legitimately long 6-level playthrough.
 		test.setTimeout(120_000);
 		const testInfo = test.info();
 		const baseURL =

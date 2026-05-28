@@ -22,7 +22,7 @@
 Dependency-ordered. Drain top-down on a single branch.
 
 ### Enforcement + verification (mostly shipped via #82/#83 — finish the tail)
-- [ ] CR-rAF Root-cause the CI headless-GL `requestAnimationFrame` stall in the 6-level "mission complete" playthrough screenshot (currently `test.skip` on CI in `tests/e2e/screenshots.spec.ts`, verified locally). Make it gate CI deterministically, then remove the skip.
+- [x] CR-rAF Root-caused the CI headless-GL rAF stall: `waitForFrames` waited on a `requestAnimationFrame` that stops firing while the `<Canvas>` WebGL context is torn down + rebuilt mid level-transition. Fixed by racing rAF against a 32ms `setTimeout` fallback in both e2e specs so the frame countdown can't stall; removed the CI skip on the 6-level "mission complete" pose — it gates CI again.
 - [ ] CR-C2 Convert the screenshot specs from capture-only to real pixel assertions vs committed baselines (`toHaveScreenshot`/`pixelmatch`), so the visual gate actually diffs (full-review F2/C-2).
 - [ ] CR-H1 Wire `scripts/verify-pages-deploy.mjs` as a post-deploy smoke job in `release.yml` (full-review H-1).
 - [ ] CR-H2 Add an `assembleRelease` (R8/ProGuard) CI build job so the Play-shipping APK path is exercised (full-review H-2).
