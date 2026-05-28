@@ -251,6 +251,10 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 	});
 
 	test("05 mission complete — full run cleared", async () => {
+		// This pose clears 6 full levels sequentially (kill→key→win→teleport
+		// ×6, 54 frames each), so it legitimately needs more than the default
+		// 60s — slower CI runners exceed it. Not a hang; a long playthrough.
+		test.setTimeout(120_000);
 		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
