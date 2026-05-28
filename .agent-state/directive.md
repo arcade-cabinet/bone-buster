@@ -1,7 +1,7 @@
 # Bone Buster — live work queue
 
 **Status:** ACTIVE
-**Branch:** one long-running branch per slice. PRs squash-merge to main when their slice is fully verified + reviewers folded.
+**Branch:** ONE long-running branch holds all in-flight work. Remote feedback + a single squash-merge happen at the END, not per-slice. Versioning is entirely release-please's — nothing here is version-gated, and the agent never assigns a release version.
 **Authority chain:** DESIGN > ARCHITECTURE > DECISIONS > **PRD** > this file > ROADMAP.
 **Spec:** [`docs/PRD.md`](../docs/PRD.md) carries the user stories, surfaces, and acceptance bars. Each item below points at its PRD section for the why and the verifiable acceptance.
 **Standards:** [`STANDARDS.md`](../STANDARDS.md) carries doctrine (quality bar, slot architecture, no-end-of-turn, design tokens, etc).
@@ -15,11 +15,38 @@
 3. Implement, run `pnpm verify`, commit, dispatch reviewer trio locally.
 4. Fold reviewer findings into the next forward commit.
 5. Flip `[ ]` → `[x]` in the same commit; **delete the item from this file** in the next forward-going commit (per the prune-shipped-from-directive rule).
-6. Push + open one PR per coherent slice (lane completion or larger), not per commit (per the no-pr-per-commit rule).
+6. Keep ALL work on the single long-running branch. Open the PR + gather remote feedback + squash-merge only when the whole queue below is drained — not per commit, not per slice. The work is the directive; wall-clock and size never gate it.
 
-## Queue
+## Queue — comprehensive-review remediation (one branch)
 
-(empty — overhaul + v0.5.0 shipped + live Pages deploy verified end-to-end.)
+Dependency-ordered. Drain top-down on a single branch.
+
+### Enforcement + verification (mostly shipped via #82/#83 — finish the tail)
+- [ ] CR-rAF Root-cause the CI headless-GL `requestAnimationFrame` stall in the 6-level "mission complete" playthrough screenshot (currently `test.skip` on CI in `tests/e2e/screenshots.spec.ts`, verified locally). Make it gate CI deterministically, then remove the skip.
+- [ ] CR-C2 Convert the screenshot specs from capture-only to real pixel assertions vs committed baselines (`toHaveScreenshot`/`pixelmatch`), so the visual gate actually diffs (full-review F2/C-2).
+- [ ] CR-H1 Wire `scripts/verify-pages-deploy.mjs` as a post-deploy smoke job in `release.yml` (full-review H-1).
+- [ ] CR-H2 Add an `assembleRelease` (R8/ProGuard) CI build job so the Play-shipping APK path is exercised (full-review H-2).
+
+### Determinism rigor (partly shipped — tail)
+- [ ] CR-TS1 Flip `noUncheckedIndexedAccess: true` in tsconfig; resolve the bounded indexing errors with explicit guards (full-review TS-1).
+- [ ] CR-TS4 Brand `Seed` (`type Seed = number & {__seed}`) so `mulberry32(entityId)` / raw-tag XOR is a compile error (full-review TS-4).
+- [ ] CR-F6 Extract `readBaseSeedFromUrl`/`readArchetypeFromUrl` to a testable module + table-test the parse boundary (full-review F6).
+
+### The big perf + reconciliation win
+- [ ] CR-H1perf Convert `ParticleBurstField`/`ShellEjectField`/`BodyPartField` to `InstancedMesh` (dispose-on-despawn already shipped); add `gl.info`/`Howler._howls` perf-leak probes to the perf script (full-review H1/M1/F1).
+- [ ] CR-R1 Fix `DamageNumberField`'s per-frame `force()` — render the pool once, animate imperatively in `useFrame` (full-review R-1).
+- [ ] CR-M1audio Cache one Howl per one-shot slug (stop per-`play()` allocation) (full-review M1).
+
+### Structural decomposition
+- [ ] CR-H1eng Decompose `src/engine/engine.ts` (1344) along type seams into mapTypes/gridGen/collision/raycast/sectors/spawn/projectiles; move the yuka import into `projectiles.ts` (fixes the H-3 wrong-direction dep).
+- [ ] CR-H1scene Extract `<EnemyField>`/`<ScatterFields>`/`<SceneTickDriver>` from `app/views/Scene.tsx` (1261); promote GameState to a `gameReducer` + extract `useLevelTransition` from `Shell.tsx` (1060), dissolving the `flushSync` buffering (full-review H-1/M-2/M-3).
+- [ ] CR-M1scatter Extract a shared `src/world/scatter/sampling.ts` (`bboxOf`/`nearAny`/`sampleSectorPoints`/`SCATTER_ID_STRIDE`); collapse the 7 parallel scatter one-offs (full-review M-1).
+
+### Remaining quality + tests + docs tail
+- [ ] CR-F7 Seed pellet spread via per-shot `mulberry32`, extract `resolvePellet`/`applyMelee*`/`onEnemyKilled` from `resolveFire`, add a deterministic combat test (full-review F7).
+- [ ] CR-F8 Table-drive `onCollectPickup`; add per-kind reducer tests (full-review F8).
+- [ ] CR-F9 Audio-graph lifecycle browser tests (`howlerBus`/`ambientGraph`/`musicGraph`) (full-review F9).
+- [ ] CR-poly P3 tail: `shadows="soft"`→hard in the low-FPS window (L2), `pnpm up @lhci/cli` + `pnpm audit --prod` gate (L-1), ARCHITECTURE sim/tick table + dangling-ref doc nits (D9/D10), mobile perf-script baseline-ratio.
 
 ## Closeout notes
 
