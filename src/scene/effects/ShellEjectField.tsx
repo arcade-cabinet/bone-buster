@@ -3,9 +3,20 @@ import { useFrame } from "@react-three/fiber";
 import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { InstancedParticlePool, makeInstancedAlphaMaterial } from "./instancedParticles";
 
 const COLOR_BRASS = new THREE.Color(BONE_BUSTER_PALETTE.shellBrass).getHex();
-const COLOR_BRASS_DEEP = new THREE.Color(BONE_BUSTER_PALETTE.shellBrassDeep).getHex();
+
+// CR-H1perf — one shared brass material for ALL shells; per-shell alpha rides
+// the instance attribute. (Pre-instancing each shell also carried a
+// shellBrassDeep emissive; the instanced material folds the warm tint into
+// the shared emissiveIntensity — the per-shell variation that matters is
+// position/rotation/fade, all instanced.)
+const SHELL_MATERIAL = /*@__PURE__*/ makeInstancedAlphaMaterial({
+	emissiveIntensity: 0.4,
+	metalness: 0.7,
+	roughness: 0.35,
+});
 
 // QW3 — module-scope shared geometry. All shells reference this one
 // CylinderGeometry; the Mesh per-shell still gives us scale +
@@ -19,6 +30,7 @@ type Shell = {
 	pos: { x: number; y: number; z: number };
 	vel: { x: number; y: number; z: number };
 	spin: { x: number; y: number; z: number };
+	rot: { x: number; y: number; z: number }; // accumulated rotation (was mesh.rotation)
 	createdAt: number;
 	bounced: boolean;
 	// PA9b — chaingun ejects ~11 shells/sec; smaller scale reads correctly
@@ -46,20 +58,14 @@ const MAX_SHELLS = 80;
 export function ShellEjectField() {
 	const shellsRef = useRef<Shell[]>([]);
 	const groupRef = useRef<THREE.Group | null>(null);
-	const meshes = useRef<Map<number, THREE.Mesh>>(new Map());
 	const nextId = useRef(1);
-	// Reused so the tick loop allocates no per-frame Set (was `new Set()`/frame).
-	const seenScratch = useRef<Set<number>>(new Set());
+	// CR-H1perf — one InstancedMesh for every shell (1 draw call).
+	const poolRef = useRef<InstancedParticlePool | null>(null);
 
-	// Drain the mesh pool on unmount so a level transition doesn't strand
-	// per-instance materials on the GPU.
 	useEffect(() => {
-		const pool = meshes.current;
 		return () => {
-			for (const mesh of pool.values()) {
-				(mesh.material as THREE.Material).dispose();
-			}
-			pool.clear();
+			poolRef.current?.dispose();
+			poolRef.current = null;
 		};
 	}, []);
 
@@ -74,6 +80,7 @@ export function ShellEjectField() {
 					y: (Math.random() - 0.5) * 12,
 					z: (Math.random() - 0.5) * 12,
 				},
+				rot: { x: 0, y: 0, z: 0 },
 				createdAt: performance.now(),
 				bounced: false,
 				scale: d.scale,
@@ -83,12 +90,16 @@ export function ShellEjectField() {
 	}, []);
 
 	useFrame((_, dt) => {
-		if (!groupRef.current) return;
+		const group = groupRef.current;
+		if (!group) return;
+		let pool = poolRef.current;
+		if (!pool) {
+			pool = new InstancedParticlePool(SHELL_GEOMETRY, SHELL_MATERIAL, MAX_SHELLS);
+			group.add(pool.mesh);
+			poolRef.current = pool;
+		}
 		const now = performance.now();
-		// Compact in place (write-index) — no per-frame array alloc.
 		const shells = shellsRef.current;
-		const seen = seenScratch.current;
-		seen.clear();
 		let w = 0;
 		for (let r = 0; r < shells.length; r++) {
 			const shell = shells[r];
@@ -112,49 +123,30 @@ export function ShellEjectField() {
 					shell.vel.y = 0;
 				}
 			}
-			let mesh = meshes.current.get(shell.id);
-			if (!mesh) {
-				// QW3 — share SHELL_GEOMETRY at module scope; material
-				// stays per-mesh because per-shell opacity fades
-				// independently as TTL elapses (see opacity write below).
-				const m = new THREE.Mesh(
-					SHELL_GEOMETRY,
-					new THREE.MeshStandardMaterial({
-						color: COLOR_BRASS,
-						emissive: COLOR_BRASS_DEEP,
-						emissiveIntensity: 0.4,
-						metalness: 0.7,
-						roughness: 0.35,
-						transparent: true,
-					}),
-				);
-				m.scale.setScalar(shell.scale);
-				groupRef.current.add(m);
-				meshes.current.set(shell.id, m);
-				mesh = m;
-			}
-			mesh.position.set(shell.pos.x, shell.pos.y, shell.pos.z);
-			mesh.rotation.x += shell.spin.x * dt;
-			mesh.rotation.y += shell.spin.y * dt;
-			mesh.rotation.z += shell.spin.z * dt;
+			shell.rot.x += shell.spin.x * dt;
+			shell.rot.y += shell.spin.y * dt;
+			shell.rot.z += shell.spin.z * dt;
 			// Fade only in the last 750 ms.
 			const fadeStart = SHELL_TTL_MS - 750;
 			const fade = age < fadeStart ? 1 : 1 - (age - fadeStart) / 750;
-			(mesh.material as THREE.MeshStandardMaterial).opacity = fade;
-			mesh.visible = true;
-			seen.add(shell.id);
+			if (w < MAX_SHELLS) {
+				pool.write(
+					w,
+					shell.pos.x,
+					shell.pos.y,
+					shell.pos.z,
+					shell.scale,
+					COLOR_BRASS,
+					fade,
+					shell.rot.x,
+					shell.rot.y,
+					shell.rot.z,
+				);
+			}
 			shells[w++] = shell;
 		}
 		shells.length = w;
-		for (const [id, mesh] of meshes.current) {
-			if (!seen.has(id)) {
-				mesh.visible = false;
-				groupRef.current.remove(mesh);
-				// Dispose per-instance material (shared SHELL_GEOMETRY is not).
-				(mesh.material as THREE.Material).dispose();
-				meshes.current.delete(id);
-			}
-		}
+		pool.commit(Math.min(w, MAX_SHELLS));
 	});
 
 	return (

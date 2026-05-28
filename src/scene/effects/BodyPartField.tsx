@@ -5,16 +5,35 @@ import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import type { PropArchetype } from "@world/scatter/propPool";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { InstancedParticlePool, makeInstancedAlphaMaterial } from "./instancedParticles";
 
 const COLOR_PHASER = new THREE.Color(BONE_BUSTER_PALETTE.enemyWraithSoul).getHex();
 const COLOR_BOUNCER = new THREE.Color(BONE_BUSTER_PALETTE.enemyImpMagma).getHex();
 const COLOR_BONE = new THREE.Color(BONE_BUSTER_PALETTE.enemyBone).getHex();
+// POL40 decal colors (dark splatter vs faint bone mark).
+const DECAL_COLOR_BONE = 0x2a2a2a;
+const DECAL_COLOR_GIB = 0x4a0808;
+const DECAL_FLAT_ROT_X = -Math.PI / 2; // lay the circle flat on the floor
+
+// CR-H1perf — shared instanced materials: shards (lit boxes, per-instance
+// color + alpha) and decals (flat circles, dark, double-sided so the floor
+// quad shows from any camera angle).
+const SHARD_MATERIAL = /*@__PURE__*/ makeInstancedAlphaMaterial({
+	emissiveIntensity: 0.25,
+	roughness: 0.7,
+});
+const DECAL_MATERIAL = /*@__PURE__*/ (() => {
+	const m = makeInstancedAlphaMaterial({ emissiveIntensity: 0, roughness: 1 });
+	m.side = THREE.DoubleSide;
+	return m;
+})();
 
 type BodyShard = {
 	id: number;
 	pos: { x: number; y: number; z: number };
 	vel: { x: number; y: number; z: number };
 	spin: { x: number; y: number; z: number };
+	rot: { x: number; y: number; z: number }; // accumulated rotation (was mesh.rotation)
 	color: number;
 	createdAt: number;
 	bounced: boolean;
@@ -94,26 +113,17 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 	const timings = useMemo(() => timingsFor(ttl), [ttl]);
 	const shardsRef = useRef<BodyShard[]>([]);
 	const groupRef = useRef<THREE.Group | null>(null);
-	const meshes = useRef<Map<number, THREE.Mesh>>(new Map());
-	// POL40 — per-shard ground-decal mesh, mounted on settle and torn
-	// down with the shard. Keyed by shard id so the decal lives exactly
-	// as long as the gib it belongs to.
-	const decalMeshes = useRef<Map<number, THREE.Mesh>>(new Map());
+	// CR-H1perf — two InstancedMeshes (1 draw call each): shards + decals.
+	const shardPoolRef = useRef<InstancedParticlePool | null>(null);
+	const decalPoolRef = useRef<InstancedParticlePool | null>(null);
 	const nextId = useRef(1);
-	// Reused so the tick loop allocates no per-frame Set (was `new Set()`/frame).
-	const seenScratch = useRef<Set<number>>(new Set());
 
-	// Drain both pools on unmount so a level transition doesn't strand
-	// per-instance materials on the GPU. Shared module-scope geometries
-	// (SHARD_GEOMETRY / DECAL_GEOMETRY) are intentionally NOT disposed.
 	useEffect(() => {
-		const shardPool = meshes.current;
-		const decalPool = decalMeshes.current;
 		return () => {
-			for (const mesh of shardPool.values()) (mesh.material as THREE.Material).dispose();
-			for (const decal of decalPool.values()) (decal.material as THREE.Material).dispose();
-			shardPool.clear();
-			decalPool.clear();
+			shardPoolRef.current?.dispose();
+			decalPoolRef.current?.dispose();
+			shardPoolRef.current = null;
+			decalPoolRef.current = null;
 		};
 	}, []);
 
@@ -143,6 +153,7 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 						y: (Math.random() - 0.5) * 8,
 						z: (Math.random() - 0.5) * 8,
 					},
+					rot: { x: 0, y: 0, z: 0 },
 					color: baseColor,
 					createdAt: now,
 					bounced: false,
@@ -156,26 +167,32 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 	}, []);
 
 	useFrame((_, dt) => {
-		if (!groupRef.current) return;
+		const group = groupRef.current;
+		if (!group) return;
+		let shardPool = shardPoolRef.current;
+		let decalPool = decalPoolRef.current;
+		if (!shardPool || !decalPool) {
+			shardPool = new InstancedParticlePool(SHARD_GEOMETRY, SHARD_MATERIAL, MAX_BODY_SHARDS);
+			decalPool = new InstancedParticlePool(DECAL_GEOMETRY, DECAL_MATERIAL, MAX_BODY_SHARDS);
+			group.add(shardPool.mesh);
+			group.add(decalPool.mesh);
+			shardPoolRef.current = shardPool;
+			decalPoolRef.current = decalPool;
+		}
 		const now = performance.now();
-		// Compact in place (write-index) — no per-frame array alloc.
 		const shards = shardsRef.current;
-		const seen = seenScratch.current;
-		seen.clear();
-		let w = 0;
+		let w = 0; // survivor + shard-instance write-index (1:1 — every live shard draws)
+		let d = 0; // settled-decal instance write-index
 		for (let r = 0; r < shards.length; r++) {
 			const shard = shards[r];
 			if (shard === undefined) continue;
 			const age = now - shard.createdAt;
 			if (age > timings.ttl) continue;
-			// POL40 — capture the rest XZ position on the motion→settle
-			// transition. One-shot per shard; rendered as a flat dark
-			// circle on the floor for the rest of the shard's lifetime.
+			// POL40 — capture the rest XZ on the motion→settle transition.
 			if (age >= timings.motion && shard.settledAt === null) {
 				shard.settledAt = { x: shard.pos.x, z: shard.pos.z };
 			}
-			// POL25 — phased lifecycle. Only run physics + spin in the
-			// MOTION phase; after MOTION_MS the shard rests in place.
+			// POL25 — physics + spin only during the MOTION phase.
 			if (age < timings.motion) {
 				shard.pos.x += shard.vel.x * dt;
 				shard.pos.y += shard.vel.y * dt;
@@ -194,93 +211,55 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 						shard.vel.y = 0;
 					}
 				}
+				shard.rot.x += shard.spin.x * dt;
+				shard.rot.y += shard.spin.y * dt;
+				shard.rot.z += shard.spin.z * dt;
 			}
-			let mesh = meshes.current.get(shard.id);
-			if (!mesh) {
-				// QW3 — share SHARD_GEOMETRY; material per-mesh because
-				// per-shard color + per-shard opacity decay independently.
-				const m = new THREE.Mesh(
-					SHARD_GEOMETRY,
-					new THREE.MeshStandardMaterial({
-						color: shard.color,
-						emissive: shard.color,
-						emissiveIntensity: 0.25,
-						transparent: true,
-						roughness: 0.7,
-					}),
-				);
-				groupRef.current.add(m);
-				meshes.current.set(shard.id, m);
-				mesh = m;
-			}
-			mesh.position.set(shard.pos.x, shard.pos.y, shard.pos.z);
-			// POL25 — spin only during motion phase; rest pose is static.
-			if (age < timings.motion) {
-				mesh.rotation.x += shard.spin.x * dt;
-				mesh.rotation.y += shard.spin.y * dt;
-				mesh.rotation.z += shard.spin.z * dt;
-			}
-			// POL25 + POL41 — phased opacity: full during motion + rest,
-			// fade only during the final settleEnd → ttl window. POL41
-			// scales the window per archetype.
+			// POL25 + POL41 — full opacity through motion + rest, fade only
+			// in the settleEnd → ttl window.
 			let opacity = 1;
 			if (age > timings.settleEnd) {
 				const fadeT = (age - timings.settleEnd) / (timings.ttl - timings.settleEnd);
 				opacity = Math.max(0, 1 - fadeT);
 			}
-			(mesh.material as THREE.MeshStandardMaterial).opacity = opacity;
-			mesh.visible = true;
-			// POL40 — render the rest-decal once settled. Flat dark
-			// circle just above the floor (y=0.02 to avoid z-fighting
-			// with the floor plane). Shares the shard's color but
-			// pushed toward dark/red emissive so blood/bouncer gibs read
-			// as splatter while bone shards leave a faint mark.
-			if (shard.settledAt !== null && groupRef.current) {
-				let decal = decalMeshes.current.get(shard.id);
-				if (!decal) {
-					// QW3 — share DECAL_GEOMETRY; material per-mesh
-					// because color varies per-shard-kind (bone vs gib).
-					decal = new THREE.Mesh(
-						DECAL_GEOMETRY,
-						new THREE.MeshBasicMaterial({
-							color: shard.color === COLOR_BONE ? 0x2a2a2a : 0x4a0808,
-							transparent: true,
-							opacity: 0.55,
-							side: THREE.DoubleSide,
-							depthWrite: false,
-						}),
-					);
-					decal.rotation.x = -Math.PI / 2;
-					groupRef.current.add(decal);
-					decalMeshes.current.set(shard.id, decal);
-				}
-				decal.position.set(shard.settledAt.x, 0.02, shard.settledAt.z);
-				(decal.material as THREE.MeshBasicMaterial).opacity = 0.55 * opacity;
+			if (w < MAX_BODY_SHARDS) {
+				shardPool.write(
+					w,
+					shard.pos.x,
+					shard.pos.y,
+					shard.pos.z,
+					1,
+					shard.color,
+					opacity,
+					shard.rot.x,
+					shard.rot.y,
+					shard.rot.z,
+				);
 			}
-			seen.add(shard.id);
-			shards[w++] = shard;
+			// POL40 — settled shards get a flat dark floor decal (y=0.02 to
+			// avoid z-fighting). Dark splatter for gibs, faint mark for bone.
+			if (shard.settledAt !== null && d < MAX_BODY_SHARDS) {
+				const decalColor = shard.color === COLOR_BONE ? DECAL_COLOR_BONE : DECAL_COLOR_GIB;
+				decalPool.write(
+					d,
+					shard.settledAt.x,
+					0.02,
+					shard.settledAt.z,
+					1,
+					decalColor,
+					0.55 * opacity,
+					DECAL_FLAT_ROT_X,
+					0,
+					0,
+				);
+				d += 1;
+			}
+			shards[w] = shard; // compact survivor into slot w
+			w += 1;
 		}
 		shards.length = w;
-		for (const [id, mesh] of meshes.current) {
-			if (!seen.has(id)) {
-				mesh.visible = false;
-				groupRef.current.remove(mesh);
-				// Dispose per-instance material (shared SHARD_GEOMETRY is not).
-				(mesh.material as THREE.Material).dispose();
-				meshes.current.delete(id);
-			}
-		}
-		// POL40 — tear down decals when their shard despawns.
-		for (const [id, decal] of decalMeshes.current) {
-			if (!seen.has(id)) {
-				groupRef.current.remove(decal);
-				// Dispose only the per-instance material — DECAL_GEOMETRY is
-				// a shared module-scope geometry (do NOT dispose it; doing so
-				// broke every subsequent decal once the first one despawned).
-				(decal.material as THREE.Material).dispose();
-				decalMeshes.current.delete(id);
-			}
-		}
+		shardPool.commit(Math.min(w, MAX_BODY_SHARDS));
+		decalPool.commit(Math.min(d, MAX_BODY_SHARDS));
 	});
 
 	return (

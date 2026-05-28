@@ -35,7 +35,8 @@ Dependency-ordered. Drain top-down on a single branch.
 ### The big perf + reconciliation win
 - [ ] CR-H1perf Convert `ParticleBurstField`/`ShellEjectField`/`BodyPartField` to `InstancedMesh` (dispose-on-despawn already shipped); add `gl.info`/`Howler._howls` perf-leak probes to the perf script (full-review H1/M1/F1).
   - DONE + COMMITTED: `src/scene/effects/instancedParticles.ts` (shared `InstancedParticlePool` + per-instance-alpha material via onBeforeCompile) + ParticleBurstField → one InstancedMesh. tsc clean, dispose test green, LIT visual capture confirmed the motes render with correct warm color + glow at the fire point.
-  - REMAINING: (b) convert ShellEjectField (per-instance rotation) + BodyPartField (rotation + the decal sub-pool) to `InstancedParticlePool`; (c) add `gl.info.render.calls` draw-call + `Howler._howls` perf-script probes (full-review F1).
+  - DONE + COMMITTED: ShellEjectField → 1 InstancedMesh (per-instance rotation accumulator); BodyPartField → 2 InstancedMeshes (shard pool + flat decal pool). tsc clean, all 3 dispose tests green (1/1/2 InstancedMeshes), LIT visual capture confirmed shells + gibs + motes render with correct warm color/glow at the fire point.
+  - REMAINING: (c) add `gl.info.render.calls` draw-call + `Howler._howls` perf-script probes to obs3-perf-snapshot so the draw-call win + Howl plateau are gated (full-review F1).
 - [ ] CR-R1 Fix `DamageNumberField`'s per-frame `force()` — render the pool once, animate imperatively in `useFrame` (full-review R-1).
 - [x] CR-M1audio Cache one-shot Howls per variant file (ONESHOT_POOL keyed by variant path) so rapid fire reuses Howls + layers via Howler sound-ids instead of allocating + leaking a fresh Howl per `play()`; resetForTesting unloads the pool. Pinned by bonebuster-howlerOneshotCache.test.ts (40 plays → ≤3 constructions) (full-review M1).
 

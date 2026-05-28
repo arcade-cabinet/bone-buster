@@ -57,11 +57,6 @@ function CaptureScene({
 	return null;
 }
 
-async function mountField(node: React.ReactNode) {
-	const { driver } = await mountFieldUnmountable(node);
-	return driver;
-}
-
 async function mountFieldUnmountable(node: React.ReactNode) {
 	let advance!: (t: number) => void;
 	let scene!: THREE.Scene;
@@ -106,17 +101,6 @@ function watchObjDispose(obj: { dispose: () => void }): () => boolean {
 	return () => disposed;
 }
 
-/** Returns true once `.dispose()` has been observed on the material. */
-function watchDispose(material: THREE.Material): () => boolean {
-	let disposed = false;
-	const orig = material.dispose.bind(material);
-	material.dispose = () => {
-		disposed = true;
-		orig();
-	};
-	return () => disposed;
-}
-
 /** Returns true if the geometry's dispose is ever called (it must NOT be). */
 function watchGeometryDispose(geometry: THREE.BufferGeometry): () => boolean {
 	let disposed = false;
@@ -154,45 +138,45 @@ describe("effect-field GPU-resource disposal (H2 / F1)", () => {
 		expect(geoWatch()).toBe(false); // shared geometry untouched
 	});
 
-	it("BodyPartField disposes shard material on despawn but never the shared geometry", async () => {
-		const driver = await mountField(<BodyPartField />);
+	it("BodyPartField renders exactly two InstancedMeshes (shards + decals), disposed on unmount", async () => {
+		// CR-H1perf — converted to two InstancedMeshes (shard pool + decal
+		// pool), 1 draw call each, instead of one Mesh per shard + per decal.
+		const { driver, unmount } = await mountFieldUnmountable(<BodyPartField />);
 
-		dispatch({ type: "bodyParts", kind: "bone", x: 0, y: 0 }); // createdAt = clock(0)
+		dispatch({ type: "bodyParts", kind: "bone", x: 0, y: 0 });
+		driver.step(16); // pools created + shards written
+
+		const meshes = driver.liveMeshes();
+		expect(meshes.length).toBe(2); // shard pool + decal pool, not N gibs
+		for (const m of meshes) expect((m as THREE.InstancedMesh).isInstancedMesh).toBe(true);
+		const shardMesh = meshes.find((m) => (m as THREE.InstancedMesh).count > 0);
+		expect(shardMesh).toBeDefined(); // shards are drawn
+		const disposeWatches = meshes.map((m) =>
+			watchObjDispose(m as unknown as { dispose: () => void }),
+		);
+		const geoWatches = meshes.map((m) => watchGeometryDispose(m.geometry));
+
+		unmount();
+		expect(disposeWatches.every((w) => w())).toBe(true); // both InstancedMeshes freed
+		expect(geoWatches.some((w) => w())).toBe(false); // shared geometries untouched
+	});
+
+	it("ShellEjectField renders one InstancedMesh, disposed on unmount", async () => {
+		const { driver, unmount } = await mountFieldUnmountable(<ShellEjectField />);
+
+		dispatch({ type: "shellEject", x: 0, y: 0, z: 0, vx: 1, vy: 2, vz: 0, scale: 1 });
 		driver.step(16);
 
 		const meshes = driver.liveMeshes();
-		expect(meshes.length).toBeGreaterThan(0);
-		const matWatch = meshes.map((m) => watchDispose(m.material as THREE.Material));
-		// Regression: a prior bug disposed the SHARED geometry on first despawn,
-		// breaking every later shard/decal. The shared geometry must survive.
-		const mesh0body = meshes[0];
-		if (!mesh0body) throw new Error("meshes[0] missing after length > 0 check");
-		const geoWatch = watchGeometryDispose(mesh0body.geometry);
+		expect(meshes.length).toBe(1);
+		const inst = meshes[0] as THREE.InstancedMesh;
+		expect(inst.isInstancedMesh).toBe(true);
+		expect(inst.count).toBeGreaterThan(0);
+		const meshDisposed = watchObjDispose(inst);
+		const geoWatch = watchGeometryDispose(inst.geometry);
 
-		clock = 20_000; // past shard TTL (5000ms) → shards + decals despawn
-		driver.step(32);
-
-		// `.some`, not `.every`: the meshes captured at spawn are the shard
-		// meshes; decals only mount after a shard settles, so not every live
-		// material at capture-time is guaranteed a despawn with a decal in the
-		// same window. The contract we pin is "despawn disposes materials" —
-		// at least one shard material freed proves the dispose path runs.
-		expect(matWatch.some((w) => w())).toBe(true);
+		unmount();
+		expect(meshDisposed()).toBe(true);
 		expect(geoWatch()).toBe(false);
-	});
-
-	it("ShellEjectField drains its live material pool on unmount", async () => {
-		const driver = await mountField(<ShellEjectField />);
-
-		dispatch({ type: "shellEject", x: 0, y: 0, z: 0, vx: 1, vy: 2, vz: 0, scale: 1 });
-		driver.step(16); // shells live, not yet past TTL
-
-		const meshes = driver.liveMeshes();
-		expect(meshes.length).toBeGreaterThan(0);
-		const matWatch = meshes.map((m) => watchDispose(m.material as THREE.Material));
-
-		cleanup(); // unmount → teardown effect must drain the live pool
-
-		expect(matWatch.every((w) => w())).toBe(true);
 	});
 });
