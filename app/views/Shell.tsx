@@ -17,6 +17,7 @@ import type { BoneBusterMap, PickupKind } from "@engine/engine";
 import { addBoneBusterListener, dispatch } from "@engine/events";
 import { createEventPrng, createFreshEventSeed, cyrb128 } from "@engine/rng";
 import { CANONICAL_SEED_PHRASE, randomSeedPhrase } from "@engine/seedPhrase";
+import { advanceAndPersistEventSeed, loadEventSeed } from "@platform/persistence/eventSeed";
 import { loadSettings, saveSettings } from "@platform/persistence/settingsStore";
 import { Canvas } from "@react-three/fiber";
 import { PLAYER_MAX_HP } from "@shared/constants";
@@ -252,6 +253,31 @@ declare global {
 
 export function BoneBusterShell() {
 	const [seedPhrase, setSeedPhrase] = useState(readSeedFromUrl);
+	// SEED4 — the device-persistent event-PRNG seed (Capacitor Preferences).
+	// Loaded once on mount; `rollSeedPhrase` advances it (persisting the new
+	// value) and draws a fresh suggested phrase, so each roll/new-game uses a
+	// deterministic-but-fresh event stream rather than an inline crypto mint.
+	const eventSeedRef = useRef<string | null>(null);
+	useEffect(() => {
+		let cancelled = false;
+		void loadEventSeed().then((s) => {
+			if (!cancelled) eventSeedRef.current = s;
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+	const rollSeedPhrase = useCallback(() => {
+		// Draw the suggested phrase from the current event stream, then advance
+		// + persist the buried seed for the next roll. Falls back to a fresh
+		// mint if Preferences hasn't resolved yet (first frames after mount).
+		const seed = eventSeedRef.current ?? createFreshEventSeed();
+		const phrase = randomSeedPhrase(createEventPrng(seed));
+		setSeedPhrase(phrase);
+		void advanceAndPersistEventSeed(seed).then((next) => {
+			eventSeedRef.current = next;
+		});
+	}, []);
 	// INF3 — when `?bonebusterArchetype` is present, switch the level to
 	// procedural so the seed rewrite (and thus the archetype pick)
 	// actually drives map generation. Without this override the default
@@ -468,11 +494,11 @@ export function BoneBusterShell() {
 			// (dead, won) or there's no live run to resume from.
 			const preserveSeed = prev.status === "paused" || prev.status === "playing";
 			if (!preserveSeed) {
-				setSeedPhrase(randomSeedPhrase(createEventPrng(createFreshEventSeed())));
+				rollSeedPhrase();
 			}
 			return { ...prev, status: "landing" };
 		});
-	}, []);
+	}, [rollSeedPhrase]);
 
 	// E3 — surface a "resume run" affordance on the landing when we have a
 	// paused run that can be picked up. The user has to have actually clicked
@@ -684,7 +710,7 @@ export function BoneBusterShell() {
 		if (state.status !== "transitioning") return;
 		const timer = window.setTimeout(() => {
 			if (settings.level === "procedural") {
-				setSeedPhrase(randomSeedPhrase(createEventPrng(createFreshEventSeed())));
+				rollSeedPhrase();
 			} else {
 				const next = advanceLevel(settings.level, state.run.runLevelsCleared);
 				if (next !== null && next !== "procedural") {
@@ -716,7 +742,7 @@ export function BoneBusterShell() {
 			}));
 		}, TRANSITION_HOLD_MS);
 		return () => window.clearTimeout(timer);
-	}, [state.status, state.run.runLevelsCleared, settings.level]);
+	}, [state.status, state.run.runLevelsCleared, settings.level, rollSeedPhrase]);
 
 	// Debug hooks for headed e2e tests. Only attached when ?bonebusterDebug is
 	// present AND not in production. The contract is the only stable way to
@@ -931,9 +957,7 @@ export function BoneBusterShell() {
 								onResume={onResumeRun}
 								seedPhrase={seedPhrase}
 								onSeedPhraseChange={setSeedPhrase}
-								onRandomizeSeedPhrase={() =>
-									setSeedPhrase(randomSeedPhrase(createEventPrng(createFreshEventSeed())))
-								}
+								onRandomizeSeedPhrase={() => rollSeedPhrase()}
 							/>
 						</motion.div>
 					)}
