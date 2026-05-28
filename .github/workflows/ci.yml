@@ -40,6 +40,12 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+      # CR-poly (full-review L-1) — block on PRODUCTION-dependency advisories
+      # only (currently zero). Dev-dep advisories (e.g. @lhci/cli transitives)
+      # don't ship in the bundle/APK, so they stay non-blocking; this keeps the
+      # shipped surface clean without churning on CI-only tool CVEs.
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
 
   # C-1 (full-review) — the documented merge gate is `pnpm verify`, which
   # includes test:browser + assets:verify-runtime + audio:verify-runtime.

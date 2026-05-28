@@ -37,6 +37,12 @@ const ARCHETYPES = ["corridor", "arena", "courtyard", "sewer", "library"];
  * AdaptiveResolution + A3 fallback chain hold the game above
  * its minimum playable threshold on a Pixel 5a-class device". */
 const MOBILE_FPS_FLOOR = 30;
+// CR-poly (full-review) — a draw-call ceiling that's STABLE on the software
+// emulator (unlike FPS, which is noisy there). Catches a regression of the
+// effect-field instancing (CR-H1perf) — pre-instancing combat peaked at
+// ~350 individual draw calls; the ceiling sits well above the instanced
+// steady state but below the un-instanced regression.
+const MOBILE_CALL_BUDGET = 1400;
 
 /** CDP endpoint exposed by `adb forward` in the CI job. */
 const CDP_ENDPOINT = process.env.MOBILE_CDP_ENDPOINT || "http://localhost:9222";
@@ -142,6 +148,13 @@ for (const archetype of ARCHETYPES) {
 	if (sample.minFps != null && sample.minFps < MOBILE_FPS_FLOOR) {
 		failures.push(
 			`${archetype}: mobile minFps ${sample.minFps.toFixed(1)} < floor ${MOBILE_FPS_FLOOR}`,
+		);
+	}
+	// Draw-call ceiling — stable on the emulator GPU, so a meaningful gate
+	// alongside the noisier FPS floor.
+	if (sample.peakCalls > MOBILE_CALL_BUDGET) {
+		failures.push(
+			`${archetype}: mobile draw-calls peak ${sample.peakCalls} > budget ${MOBILE_CALL_BUDGET}`,
 		);
 	}
 	if (sample.minFps == null) {

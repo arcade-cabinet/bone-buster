@@ -68,7 +68,7 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 | Module | Owns |
 | --- | --- |
-| `app/views/Scene.tsx` | r3f Canvas root, scene composition, MapGeometry, SectorMapGeometry, EnemyMesh, WeaponViewmodel, KeyMarker, ExitPortal, RealDoor, TreasureChest — **flagged for decomposition; see DECISIONS** |
+| `app/views/Scene.tsx` | r3f Canvas root, scene composition, MapGeometry, SectorMapGeometry, EnemyMesh, WeaponViewmodel, KeyMarker, ExitPortal, RealDoor, TreasureChest — **flagged for decomposition (comprehensive-review CR-H1scene backlog; no binding DECISIONS record yet)** |
 | `app/components/PlayerController.tsx` | Camera + movement input (pointer-lock + touch sticks), pointer-lock state |
 | `src/assets/models.ts` | Enemy + weapon + prop GLB registry + per-kind skin rosters, BASE_URL-aware URL helper `A()` |
 | `app/components/RefLevelMap.tsx` | Renderer for reference-clone level layouts |
