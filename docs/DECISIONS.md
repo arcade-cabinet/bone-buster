@@ -43,8 +43,9 @@ ships into Capacitor (which has no concept of a server).
 **Date:** 2026-04-23
 
 3D rendering is r3f over three.js. Postprocessing via
-`@react-three/postprocessing`. AI steering via `yuka`. Procedural
-audio via Tone.js.
+`@react-three/postprocessing`. AI steering via `yuka`. ~~Procedural
+audio via Tone.js.~~ (Audio clause superseded by D20 — Howler replaced
+Tone.js in A11c.)
 
 **Why:** r3f's declarative scene tree composes cleanly with React's
 component model. The ecosystem (drei helpers, postprocessing
@@ -306,7 +307,9 @@ AO.5's original acceptance referenced "Lighthouse PWA score ≥ 90." Lighthouse 
 
 ## D15 — AudioBus: channel-per-synth, not channel-per-cue (AUDIO1)
 
-**Status:** Locked.
+**Status:** Superseded by D20 on 2026-05-28 (Tone.js removed; the
+channel-per-synth scheduling concern no longer applies under Howler).
+Historical text retained below per the log convention.
 **Date:** 2026-04-30 (shipped); backfilled 2026-05-15 per ARCHITECTURE audit §7.5
 
 `src/audio/audioBus.ts` keys channels by SYNTH INSTANCE, not by cue. Multiple cues (e.g. `playPickup`, `playSecretFound`) that share the underlying `Tone.PolySynth` route through the SAME channel; channels schedule via a strictly-increasing `t` so Tone's "Start time must be strictly greater than previous start time" check never trips.
@@ -434,6 +437,31 @@ D19 routes all cosmetic picks through `seedrandom` with per-system tags, so:
 - *xoshiro128++ / pcg32.* — same statistical class as seedrandom but no canonical npm package; rolling our own is a fresh byte-stability risk.
 
 **Source:** `src/engine/prng.ts:60+` (cosmetic-stream API), `src/__tests__/unit/bonebuster-prng-cosmetic.test.ts` (byte-stability pins), `package.json` (`seedrandom` dep).
+
+---
+
+## D20 — Howler replaces Tone.js for all audio (A11c)
+
+**Status:** Locked. **Supersedes the audio clause of D2 and all of D15.**
+**Date:** 2026-05-28 (recording a change that shipped in A11c)
+
+All audio — SFX, music, ambient, stings — runs through `howler`
+(`src/audio/howlerBus.ts` + `sfx.ts`). Tone.js was removed; there is no
+`tone` dependency and no `audioBus.ts` synth graph. Cues play sampled
+assets, not synthesized tones, so the channel-per-synth scheduling
+contract D15 described no longer exists.
+
+**Why:** the procedural-synth approach (Tone.js) was replaced by sampled
+audio assets promoted from the itch.io packs — sampled SFX read as
+"modernized DOOM" far better than synthesized tones, and Howler's
+sprite/pooling model fits one-shot game SFX directly. Removing Tone.js
+also dropped a heavy dependency from the bundle.
+
+**Rejected:**
+- *Keeping Tone.js for music only* — split audio stack, two mental
+  models, two bundles; not worth it once SFX moved to samples.
+- *Web Audio API directly* — Howler already wraps it with pooling,
+  format fallback, and mobile-unlock handling we'd otherwise re-implement.
 
 ---
 

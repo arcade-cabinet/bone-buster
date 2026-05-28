@@ -1,24 +1,24 @@
 {
 	"coverage_rules": [
 		{
-			"when_changed": ["src/RefLevelMap.tsx", "src/ObjexoomScene.tsx", "src/ObjexoomHUD.tsx", "src/ObjexoomLanding.tsx", "src/ObjexoomShell.tsx", "src/PlayerController.tsx", "public/models/**"],
-			"require_changed": ["docs/assets/screenshots/**", "tests/e2e/screenshots.spec.ts"],
+			"when_changed": ["app/views/**", "src/scene/**", "src/assets/**", "public/assets/models/**"],
+			"require_changed": ["docs/assets/screenshots/**", "tests/e2e/screenshots.spec.ts", "tests/e2e/archetypeScreenshots.spec.ts", "src/__tests__/browser/**"],
 			"or_explicit_skip": "// no-visual-impact: <≥10 word reason>",
-			"block_message": "Render/UI/asset change without canonical screenshot update."
+			"block_message": "Render/UI/asset change without canonical screenshot or browser-test update."
 		},
 		{
-			"when_changed": ["src/sfx.ts"],
-			"require_changed": ["src/__tests__/unit/objexoom-sfx.test.ts"],
+			"when_changed": ["src/audio/**"],
+			"require_changed": ["src/__tests__/unit/**", "src/__tests__/browser/**"],
 			"or_explicit_skip": "// no-audio-impact: <≥10 word reason>",
-			"block_message": "Audio change without sfx test update."
+			"block_message": "Audio change without sfx/audio-graph test update."
 		},
 		{
-			"when_changed": ["src/engine.ts", "src/enemyAi.ts", "src/buildMap.ts", "src/turtle.ts", "src/refLevel.ts", "src/runStats.ts", "src/settings.ts", "src/weapons.ts", "src/yukaIntegration.ts"],
-			"require_changed": ["src/__tests__/unit/**"],
-			"block_message": "Sim/engine change without unit test."
+			"when_changed": ["src/engine/**", "src/world/**", "src/ai/**", "src/store/**", "src/scene/tick/**"],
+			"require_changed": ["src/__tests__/unit/**", "src/__tests__/browser/**"],
+			"block_message": "Sim/engine/world/ai/tick change without unit or browser test."
 		},
 		{
-			"when_changed": ["src/ObjexoomScene.tsx", "src/RefLevelMap.tsx", "public/models/**"],
+			"when_changed": ["app/views/Scene.tsx", "src/scene/map/**", "src/scene/render/**", "public/assets/models/**"],
 			"require_run": "pnpm test:e2e:screenshots",
 			"evidence_pattern": "\\d+ passed",
 			"block_message": "Render/asset change requires e2e screenshot pass."
@@ -33,8 +33,23 @@
 	"ban_patterns": [
 		{
 			"pattern": "Math\\.random\\(\\)",
-			"globs": ["src/engine.ts", "src/enemyAi.ts", "src/buildMap.ts", "src/turtle.ts", "src/runStats.ts"],
-			"message": "Use seedrandom or deterministic RNG — engine code must be replayable."
+			"globs": ["src/engine/**", "src/world/**", "src/ai/**", "src/store/**"],
+			"message": "Use mulberry32(seed) from src/engine/prng.ts — engine/world/ai/store code must be replayable (canonical byte-stability)."
+		},
+		{
+			"pattern": "\\b(performance\\.now|Date\\.now)\\(\\)",
+			"globs": ["src/engine/**", "src/world/**", "src/ai/**", "src/store/**"],
+			"message": "No wall-clock in determinism-gated code (incl. window./globalThis. prefixed) — pass time in from the caller; engine/world/ai/store must be replayable."
+		},
+		{
+			"pattern": "\\^\\s*0x[0-9a-fA-F]{6,8}\\b",
+			"globs": ["src/world/**", "src/engine/**"],
+			"message": "Use a named RNG_TAGS constant from src/engine/prng.ts, not a raw-hex XOR tag — the determinism contract must have one source of truth."
+		},
+		{
+			"pattern": "\\b(fetch|XMLHttpRequest|WebSocket|EventSource)\\s*\\(",
+			"globs": ["src/**", "app/**"],
+			"message": "No-network invariant: this is a fully client-side game with no backend. Runtime network reopens the remote-asset parse + exfil attack surface. Use the A() asset helper for first-party bundle assets."
 		},
 		{
 			"pattern": "@objexiv/",

@@ -48,6 +48,20 @@ export function ShellEjectField() {
 	const groupRef = useRef<THREE.Group | null>(null);
 	const meshes = useRef<Map<number, THREE.Mesh>>(new Map());
 	const nextId = useRef(1);
+	// Reused so the tick loop allocates no per-frame Set (was `new Set()`/frame).
+	const seenScratch = useRef<Set<number>>(new Set());
+
+	// Drain the mesh pool on unmount so a level transition doesn't strand
+	// per-instance materials on the GPU.
+	useEffect(() => {
+		const pool = meshes.current;
+		return () => {
+			for (const mesh of pool.values()) {
+				(mesh.material as THREE.Material).dispose();
+			}
+			pool.clear();
+		};
+	}, []);
 
 	useEffect(() => {
 		return addBoneBusterListener("shellEject", (d) => {
@@ -71,9 +85,13 @@ export function ShellEjectField() {
 	useFrame((_, dt) => {
 		if (!groupRef.current) return;
 		const now = performance.now();
-		const live: Shell[] = [];
-		const seen = new Set<number>();
-		for (const shell of shellsRef.current) {
+		// Compact in place (write-index) — no per-frame array alloc.
+		const shells = shellsRef.current;
+		const seen = seenScratch.current;
+		seen.clear();
+		let w = 0;
+		for (let r = 0; r < shells.length; r++) {
+			const shell = shells[r];
 			const age = now - shell.createdAt;
 			if (age > SHELL_TTL_MS) continue;
 			shell.pos.x += shell.vel.x * dt;
@@ -124,13 +142,15 @@ export function ShellEjectField() {
 			(mesh.material as THREE.MeshStandardMaterial).opacity = fade;
 			mesh.visible = true;
 			seen.add(shell.id);
-			live.push(shell);
+			shells[w++] = shell;
 		}
-		shellsRef.current = live;
+		shells.length = w;
 		for (const [id, mesh] of meshes.current) {
 			if (!seen.has(id)) {
 				mesh.visible = false;
 				groupRef.current.remove(mesh);
+				// Dispose per-instance material (shared SHELL_GEOMETRY is not).
+				(mesh.material as THREE.Material).dispose();
 				meshes.current.delete(id);
 			}
 		}

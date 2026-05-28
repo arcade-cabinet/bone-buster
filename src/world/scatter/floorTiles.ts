@@ -23,7 +23,7 @@
 import { A } from "@assets/assetUrl";
 import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, RNG_TAGS } from "@engine/prng";
 
 export const FLOOR_TILE_VARIANTS: readonly string[] = [
 	A("/assets/models/structures/asphalt_hr_1.glb"),
@@ -56,7 +56,7 @@ export function spawnFloorTiles(map: BoneBusterMap): FloorTileInstance[] {
 	if (!map.useModularFloor) return [];
 
 	const out: FloorTileInstance[] = [];
-	const rng = mulberry32((map.seed >>> 0) ^ 0x464c5254);
+	const rng = mulberry32((map.seed >>> 0) ^ RNG_TAGS.FLRT);
 
 	for (const sector of map.sectors) {
 		if (sector.vertices.length < 3) continue;

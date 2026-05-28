@@ -7,14 +7,20 @@
  *   - `CapacitorDatabase` (production) — wraps the Capacitor plugin;
  *     on native uses iOS/Android SQLite, on web uses jeep-sqlite
  *     (WASM, IndexedDB-backed) so the same SQL runs in both.
- *   - `InMemoryDatabase` (test) — Map-backed mock with minimal SQL
- *     parsing for runs-table CRUD. NOT a full SQLite implementation;
- *     only the SQL shapes the app actually uses are supported.
+ *   - `InMemoryDatabase` (test + production web-fallback) — Map-backed
+ *     adapter with minimal SQL parsing for runs-table CRUD. NOT a full
+ *     SQLite implementation; only the SQL shapes the app actually uses
+ *     are supported. Used by tests AND, in real player sessions, as the
+ *     ephemeral web fallback when jeep-sqlite can't initialize (e.g. a
+ *     restricted-storage iframe) — see `createDatabase`. Its SQL parser
+ *     therefore runs in production; keep it in lockstep with the SQL
+ *     templates in `runHistory.ts`.
  *
  * Why this interface, not "import sqlite directly":
  *   - Tests need a synchronous-ish path that doesn't depend on
  *     loading WASM (vitest runs in Node where jeep-sqlite isn't
- *     wired). InMemoryDatabase satisfies that.
+ *     wired), and the web fallback needs a dependency-free adapter
+ *     when WASM init fails. InMemoryDatabase satisfies both.
  *   - The runtime selection (`createDatabase`) sits behind one
  *     factory call so swapping the backend (e.g. for an encrypted
  *     impl, or for a different test mock) is one-line.
@@ -41,10 +47,14 @@ export interface DatabaseAdapter {
 }
 
 /**
- * In-memory test adapter. Supports only the SQL shapes the run-history
- * subsystem uses; not a general-purpose SQLite shim. Reads from a
- * single `rows: T[]` array under one fixed table name so tests can
- * inspect / seed state directly via the `rows` accessor.
+ * In-memory adapter for tests AND the production web fallback (see the
+ * module header + `createDatabase`). Supports only the SQL shapes the
+ * run-history subsystem uses; not a general-purpose SQLite shim. Reads
+ * from a single `rows: T[]` array under one fixed table name so tests
+ * can inspect / seed state directly via the `rows` accessor. Because it
+ * runs in real web-fallback sessions, its SQL parser must stay in sync
+ * with `runHistory.ts`'s exact statement shapes (pinned by the
+ * in-memory-database + runHistory.browser tests).
  *
  * Supported statements:
  *   CREATE TABLE IF NOT EXISTS <name> (...)   — recorded, no-op

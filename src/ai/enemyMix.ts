@@ -30,7 +30,7 @@
  */
 
 import type { EnemyKind, EnemySpawn } from "@engine/engine";
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, RNG_TAGS } from "@engine/prng";
 import type { PropArchetype } from "@world/scatter/propPool";
 
 export type EnemyMixTable = Readonly<Record<EnemyKind, number>>;
@@ -173,7 +173,7 @@ export function remapEnemyMix(
 	seed: number,
 ): readonly EnemySpawn[] {
 	const table = ENEMY_MIX_TABLES[archetype];
-	const rng = mulberry32((seed >>> 0) ^ 0x454e4d58);
+	const rng = mulberry32((seed >>> 0) ^ RNG_TAGS.ENMX);
 	return spawns.map((spawn) => ({
 		...spawn,
 		kind: pickKindFromTable(table, rng),

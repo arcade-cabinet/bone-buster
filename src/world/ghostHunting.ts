@@ -197,8 +197,10 @@ export interface CrucifixInstance {
  * Returns true iff (enemyX, enemyZ) is within CRUCIFIX_RADIUS_TILES
  * of ANY of the currently-active crucifixes. `now` lets the helper
  * filter expired entries without forcing the caller to prune the
- * list first; the per-frame enemy tick can pass `performance.now()`
- * once and let the helper handle the lifetime check.
+ * list first; the per-frame enemy tick passes the current clock value
+ * (a wall-clock timestamp, injected by the caller — determinism-gated
+ * code must not read the clock itself) once and lets the helper handle
+ * the lifetime check.
  *
  * Exported pure so tests can pin the contract without a scene.
  */

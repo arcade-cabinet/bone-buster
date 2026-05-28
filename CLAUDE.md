@@ -32,7 +32,7 @@ DESIGN > ARCHITECTURE > DECISIONS > PRD > directive > ROADMAP.
 ## Repo-specific
 
 - **Run:** `pnpm dev` (Vite at <http://localhost:5191> — pinned via `strictPort`)
-- **Test:** `pnpm test` (vitest unit, ~700 passing) + `pnpm test:browser` (real Chromium, 6) + `pnpm test:e2e:screenshots` (5 canonical poses) + `pnpm test:e2e:archetype-screenshots` (5 per-archetype poses)
+- **Test:** `pnpm test` (vitest unit, ~840 passing) + `pnpm test:browser` (real Chromium, 6) + `pnpm test:e2e:screenshots` (5 canonical poses) + `pnpm test:e2e:archetype-screenshots` (5 per-archetype poses)
 - **Verify:** `pnpm verify` runs lint + check + test + test:browser + assets:verify-runtime (merge gate)
 - **Build:** `pnpm build` (web), `pnpm build:native` (web + cap sync), `pnpm build:pages` (GH Pages base path)
 - **Deploy:** GitHub Pages via `.github/workflows/release.yml` on release-please tag

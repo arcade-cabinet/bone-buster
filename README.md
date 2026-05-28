@@ -36,10 +36,11 @@ dev/repro sessions; `?archetype=<name>` forces the seed to
 land on a chosen archetype (`corridor` / `arena` / `courtyard`
 / `sewer` / `library`).
 
-> Note: the URL-flag names above (`?debug`, `?seed`,
-> `?archetype`, `window.__bonebuster`) are the post-rebrand
-> contract. The R8 source sweep flips the underlying
-> implementation to match.
+> Note: the URL-flag names above (`?bonebusterDebug`,
+> `?bonebusterSeed`, `?bonebusterArchetype`, `window.__bonebuster`)
+> are the post-rebrand contract. The R8 source sweep flipped the
+> underlying implementation to match; legacy `?objexoom*` aliases are
+> retained as an R8b compatibility shim.
 
 ## Scripts
 
@@ -51,7 +52,7 @@ land on a chosen archetype (`corridor` / `arena` / `courtyard`
 | `pnpm build:native` | Build + `cap sync` for Android/iOS |
 | `pnpm check` | TypeScript no-emit |
 | `pnpm lint` | Biome lint |
-| `pnpm test` | Vitest unit suite (~700 tests) |
+| `pnpm test` | Vitest unit suite (~840 tests) |
 | `pnpm test:browser` | Vitest browser suite (real Chromium via Playwright, 6 tests) |
 | `pnpm test:e2e` | Full Playwright e2e suite |
 | `pnpm test:e2e:screenshots` | Regenerate the canonical 5 screenshots |

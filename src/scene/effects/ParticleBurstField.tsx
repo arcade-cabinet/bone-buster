@@ -4,7 +4,6 @@ import { BONE_BUSTER_PALETTE, SCALE } from "@styles/tokens/index";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const COLOR_PHASER = new THREE.Color(BONE_BUSTER_PALETTE.enemyWraithSoul).getHex();
 const COLOR_BOUNCER = new THREE.Color(BONE_BUSTER_PALETTE.enemyImpMagma).getHex();
 const COLOR_AMBER = new THREE.Color(BONE_BUSTER_PALETTE.actionPickupGlow).getHex();
 // POL16 — extra colors for the layered damage burst.
@@ -64,6 +63,21 @@ export function ParticleBurstField() {
 	const groupRef = useRef<THREE.Group | null>(null);
 	const meshes = useRef<Map<number, THREE.Mesh>>(new Map());
 	const nextId = useRef(1);
+	// Reused across frames so the tick loop allocates no per-frame Set
+	// (was a fresh `new Set()` every frame — minor-GC pressure on mobile).
+	const seenScratch = useRef<Set<number>>(new Set());
+
+	// Drain the mesh pool on unmount so a level transition (Scene re-key)
+	// doesn't strand per-instance materials on the GPU.
+	useEffect(() => {
+		const pool = meshes.current;
+		return () => {
+			for (const mesh of pool.values()) {
+				(mesh.material as THREE.Material).dispose();
+			}
+			pool.clear();
+		};
+	}, []);
 
 	useEffect(() => {
 		return addBoneBusterListener("burst", (detail) => {
@@ -241,11 +255,6 @@ export function ParticleBurstField() {
 						emissiveIntensity: 1.6,
 					});
 				}
-				// Preserve back-compat: violet damage burst is now replaced
-				// by the POL16 layered path above; the phaser violet color
-				// is retained for future use (e.g. a future "phaser death"
-				// burst kind) but no event currently emits it.
-				void COLOR_PHASER;
 			}
 			while (motesRef.current.length > MAX_MOTES) motesRef.current.shift();
 		});
@@ -254,9 +263,14 @@ export function ParticleBurstField() {
 	useFrame((_, dt) => {
 		if (!groupRef.current) return;
 		const now = performance.now();
-		const live: Mote[] = [];
-		const seen = new Set<number>();
-		for (const mote of motesRef.current) {
+		// Compact the live list in place (write-index) — no per-frame array
+		// allocation. `seen` is a reused Set, cleared each frame.
+		const motes = motesRef.current;
+		const seen = seenScratch.current;
+		seen.clear();
+		let w = 0;
+		for (let r = 0; r < motes.length; r++) {
+			const mote = motes[r];
 			const age = now - mote.createdAt;
 			if (age > mote.ttlMs) continue;
 			mote.pos.x += mote.vel.x * dt;
@@ -288,13 +302,17 @@ export function ParticleBurstField() {
 			(mesh.material as THREE.MeshStandardMaterial).opacity = fade;
 			mesh.visible = true;
 			seen.add(mote.id);
-			live.push(mote);
+			motes[w++] = mote;
 		}
-		motesRef.current = live;
+		motes.length = w;
 		for (const [id, mesh] of meshes.current) {
 			if (!seen.has(id)) {
 				mesh.visible = false;
 				groupRef.current.remove(mesh);
+				// Dispose the per-instance material (shared MOTE_GEOMETRY is
+				// NOT disposed — it's module-scope and reused). Without this
+				// the GPU material accumulates monotonically under combat.
+				(mesh.material as THREE.Material).dispose();
 				meshes.current.delete(id);
 			}
 		}

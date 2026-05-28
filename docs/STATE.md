@@ -60,7 +60,7 @@ Awaiting human review-merge.
 ## Known issues
 
 - **No known runtime bugs.** Visual gate green (5 canonical +
-  10 per-archetype e2e screenshots); 962 unit + 6 browser
+  10 per-archetype e2e screenshots); ~840 unit + 6 browser
   tests pass; perf within budget across all 5 archetypes.
 - Dependabot low-severity alert on `tmp` transitive
   (GHSA-52f5-9888-hmc6, CVE-2025-54798). Not user-facing;

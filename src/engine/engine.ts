@@ -937,8 +937,13 @@ export function castRayAny(
 // Reference EnemyBullet: 1-cell/sec velocity, hits walls or player.
 // We keep tracking server-authoritative in the Scene useFrame; this
 // just describes the actor shape so unit tests can reason about it.
-// Y5 — yuka-backed projectile step. Imported as a value (only used by
-// stepEnemyBullet) so engine.ts itself stays free of yuka imports.
+// Y5 — yuka-backed projectile step, used only by stepEnemyBullet.
+// NOTE: this is a known wrong-direction dependency — engine.ts is the
+// lowest sim layer yet imports @ai (the layer above it). madge stays
+// acyclic only because yukaIntegration doesn't import back. The planned
+// fix is to move stepEnemyBullet + EnemyBullet into a src/engine/
+// projectiles.ts module where depending on @ai is in-direction, or to
+// inject the step fn at the enemyTickLoop call site. See docs/ARCHITECTURE.md.
 import { yukaProjectileStep } from "@ai/yukaIntegration";
 
 export const ENEMY_BULLET_SPEED = 1.4 * TILE; // ≈ 1 cell / second

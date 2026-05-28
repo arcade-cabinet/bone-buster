@@ -20,7 +20,7 @@
 
 import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, RNG_TAGS } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
 import type { LargePropDef } from "@world/largeProps";
 import { LARGE_PROPS, pickLargePropDef } from "@world/largeProps";
@@ -85,7 +85,7 @@ function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean 
 export function spawnLargeProps(map: BoneBusterMap): LargePropInstance[] {
 	if (map.kind !== "sectors") return [];
 	const out: LargePropInstance[] = [];
-	const rng = mulberry32((map.seed >>> 0) ^ 0x4c415250);
+	const rng = mulberry32((map.seed >>> 0) ^ RNG_TAGS.LARP);
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 	const archetype = pickArchetype(map);
 	const [minPerSector, maxPerSector] = DENSITY_BY_ARCHETYPE[archetype];

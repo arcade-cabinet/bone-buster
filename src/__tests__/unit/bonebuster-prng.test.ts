@@ -58,6 +58,7 @@ describe("CONV1 — RNG_TAGS registry", () => {
 		expect(RNG_TAGS.NATU).toBe(0x4e415455);
 		expect(RNG_TAGS.NPCS).toBe(0x4e504353);
 		expect(RNG_TAGS.ENMX).toBe(0x454e4d58);
+		expect(RNG_TAGS.NAME).toBe(0x4e414d45);
 	});
 
 	it("all tag values are distinct (no XOR collisions)", () => {
