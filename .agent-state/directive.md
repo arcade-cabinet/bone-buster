@@ -64,7 +64,7 @@ Dependency-ordered. Drain top-down on a single branch.
 ### Remaining quality + tests + docs tail
 - [ ] CR-F7 Seed pellet spread via per-shot `mulberry32`, extract `resolvePellet`/`applyMelee*`/`onEnemyKilled` from `resolveFire`, add a deterministic combat test (full-review F7).
 - [ ] CR-F8 Table-drive `onCollectPickup`; add per-kind reducer tests (full-review F8).
-- [ ] CR-F9 Audio-graph lifecycle browser tests (`howlerBus`/`ambientGraph`/`musicGraph`) (full-review F9).
+- [x] CR-F9 Audio-graph lifecycle browser tests (`howlerBus`/`ambientGraph`/`musicGraph`) (full-review F9).
 - [x] CR-poly P3 tail (done): `@lhci/cli` already latest + prod audit clean → added `pnpm audit --prod --audit-level=high` CI gate (prod-only tripwire, dev CVEs stay non-blocking) (L-1); fixed the ARCHITECTURE Scene.tsx dangling "see DECISIONS" ref → "CR-H1scene backlog" (D10); added a draw-call ceiling (MOBILE_CALL_BUDGET=1400, stable on the emulator vs noisy FPS) to the mobile perf script.
 - [ ] [WAIT-HW] CR-shadows `shadows="soft"`→hard in the low-FPS adaptive window (full-review L2). Needs a real Pixel-5a-class device to judge the soft-vs-hard PCF cost + confirm the downgrade reads acceptably — pure on-device tuning, can't validate headlessly (the e2e GL backend renders shadows differently). Hardware-blocked.
 
