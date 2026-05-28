@@ -62,3 +62,6 @@ src/**/__screenshots__/
 # Lighthouse CI per-run report cache (uploaded to temporary-public-storage
 # in CI; locally regenerated on every `pnpm lighthouse` invocation).
 .lighthouseci/
+
+# Comprehensive review scratch (not committed)
+.full-review/
