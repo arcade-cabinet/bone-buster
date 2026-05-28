@@ -217,6 +217,48 @@ jobs:
           name: app-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
 
+  # CR-H2 (full-review) — exercise the RELEASE APK path (R8/ProGuard +
+  # resource shrinking). CI otherwise only builds assembleDebug, so the
+  # bytes that actually ship to Play are never built — the classic
+  # Capacitor failure mode is a debug APK that works while the release
+  # APK white-screens because ProGuard stripped a reflectively-referenced
+  # bridge class. assembleRelease runs unsigned here (still exercises R8 +
+  # surfaces missing keep-rules); signing is a separate store-upload step.
+  # Gated on tags + the `mobile-perf` label so it doesn't tax every PR.
+  android-release:
+    if: |
+      github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') ||
+      contains(github.event.pull_request.labels.*.name, 'mobile-perf')
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        with: { version: 10.2.0 }
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '21', cache: gradle }
+      - uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+      - run: pnpm install --frozen-lockfile
+      - name: Build web bundle
+        run: pnpm build
+      - name: Capacitor sync + assembleRelease (R8/ProGuard)
+        run: |
+          if [ -d "android" ]; then
+            pnpm cap:sync
+            cd android && ./gradlew assembleRelease
+          else
+            echo "android/ not yet bootstrapped — skipping release APK build"
+          fi
+      - uses: actions/upload-artifact@v7
+        if: success() && hashFiles('android/app/build/outputs/apk/release/*.apk') != ''
+        with:
+          name: app-release-apk-unsigned
+          path: android/app/build/outputs/apk/release/*.apk
+
   # T5 — mobile perf gate. Boots a Pixel 5a-class AVD, installs the
   # debug APK from the `android` job, launches the Capacitor WebView,
   # forwards its DevTools port, and runs the OBS3 perf probe through
