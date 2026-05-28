@@ -37,9 +37,9 @@
 			"message": "Use mulberry32(seed) from src/engine/prng.ts — engine/world/ai/store code must be replayable (canonical byte-stability)."
 		},
 		{
-			"pattern": "(?<![.\\w])(performance\\.now|Date\\.now)\\(\\)",
+			"pattern": "\\b(performance\\.now|Date\\.now)\\(\\)",
 			"globs": ["src/engine/**", "src/world/**", "src/ai/**", "src/store/**"],
-			"message": "No wall-clock in determinism-gated code — pass time in from the caller; engine/world/ai/store must be replayable."
+			"message": "No wall-clock in determinism-gated code (incl. window./globalThis. prefixed) — pass time in from the caller; engine/world/ai/store must be replayable."
 		},
 		{
 			"pattern": "\\^\\s*0x[0-9a-fA-F]{6,8}\\b",

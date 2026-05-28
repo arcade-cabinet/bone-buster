@@ -24,22 +24,23 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { cleanup, render } from "@testing-library/react";
 import { useEffect } from "react";
 import type * as THREE from "three";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BodyPartField } from "../../scene/effects/BodyPartField";
 import { ParticleBurstField } from "../../scene/effects/ParticleBurstField";
 import { ShellEjectField } from "../../scene/effects/ShellEjectField";
 
 // The fields read wall-clock `performance.now()` for spawn time + TTL
-// expiry, so we control it directly: spawn at t=0, then jump the clock
-// past the TTL and step one frame to drive despawn deterministically.
+// expiry, so we control it via vi.spyOn (safer than reassigning the
+// global — performance.now can be read-only in some environments, and
+// vi.restoreAllMocks guarantees cleanup): spawn at t=0, then jump the
+// clock past the TTL and step one frame to drive despawn deterministically.
 let clock = 0;
-const realNow = performance.now.bind(performance);
 beforeEach(() => {
 	clock = 0;
-	performance.now = () => clock;
+	vi.spyOn(performance, "now").mockImplementation(() => clock);
 });
 afterEach(() => {
-	performance.now = realNow;
+	vi.restoreAllMocks();
 	cleanup();
 });
 
@@ -146,6 +147,11 @@ describe("effect-field GPU-resource disposal (H2 / F1)", () => {
 		clock = 20_000; // past shard TTL (5000ms) → shards + decals despawn
 		driver.step(32);
 
+		// `.some`, not `.every`: the meshes captured at spawn are the shard
+		// meshes; decals only mount after a shard settles, so not every live
+		// material at capture-time is guaranteed a despawn with a decal in the
+		// same window. The contract we pin is "despawn disposes materials" —
+		// at least one shard material freed proves the dispose path runs.
 		expect(matWatch.some((w) => w())).toBe(true);
 		expect(geoWatch()).toBe(false);
 	});
