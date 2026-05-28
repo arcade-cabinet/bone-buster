@@ -23,7 +23,7 @@ Dependency-ordered. Drain top-down on a single branch.
 
 ### Enforcement + verification (mostly shipped via #82/#83 — finish the tail)
 - [x] CR-rAF Root-caused the CI headless-GL rAF stall: `waitForFrames` waited on a `requestAnimationFrame` that stops firing while the `<Canvas>` WebGL context is torn down + rebuilt mid level-transition. Fixed by racing rAF against a 32ms `setTimeout` fallback in both e2e specs so the frame countdown can't stall; removed the CI skip on the 6-level "mission complete" pose — it gates CI again.
-- [ ] CR-C2 Convert the screenshot specs from capture-only to real pixel assertions vs committed baselines (`toHaveScreenshot`/`pixelmatch`), so the visual gate actually diffs (full-review F2/C-2).
+- [ ] CR-C2 Convert the screenshot specs from capture-only to real pixel assertions vs committed baselines. CODE DONE: `captureViaCDP` now asserts each capture via Playwright's built-in `expect(buf).toMatchSnapshot(name, {maxDiffPixelRatio:0.02})` (no new deps), all 5 canonical call sites pass a snapshot name. REMAINING: generate + commit the baseline PNGs via `--update-snapshots` — gated on the CR-TS1 workflow finishing so the game compiles + renders correctly (bad baselines from a mid-edit tree would be worse than none). Do the archetype spec too.
 - [ ] CR-H1 Wire `scripts/verify-pages-deploy.mjs` as a post-deploy smoke job in `release.yml` (full-review H-1).
 - [ ] CR-H2 Add an `assembleRelease` (R8/ProGuard) CI build job so the Play-shipping APK path is exercised (full-review H-2).
 
@@ -35,7 +35,7 @@ Dependency-ordered. Drain top-down on a single branch.
 ### The big perf + reconciliation win
 - [ ] CR-H1perf Convert `ParticleBurstField`/`ShellEjectField`/`BodyPartField` to `InstancedMesh` (dispose-on-despawn already shipped); add `gl.info`/`Howler._howls` perf-leak probes to the perf script (full-review H1/M1/F1).
 - [ ] CR-R1 Fix `DamageNumberField`'s per-frame `force()` — render the pool once, animate imperatively in `useFrame` (full-review R-1).
-- [ ] CR-M1audio Cache one Howl per one-shot slug (stop per-`play()` allocation) (full-review M1).
+- [x] CR-M1audio Cache one-shot Howls per variant file (ONESHOT_POOL keyed by variant path) so rapid fire reuses Howls + layers via Howler sound-ids instead of allocating + leaking a fresh Howl per `play()`; resetForTesting unloads the pool. Pinned by bonebuster-howlerOneshotCache.test.ts (40 plays → ≤3 constructions) (full-review M1).
 
 ### Structural decomposition
 - [ ] CR-H1eng Decompose `src/engine/engine.ts` (1344) along type seams into mapTypes/gridGen/collision/raycast/sectors/spawn/projectiles; move the yuka import into `projectiles.ts` (fixes the H-3 wrong-direction dep).
