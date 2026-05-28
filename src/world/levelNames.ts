@@ -91,6 +91,11 @@ export const LEVEL_NAME_POOLS: Readonly<Record<PropArchetype, readonly string[]>
 export function pickLevelName(archetype: PropArchetype, seed: number): string {
 	const pool = LEVEL_NAME_POOLS[archetype];
 	const rng = mulberry32((seed >>> 0) ^ RNG_TAGS.NAME);
+	// Math.floor(rng()*pool.length)%pool.length is provably in [0, pool.length)
+	// when pool is non-empty (all archetype pools have 8 entries).
 	const idx = Math.floor(rng() * pool.length) % pool.length;
-	return pool[idx];
+	const name = pool[idx];
+	if (name === undefined)
+		throw new RangeError(`pickLevelName: idx ${idx} out of bounds for archetype ${archetype}`);
+	return name;
 }

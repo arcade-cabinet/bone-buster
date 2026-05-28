@@ -165,6 +165,7 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 		let w = 0;
 		for (let r = 0; r < shards.length; r++) {
 			const shard = shards[r];
+			if (shard === undefined) continue;
 			const age = now - shard.createdAt;
 			if (age > timings.ttl) continue;
 			// POL40 — capture the rest XZ position on the motion→settle

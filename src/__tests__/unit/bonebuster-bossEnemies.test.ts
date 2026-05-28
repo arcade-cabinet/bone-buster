@@ -29,6 +29,7 @@ describe("E2 — boss spawn selection", () => {
 
 			// Verify no other spawn is farther from playerSpawn.
 			const bossSpawn = map.enemySpawns[bossIdx];
+			if (!bossSpawn) throw new RangeError(`enemySpawns[${bossIdx}] missing after bounds-check`);
 			const dBoss = Math.hypot(
 				bossSpawn.position.x - map.playerSpawn.x,
 				bossSpawn.position.y - map.playerSpawn.y,

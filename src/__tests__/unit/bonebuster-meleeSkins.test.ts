@@ -62,8 +62,11 @@ describe("COV9 — pickMeleeSkin", () => {
 describe("SLA1 — meathook knockback profile", () => {
 	it("meathook (index 4) is the only skin with negative knockbackMul", () => {
 		const meathookUrl = MELEE_SKIN_URLS[4];
+		if (!meathookUrl) throw new RangeError("MELEE_SKIN_URLS[4] missing");
 		expect(meathookUrl).toMatch(/melee_meathook\.glb$/);
-		expect(MELEE_PROFILES[meathookUrl].knockbackMul).toBe(-1);
+		const meathookProfile = MELEE_PROFILES[meathookUrl];
+		if (!meathookProfile) throw new Error("MELEE_PROFILES missing entry for meathookUrl");
+		expect(meathookProfile.knockbackMul).toBe(-1);
 		for (const [url, profile] of Object.entries(MELEE_PROFILES)) {
 			if (url === meathookUrl) continue;
 			expect(profile.knockbackMul).toBeGreaterThanOrEqual(0);
@@ -78,12 +81,16 @@ describe("SLA1 — meathook knockback profile", () => {
 describe("SLA2 — chainsaw loud-attract profile", () => {
 	it("chainsaw (index 2) has attractRadiusTiles > 0", () => {
 		const chainsawUrl = MELEE_SKIN_URLS[2];
+		if (!chainsawUrl) throw new RangeError("MELEE_SKIN_URLS[2] missing");
 		expect(chainsawUrl).toMatch(/melee_chainsaw\.glb$/);
-		expect(MELEE_PROFILES[chainsawUrl].attractRadiusTiles).toBeGreaterThan(0);
+		const chainsawProfile = MELEE_PROFILES[chainsawUrl];
+		if (!chainsawProfile) throw new Error("MELEE_PROFILES missing entry for chainsawUrl");
+		expect(chainsawProfile.attractRadiusTiles).toBeGreaterThan(0);
 	});
 
 	it("every non-chainsaw skin is silent (undefined or 0)", () => {
 		const chainsawUrl = MELEE_SKIN_URLS[2];
+		if (!chainsawUrl) throw new RangeError("MELEE_SKIN_URLS[2] missing");
 		for (const [url, profile] of Object.entries(MELEE_PROFILES)) {
 			if (url === chainsawUrl) continue;
 			expect(profile.attractRadiusTiles ?? 0).toBe(0);

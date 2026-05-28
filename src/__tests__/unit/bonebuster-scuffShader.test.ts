@@ -36,7 +36,7 @@ describe("ScuffShader pure helpers (PRD §R4)", () => {
 
 	describe("hash", () => {
 		it("returns a finite number in [0, 1) for any integer pair", () => {
-			for (const [x, y] of [
+			for (const pair of [
 				[0, 0],
 				[1, 0],
 				[-1, 0],
@@ -44,6 +44,10 @@ describe("ScuffShader pure helpers (PRD §R4)", () => {
 				[1024, 4096],
 				[-1000, -1000],
 			]) {
+				const x = pair[0];
+				const y = pair[1];
+				if (x === undefined || y === undefined)
+					throw new RangeError("pair has fewer than 2 elements");
 				const v = hash(x, y);
 				expect(Number.isFinite(v)).toBe(true);
 				expect(v).toBeGreaterThanOrEqual(0);

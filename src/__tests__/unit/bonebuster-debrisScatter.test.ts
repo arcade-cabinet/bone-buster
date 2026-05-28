@@ -20,11 +20,14 @@ describe("COV5 step-2 — sector-body debris scatter", () => {
 		const b = spawnDebris(map);
 		expect(a).toHaveLength(b.length);
 		for (let i = 0; i < a.length; i += 1) {
-			expect(a[i].id).toBe(b[i].id);
-			expect(a[i].position.x).toBe(b[i].position.x);
-			expect(a[i].position.y).toBe(b[i].position.y);
-			expect(a[i].yaw).toBe(b[i].yaw);
-			expect(a[i].url).toBe(b[i].url);
+			const ai = a[i];
+			const bi = b[i];
+			if (!ai || !bi) throw new Error(`scatter missing element at index ${i}`);
+			expect(ai.id).toBe(bi.id);
+			expect(ai.position.x).toBe(bi.position.x);
+			expect(ai.position.y).toBe(bi.position.y);
+			expect(ai.yaw).toBe(bi.yaw);
+			expect(ai.url).toBe(bi.url);
 		}
 	});
 

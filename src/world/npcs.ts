@@ -37,5 +37,7 @@ export function pickNpcKind(hash: number): NpcKind {
 		"basemesh",
 	];
 	const idx = (hash >>> 0) % kinds.length;
-	return kinds[idx];
+	const kind = kinds[idx];
+	if (kind === undefined) throw new RangeError(`pickNpcKind: index ${idx} of ${kinds.length}`);
+	return kind;
 }

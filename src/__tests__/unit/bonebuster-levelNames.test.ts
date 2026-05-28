@@ -43,8 +43,12 @@ describe("D8 — pickLevelName", () => {
 			for (const name of LEVEL_NAME_POOLS[archetype]) {
 				const parts = name.split(" ");
 				expect(parts).toHaveLength(2);
-				expect(parts[0].length).toBeGreaterThan(0);
-				expect(parts[1].length).toBeGreaterThan(0);
+				const p0 = parts[0];
+				const p1 = parts[1];
+				if (p0 === undefined || p1 === undefined)
+					throw new Error(`name "${name}" has fewer than 2 parts`);
+				expect(p0.length).toBeGreaterThan(0);
+				expect(p1.length).toBeGreaterThan(0);
 			}
 		}
 	});
@@ -53,7 +57,12 @@ describe("D8 — pickLevelName", () => {
 		for (const archetype of ARCHETYPE_NAMES) {
 			for (const name of LEVEL_NAME_POOLS[archetype]) {
 				const [a, b] = name.split(" ");
-				expect(a[0].toUpperCase()).toBe(b[0].toUpperCase());
+				if (a === undefined || b === undefined)
+					throw new Error(`name "${name}" has fewer than 2 words`);
+				const a0 = a[0];
+				const b0 = b[0];
+				if (a0 === undefined || b0 === undefined) throw new Error(`word in "${name}" is empty`);
+				expect(a0.toUpperCase()).toBe(b0.toUpperCase());
 			}
 		}
 	});

@@ -122,7 +122,9 @@ describe("effect-field GPU-resource disposal (H2 / F1)", () => {
 		const meshes = driver.liveMeshes();
 		expect(meshes.length).toBeGreaterThan(0);
 		const matWatch = meshes.map((m) => watchDispose(m.material as THREE.Material));
-		const geoWatch = watchGeometryDispose(meshes[0].geometry); // shared MOTE_GEOMETRY
+		const mesh0 = meshes[0];
+		if (!mesh0) throw new Error("meshes[0] missing after length > 0 check");
+		const geoWatch = watchGeometryDispose(mesh0.geometry); // shared MOTE_GEOMETRY
 
 		clock = 10_000; // well past mote TTL (350ms)
 		driver.step(32); // step a frame → expiry branch disposes despawned materials
@@ -142,7 +144,9 @@ describe("effect-field GPU-resource disposal (H2 / F1)", () => {
 		const matWatch = meshes.map((m) => watchDispose(m.material as THREE.Material));
 		// Regression: a prior bug disposed the SHARED geometry on first despawn,
 		// breaking every later shard/decal. The shared geometry must survive.
-		const geoWatch = watchGeometryDispose(meshes[0].geometry);
+		const mesh0body = meshes[0];
+		if (!mesh0body) throw new Error("meshes[0] missing after length > 0 check");
+		const geoWatch = watchGeometryDispose(mesh0body.geometry);
 
 		clock = 20_000; // past shard TTL (5000ms) → shards + decals despawn
 		driver.step(32);

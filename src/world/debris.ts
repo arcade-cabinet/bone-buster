@@ -31,5 +31,8 @@ export const DEBRIS_VARIANTS: readonly string[] = [
 /** Deterministic debris-variant pick by hash (e.g. `sectorId * map.seed + i`). */
 export function pickDebrisUrl(hash: number): string {
 	const idx = (hash >>> 0) % DEBRIS_VARIANTS.length;
-	return DEBRIS_VARIANTS[idx];
+	const url = DEBRIS_VARIANTS[idx];
+	if (url === undefined)
+		throw new RangeError(`pickDebrisUrl: index ${idx} of ${DEBRIS_VARIANTS.length}`);
+	return url;
 }

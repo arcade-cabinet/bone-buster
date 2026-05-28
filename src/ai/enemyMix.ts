@@ -145,7 +145,10 @@ function pickKindFromTable(table: EnemyMixTable, rng: () => number): EnemyKind {
 	}
 	// Falls through only on floating-point edge — return last non-zero kind.
 	for (let i = ALL_KINDS.length - 1; i >= 0; i -= 1) {
-		if (table[ALL_KINDS[i]] > 0) return ALL_KINDS[i];
+		// i is in [0, ALL_KINDS.length) by loop condition — provably in-bounds.
+		const k = ALL_KINDS[i];
+		if (k === undefined) throw new RangeError(`pickKindFromTable: ALL_KINDS[${i}] missing`);
+		if (table[k] > 0) return k;
 	}
 	return "rattler"; // unreachable given normalize() guarantees > 0
 }

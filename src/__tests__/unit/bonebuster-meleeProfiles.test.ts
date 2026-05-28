@@ -45,7 +45,9 @@ describe("PB4 — MELEE_PROFILES roster contract", () => {
 		// Canonical-screenshot back-compat: any deviation from identity
 		// on the E1 default would shift the per-shot damage and break
 		// the existing balance assumptions.
-		expect(MELEE_PROFILES[MELEE_SKIN_URLS[0]]).toEqual(DEFAULT_MELEE_PROFILE);
+		const url0 = MELEE_SKIN_URLS[0];
+		if (!url0) throw new RangeError("MELEE_SKIN_URLS[0] missing");
+		expect(MELEE_PROFILES[url0]).toEqual(DEFAULT_MELEE_PROFILE);
 	});
 
 	it("damageMul is finite and positive for every profile", () => {
@@ -78,9 +80,16 @@ describe("PB4 — MELEE_PROFILES roster contract", () => {
 		// distinct damage-profile triple. This test makes the table
 		// changes visible: any future re-balance that flattens these
 		// to identity would have to update this expectation.
-		const axe = MELEE_PROFILES[MELEE_SKIN_URLS[1]];
-		const chainsaw = MELEE_PROFILES[MELEE_SKIN_URLS[2]];
-		const meathook = MELEE_PROFILES[MELEE_SKIN_URLS[4]];
+		const url1 = MELEE_SKIN_URLS[1];
+		const url2 = MELEE_SKIN_URLS[2];
+		const url4 = MELEE_SKIN_URLS[4];
+		if (!url1 || !url2 || !url4)
+			throw new RangeError("MELEE_SKIN_URLS missing expected indices (1, 2, 4)");
+		const axe = MELEE_PROFILES[url1];
+		const chainsaw = MELEE_PROFILES[url2];
+		const meathook = MELEE_PROFILES[url4];
+		if (!axe || !chainsaw || !meathook)
+			throw new Error("MELEE_PROFILES missing entry for url1/url2/url4");
 		// Axe = heavy-slow.
 		expect(axe.damageMul).toBeGreaterThan(1);
 		expect(axe.cooldownMul).toBeGreaterThan(1);

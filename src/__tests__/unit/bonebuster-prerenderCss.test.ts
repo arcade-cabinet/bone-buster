@@ -29,6 +29,7 @@ function readMirroredLiterals(): Mirror[] {
 		);
 	}
 	const block = match[1];
+	if (block === undefined) throw new Error("PALETTE_BLOCK_RE group 1 missing — check the regex");
 	// Lines look like: const SURFACE_BASE = "#0F0C12";
 	const lineRe = /const\s+(\w+)\s*=\s*"(#[0-9A-Fa-f]{6})";/g;
 	const aliasMap: Record<string, keyof typeof BONE_PALETTE> = {
@@ -47,6 +48,9 @@ function readMirroredLiterals(): Mirror[] {
 	for (const match of block.matchAll(lineRe)) {
 		const alias = match[1];
 		const literal = match[2];
+		if (alias === undefined || literal === undefined) {
+			throw new Error("lineRe capture group missing — regex structure changed");
+		}
 		const name = aliasMap[alias];
 		if (!name) {
 			throw new Error(

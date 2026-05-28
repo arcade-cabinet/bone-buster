@@ -83,12 +83,21 @@ function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean 
 
 function pickHazardOfKinds(kinds: readonly TrapKind[], rng: () => number): TrapDef {
 	const candidates = TRAPS.filter((t) => kinds.includes(t.kind));
-	return candidates[Math.floor(rng() * candidates.length)];
+	if (candidates.length === 0)
+		throw new Error("pickHazardOfKinds: no candidates for kinds " + kinds.join(","));
+	// Math.floor(rng()*length) with rng ∈ [0,1) is provably in [0, length).
+	const def = candidates[Math.floor(rng() * candidates.length)];
+	if (def === undefined) throw new RangeError("pickHazardOfKinds: index out of bounds");
+	return def;
 }
 
 function pickTrigger(rng: () => number): TrapDef {
 	const candidates = TRAPS.filter((t) => t.kind === "trigger");
-	return candidates[Math.floor(rng() * candidates.length)];
+	if (candidates.length === 0) throw new Error("pickTrigger: no trigger candidates in TRAPS");
+	// Math.floor(rng()*length) with rng ∈ [0,1) is provably in [0, length).
+	const def = candidates[Math.floor(rng() * candidates.length)];
+	if (def === undefined) throw new RangeError("pickTrigger: index out of bounds");
+	return def;
 }
 
 /**

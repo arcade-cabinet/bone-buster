@@ -31,5 +31,8 @@ export const KITCHEN_PROPS: readonly string[] = [
 /** Deterministic kitchen-prop pick by hash. */
 export function pickKitchenProp(hash: number): string {
 	const idx = (hash >>> 0) % KITCHEN_PROPS.length;
-	return KITCHEN_PROPS[idx];
+	const url = KITCHEN_PROPS[idx];
+	if (url === undefined)
+		throw new RangeError(`pickKitchenProp: index ${idx} of ${KITCHEN_PROPS.length}`);
+	return url;
 }

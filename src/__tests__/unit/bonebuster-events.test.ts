@@ -37,9 +37,11 @@ describe("ARCH1a — typed event dispatch round-trip", () => {
 		dispatch({ type: "fpsUpdate", fps: 144, pixelRatio: 1.5 });
 		teardown();
 		expect(received).toHaveLength(1);
-		expect(received[0].type).toBe("fpsUpdate");
-		expect(received[0].fps).toBe(144);
-		expect(received[0].pixelRatio).toBe(1.5);
+		const ev0 = received[0];
+		if (!ev0) throw new Error("expected received[0]");
+		expect(ev0.type).toBe("fpsUpdate");
+		expect(ev0.fps).toBe(144);
+		expect(ev0.pixelRatio).toBe(1.5);
 	});
 
 	it("returned teardown removes the listener", () => {
@@ -144,9 +146,11 @@ describe("E8 step-2 — flameStream BurstKind", () => {
 		});
 		teardown();
 		expect(received).toHaveLength(1);
-		expect(received[0].kind).toBe("flameStream");
-		expect(received[0].dirX).toBeCloseTo(0.7);
-		expect(received[0].dirY).toBeCloseTo(0.7);
+		const ev0flame = received[0];
+		if (!ev0flame) throw new Error("expected received[0]");
+		expect(ev0flame.kind).toBe("flameStream");
+		expect(ev0flame.dirX).toBeCloseTo(0.7);
+		expect(ev0flame.dirY).toBeCloseTo(0.7);
 	});
 
 	it("other BurstKind events work without dirX/dirY (back-compat)", () => {
@@ -154,8 +158,10 @@ describe("E8 step-2 — flameStream BurstKind", () => {
 		const teardown = addBoneBusterListener("burst", (e) => received.push(e));
 		dispatch({ type: "burst", kind: "damage", x: 1, y: 2 });
 		teardown();
-		expect(received[0].kind).toBe("damage");
-		expect(received[0].dirX).toBeUndefined();
-		expect(received[0].dirY).toBeUndefined();
+		const ev0damage = received[0];
+		if (!ev0damage) throw new Error("expected received[0]");
+		expect(ev0damage.kind).toBe("damage");
+		expect(ev0damage.dirX).toBeUndefined();
+		expect(ev0damage.dirY).toBeUndefined();
 	});
 });

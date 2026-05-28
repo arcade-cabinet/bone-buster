@@ -29,5 +29,8 @@ export const DOOR_VARIANTS: readonly string[] = [
  */
 export function pickDoorUrl(seed: number): string {
 	const idx = (seed >>> 0) % DOOR_VARIANTS.length;
-	return DOOR_VARIANTS[idx];
+	const url = DOOR_VARIANTS[idx];
+	if (url === undefined)
+		throw new RangeError(`pickDoorUrl: index ${idx} of ${DOOR_VARIANTS.length}`);
+	return url;
 }

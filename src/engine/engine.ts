@@ -224,6 +224,19 @@ export type GenerateMapShape = Readonly<{
 	roomTries: number;
 }>;
 
+/**
+ * Indexed access that documents a proven in-bounds invariant: returns the
+ * element, or throws loudly if the index is out of range. Use only where the
+ * index is structurally guaranteed (loop body `i < length`, post-empty-check
+ * `[0]`, `Math.floor(rng()*len)` with rng∈[0,1)). The throw never fires in
+ * correct code — it converts a silent `undefined` into a diagnosable crash.
+ */
+function at<T>(a: readonly T[], i: number): T {
+	const v = a[i];
+	if (v === undefined) throw new RangeError(`index ${i} of ${a.length}`);
+	return v;
+}
+
 const cellCenter = (gx: number, gy: number): Vec2 => ({
 	x: (gx + 0.5) * TILE,
 	y: (gy + 0.5) * TILE,
@@ -234,8 +247,9 @@ const inBounds = (gx: number, gy: number, w: number, h: number) =>
 
 function carveRoom(cells: Cell[][], room: Room) {
 	for (let gy = room.gy; gy < room.gy + room.height; gy += 1) {
+		const row = at(cells, gy);
 		for (let gx = room.gx; gx < room.gx + room.width; gx += 1) {
-			cells[gy][gx] = "empty";
+			row[gx] = "empty";
 		}
 	}
 }
@@ -250,24 +264,24 @@ function carveCorridor(cells: Cell[][], a: Room, b: Room, rand: () => number) {
 	let cy = ay;
 	if (horizontalFirst) {
 		while (cx !== bx) {
-			cells[cy][cx] = "empty";
+			at(cells, cy)[cx] = "empty";
 			cx += cx < bx ? 1 : -1;
 		}
 		while (cy !== by) {
-			cells[cy][cx] = "empty";
+			at(cells, cy)[cx] = "empty";
 			cy += cy < by ? 1 : -1;
 		}
 	} else {
 		while (cy !== by) {
-			cells[cy][cx] = "empty";
+			at(cells, cy)[cx] = "empty";
 			cy += cy < by ? 1 : -1;
 		}
 		while (cx !== bx) {
-			cells[cy][cx] = "empty";
+			at(cells, cy)[cx] = "empty";
 			cx += cx < bx ? 1 : -1;
 		}
 	}
-	cells[cy][cx] = "empty";
+	at(cells, cy)[cx] = "empty";
 }
 
 function bfsReachable(
@@ -276,13 +290,13 @@ function bfsReachable(
 	passable: (c: Cell) => boolean,
 ): boolean[][] {
 	const height = cells.length;
-	const width = cells[0].length;
+	const width = at(cells, 0).length;
 	const visited: boolean[][] = Array.from({ length: height }, () =>
 		new Array<boolean>(width).fill(false),
 	);
 	if (!inBounds(start.gx, start.gy, width, height)) return visited;
 	const queue: Array<{ gx: number; gy: number }> = [start];
-	visited[start.gy][start.gx] = true;
+	at(visited, start.gy)[start.gx] = true;
 	while (queue.length > 0) {
 		const next = queue.shift();
 		if (!next) break;
@@ -296,9 +310,10 @@ function bfsReachable(
 			const nx = gx + dx;
 			const ny = gy + dy;
 			if (!inBounds(nx, ny, width, height)) continue;
-			if (visited[ny][nx]) continue;
-			if (!passable(cells[ny][nx])) continue;
-			visited[ny][nx] = true;
+			const visitedRow = at(visited, ny);
+			if (at(visitedRow, nx)) continue;
+			if (!passable(at(at(cells, ny), nx))) continue;
+			visitedRow[nx] = true;
 			queue.push({ gx: nx, gy: ny });
 		}
 	}
@@ -334,21 +349,22 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 		rooms.push(room);
 		carveRoom(cells, room);
 		if (rooms.length > 1) {
-			carveCorridor(cells, rooms[rooms.length - 2], room, rand);
+			carveCorridor(cells, at(rooms, rooms.length - 2), room, rand);
 		}
 	}
 
 	// Sprinkle lava in a few inner rooms.
 	const lavaRoomCount = Math.min(2, Math.floor(rooms.length / 6));
 	for (let i = 0; i < lavaRoomCount; i += 1) {
-		const room = rooms[Math.floor(rand() * (rooms.length - 2)) + 1];
+		const room = at(rooms, Math.floor(rand() * (rooms.length - 2)) + 1);
 		const cgx = room.gx + Math.floor(room.width / 2);
 		const cgy = room.gy + Math.floor(room.height / 2);
-		if (cells[cgy][cgx] === "empty") cells[cgy][cgx] = "lava";
+		const cellRow = at(cells, cgy);
+		if (cellRow[cgx] === "empty") cellRow[cgx] = "lava";
 	}
 
 	// Player spawn = first room center.
-	const spawnRoom = rooms[0];
+	const spawnRoom = at(rooms, 0);
 	const startGx = spawnRoom.gx + Math.floor(spawnRoom.width / 2);
 	const startGy = spawnRoom.gy + Math.floor(spawnRoom.height / 2);
 
@@ -361,9 +377,11 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	let exit = { gx: startGx, gy: startGy };
 	let exitDist = -1;
 	for (let gy = 0; gy < height; gy += 1) {
+		const reachRow = at(reach, gy);
+		const cellRow = at(cells, gy);
 		for (let gx = 0; gx < width; gx += 1) {
-			if (!reach[gy][gx]) continue;
-			if (cells[gy][gx] !== "empty") continue;
+			if (!reachRow[gx]) continue;
+			if (cellRow[gx] !== "empty") continue;
 			const d = Math.abs(gx - startGx) + Math.abs(gy - startGy);
 			if (d > exitDist) {
 				exitDist = d;
@@ -383,15 +401,16 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 		] as const
 	)
 		.map(([dx, dy]) => ({ gx: exit.gx + dx, gy: exit.gy + dy }))
-		.filter((n) => inBounds(n.gx, n.gy, width, height) && cells[n.gy][n.gx] === "empty");
+		.filter((n) => inBounds(n.gx, n.gy, width, height) && at(cells, n.gy)[n.gx] === "empty");
 	if (exitNeighbors.length > 0) {
-		doorCell = exitNeighbors[0];
+		doorCell = at(exitNeighbors, 0);
 		for (let i = 1; i < exitNeighbors.length; i += 1) {
-			cells[exitNeighbors[i].gy][exitNeighbors[i].gx] = "wall";
+			const n = at(exitNeighbors, i);
+			at(cells, n.gy)[n.gx] = "wall";
 		}
-		cells[doorCell.gy][doorCell.gx] = "door";
+		at(cells, doorCell.gy)[doorCell.gx] = "door";
 	}
-	cells[exit.gy][exit.gx] = "exit";
+	at(cells, exit.gy)[exit.gx] = "exit";
 
 	const openReach = bfsReachable(
 		cells,
@@ -403,9 +422,11 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	let key = { gx: startGx, gy: startGy };
 	let keyDist = -1;
 	for (let gy = 0; gy < height; gy += 1) {
+		const openReachRow = at(openReach, gy);
+		const cellRow = at(cells, gy);
 		for (let gx = 0; gx < width; gx += 1) {
-			if (!openReach[gy][gx]) continue;
-			if (cells[gy][gx] !== "empty") continue;
+			if (!openReachRow[gx]) continue;
+			if (cellRow[gx] !== "empty") continue;
 			if (gx === startGx && gy === startGy) continue;
 			const d = Math.abs(gx - doorCell.gx) + Math.abs(gy - doorCell.gy);
 			if (d > keyDist) {
@@ -414,14 +435,16 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 			}
 		}
 	}
-	cells[key.gy][key.gx] = "key";
+	at(cells, key.gy)[key.gx] = "key";
 
 	// Enemy spawns: room centers + room corners, distance-biased.
 	const enemyCandidates: Vec2[] = [];
 	for (let gy = 0; gy < height; gy += 1) {
+		const openReachRow = at(openReach, gy);
+		const cellRow = at(cells, gy);
 		for (let gx = 0; gx < width; gx += 1) {
-			if (!openReach[gy][gx]) continue;
-			if (cells[gy][gx] !== "empty") continue;
+			if (!openReachRow[gx]) continue;
+			if (cellRow[gx] !== "empty") continue;
 			if (gx === startGx && gy === startGy) continue;
 			const d = Math.abs(gx - startGx) + Math.abs(gy - startGy);
 			if (d < 5) continue;
@@ -430,7 +453,10 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	}
 	for (let i = enemyCandidates.length - 1; i > 0; i -= 1) {
 		const j = Math.floor(rand() * (i + 1));
-		[enemyCandidates[i], enemyCandidates[j]] = [enemyCandidates[j], enemyCandidates[i]];
+		const ci = at(enemyCandidates, i);
+		const cj = at(enemyCandidates, j);
+		enemyCandidates[i] = cj;
+		enemyCandidates[j] = ci;
 	}
 	// E13 step-10 — per-archetype enemy-count multiplier. Resolved
 	// inline as `(seed >>> 0) % 5` because we're building the map and
@@ -447,11 +473,11 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 		"library",
 	] as const satisfies readonly PropArchetype[];
 	const archetypeIdx = (seed >>> 0) % 5;
-	const archetype = ARCHETYPE_NAMES_INLINE[archetypeIdx];
+	const archetype = at(ARCHETYPE_NAMES_INLINE, archetypeIdx);
 	const baseEnemyCount = Math.max(6, Math.floor(rooms.length * 1.2));
 	const totalEnemies = Math.min(
 		16,
-		Math.max(4, Math.round(baseEnemyCount * ARCHETYPE_ENEMY_MULTIPLIER[archetypeIdx])),
+		Math.max(4, Math.round(baseEnemyCount * at(ARCHETYPE_ENEMY_MULTIPLIER, archetypeIdx))),
 	);
 	// Base trio stand-in. Production paths remap through
 	// `remapEnemyMix` (see app/views/Scene.tsx:141) before consuming
@@ -460,7 +486,7 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	// sees the full base mechanic surface.
 	const baseKinds = ["rattler", "phaser", "bouncer"] as const;
 	const enemySpawns: EnemySpawn[] = enemyCandidates.slice(0, totalEnemies).map((position, idx) => ({
-		kind: baseKinds[idx % baseKinds.length],
+		kind: at(baseKinds, idx % baseKinds.length),
 		position,
 	}));
 
@@ -488,7 +514,7 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	const basePickupCount = Math.min(8, pickupCandidates.length);
 	const pickupTotal = Math.min(
 		pickupCandidates.length,
-		Math.max(4, Math.round(basePickupCount * ARCHETYPE_PICKUP_MULTIPLIER[archetypeIdx])),
+		Math.max(4, Math.round(basePickupCount * at(ARCHETYPE_PICKUP_MULTIPLIER, archetypeIdx))),
 	);
 	const wantsFlame = (seed >>> 0) % 3 === 0;
 	// PB5 step-2 — EMF reader spawns on every 4th seed (seed%4==0). One
@@ -519,7 +545,7 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	const pickupSpawns: PickupSpawn[] = pickupCandidates
 		.slice(0, pickupTotal)
 		.map((position, idx) => {
-			if (idx < reserved.length) return { kind: reserved[idx], position };
+			if (idx < reserved.length) return { kind: at(reserved, idx), position };
 			const tailIdx = idx - reserved.length;
 			// Per-archetype bias on the tail. The cadence values (every 3rd
 			// for arena/courtyard, every 4th for library) were picked so
@@ -537,7 +563,7 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 			return { kind: "health", position };
 		});
 
-	cells[startGy][startGx] = "spawn";
+	at(cells, startGy)[startGx] = "spawn";
 
 	return {
 		kind: "grid",
@@ -566,7 +592,7 @@ export function worldToGrid(pos: Vec2): { gx: number; gy: number } {
 
 export function cellAt(gx: number, gy: number, map: BoneBusterGridMap): Cell | "outOfBounds" {
 	if (!inBounds(gx, gy, map.width, map.height)) return "outOfBounds";
-	return map.cells[gy][gx];
+	return at(at(map.cells, gy), gx);
 }
 
 export function isBlocking(cell: Cell | "outOfBounds", doorOpen: boolean) {
@@ -762,8 +788,9 @@ export function pickBossSpawnIndex(map: BoneBusterMap): number {
 	// reason, the picker still works. Reviewer-caught issue from E2.
 	let bestDistSq = Number.NEGATIVE_INFINITY;
 	for (let i = 0; i < map.enemySpawns.length; i += 1) {
-		const dx = map.enemySpawns[i].position.x - map.playerSpawn.x;
-		const dy = map.enemySpawns[i].position.y - map.playerSpawn.y;
+		const spawn = at(map.enemySpawns, i);
+		const dx = spawn.position.x - map.playerSpawn.x;
+		const dy = spawn.position.y - map.playerSpawn.y;
 		const d2 = dx * dx + dy * dy;
 		if (d2 > bestDistSq) {
 			bestDistSq = d2;
@@ -1059,10 +1086,12 @@ export function polygonContains(point: Vec2, vertices: readonly Vec2[]): boolean
 	const px = point.x;
 	const py = point.y + 1e-6;
 	for (let i = 0, j = len - 1; i < len; j = i, i += 1) {
-		const xi = vertices[i].x;
-		const yi = vertices[i].y;
-		const xj = vertices[j].x;
-		const yj = vertices[j].y;
+		const vi = at(vertices, i);
+		const vj = at(vertices, j);
+		const xi = vi.x;
+		const yi = vi.y;
+		const xj = vj.x;
+		const yj = vj.y;
 		const intersects = yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi + 1e-30) + xi;
 		if (intersects) inside = !inside;
 	}
@@ -1193,8 +1222,8 @@ export function castRaySectors(
 		const verts = sector.vertices;
 		const len = verts.length;
 		for (let i = 0; i < len; i += 1) {
-			const a = verts[i];
-			const b = verts[(i + 1) % len];
+			const a = at(verts, i);
+			const b = at(verts, (i + 1) % len);
 			const t = rayHitsSegment(origin, dir, a, b);
 			if (t == null) continue;
 			if (t < 1e-6) continue;
@@ -1245,7 +1274,7 @@ export function computePortalEdges(map: BoneBusterSectorMap): Set<string> {
 		const verts = sector.vertices;
 		const len = verts.length;
 		for (let i = 0; i < len; i += 1) {
-			const k = edgeKey(verts[i], verts[(i + 1) % len]);
+			const k = edgeKey(at(verts, i), at(verts, (i + 1) % len));
 			const list = owners.get(k);
 			if (list) list.push(sector);
 			else owners.set(k, [sector]);
@@ -1256,7 +1285,7 @@ export function computePortalEdges(map: BoneBusterSectorMap): Set<string> {
 		if (sectors.length < 2) continue;
 		// Treat any pair of co-floor sectors as a portal. (Reference behaves
 		// similarly — same floor + same ceiling => no wall drawn.)
-		const a = sectors[0];
+		const a = at(sectors, 0);
 		const allMatch = sectors.every(
 			(s) =>
 				Math.abs(s.floorHeight - a.floorHeight) < 0.001 &&
@@ -1319,8 +1348,8 @@ export function resolveCollisionSectors(
 			const verts = sector.vertices;
 			const len = verts.length;
 			for (let i = 0; i < len; i += 1) {
-				const a = verts[i];
-				const b = verts[(i + 1) % len];
+				const a = at(verts, i);
+				const b = at(verts, (i + 1) % len);
 				if (portals.has(edgeKey(a, b))) continue;
 				const closest = closestPointOnSegment({ x, y }, a, b);
 				const dx = x - closest.x;

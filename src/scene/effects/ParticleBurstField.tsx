@@ -271,6 +271,7 @@ export function ParticleBurstField() {
 		let w = 0;
 		for (let r = 0; r < motes.length; r++) {
 			const mote = motes[r];
+			if (mote === undefined) continue;
 			const age = now - mote.createdAt;
 			if (age > mote.ttlMs) continue;
 			mote.pos.x += mote.vel.x * dt;

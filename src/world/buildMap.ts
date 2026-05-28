@@ -29,7 +29,12 @@ export function buildMap(
 		// `generateMap` re-derives the same archetype internally and
 		// writes it onto the returned map's `archetype` field, so this
 		// pre-computation is a temporary the caller doesn't see.
-		const archetype = ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length];
+		const archetypeIdx = (seed >>> 0) % ARCHETYPE_NAMES.length;
+		const archetype = ARCHETYPE_NAMES[archetypeIdx];
+		if (archetype === undefined)
+			throw new RangeError(
+				`buildMap: archetype index ${archetypeIdx} of ${ARCHETYPE_NAMES.length}`,
+			);
 		return generateMap(seed, getArchetypeMapShape(archetype));
 	}
 	const refIdx = (level - 1) as 0 | 1 | 2 | 3 | 4;

@@ -93,5 +93,7 @@ export const ALL_WALL_URLS: readonly string[] = Array.from(
 export function pickWallUrl(archetype: PropArchetype, hash: number): string {
 	const pool = WALLS_BY_ARCHETYPE[archetype];
 	const idx = (hash >>> 0) % pool.length;
-	return pool[idx];
+	const url = pool[idx];
+	if (url === undefined) throw new RangeError(`pickWallUrl: index ${idx} of ${pool.length}`);
+	return url;
 }

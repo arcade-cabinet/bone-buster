@@ -83,7 +83,10 @@ describe("pickRayBarrel", () => {
 	});
 
 	it("ignores exploded barrels", () => {
-		const withExploded: Barrel[] = [{ ...barrels[0], exploded: true }, barrels[1]];
+		const b0 = barrels[0];
+		const b1 = barrels[1];
+		if (!b0 || !b1) throw new RangeError("barrels fixture missing expected elements");
+		const withExploded: Barrel[] = [{ ...b0, exploded: true }, b1];
 		const hit = pickRayBarrel({ x: 0, y: 0 }, { x: 1, y: 0 }, withExploded, 10);
 		expect(hit?.barrel.id).toBe(1);
 	});

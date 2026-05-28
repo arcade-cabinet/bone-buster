@@ -89,7 +89,9 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await expect(page.locator(PLAYER_HUD)).toBeVisible({ timeout: 5_000 });
 
 		const initialHp = await page.locator(PLAYER_HUD).innerText();
-		const initialHpNum = Number.parseInt(initialHp.split("/")[0].trim(), 10);
+		const initialHpPart = initialHp.split("/")[0];
+		if (initialHpPart === undefined) throw new Error("HP text has no '/' separator");
+		const initialHpNum = Number.parseInt(initialHpPart.trim(), 10);
 
 		// Teleport the player on top of the first enemy spawn so the AI is
 		// guaranteed to land hits within the next few seconds.
@@ -114,7 +116,9 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 			.poll(
 				async () => {
 					const text = await page.locator(PLAYER_HUD).innerText();
-					return Number.parseInt(text.split("/")[0].trim(), 10);
+					const part = text.split("/")[0];
+					if (part === undefined) throw new Error("HP text has no '/' separator");
+					return Number.parseInt(part.trim(), 10);
 				},
 				{
 					timeout: 20_000,

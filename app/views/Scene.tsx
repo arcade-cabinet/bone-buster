@@ -258,7 +258,10 @@ export function BoneBusterScene({
 	const wreckPosition = useMemo(() => {
 		if (archetype !== "courtyard") return null;
 		if (!isSectorMap(map) || map.sectors.length === 0) return null;
-		let best = map.sectors[0];
+		const firstSector = map.sectors[0];
+		// firstSector is provably defined: we returned null when sectors.length === 0.
+		if (firstSector === undefined) return null;
+		let best = firstSector;
 		let bestDistSq = Number.NEGATIVE_INFINITY;
 		for (const sector of map.sectors) {
 			let cx = 0;
@@ -711,6 +714,8 @@ export function BoneBusterScene({
 		let writeIdx = 0;
 		for (let i = 0; i < bullets.length; i += 1) {
 			const bullet = bullets[i];
+			// bullet is provably defined: i < bullets.length.
+			if (bullet === undefined) continue;
 			const step = stepEnemyBullet(bullet, dt, now, playerPos, map, collisionCtxRef.current);
 			if (step.kind === "hitPlayer") {
 				gameRef.current.onHit(ENEMY_BULLET_DAMAGE);

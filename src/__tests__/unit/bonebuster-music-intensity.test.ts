@@ -12,10 +12,19 @@ import { describe, expect, it } from "vitest";
 
 describe("POL33 — music intensity dB table", () => {
 	it("ranks the 5 difficulties monotonically from quiet to loud", () => {
-		expect(MUSIC_INTENSITY_DB.tooYoung).toBeLessThan(MUSIC_INTENSITY_DB.notTooRough);
-		expect(MUSIC_INTENSITY_DB.notTooRough).toBeLessThan(MUSIC_INTENSITY_DB.hurtMePlenty);
-		expect(MUSIC_INTENSITY_DB.hurtMePlenty).toBeLessThan(MUSIC_INTENSITY_DB.ultraViolence);
-		expect(MUSIC_INTENSITY_DB.ultraViolence).toBeLessThan(MUSIC_INTENSITY_DB.nightmare);
+		const { tooYoung, notTooRough, hurtMePlenty, ultraViolence, nightmare } = MUSIC_INTENSITY_DB;
+		if (
+			tooYoung === undefined ||
+			notTooRough === undefined ||
+			hurtMePlenty === undefined ||
+			ultraViolence === undefined ||
+			nightmare === undefined
+		)
+			throw new Error("MUSIC_INTENSITY_DB missing expected keys");
+		expect(tooYoung).toBeLessThan(notTooRough);
+		expect(notTooRough).toBeLessThan(hurtMePlenty);
+		expect(hurtMePlenty).toBeLessThan(ultraViolence);
+		expect(ultraViolence).toBeLessThan(nightmare);
 	});
 
 	it("centers hurtMePlenty at 0dB (the baseline)", () => {
@@ -27,7 +36,9 @@ describe("POL33 — music intensity dB table", () => {
 		// formula in sfx.ts). NIGHTMARE adds the most positive delta.
 		// The result must still fit musicVoice.max.
 		const baseV0 = -28;
-		expect(baseV0 + MUSIC_INTENSITY_DB.nightmare).toBeLessThanOrEqual(SFX_BANDS.musicVoice.max);
+		const nightmare = MUSIC_INTENSITY_DB.nightmare;
+		if (nightmare === undefined) throw new Error("MUSIC_INTENSITY_DB.nightmare missing");
+		expect(baseV0 + nightmare).toBeLessThanOrEqual(SFX_BANDS.musicVoice.max);
 	});
 
 	it("tooYoung delta + base v5 stays inside SFX_BANDS.musicVoice", () => {
@@ -35,7 +46,9 @@ describe("POL33 — music intensity dB table", () => {
 		// TOO YOUNG adds the most negative delta. The result must still
 		// fit musicVoice.min.
 		const baseV5 = -28 - 5 * 1.5;
-		expect(baseV5 + MUSIC_INTENSITY_DB.tooYoung).toBeGreaterThanOrEqual(SFX_BANDS.musicVoice.min);
+		const tooYoung = MUSIC_INTENSITY_DB.tooYoung;
+		if (tooYoung === undefined) throw new Error("MUSIC_INTENSITY_DB.tooYoung missing");
+		expect(baseV5 + tooYoung).toBeGreaterThanOrEqual(SFX_BANDS.musicVoice.min);
 	});
 
 	it("table covers every shipped difficulty", () => {

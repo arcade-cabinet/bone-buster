@@ -30,7 +30,9 @@ export const LOOT_URL_LIST: readonly string[] = Object.values(LOOT_URLS);
 export function pickLootKind(hash: number): LootKind {
 	const kinds: readonly LootKind[] = ["bottles", "books", "treasure"];
 	const idx = (hash >>> 0) % kinds.length;
-	return kinds[idx];
+	const kind = kinds[idx];
+	if (kind === undefined) throw new RangeError(`pickLootKind: index ${idx} of ${kinds.length}`);
+	return kind;
 }
 
 /**

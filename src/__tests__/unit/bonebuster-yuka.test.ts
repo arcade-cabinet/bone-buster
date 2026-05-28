@@ -114,7 +114,10 @@ describe("buildNavmeshFromSectors (Y6)", () => {
 		const map = loadRefLevel(0);
 		const navmesh = buildNavmeshFromSectors(map);
 		for (let i = 0; i < navmesh.regions.length; i += 1) {
-			expect(navmesh.regions[i].floorHeight).toBe(map.sectors[i].floorHeight);
+			const region = navmesh.regions[i];
+			const sector = map.sectors[i];
+			if (!region || !sector) throw new RangeError(`regions/sectors missing element at index ${i}`);
+			expect(region.floorHeight).toBe(sector.floorHeight);
 		}
 	});
 });

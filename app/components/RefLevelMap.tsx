@@ -71,6 +71,9 @@ export function RefLevelMap({ level }: Props) {
 						{/* Walls — one quad per edge */}
 						{poly.vertices.map((a, idx) => {
 							const b = poly.vertices[(idx + 1) % poly.vertices.length];
+							// b is provably defined: modulo wrap stays within
+							// [0, vertices.length) and the array has that element.
+							if (b === undefined) return null;
 							const ax = (a.x - ox) * WORLD_SCALE;
 							const ay = (a.y - oy) * WORLD_SCALE;
 							const bx = (b.x - ox) * WORLD_SCALE;

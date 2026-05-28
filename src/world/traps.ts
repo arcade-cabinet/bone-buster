@@ -68,5 +68,7 @@ export function trapsByKind(kind: TrapKind): readonly TrapDef[] {
 /** Deterministic trap-def pick by hash. */
 export function pickTrapDef(hash: number): TrapDef {
 	const idx = (hash >>> 0) % TRAPS.length;
-	return TRAPS[idx];
+	const def = TRAPS[idx];
+	if (def === undefined) throw new RangeError(`pickTrapDef: index ${idx} of ${TRAPS.length}`);
+	return def;
 }

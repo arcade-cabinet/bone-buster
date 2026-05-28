@@ -76,20 +76,29 @@ export function decodeLevel(encoded: string): DecodedLevel {
 
 	let i = 0;
 	while (i < commands.length) {
+		// i < commands.length is guaranteed by the while condition; cmd is in-bounds.
 		const cmd = commands[i];
+		if (cmd === undefined) break; // Uint8Array invariant guard — documents the contract
 		i += 1;
 		const low = cmd & 31;
 		const high = cmd >> 5;
 
 		if (high <= 1) {
 			// Make a region with `low` vertices. high==0 = keep, high==1 = goto only.
-			const verts: Point2[] = [turtle[0]];
+			// turtle always has at least one element (starts with [{x:0,y:0}] and only grows).
+			const head0 = turtle[0];
+			if (head0 === undefined) break; // invariant guard — turtle is never empty
+			const verts: Point2[] = [head0];
 			for (let v = 0; v < low && i < commands.length; v += 1) {
+				// i < commands.length checked in for-condition above.
 				const edge = commands[i];
+				if (edge === undefined) break; // Uint8Array invariant guard
 				i += 1;
 				const dx = ((edge >> 4) - 7) * 8;
 				const dy = ((edge & 15) - 7) * 8;
-				const next = { x: turtle[0].x + dx, y: turtle[0].y + dy };
+				const head = turtle[0];
+				if (head === undefined) break; // invariant guard — turtle is never empty
+				const next = { x: head.x + dx, y: head.y + dy };
 				turtle.unshift(next);
 				verts.push(next);
 			}
@@ -103,19 +112,25 @@ export function decodeLevel(encoded: string): DecodedLevel {
 		} else if (high === 3) {
 			// Object placement
 			if (i + 1 >= commands.length) break;
+			// i and i+1 are both < commands.length, so a and b are in-bounds.
 			const a = commands[i];
+			if (a === undefined) break; // Uint8Array invariant guard
 			i += 1;
 			const b = commands[i];
+			if (b === undefined) break; // Uint8Array invariant guard
 			i += 1;
 			const dx = ((a >> 4) - 7) * 8;
 			const dy = ((a & 15) - 7) * 8;
 			const dz = ((b >> 4) - 7) * 2;
 			const rot = b & 15;
+			// turtle is never empty — invariant guard.
+			const head = turtle[0];
+			if (head === undefined) break;
 			objects.push({
 				classIdx: low,
 				position: {
-					x: turtle[0].x + dx,
-					y: turtle[0].y + dy,
+					x: head.x + dx,
+					y: head.y + dy,
 					z: floorHeight + dz,
 				},
 				theta: (rot / 8) * Math.PI,

@@ -97,5 +97,10 @@ export function spawnFloorTiles(map: BoneBusterMap): FloorTileInstance[] {
 }
 
 export function floorTileUrlFor(instance: FloorTileInstance): string {
-	return FLOOR_TILE_VARIANTS[instance.variantIndex];
+	// variantIndex is set by spawnFloorTiles to Math.floor(rng()*FLOOR_TILE_VARIANTS.length)
+	// which is provably in [0, length). Assert to satisfy noUncheckedIndexedAccess.
+	const url = FLOOR_TILE_VARIANTS[instance.variantIndex];
+	if (url === undefined)
+		throw new RangeError(`floorTileUrlFor: variantIndex ${instance.variantIndex} out of bounds`);
+	return url;
 }

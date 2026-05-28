@@ -83,7 +83,9 @@ describe("PD3 — CHAINGUN_PROFILES roster contract", () => {
 	});
 
 	it("the canonical chaingun (index 0) maps to the identity profile", () => {
-		expect(CHAINGUN_PROFILES[CHAINGUN_SKIN_URLS[0]]).toEqual(DEFAULT_CHAINGUN_PROFILE);
+		const url0 = CHAINGUN_SKIN_URLS[0];
+		if (!url0) throw new RangeError("CHAINGUN_SKIN_URLS[0] missing");
+		expect(CHAINGUN_PROFILES[url0]).toEqual(DEFAULT_CHAINGUN_PROFILE);
 	});
 
 	it("damageMul + cooldownMul are finite and positive for every profile", () => {

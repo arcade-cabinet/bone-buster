@@ -96,6 +96,7 @@ export function DamageNumberField() {
 				// Scan from newest → oldest so we attach to the most recent slot.
 				for (let i = numbersRef.current.length - 1; i >= 0; i -= 1) {
 					const slot = numbersRef.current[i];
+					if (slot === undefined) continue;
 					if (slot.enemyId !== incomingEnemyId) continue;
 					if (now - slot.lastStackAt > STACK_WINDOW_MS) break;
 					slot.amount += d.amount;

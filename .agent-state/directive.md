@@ -30,7 +30,7 @@ Dependency-ordered. Drain top-down on a single branch.
 ### Determinism rigor (partly shipped — tail)
 - [ ] CR-TS1 Flip `noUncheckedIndexedAccess: true` in tsconfig; resolve the bounded indexing errors with explicit guards (full-review TS-1).
 - [ ] CR-TS4 Brand `Seed` (`type Seed = number & {__seed}`) so `mulberry32(entityId)` / raw-tag XOR is a compile error (full-review TS-4).
-- [ ] CR-F6 Extract `readBaseSeedFromUrl`/`readArchetypeFromUrl` to a testable module + table-test the parse boundary (full-review F6).
+- [x] CR-F6 Extracted the URL-flag parsers to `app/views/urlFlags.ts` (pure `*FromHref` forms + thin window wrappers); Shell.tsx imports them. Table-tested the parse boundary in bonebuster-urlFlags.test.ts (17 cases: decimal/legacy-alias accept, signed-32-bit mask quirk documented, negative/hex/scientific/float/junk/empty reject, canonical-wins, unparseable-href→null) (full-review F6).
 
 ### The big perf + reconciliation win
 - [ ] CR-H1perf Convert `ParticleBurstField`/`ShellEjectField`/`BodyPartField` to `InstancedMesh` (dispose-on-despawn already shipped); add `gl.info`/`Howler._howls` perf-leak probes to the perf script (full-review H1/M1/F1).

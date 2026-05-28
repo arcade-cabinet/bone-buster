@@ -51,9 +51,11 @@ describe("PB2 enemy-kill banner dispatch", () => {
 		const { dispatch } = await import("@engine/events");
 		dispatch({ type: "enemyKilled", enemyId: 42, kind: "plaguebeak" });
 		expect(bus.events).toHaveLength(1);
-		expect(bus.events[0].type).toBe("enemyKilled");
-		expect(bus.events[0].enemyId).toBe(42);
-		expect(bus.events[0].kind).toBe("plaguebeak");
+		const ev0 = bus.events[0];
+		if (!ev0) throw new Error("bus.events[0] missing after toHaveLength(1)");
+		expect(ev0.type).toBe("enemyKilled");
+		expect(ev0.enemyId).toBe(42);
+		expect(ev0.kind).toBe("plaguebeak");
 	});
 
 	it("multi-kill bursts each dispatch their own event so the banner can stack-count", async () => {
@@ -74,7 +76,10 @@ describe("PB2 enemy-kill banner dispatch", () => {
 		const bosses = bus.events.filter((e) => e.type === "bossDefeated");
 		expect(kills).toHaveLength(1);
 		expect(bosses).toHaveLength(1);
-		expect(kills[0].kind).toBe("rattler");
-		expect(bosses[0].enemyId).toBe(99);
+		const kill0 = kills[0];
+		const boss0 = bosses[0];
+		if (!kill0 || !boss0) throw new Error("kills[0] or bosses[0] missing after toHaveLength(1)");
+		expect(kill0.kind).toBe("rattler");
+		expect(boss0.enemyId).toBe(99);
 	});
 });

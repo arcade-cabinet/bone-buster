@@ -32,7 +32,11 @@ function libraryMap(seed: number): BoneBusterSectorMap {
 	return {
 		kind: "sectors",
 		seed,
-		archetype: ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length],
+		archetype: (() => {
+			const v = ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length];
+			if (!v) throw new RangeError("archetype index out of range");
+			return v;
+		})(),
 		sectors,
 		playerSpawn: { x: -100, y: -100 },
 		playerYaw: 0,
@@ -71,11 +75,14 @@ describe("COV13 step-2 — spawnKitchen invariants", () => {
 		const b = spawnKitchen(libraryMap(4));
 		expect(a.length).toBe(b.length);
 		for (let i = 0; i < a.length; i += 1) {
-			expect(a[i].id).toBe(b[i].id);
-			expect(a[i].position.x).toBe(b[i].position.x);
-			expect(a[i].position.y).toBe(b[i].position.y);
-			expect(a[i].url).toBe(b[i].url);
-			expect(a[i].yaw).toBe(b[i].yaw);
+			const ai = a[i];
+			const bi = b[i];
+			if (!ai || !bi) throw new Error(`scatter missing element at index ${i}`);
+			expect(ai.id).toBe(bi.id);
+			expect(ai.position.x).toBe(bi.position.x);
+			expect(ai.position.y).toBe(bi.position.y);
+			expect(ai.url).toBe(bi.url);
+			expect(ai.yaw).toBe(bi.yaw);
 		}
 	});
 

@@ -133,5 +133,8 @@ export const LARGE_PROPS: readonly LargePropDef[] = [
 /** Deterministic large-prop pick by hash. */
 export function pickLargePropDef(hash: number): LargePropDef {
 	const idx = (hash >>> 0) % LARGE_PROPS.length;
-	return LARGE_PROPS[idx];
+	const def = LARGE_PROPS[idx];
+	if (def === undefined)
+		throw new RangeError(`pickLargePropDef: index ${idx} of ${LARGE_PROPS.length}`);
+	return def;
 }

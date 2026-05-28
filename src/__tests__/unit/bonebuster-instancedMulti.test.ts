@@ -70,13 +70,16 @@ describe("PB3 findFirstMesh / findAllMeshes", () => {
 	it("findAllMeshes captures the local-relative-to-scene transform for each sub-mesh", () => {
 		const scene = makeScene();
 		const all = findAllMeshes(scene);
+		const meshA = all[0];
+		const meshB = all[1];
+		if (!meshA || !meshB) throw new Error("findAllMeshes returned fewer than 2 meshes");
 		// subA was offset +1 X.
-		const aPos = new Vector3().setFromMatrixPosition(all[0].localMatrix);
+		const aPos = new Vector3().setFromMatrixPosition(meshA.localMatrix);
 		expect(aPos.x).toBeCloseTo(1, 5);
 		expect(aPos.y).toBeCloseTo(0, 5);
 		expect(aPos.z).toBeCloseTo(0, 5);
 		// subB was offset +2 Y.
-		const bPos = new Vector3().setFromMatrixPosition(all[1].localMatrix);
+		const bPos = new Vector3().setFromMatrixPosition(meshB.localMatrix);
 		expect(bPos.x).toBeCloseTo(0, 5);
 		expect(bPos.y).toBeCloseTo(2, 5);
 		expect(bPos.z).toBeCloseTo(0, 5);
@@ -96,7 +99,9 @@ describe("PB3 findFirstMesh / findAllMeshes", () => {
 			// scratch is the same instance.
 			composeInstanceMatrix({ id: 0, position: { x: 10, y: 20 }, yaw: 0 }),
 		);
-		composed.multiply(all[0].localMatrix);
+		const meshA = all[0];
+		if (!meshA) throw new Error("findAllMeshes returned no meshes");
+		composed.multiply(meshA.localMatrix);
 		const worldA = new Vector3().setFromMatrixPosition(composed);
 		// subA local +1 X, instance at (10,?,20) → world (11, 0, 20).
 		expect(worldA.x).toBeCloseTo(11, 5);
@@ -117,7 +122,9 @@ describe("PB3 findFirstMesh / findAllMeshes", () => {
 		const composed = new Matrix4().copy(
 			composeInstanceMatrix({ id: 0, position: { x: 10, y: 20 }, yaw: Math.PI / 2 }),
 		);
-		composed.multiply(all[0].localMatrix);
+		const meshA2 = all[0];
+		if (!meshA2) throw new Error("findAllMeshes returned no meshes");
+		composed.multiply(meshA2.localMatrix);
 		const worldA = new Vector3().setFromMatrixPosition(composed);
 
 		// Three.js rotates around +Y (Y_AXIS in InstancedField). With yaw
@@ -133,7 +140,7 @@ describe("PB3 findFirstMesh / findAllMeshes", () => {
 		// `composed.premultiply(local)`, this assertion would catch it
 		// because premultiply effectively does local × instance.
 		const reversed = new Matrix4()
-			.copy(all[0].localMatrix)
+			.copy(meshA2.localMatrix)
 			.multiply(composeInstanceMatrix({ id: 0, position: { x: 10, y: 20 }, yaw: Math.PI / 2 }));
 		const worldReversed = new Vector3().setFromMatrixPosition(reversed);
 		// Reversed: instance position rotates around origin instead. The
@@ -164,9 +171,13 @@ describe("PB3 fold — chunkInstances", () => {
 		const items = Array.from({ length: 35 }, (_, i) => i);
 		const chunks = chunkInstances(items, 16);
 		expect(chunks).toHaveLength(3);
-		expect(chunks[0]).toHaveLength(16);
-		expect(chunks[1]).toHaveLength(16);
-		expect(chunks[2]).toHaveLength(3);
+		const c0 = chunks[0];
+		const c1 = chunks[1];
+		const c2 = chunks[2];
+		if (!c0 || !c1 || !c2) throw new Error("chunkInstances returned fewer than 3 chunks");
+		expect(c0).toHaveLength(16);
+		expect(c1).toHaveLength(16);
+		expect(c2).toHaveLength(3);
 		// Every item is preserved (no truncation).
 		expect(chunks.flat()).toEqual(items);
 	});

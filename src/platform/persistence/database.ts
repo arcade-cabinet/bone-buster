@@ -81,7 +81,10 @@ export class InMemoryDatabase implements DatabaseAdapter {
 
 		const create = stmt.match(/^CREATE TABLE(?: IF NOT EXISTS)?\s+(\w+)/i);
 		if (create) {
-			this.#tableName = create[1];
+			const name = create[1];
+			if (name === undefined)
+				throw new RangeError("InMemoryDatabase: CREATE TABLE regex missing capture group 1");
+			this.#tableName = name;
 			return;
 		}
 		// Other DDL — no-op for the mock.
@@ -90,19 +93,25 @@ export class InMemoryDatabase implements DatabaseAdapter {
 
 		const insert = stmt.match(/^INSERT INTO \w+\s*\(([^)]+)\)\s+VALUES\s*\(([^)]+)\)/i);
 		if (insert) {
-			const cols = insert[1].split(",").map((c) => c.trim());
-			const valueTokens = insert[2].split(",").map((v) => v.trim());
+			const insertCols = insert[1];
+			const insertVals = insert[2];
+			if (insertCols === undefined || insertVals === undefined)
+				throw new RangeError("InMemoryDatabase: INSERT regex missing capture group");
+			const cols = insertCols.split(",").map((c) => c.trim());
+			const valueTokens = insertVals.split(",").map((v) => v.trim());
 			const row: Record<string, unknown> = {};
 			let paramIdx = 0;
 			for (let i = 0; i < cols.length; i += 1) {
+				const col = cols[i];
 				const tok = valueTokens[i];
+				if (col === undefined || tok === undefined) continue;
 				if (tok === "?") {
-					row[cols[i]] = params[paramIdx];
+					row[col] = params[paramIdx];
 					paramIdx += 1;
 				} else if (/^-?\d+(?:\.\d+)?$/.test(tok)) {
-					row[cols[i]] = Number(tok);
+					row[col] = Number(tok);
 				} else {
-					row[cols[i]] = tok.replace(/^['"]|['"]$/g, "");
+					row[col] = tok.replace(/^['"]|['"]$/g, "");
 				}
 			}
 			if (!("id" in row)) {
@@ -148,12 +157,16 @@ export class InMemoryDatabase implements DatabaseAdapter {
 		let rows = [...this.#rows];
 		const orderMatch = stmt.match(/ORDER BY\s+(.+?)(?:\s+LIMIT\b|\s*$)/i);
 		if (orderMatch) {
-			const orderClauses = orderMatch[1].split(",").map((c) => c.trim());
+			const orderClause = orderMatch[1];
+			if (orderClause === undefined)
+				throw new RangeError("InMemoryDatabase: ORDER BY regex missing capture group 1");
+			const orderClauses = orderClause.split(",").map((c) => c.trim());
 			rows.sort((a, b) => {
 				for (const clause of orderClauses) {
 					const m = clause.match(/(\w+)\s*(ASC|DESC)?/i);
 					if (!m) continue;
 					const col = m[1];
+					if (col === undefined) continue;
 					const desc = (m[2] ?? "ASC").toUpperCase() === "DESC";
 					const va = a[col];
 					const vb = b[col];

@@ -100,11 +100,17 @@ export function spawnKitchen(map: BoneBusterMap): KitchenInstance[] {
 			}
 			if (accepted === null) continue;
 			placed.push(accepted);
+			// Math.floor(rng()*KITCHEN_PROPS.length) with rng ∈ [0,1) is provably
+			// in [0, KITCHEN_PROPS.length). KITCHEN_PROPS is non-empty (it's a
+			// non-empty static array) — assert to satisfy noUncheckedIndexedAccess.
+			const kitchenUrl = KITCHEN_PROPS[Math.floor(rng() * KITCHEN_PROPS.length)];
+			if (kitchenUrl === undefined)
+				throw new RangeError("spawnKitchen: KITCHEN_PROPS index out of bounds");
 			out.push({
 				id: sector.id * ID_STRIDE + placed.length - 1,
 				position: accepted,
 				yaw: rng() * Math.PI * 2,
-				url: KITCHEN_PROPS[Math.floor(rng() * KITCHEN_PROPS.length)],
+				url: kitchenUrl,
 			});
 		}
 	}

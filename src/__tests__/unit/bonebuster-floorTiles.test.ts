@@ -81,11 +81,14 @@ describe("COV3 step-1 — floor tile scatter", () => {
 		const b = spawnFloorTiles(map);
 		expect(a).toHaveLength(b.length);
 		for (let i = 0; i < a.length; i += 1) {
-			expect(a[i].id).toBe(b[i].id);
-			expect(a[i].position.x).toBe(b[i].position.x);
-			expect(a[i].position.y).toBe(b[i].position.y);
-			expect(a[i].variantIndex).toBe(b[i].variantIndex);
-			expect(a[i].rotationQuarters).toBe(b[i].rotationQuarters);
+			const ai = a[i];
+			const bi = b[i];
+			if (!ai || !bi) throw new Error(`scatter missing element at index ${i}`);
+			expect(ai.id).toBe(bi.id);
+			expect(ai.position.x).toBe(bi.position.x);
+			expect(ai.position.y).toBe(bi.position.y);
+			expect(ai.variantIndex).toBe(bi.variantIndex);
+			expect(ai.rotationQuarters).toBe(bi.rotationQuarters);
 		}
 	});
 

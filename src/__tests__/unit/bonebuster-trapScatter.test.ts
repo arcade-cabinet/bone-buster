@@ -51,10 +51,13 @@ describe("COV8 step-2 — spawnTraps determinism", () => {
 		const b = spawnTraps(reseed(42));
 		expect(a.length).toBe(b.length);
 		for (let i = 0; i < a.length; i += 1) {
-			expect(a[i].id).toBe(b[i].id);
-			expect(a[i].position.x).toBe(b[i].position.x);
-			expect(a[i].position.y).toBe(b[i].position.y);
-			expect(a[i].def.id).toBe(b[i].def.id);
+			const ai = a[i];
+			const bi = b[i];
+			if (!ai || !bi) throw new Error(`scatter missing element at index ${i}`);
+			expect(ai.id).toBe(bi.id);
+			expect(ai.position.x).toBe(bi.position.x);
+			expect(ai.position.y).toBe(bi.position.y);
+			expect(ai.def.id).toBe(bi.def.id);
 		}
 	});
 
@@ -106,6 +109,7 @@ describe("COV8 step-2 — disarmSector + triggerAt + trapAt", () => {
 		const traps = spawnTraps(reseed(1));
 		const sectorIds = new Set(traps.map((t) => t.sectorId));
 		const targetSector = [...sectorIds][0];
+		if (targetSector === undefined) throw new Error("expected at least one sector");
 		const targetCount = traps.filter((t) => t.sectorId === targetSector).length;
 
 		const disarmed = disarmSector(traps, targetSector);
@@ -119,7 +123,9 @@ describe("COV8 step-2 — disarmSector + triggerAt + trapAt", () => {
 	it("disarmSector returns 0 when called twice on the same sector", () => {
 		const traps = spawnTraps(reseed(1));
 		if (traps.length === 0) return; // trivially pass
-		const sid = traps[0].sectorId;
+		const first = traps[0];
+		if (!first) throw new Error("traps[0] unexpectedly missing after length check");
+		const sid = first.sectorId;
 		disarmSector(traps, sid);
 		expect(disarmSector(traps, sid)).toBe(0);
 	});

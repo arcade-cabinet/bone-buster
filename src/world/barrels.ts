@@ -70,10 +70,23 @@ export function spawnBarrels(map: BoneBusterMap): Barrel[] {
 	// Fisher-Yates with seeded rng, then take the first `targetCount`.
 	for (let i = indexPool.length - 1; i > 0; i -= 1) {
 		const j = Math.floor(rng() * (i + 1));
-		[indexPool[i], indexPool[j]] = [indexPool[j], indexPool[i]];
+		// i and j are both provably in [0, indexPool.length) by the loop
+		// bounds and the floor(rng()*(i+1)) formula (rng ∈ [0,1)).
+		const vi = indexPool[i];
+		const vj = indexPool[j];
+		if (vi === undefined || vj === undefined)
+			throw new RangeError(`spawnBarrels: Fisher-Yates indices out of bounds (i=${i}, j=${j})`);
+		indexPool[i] = vj;
+		indexPool[j] = vi;
 	}
 	for (let i = 0; i < targetCount; i += 1) {
-		const base = map.pickupSpawns[indexPool[i]].position;
+		// i < targetCount <= indexPool.length, and each indexPool[i] was a
+		// valid index into map.pickupSpawns — provably in-bounds.
+		const poolIdx = indexPool[i];
+		if (poolIdx === undefined) throw new RangeError(`spawnBarrels: indexPool[${i}] missing`);
+		const spawn = map.pickupSpawns[poolIdx];
+		if (spawn === undefined) throw new RangeError(`spawnBarrels: pickupSpawns[${poolIdx}] missing`);
+		const base = spawn.position;
 		const dx = (rng() - 0.5) * 1.4;
 		const dy = (rng() - 0.5) * 1.4;
 		out.push({

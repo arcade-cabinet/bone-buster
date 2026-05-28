@@ -97,7 +97,9 @@ describe("bonebuster engine — map generation", () => {
 		const map = generateMap(SEED);
 		const exitCell = map.cells.find((row) => row.find((c) => c === "exit"));
 		expect(exitCell).toBeDefined();
-		expect(map.cells[map.doorCell.gy][map.doorCell.gx]).toBe("door");
+		const doorRow = map.cells[map.doorCell.gy];
+		if (!doorRow) throw new RangeError(`cells row ${map.doorCell.gy} missing`);
+		expect(doorRow[map.doorCell.gx]).toBe("door");
 	});
 
 	it("places exactly one key cell", () => {

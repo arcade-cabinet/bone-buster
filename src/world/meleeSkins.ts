@@ -113,31 +113,55 @@ export const DEFAULT_MELEE_PROFILE: MeleeProfile = {
  *   cleaver  — heavy-medium. -20% swing rate, +27% damage.
  *   sword    — balanced upgrade. +10% damage, +10% swing rate.
  */
+// MELEE_SKIN_URLS is a fixed-length array; every index below is provably
+// in-bounds. Hoisting each entry into a named const before using it as a
+// computed key documents the invariant and satisfies noUncheckedIndexedAccess.
+function meleeSkinUrl(i: number): string {
+	const v = MELEE_SKIN_URLS[i];
+	if (v === undefined)
+		throw new RangeError(`meleeSkinUrl: index ${i} out of bounds (len ${MELEE_SKIN_URLS.length})`);
+	return v;
+}
+const _ms0 = meleeSkinUrl(0);
+const _ms1 = meleeSkinUrl(1);
+const _ms2 = meleeSkinUrl(2);
+const _ms3 = meleeSkinUrl(3);
+const _ms4 = meleeSkinUrl(4);
+const _ms5 = meleeSkinUrl(5);
+const _ms6 = meleeSkinUrl(6);
+const _ms7 = meleeSkinUrl(7);
+const _ms8 = meleeSkinUrl(8);
+const _ms9 = meleeSkinUrl(9);
+const _ms10 = meleeSkinUrl(10);
+const _ms11 = meleeSkinUrl(11);
+const _ms12 = meleeSkinUrl(12);
+const _ms13 = meleeSkinUrl(13);
+
 export const MELEE_PROFILES: Readonly<Record<string, MeleeProfile>> = {
-	[MELEE_SKIN_URLS[0]]: DEFAULT_MELEE_PROFILE, // machete (E1 default)
-	[MELEE_SKIN_URLS[1]]: { damageMul: 1.5, cooldownMul: 1.5, knockbackMul: 1 }, // axe
-	[MELEE_SKIN_URLS[2]]: {
+	[_ms0]: DEFAULT_MELEE_PROFILE, // machete (E1 default)
+	[_ms1]: { damageMul: 1.5, cooldownMul: 1.5, knockbackMul: 1 }, // axe
+	[_ms2]: {
 		damageMul: 0.73,
 		cooldownMul: 0.7,
 		knockbackMul: 1,
 		attractRadiusTiles: 8,
 	}, // chainsaw
-	[MELEE_SKIN_URLS[3]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife
-	[MELEE_SKIN_URLS[4]]: { damageMul: 1, cooldownMul: 1, knockbackMul: -1 }, // meathook (pull)
-	[MELEE_SKIN_URLS[5]]: { damageMul: 1.27, cooldownMul: 1.2, knockbackMul: 1 }, // cleaver
-	[MELEE_SKIN_URLS[6]]: { damageMul: 1.1, cooldownMul: 0.9, knockbackMul: 1 }, // sword
+	[_ms3]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife
+	[_ms4]: { damageMul: 1, cooldownMul: 1, knockbackMul: -1 }, // meathook (pull)
+	[_ms5]: { damageMul: 1.27, cooldownMul: 1.2, knockbackMul: 1 }, // cleaver
+	[_ms6]: { damageMul: 1.1, cooldownMul: 0.9, knockbackMul: 1 }, // sword
 	// PD2 — additions. Baseball bat = wide-arc heavy (+30% damage,
 	// +20% cooldown). Katana = balanced upgrade (+15% damage, -5%
 	// cooldown). Knife_1..5 = visually-distinct knife variants sharing
 	// the base knife profile (0.55× / 0.57×) — players see a different
 	// blade silhouette, identical mechanics.
-	[MELEE_SKIN_URLS[7]]: { damageMul: 1.3, cooldownMul: 1.2, knockbackMul: 1 }, // baseball bat
-	[MELEE_SKIN_URLS[8]]: { damageMul: 1.15, cooldownMul: 0.95, knockbackMul: 1 }, // katana
-	[MELEE_SKIN_URLS[9]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_1
-	[MELEE_SKIN_URLS[10]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_2
-	[MELEE_SKIN_URLS[11]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_3
-	[MELEE_SKIN_URLS[12]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_4
-	[MELEE_SKIN_URLS[13]]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_5
+	[_ms7]: { damageMul: 1.3, cooldownMul: 1.2, knockbackMul: 1 }, // baseball bat
+	[_ms8]: { damageMul: 1.15, cooldownMul: 0.95, knockbackMul: 1 }, // katana
+	[_ms9]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_1
+	[_ms10]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_2
+	[_ms11]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_3
+	[_ms12]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_4
+	[_ms13]: { damageMul: 0.55, cooldownMul: 0.57, knockbackMul: 1 }, // knife_5
 };
 
 /**

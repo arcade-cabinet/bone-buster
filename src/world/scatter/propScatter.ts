@@ -122,7 +122,10 @@ export function spawnProps(map: BoneBusterMap, archetype: PropArchetype): PropIn
 			if (accepted === null) continue; // sector too crowded or too small — move on.
 
 			placed.push(accepted);
+			// Math.floor(rng()*pool.length) with rng ∈ [0,1) is provably in [0, pool.length).
+			// pool.length > 0 is checked above before the sector loop.
 			const prop = pool[Math.floor(rng() * pool.length)];
+			if (prop === undefined) throw new RangeError("spawnProps: prop pool index out of bounds");
 			const yaw = rng() * Math.PI * 2;
 			out.push({
 				id: sector.id * ID_STRIDE + placed.length - 1,

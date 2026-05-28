@@ -41,8 +41,11 @@ describe("D5 — remapEnemyMix", () => {
 		for (const archetype of ARCHETYPE_NAMES) {
 			const out = remapEnemyMix(spawns, archetype, 7);
 			for (let i = 0; i < spawns.length; i += 1) {
-				expect(out[i].position.x).toBe(spawns[i].position.x);
-				expect(out[i].position.y).toBe(spawns[i].position.y);
+				const oi = out[i];
+				const si = spawns[i];
+				if (!oi || !si) throw new Error(`remapEnemyMix output missing element at index ${i}`);
+				expect(oi.position.x).toBe(si.position.x);
+				expect(oi.position.y).toBe(si.position.y);
 			}
 		}
 	});

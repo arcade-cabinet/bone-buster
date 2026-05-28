@@ -48,8 +48,11 @@ describe("E13 step-5 — generateMap respects shape override", () => {
 		expect(a.seed).toBe(b.seed);
 		expect(a.cells.length).toBe(b.cells.length);
 		for (let y = 0; y < a.cells.length; y += 1) {
-			for (let x = 0; x < a.cells[y].length; x += 1) {
-				expect(a.cells[y][x]).toBe(b.cells[y][x]);
+			const rowA = a.cells[y];
+			const rowB = b.cells[y];
+			if (!rowA || !rowB) throw new RangeError(`cells row ${y} missing`);
+			for (let x = 0; x < rowA.length; x += 1) {
+				expect(rowA[x]).toBe(rowB[x]);
 			}
 		}
 		expect(a.rooms.length).toBe(b.rooms.length);

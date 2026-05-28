@@ -92,6 +92,7 @@ export function ShellEjectField() {
 		let w = 0;
 		for (let r = 0; r < shells.length; r++) {
 			const shell = shells[r];
+			if (shell === undefined) continue;
 			const age = now - shell.createdAt;
 			if (age > SHELL_TTL_MS) continue;
 			shell.pos.x += shell.vel.x * dt;
