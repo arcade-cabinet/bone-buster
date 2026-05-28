@@ -929,6 +929,11 @@ export function BoneBusterShell() {
 								onQuit={onQuit}
 								canResume={hasPausedRun}
 								onResume={onResumeRun}
+								seedPhrase={seedPhrase}
+								onSeedPhraseChange={setSeedPhrase}
+								onRandomizeSeedPhrase={() =>
+									setSeedPhrase(randomSeedPhrase(createEventPrng(createFreshEventSeed())))
+								}
 							/>
 						</motion.div>
 					)}
