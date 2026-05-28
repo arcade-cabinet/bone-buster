@@ -64,8 +64,6 @@ import {
 	BulletField,
 	CrucifixField,
 	DamageNumberField,
-	DebrisField,
-	DecalField,
 	EnemyHitFlash,
 	EnemyMesh,
 	EnemyUvBaseHide,
@@ -73,30 +71,21 @@ import {
 	ExitPortal,
 	ExitPortalApproach,
 	Flashlight,
-	FloorTileField,
 	KeyMarker,
-	KitchenField,
-	LampField,
-	LargePropField,
 	MapGeometry,
-	NatureField,
-	NpcField,
 	ParticleBurstField,
 	PickupMesh,
 	PostprocessingChain,
-	PropField,
 	RealDoor,
 	ReturnToSpawnBearingWriter,
-	SecretField,
 	SectorMapGeometry,
 	ShellEjectField,
-	TrapField,
 	TreasureChest,
 	UvFlashlight,
-	VehicleWreck,
 	WeaponSwapDip,
 	WeaponViewmodel,
 } from "../../src/scene";
+import { ScatterFields } from "../../src/scene/fields/ScatterFields";
 import { tickEnemyLoop } from "../../src/scene/tick/enemyTickLoop";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
 import { createTimeScaleBus } from "../../src/scene/tick/timeScaleBus";
@@ -1135,59 +1124,27 @@ export function BoneBusterScene({
 				}
 			/>
 
-			{/* E6 — secret switches + their hidden walls. Empty when the
-			    current map has no `secrets` field (grid maps + future
-			    secret-free ref levels). */}
-			<SecretField secretsRef={secretsRef} />
-
-			{/* COV1 — PSX Mega Pack II lamp scatter. Empty on grid maps
-			    in this slice. E4 will flip a subset to `on` + wire
-			    scoped pointLights. */}
-			<LampField lamps={lampsRef.current} lightColor={lightPalette.lampLightColor} />
-
-			{/* COV4 + E3 — decorative prop scatter from PSX Mega Pack II
-			    Props pool. Step-1: "corridor" archetype default for
-			    every sector; E13 will pick archetypes per mapSeedNum. */}
-			<PropField props={propsRef.current} />
-
-			{/* COV2 step-2 — anchor-piece large-prop scatter (1-2 per
-			    sector). Blocking entries (machinery, shipping container)
-			    push the player out via the collision blocker list. */}
-			<LargePropField props={largePropsRef.current} />
-
-			{/* COV8 step-2 — trap scatter (0-2 hazards + 1 trigger per
-			    sector, archetype-biased). Tick damage + lever-disarm
-			    flow lives in the per-frame loop in BoneBusterScene. */}
-			<TrapField traps={trapsRef.current} disarmedVersion={trapsDisarmedVersion} />
-
-			{/* COV13 step-2 — library-archetype kitchen scatter.
-			    Empty on non-library archetypes. */}
-			<KitchenField props={kitchenRef.current} />
-
-			{/* COV11 step-2 — courtyard-archetype nature scatter.
-			    Empty on non-courtyard archetypes. */}
-			<NatureField instances={natureRef.current} />
-
-			{/* COV14 step-2 — library-archetype ambient NPCs. Pure
-			    set-dressing; no AI/LOS/damage tracks. */}
-			<NpcField instances={npcsRef.current} />
-
-			{/* COV3 step-1 — modular asphalt floor tiles. Empty unless
-			    the map opts in via `useModularFloor: true`. */}
-			<FloorTileField tiles={floorTilesRef.current} />
-
-			{/* COV5 step-2 — sector-body debris scatter (3-5 per sector,
-			    skip-radius 4 from spawn/exit/key). Reads as "overrun." */}
-			<DebrisField debris={debrisRef.current} />
-
-			{/* COV6 step-2.1 — wall-face decals as billboard quads with
-			    the GLB's primary texture extracted onto a 1.2×0.8 plane
-			    aligned to the sector edge normal. */}
-			<DecalField decals={decalsRef.current} />
-
-			{/* COV10 step-2 — one RV wreck at the courtyard archetype's
-			    farthest-sector centroid. Null on non-courtyard maps. */}
-			{wreckPosition && <VehicleWreck position={wreckPosition} seed={mapSeedNum} />}
+			{/* CR-H1scene — the presentational scatter cluster (secrets,
+			    lamps, props, large props, traps, kitchen, nature, NPCs,
+			    floor tiles, debris, decals, RV wreck). Each child is a
+			    pure render of a spawned instance list owned by a ref here. */}
+			<ScatterFields
+				secretsRef={secretsRef}
+				lamps={lampsRef.current}
+				lampLightColor={lightPalette.lampLightColor}
+				props={propsRef.current}
+				largeProps={largePropsRef.current}
+				traps={trapsRef.current}
+				trapsDisarmedVersion={trapsDisarmedVersion}
+				kitchen={kitchenRef.current}
+				nature={natureRef.current}
+				npcs={npcsRef.current}
+				floorTiles={floorTilesRef.current}
+				debris={debrisRef.current}
+				decals={decalsRef.current}
+				wreckPosition={wreckPosition}
+				mapSeedNum={mapSeedNum}
+			/>
 
 			{enemiesRef.current.map((enemy) => (
 				<group key={enemy.id}>
