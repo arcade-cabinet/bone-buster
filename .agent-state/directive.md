@@ -59,7 +59,7 @@ Dependency-ordered. Drain top-down on a single branch.
 ### Structural decomposition
 - [ ] CR-H1eng Decompose `src/engine/engine.ts` (1344) along type seams into mapTypes/gridGen/collision/raycast/sectors/spawn/projectiles; move the yuka import into `projectiles.ts` (fixes the H-3 wrong-direction dep).
 - [ ] CR-H1scene Extract `<EnemyField>`/`<ScatterFields>`/`<SceneTickDriver>` from `app/views/Scene.tsx` (1261); promote GameState to a `gameReducer` + extract `useLevelTransition` from `Shell.tsx` (1060), dissolving the `flushSync` buffering (full-review H-1/M-2/M-3).
-- [ ] CR-M1scatter Extract a shared `src/world/scatter/sampling.ts` (`bboxOf`/`nearAny`/`sampleSectorPoints`/`SCATTER_ID_STRIDE`); collapse the 7 parallel scatter one-offs (full-review M-1).
+- [x] CR-M1scatter Extracted `src/world/scatter/sampling.ts` with the shared `bboxOf` + `nearAny` (were 6 byte-identical copies) + `SCATTER_ID_STRIDE` (1000, unified — fixes the 100-vs-1000 drift) + `scatterId(sectorId, idx)` with a dev-mode overflow guard. All 7 scatter modules import them; 103 scatter tests + 9 new sampling-primitive tests green. (Scoped: extracted the duplicated PRIMITIVES + id-stride invariant — the per-module rejection LOOPS keep their distinct accept criteria rather than forcing one `sampleSectorPoints` signature; that fuller unification wasn't worth the coupling.) Also fixed the damageNumberPool browser-test flake (structural slot detector, no longer races troika async mount) — 6/6 clean (full-review M-1).
 
 ### Remaining quality + tests + docs tail
 - [ ] CR-F7 Seed pellet spread via per-shot `mulberry32`, extract `resolvePellet`/`applyMelee*`/`onEnemyKilled` from `resolveFire`, add a deterministic combat test (full-review F7).

@@ -20,6 +20,7 @@ import { polygonContains } from "@engine/engine";
 import { forkStream } from "@engine/rng";
 import { pickArchetype } from "@world/archetype";
 import { KITCHEN_PROPS } from "@world/kitchen";
+import { bboxOf, nearAny, scatterId } from "@world/scatter/sampling";
 
 const KITCHEN_SECTOR_PROBABILITY = 0.2;
 const PROPS_PER_SECTOR_MIN = 1;
@@ -27,39 +28,12 @@ const PROPS_PER_SECTOR_MAX = 3;
 const SKIP_RADIUS = 3;
 const MIN_PROP_SPACING = 1.2;
 const MAX_SAMPLE_ATTEMPTS = 12;
-const ID_STRIDE = 100;
 
 export interface KitchenInstance {
 	readonly id: number;
 	readonly position: Vec2;
 	readonly yaw: number;
 	readonly url: string;
-}
-
-function bboxOf(verts: readonly Vec2[]): {
-	minX: number;
-	maxX: number;
-	minY: number;
-	maxY: number;
-} {
-	let minX = Infinity;
-	let maxX = -Infinity;
-	let minY = Infinity;
-	let maxY = -Infinity;
-	for (const v of verts) {
-		if (v.x < minX) minX = v.x;
-		if (v.x > maxX) maxX = v.x;
-		if (v.y < minY) minY = v.y;
-		if (v.y > maxY) maxY = v.y;
-	}
-	return { minX, maxX, minY, maxY };
-}
-
-function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean {
-	for (const o of others) {
-		if (Math.hypot(o.x - point.x, o.y - point.y) < radius) return true;
-	}
-	return false;
 }
 
 /**
@@ -107,7 +81,7 @@ export function spawnKitchen(map: BoneBusterMap): KitchenInstance[] {
 			if (kitchenUrl === undefined)
 				throw new RangeError("spawnKitchen: KITCHEN_PROPS index out of bounds");
 			out.push({
-				id: sector.id * ID_STRIDE + placed.length - 1,
+				id: scatterId(sector.id, placed.length - 1),
 				position: accepted,
 				yaw: rng() * Math.PI * 2,
 				url: kitchenUrl,

@@ -21,13 +21,13 @@ import { polygonContains } from "@engine/engine";
 import { cyrb128, forkStream } from "@engine/rng";
 import { pickArchetype } from "@world/archetype";
 import { pickNaturePlant } from "@world/nature";
+import { bboxOf, nearAny, scatterId } from "@world/scatter/sampling";
 
 const INSTANCES_PER_SECTOR_MIN = 4;
 const INSTANCES_PER_SECTOR_MAX = 8;
 const SKIP_RADIUS = 3;
 const MIN_INSTANCE_SPACING = 1.5;
 const MAX_SAMPLE_ATTEMPTS = 12;
-const ID_STRIDE = 100;
 /**
  * Scale range applied per single-plant instance. PT2 lifted these
  * from 0.15-0.32 (which was sized for the full Mega_Nature aggregate)
@@ -43,32 +43,6 @@ export interface NatureInstance {
 	readonly scale: number;
 	/** PT2 — deterministic per-instance plant pick (see pickNaturePlant). */
 	readonly url: string;
-}
-
-function bboxOf(verts: readonly Vec2[]): {
-	minX: number;
-	maxX: number;
-	minY: number;
-	maxY: number;
-} {
-	let minX = Infinity;
-	let maxX = -Infinity;
-	let minY = Infinity;
-	let maxY = -Infinity;
-	for (const v of verts) {
-		if (v.x < minX) minX = v.x;
-		if (v.x > maxX) maxX = v.x;
-		if (v.y < minY) minY = v.y;
-		if (v.y > maxY) maxY = v.y;
-	}
-	return { minX, maxX, minY, maxY };
-}
-
-function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean {
-	for (const o of others) {
-		if (Math.hypot(o.x - point.x, o.y - point.y) < radius) return true;
-	}
-	return false;
 }
 
 /**
@@ -105,7 +79,7 @@ export function spawnNature(map: BoneBusterMap): NatureInstance[] {
 			}
 			if (accepted === null) continue;
 			placed.push(accepted);
-			const id = sector.id * ID_STRIDE + placed.length - 1;
+			const id = scatterId(sector.id, placed.length - 1);
 			out.push({
 				id,
 				position: accepted,

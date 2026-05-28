@@ -23,12 +23,12 @@ import { polygonContains } from "@engine/engine";
 import { forkStream } from "@engine/rng";
 import { pickArchetype } from "@world/archetype";
 import type { PropArchetype } from "@world/scatter/propPool";
+import { bboxOf, nearAny, scatterId } from "@world/scatter/sampling";
 import { TRAPS, type TrapDef, type TrapKind } from "@world/traps";
 
 const SKIP_RADIUS = 3;
 const MIN_TRAP_SPACING = 2.0;
 const MAX_SAMPLE_ATTEMPTS = 12;
-const ID_STRIDE = 100;
 
 export interface TrapInstance {
 	readonly id: number;
@@ -54,32 +54,6 @@ const HAZARD_PER_SECTOR: Readonly<Record<PropArchetype, readonly [number, number
 
 /** Hazard kinds (the 3 that damage on overlap). Triggers are separate. */
 const HAZARD_KINDS: readonly TrapKind[] = ["spike", "blade", "rolling"];
-
-function bboxOf(verts: readonly Vec2[]): {
-	minX: number;
-	maxX: number;
-	minY: number;
-	maxY: number;
-} {
-	let minX = Infinity;
-	let maxX = -Infinity;
-	let minY = Infinity;
-	let maxY = -Infinity;
-	for (const v of verts) {
-		if (v.x < minX) minX = v.x;
-		if (v.x > maxX) maxX = v.x;
-		if (v.y < minY) minY = v.y;
-		if (v.y > maxY) maxY = v.y;
-	}
-	return { minX, maxX, minY, maxY };
-}
-
-function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean {
-	for (const o of others) {
-		if (Math.hypot(o.x - point.x, o.y - point.y) < radius) return true;
-	}
-	return false;
-}
 
 function pickHazardOfKinds(kinds: readonly TrapKind[], rng: () => number): TrapDef {
 	const candidates = TRAPS.filter((t) => kinds.includes(t.kind));
@@ -136,7 +110,7 @@ export function spawnTraps(map: BoneBusterMap): TrapInstance[] {
 			if (accepted === null) continue;
 			placed.push(accepted);
 			out.push({
-				id: sector.id * ID_STRIDE + placed.length - 1,
+				id: scatterId(sector.id, placed.length - 1),
 				sectorId: sector.id,
 				position: accepted,
 				yaw: rng() * Math.PI * 2,
@@ -166,7 +140,7 @@ export function spawnTraps(map: BoneBusterMap): TrapInstance[] {
 			if (leverPos !== null) {
 				placed.push(leverPos);
 				out.push({
-					id: sector.id * ID_STRIDE + placed.length - 1,
+					id: scatterId(sector.id, placed.length - 1),
 					sectorId: sector.id,
 					position: leverPos,
 					yaw: rng() * Math.PI * 2,

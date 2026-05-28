@@ -25,11 +25,11 @@ import { pickArchetype } from "@world/archetype";
 import type { LargePropDef } from "@world/largeProps";
 import { LARGE_PROPS, pickLargePropDef } from "@world/largeProps";
 import type { PropArchetype } from "@world/scatter/propPool";
+import { bboxOf, nearAny, scatterId } from "@world/scatter/sampling";
 
 const SKIP_RADIUS = 5;
 const MIN_LARGE_SPACING = 2.5;
 const MAX_SAMPLE_ATTEMPTS = 16;
-const ID_STRIDE = 100;
 
 /**
  * E13 step-16 — per-archetype large-prop density. Corridor preserves
@@ -50,32 +50,6 @@ export interface LargePropInstance {
 	readonly position: Vec2;
 	readonly yaw: number;
 	readonly def: LargePropDef;
-}
-
-function bboxOf(verts: readonly Vec2[]): {
-	minX: number;
-	maxX: number;
-	minY: number;
-	maxY: number;
-} {
-	let minX = Infinity;
-	let maxX = -Infinity;
-	let minY = Infinity;
-	let maxY = -Infinity;
-	for (const v of verts) {
-		if (v.x < minX) minX = v.x;
-		if (v.x > maxX) maxX = v.x;
-		if (v.y < minY) minY = v.y;
-		if (v.y > maxY) maxY = v.y;
-	}
-	return { minX, maxX, minY, maxY };
-}
-
-function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean {
-	for (const o of others) {
-		if (Math.hypot(o.x - point.x, o.y - point.y) < radius) return true;
-	}
-	return false;
 }
 
 /**
@@ -115,7 +89,7 @@ export function spawnLargeProps(map: BoneBusterMap): LargePropInstance[] {
 			const def = pickLargePropDef(hash);
 			const yaw = rng() * Math.PI * 2;
 			out.push({
-				id: sector.id * ID_STRIDE + (placed.length - 1),
+				id: scatterId(sector.id, placed.length - 1),
 				position: accepted,
 				yaw,
 				def,

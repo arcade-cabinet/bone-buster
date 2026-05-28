@@ -27,45 +27,19 @@ import { polygonContains } from "@engine/engine";
 import { cyrb128, forkStream } from "@engine/rng";
 import { pickArchetype } from "@world/archetype";
 import { type NpcKind, pickNpcKind } from "@world/npcs";
+import { bboxOf, nearAny, scatterId } from "@world/scatter/sampling";
 
 const PER_SECTOR_MIN = 0;
 const PER_SECTOR_MAX = 2;
 const SKIP_RADIUS = 4;
 const MIN_INSTANCE_SPACING = 2.5;
 const MAX_SAMPLE_ATTEMPTS = 12;
-const ID_STRIDE = 100;
 
 export interface NpcInstance {
 	readonly id: number;
 	readonly position: Vec2;
 	readonly yaw: number;
 	readonly kind: NpcKind;
-}
-
-function bboxOf(verts: readonly Vec2[]): {
-	minX: number;
-	maxX: number;
-	minY: number;
-	maxY: number;
-} {
-	let minX = Infinity;
-	let maxX = -Infinity;
-	let minY = Infinity;
-	let maxY = -Infinity;
-	for (const v of verts) {
-		if (v.x < minX) minX = v.x;
-		if (v.x > maxX) maxX = v.x;
-		if (v.y < minY) minY = v.y;
-		if (v.y > maxY) maxY = v.y;
-	}
-	return { minX, maxX, minY, maxY };
-}
-
-function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean {
-	for (const o of others) {
-		if (Math.hypot(o.x - point.x, o.y - point.y) < radius) return true;
-	}
-	return false;
 }
 
 /**
@@ -103,7 +77,7 @@ export function spawnNpcs(map: BoneBusterMap): NpcInstance[] {
 			placed.push(accepted);
 			const slotIdx = placed.length - 1;
 			out.push({
-				id: sector.id * ID_STRIDE + slotIdx,
+				id: scatterId(sector.id, slotIdx),
 				position: accepted,
 				yaw: rng() * Math.PI * 2,
 				kind: pickNpcKind((cyrb128(map.seedPhrase)[0] >>> 0) ^ ((sector.id + 1) * 7919 + slotIdx)),

@@ -59,13 +59,15 @@ async function mount() {
 	await vi.waitFor(() => {
 		if (!scene) throw new Error("scene not ready");
 	});
-	// A slot group is a group whose DIRECT children are drei <Text> (troika
-	// text-mesh objects expose a `.text` string field) — distinguishes them
-	// from the wrapper group (whose children are themselves groups).
+	// A slot group is a group with ≥2 children, NONE of which are groups
+	// (the slot's children are the two drei <Text> meshes). This is purely
+	// STRUCTURAL — it does NOT depend on troika's async `.text` population,
+	// which races the first traversal. The wrapper group is excluded because
+	// its children ARE groups (the slots). Robust against mount timing.
 	const isSlotGroup = (o: THREE.Object3D): boolean =>
 		(o as THREE.Group).isGroup &&
 		o.children.length >= 2 &&
-		o.children.every((c) => typeof (c as unknown as { text?: unknown }).text === "string");
+		o.children.every((c) => !(c as THREE.Group).isGroup);
 	const slotGroups = (): THREE.Object3D[] => {
 		const out: THREE.Object3D[] = [];
 		scene.traverse((o) => {
@@ -73,11 +75,11 @@ async function mount() {
 		});
 		return out;
 	};
-	// Wait until the DamageNumberField's fixed slot pool has mounted (troika
-	// <Text> children attach asynchronously) so the first dispatch+step finds
-	// bound slot refs — otherwise the test races the field's first commit.
+	// Wait until the fixed slot pool has mounted (the field renders
+	// MAX_NUMBERS=24 slots once). Structural detector above doesn't race
+	// troika, but the React commit itself is async — wait for the full pool.
 	await vi.waitFor(() => {
-		if (slotGroups().length < 1) throw new Error("slot pool not mounted yet");
+		if (slotGroups().length < 24) throw new Error("slot pool not fully mounted yet");
 	});
 	return {
 		step: (ms: number) => advance(ms / 1000),

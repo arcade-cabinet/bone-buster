@@ -29,6 +29,7 @@ import { polygonContains } from "@engine/engine";
 import { forkStream } from "@engine/rng";
 import type { PropArchetype, PropDef } from "@world/scatter/propPool";
 import { POOLS } from "@world/scatter/propPool";
+import { bboxOf, nearAny, scatterId } from "@world/scatter/sampling";
 
 const SKIP_RADIUS = 4;
 const MIN_PROP_SPACING = 1.4;
@@ -62,25 +63,6 @@ export interface PropInstance {
 	/** Yaw rotation in radians; deterministic per-instance for variety. */
 	readonly yaw: number;
 	readonly prop: PropDef;
-}
-
-function bboxOf(verts: readonly Vec2[]): {
-	minX: number;
-	maxX: number;
-	minY: number;
-	maxY: number;
-} {
-	let minX = Infinity;
-	let maxX = -Infinity;
-	let minY = Infinity;
-	let maxY = -Infinity;
-	for (const v of verts) {
-		if (v.x < minX) minX = v.x;
-		if (v.x > maxX) maxX = v.x;
-		if (v.y < minY) minY = v.y;
-		if (v.y > maxY) maxY = v.y;
-	}
-	return { minX, maxX, minY, maxY };
 }
 
 /**
@@ -128,7 +110,7 @@ export function spawnProps(map: BoneBusterMap, archetype: PropArchetype): PropIn
 			if (prop === undefined) throw new RangeError("spawnProps: prop pool index out of bounds");
 			const yaw = rng() * Math.PI * 2;
 			out.push({
-				id: sector.id * ID_STRIDE + placed.length - 1,
+				id: scatterId(sector.id, placed.length - 1),
 				position: accepted,
 				yaw,
 				prop,
@@ -168,12 +150,4 @@ function sampleAcceptablePoint(
 	return null;
 }
 
-function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean {
-	for (const o of others) {
-		if (Math.hypot(o.x - point.x, o.y - point.y) < radius) return true;
-	}
-	return false;
-}
-
-/** Max props per sector for id-collision safety. `PROPS_PER_SECTOR_MAX <= ID_STRIDE`. */
-const ID_STRIDE = 1000;
+/** Max props per sector for id-collision safety. `PROPS_PER_SECTOR_MAX <= SCATTER_ID_STRIDE`. */
