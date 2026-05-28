@@ -24,7 +24,7 @@ Dependency-ordered. Drain top-down on a single branch.
 ### Enforcement + verification (mostly shipped via #82/#83 — finish the tail)
 - [x] CR-rAF Root-caused the CI headless-GL rAF stall: `waitForFrames` waited on a `requestAnimationFrame` that stops firing while the `<Canvas>` WebGL context is torn down + rebuilt mid level-transition. Fixed by racing rAF against a 32ms `setTimeout` fallback in both e2e specs so the frame countdown can't stall; removed the CI skip on the 6-level "mission complete" pose — it gates CI again.
 - [x] CR-C2 Screenshot specs now assert via Playwright's built-in `expect(buf).toMatchSnapshot(name, {maxDiffPixelRatio})` (no new deps). The 3 deterministic poses (landing + flashlight on/off) are baseline-gated with committed goldens; the 2 inherently-animated poses (going-back light strobe — oscillates ~70% peak↔trough; 6-level playthrough end-state) are `snapshotName: null` capture-only since pixel-diffing them flakes at any tolerance. Verified flake-free across 3 consecutive runs. The visual-regression gate is real now (full-review F2/C-2).
-- [ ] CR-H1 Wire `scripts/verify-pages-deploy.mjs` as a post-deploy smoke job in `release.yml` (full-review H-1).
+- [x] CR-H1 Wired `verify-pages-deploy.mjs` as a `verify-deploy` job in release.yml (needs deploy-pages, consumes its `page_url` output + appends debug flags, uploads the landing+ingame smoke shots). Added `verify:pages` script alias. The live-deploy smoke test now runs after every Pages deploy (full-review H-1).
 - [ ] CR-H2 Add an `assembleRelease` (R8/ProGuard) CI build job so the Play-shipping APK path is exercised (full-review H-2).
 
 ### Determinism rigor (partly shipped — tail)
@@ -34,6 +34,7 @@ Dependency-ordered. Drain top-down on a single branch.
 
 ### The big perf + reconciliation win
 - [ ] CR-H1perf Convert `ParticleBurstField`/`ShellEjectField`/`BodyPartField` to `InstancedMesh` (dispose-on-despawn already shipped); add `gl.info`/`Howler._howls` perf-leak probes to the perf script (full-review H1/M1/F1).
+  - WIP (uncommitted): added `src/scene/effects/instancedParticles.ts` (shared `InstancedParticlePool` + per-instance-alpha material via onBeforeCompile). Converted ParticleBurstField to one InstancedMesh — tsc clean, dispose test rewritten + green (1 mesh, count>0, disposed on unmount), canonical baselines still pass. NOT YET DONE: (a) clean LIT visual capture of the motes — the verification capture rendered a dark scene so mote color/fade/glow is UNVERIFIED; must confirm before commit; (b) convert ShellEjectField + BodyPartField; (c) `gl.info` draw-call + `Howler._howls` perf-script probes. Do not commit until the motes are visually confirmed correct.
 - [ ] CR-R1 Fix `DamageNumberField`'s per-frame `force()` — render the pool once, animate imperatively in `useFrame` (full-review R-1).
 - [x] CR-M1audio Cache one-shot Howls per variant file (ONESHOT_POOL keyed by variant path) so rapid fire reuses Howls + layers via Howler sound-ids instead of allocating + leaking a fresh Howl per `play()`; resetForTesting unloads the pool. Pinned by bonebuster-howlerOneshotCache.test.ts (40 plays → ≤3 constructions) (full-review M1).
 

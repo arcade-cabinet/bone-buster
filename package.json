@@ -60,7 +60,8 @@
 		"audio:verify-runtime": "node scripts/verify-runtime-audio.mjs",
 		"assets:prepare-wasm": "node scripts/prepare-web-wasm.mjs",
 		"lighthouse": "lhci autorun --config=.lighthouserc.json",
-		"verify": "pnpm check && pnpm lint && pnpm test && pnpm test:browser && pnpm assets:verify-runtime && pnpm audio:verify-runtime"
+		"verify": "pnpm check && pnpm lint && pnpm test && pnpm test:browser && pnpm assets:verify-runtime && pnpm audio:verify-runtime",
+		"verify:pages": "node scripts/verify-pages-deploy.mjs"
 	},
 	"dependencies": {
 		"@capacitor-community/sqlite": "^8.1.0",

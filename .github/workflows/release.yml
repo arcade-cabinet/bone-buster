@@ -88,9 +88,47 @@ jobs:
     permissions:
       pages: write
       id-token: write
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  # CR-H1 (full-review) — post-deploy smoke test. Drives the LIVE Pages
+  # deploy past landing → in-game via the debug hooks and fails if the
+  # site doesn't boot or the console reports errors. The script
+  # (scripts/verify-pages-deploy.mjs) already exists and reads PAGES_URL;
+  # it was previously wired into nothing. This is the highest-value
+  # observability control for a static game with no error-reporting backend.
+  verify-deploy:
+    needs: deploy-pages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        with: { version: 10.2.0 }
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Smoke-test the live Pages deploy
+        env:
+          # deploy-pages emits the canonical site URL; append the debug
+          # flags the verify script drives through (start → HUD).
+          PAGES_URL: ${{ needs.deploy-pages.outputs.page_url }}?bonebusterDebug&bonebusterSeed=12345
+        run: node scripts/verify-pages-deploy.mjs
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: pages-deploy-smoke
+          path: |
+            /tmp/pages-landing.png
+            /tmp/pages-ingame.png
