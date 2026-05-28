@@ -10,7 +10,7 @@
  * fails the suite immediately, not just at `pnpm verify` time.
  */
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { closeSync, openSync, readdirSync, readSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -37,8 +37,14 @@ describe("GLB asset integrity", () => {
 	it.each(
 		glbs.map((p) => [p.slice(MODELS_DIR.length + 1), p] as const),
 	)("%s has a valid binary-glTF header", (_label, path) => {
-		const head = readFileSync(path).subarray(0, 12);
-		expect(head.length).toBe(12);
+		// Read only the 12-byte header, not the whole file.
+		const head = Buffer.alloc(12);
+		const fd = openSync(path, "r");
+		try {
+			expect(readSync(fd, head, 0, 12, 0)).toBe(12);
+		} finally {
+			closeSync(fd);
+		}
 		expect(head.readUInt32LE(0)).toBe(GLB_MAGIC); // "glTF"
 		expect(head.readUInt32LE(4)).toBe(2); // container version
 		expect(head.readUInt32LE(8)).toBe(statSync(path).size); // declared length

@@ -122,7 +122,15 @@ for (const url of urls) {
 		continue;
 	}
 	if (url.endsWith(".glb")) {
-		const headerErr = await validateGlbHeader(onDisk, info.size);
+		let headerErr;
+		try {
+			headerErr = await validateGlbHeader(onDisk, info.size);
+		} catch (e) {
+			// open()/read() can throw if the file vanishes or perms change
+			// between the stat above and here — report it tidily instead of
+			// crashing the gate with an unhandled rejection.
+			headerErr = `unreadable GLB: ${e.message}`;
+		}
 		if (headerErr) {
 			errors.push(`CORRUPT-GLB: ${url} — ${headerErr}`);
 			continue;
