@@ -15,9 +15,9 @@ import {
 import { PlayerController } from "@components/PlayerController";
 import { addBoneBusterListener, dispatch } from "@engine/events";
 import { type BoneBusterMap, type Enemy, isSectorMap, type Pickup } from "@engine/mapTypes";
-import { ENEMY_BULLET_DAMAGE, type EnemyBullet, stepEnemyBullet } from "@engine/projectiles";
+import type { EnemyBullet } from "@engine/projectiles";
 import { cyrb128 } from "@engine/rng";
-import { computePortalEdges, polygonContains } from "@engine/sectors";
+import { computePortalEdges } from "@engine/sectors";
 import { spawnEnemies, spawnPickups } from "@engine/spawn";
 import { useFrame, useThree } from "@react-three/fiber";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
@@ -41,17 +41,7 @@ import { lootPickupSpawn } from "@world/scatter/lootScatter";
 import { type NatureInstance, spawnNature } from "@world/scatter/natureScatter";
 import { type NpcInstance, spawnNpcs } from "@world/scatter/npcScatter";
 import { type PropInstance, spawnProps } from "@world/scatter/propScatter";
-import {
-	disarmSector,
-	spawnTraps,
-	TRAP_OVERLAP_RADIUS,
-	TRAP_TICK_COOLDOWN_MS,
-	TRAP_TICK_DAMAGE,
-	TRIGGER_OVERLAP_RADIUS,
-	type TrapInstance,
-	trapAt,
-	triggerAt,
-} from "@world/scatter/trapScatter";
+import { spawnTraps, type TrapInstance } from "@world/scatter/trapScatter";
 import { type Secret, spawnSecrets } from "@world/secrets";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -81,8 +71,8 @@ import {
 } from "../../src/scene";
 import { EntityMeshes } from "../../src/scene/fields/EntityMeshes";
 import { ScatterFields } from "../../src/scene/fields/ScatterFields";
-import { tickEnemyLoop } from "../../src/scene/tick/enemyTickLoop";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
+import { runSceneTick } from "../../src/scene/tick/sceneTick";
 import { createTimeScaleBus } from "../../src/scene/tick/timeScaleBus";
 import { pickChaingunProfile } from "../../src/world/chaingunSkins";
 import {
@@ -519,201 +509,54 @@ export function BoneBusterScene({
 		};
 	}, []);
 
+	// CR-H1scene step-c — the 200-line per-frame MAIN tick body lives in
+	// src/scene/tick/sceneTick.ts. The useFrame REGISTRATION stays here (so
+	// frame-callback ordering vs the aux loops + the priority-pinned muzzle
+	// block is byte-identical — see docs/specs/97-scene-decomposition.md);
+	// the body is a single runSceneTick({...}) call. Pure relocation.
 	useFrame((_, deltaSeconds) => {
 		if (!active) return;
-		const dt = Math.min(0.05, deltaSeconds);
-		const now = performance.now();
-		// Y7 — advance the yuka EntityManager once per frame. Today no
-		// entities are registered (the FSM still drives behavior via the
-		// existing loop below); the tick is wired so Y1-Y6 follow-ups
-		// have a working scheduler the moment they register entities.
-		tickYuka(dt);
-
-		const px = camera.position.x;
-		const py = camera.position.z;
-
-		// Y3 — derive player XZ velocity from prev-frame position. Smooth
-		// against a tiny floor so a stationary player gives the bouncer a
-		// zero-lead (i.e. it just Seeks the current position).
-		if (prevPlayerPosRef.current && dt > 1e-6) {
-			playerVelocityRef.current = {
-				x: (px - prevPlayerPosRef.current.x) / dt,
-				y: (py - prevPlayerPosRef.current.y) / dt,
-			};
-		}
-		prevPlayerPosRef.current = { x: px, y: py };
-
-		// H8 — phase-aware win condition.
-		//   phase === "out":         crossing the goal portal flips to "going_back".
-		//   phase === "going_back":  reaching the original playerSpawn clears.
-		const currentPhase = phaseRef.current;
-		if (currentPhase === "out") {
-			const dxExit = px - map.exitPosition.x;
-			const dyExit = py - map.exitPosition.y;
-			// E2 — portal stays locked until every boss enemy is dead, even
-			// if the key has been collected. Sync the reactive flag on the
-			// same tick so the visual portal/door reflects the gate state.
-			const allBossesDeadNow = enemiesRef.current.every((e) => e.tier !== "boss" || e.dead);
-			if (allBossesDeadNow !== allBossesDead) setAllBossesDead(allBossesDeadNow);
-			if (hasKey && allBossesDeadNow && dxExit * dxExit + dyExit * dyExit < TILE * TILE * 0.4) {
-				if (!lastWonAt.current) {
-					lastWonAt.current = true;
-					gameRef.current.onWin();
-					playPortal();
-				}
-			}
-		} else {
-			const dxSpawn = px - map.playerSpawn.x;
-			const dySpawn = py - map.playerSpawn.y;
-			if (dxSpawn * dxSpawn + dySpawn * dySpawn < TILE * TILE * 0.4) {
-				if (!lastReachedSpawnAt.current) {
-					lastReachedSpawnAt.current = true;
-					gameRef.current.onReachSpawn();
-					playPortal();
-				}
-			}
-		}
-
-		// H8 — light strobe during going_back. 200-frame cycle, 10 frames bright.
-		// POL27 — strobe levels respect per-archetype darkness multipliers
-		// so a dark-sewer going_back still flickers proportionally to the
-		// archetype's lighting baseline rather than blasting bright.
-		if (currentPhase === "going_back") {
-			strobeFrameRef.current = (strobeFrameRef.current + 1) % 200;
-			const bright = strobeFrameRef.current < 10;
-			if (ambientLightRef.current) {
-				ambientLightRef.current.intensity = (bright ? 1.4 : 0.2) * lightPalette.ambientMul;
-			}
-			if (directionalLightRef.current) {
-				directionalLightRef.current.intensity = (bright ? 2.0 : 0.35) * lightPalette.directionalMul;
-			}
-		}
-
-		// H5 — Lava damage. Grid maps: cell type "lava". Sector maps: any
-		// polygon whose floorHeight is negative (matches reference's pallet
-		// trigger). Cadence: 600 ms, 8 HP per tick.
-		let standingOnLava = false;
-		if (map.kind === "grid") {
-			const playerCell = {
-				gx: Math.floor(px / TILE),
-				gy: Math.floor(py / TILE),
-			};
-			const standingCell = map.cells[playerCell.gy]?.[playerCell.gx] ?? "wall";
-			standingOnLava = standingCell === "lava";
-		} else {
-			// Sector map: floorHeight < 0 == lava (renderer's heuristic).
-			for (const sector of map.sectors) {
-				if (sector.floorHeight >= 0) continue;
-				if (polygonContains({ x: px, y: py + 1e-6 }, sector.vertices)) {
-					standingOnLava = true;
-					break;
-				}
-			}
-		}
-		if (standingOnLava && now - lastLavaTickAt.current > 600) {
-			lastLavaTickAt.current = now;
-			gameRef.current.onHit(8);
-			playHurt();
-		}
-
-		// COV8 step-2 — trap tick damage + lever-disarm-sector.
-		// First check for trigger overlap (disarms the whole sector).
-		const trigger = triggerAt(trapsRef.current, { x: px, y: py }, TRIGGER_OVERLAP_RADIUS);
-		if (trigger) {
-			trigger.disarmed = true;
-			const count = disarmSector(trapsRef.current, trigger.sectorId);
-			if (count > 1) playPickup();
-			// PT1 — bump the version so TrapField re-memos the visible
-			// filter and the disarmed hazards drop from the instanced
-			// buffer this render cycle (not on whatever next ambient
-			// render happens to fire).
-			setTrapsDisarmedVersion((v) => v + 1);
-		}
-		// Then check for hazard overlap (per-trap ticked damage).
-		const hazard = trapAt(trapsRef.current, { x: px, y: py }, TRAP_OVERLAP_RADIUS);
-		if (hazard) {
-			const lastTick = lastTrapTickAt.current.get(hazard.id) ?? 0;
-			if (now - lastTick > TRAP_TICK_COOLDOWN_MS) {
-				lastTrapTickAt.current.set(hazard.id, now);
-				const kind = hazard.def.kind;
-				const damage =
-					kind === "spike" || kind === "blade" || kind === "rolling" ? TRAP_TICK_DAMAGE[kind] : 0;
-				if (damage > 0) {
-					gameRef.current.onHit(damage);
-					playHurt();
-				}
-			}
-		}
-
-		// Pickup collection
-		for (const pickup of pickupsRef.current) {
-			if (pickup.collected) continue;
-			const dx = px - pickup.position.x;
-			const dy = py - pickup.position.y;
-			if (dx * dx + dy * dy < 1.4 * 1.4) {
-				pickup.collected = true;
-				const mesh = pickupMeshes.current.get(pickup.id);
-				if (mesh) mesh.visible = false;
-				gameRef.current.onCollectPickup(pickup.kind);
-				playPickup();
-				dispatch({
-					type: "burst",
-					x: pickup.position.x,
-					y: pickup.position.y,
-					kind: "pickup",
-				});
-			}
-		}
-
-		// ARCH2a — per-frame enemy AI loop lives in src/scene/tick/enemyTickLoop.ts.
-		// Behavior is byte-identical; this call site is a pure relocation.
-		tickEnemyLoop({
+		runSceneTick({
+			deltaSeconds,
+			camera,
+			map,
+			settings,
+			hasKey,
+			lightPalette,
+			gameRef,
+			prevPlayerPosRef,
+			playerVelocityRef,
+			phaseRef,
+			allBossesDead,
+			setAllBossesDead,
+			lastWonAtRef: lastWonAt,
+			lastReachedSpawnAtRef: lastReachedSpawnAt,
+			strobeFrameRef,
+			ambientLightRef,
+			directionalLightRef,
+			lastLavaTickAtRef: lastLavaTickAt,
+			trapsRef,
+			lastTrapTickAtRef: lastTrapTickAt,
+			bumpTrapsDisarmedVersion: () => setTrapsDisarmedVersion((v) => v + 1),
+			pickupsRef,
+			pickupMeshesRef: pickupMeshes,
 			enemiesRef,
-			yukaEntitiesRef,
-			bulletsRef,
-			nextBulletIdRef,
 			enemyMeshesRef: enemyMeshes,
+			yukaEntitiesRef,
 			lastSeenRef,
 			aggroFiredRef,
 			bossSpottedFiredRef,
 			collisionCtxRef,
-			gameRef,
-			map,
-			camera,
-			settings,
-			playerVelocity: playerVelocityRef.current,
-			playerX: px,
-			playerY: py,
-			now,
-			dt,
-			timeScaleBus: timeScaleBusRef.current,
+			timeScaleBusRef,
 			crucifixesRef: activeCrucifixesRef,
+			bulletsRef,
+			nextBulletIdRef,
+			bulletMeshesRef: bulletMeshes,
+			tickYuka,
+			playPortal,
+			playHurt,
+			playPickup,
 		});
-
-		// Bullet integration — advance, check wall/player, retire dead bullets.
-		const bullets = bulletsRef.current;
-		const playerPos = { x: px, y: py };
-		let writeIdx = 0;
-		for (let i = 0; i < bullets.length; i += 1) {
-			const bullet = bullets[i];
-			// bullet is provably defined: i < bullets.length.
-			if (bullet === undefined) continue;
-			const step = stepEnemyBullet(bullet, dt, now, playerPos, map, collisionCtxRef.current);
-			if (step.kind === "hitPlayer") {
-				gameRef.current.onHit(ENEMY_BULLET_DAMAGE);
-				playHurt();
-				const bm = bulletMeshes.current.get(bullet.id);
-				if (bm) bm.visible = false;
-				continue;
-			}
-			if (step.kind === "hitWall" || step.kind === "expired") {
-				const bm = bulletMeshes.current.get(bullet.id);
-				if (bm) bm.visible = false;
-				continue;
-			}
-			bullets[writeIdx++] = bullet;
-		}
-		bullets.length = writeIdx;
 	});
 
 	// Debug listeners (e2e harness). No-ops in production. The
