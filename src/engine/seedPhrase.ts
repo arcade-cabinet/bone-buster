@@ -87,4 +87,6 @@ export function isSeedPhrase(s: string): boolean {
  * against (replaces the old numeric "seed 0 = corridor" anchor). Changing it
  * re-blesses every canonical golden — DON'T without reason.
  */
-export const CANONICAL_SEED_PHRASE = "rotten-cursed-ossuary";
+// Hashes to archetype idx 0 (corridor) via cyrb128[0] % 5 — the frozen
+// canonical anchor. Changing it re-blesses every canonical golden.
+export const CANONICAL_SEED_PHRASE = "marrowed-vile-sepulcher";

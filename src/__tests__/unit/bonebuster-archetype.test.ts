@@ -10,7 +10,8 @@
  */
 
 import { generateMap } from "@engine/engine";
-import { ARCHETYPE_NAMES, pickArchetype } from "@world/archetype";
+import { CANONICAL_SEED_PHRASE } from "@engine/seedPhrase";
+import { ARCHETYPE_NAMES, archetypeForPhrase, pickArchetype } from "@world/archetype";
 import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
 
@@ -27,18 +28,26 @@ describe("E13 — archetype pick", () => {
 		}
 	});
 
-	// F4 — the procedural "NEW GAME" path is generateMap(seed), not
-	// loadRefLevel. The seed%5 → archetype invariant (canonical
-	// byte-stability: seed 0 = corridor) must be pinned on the prod
+	// F4 / SEED2 — the procedural "NEW GAME" path is generateMap(seedPhrase).
+	// The archetype now derives from cyrb128(phrase)[0] % 5 (was seed % 5);
+	// pin that generateMap's archetype matches archetypeForPhrase on the prod
 	// construction path, not only on the ref-level loader.
-	it("generateMap derives archetype = ARCHETYPE_NAMES[seed % 5]", () => {
-		for (const seed of [0, 1, 2, 3, 4, 5, 9, 10, 12345, 99999]) {
-			expect(generateMap(seed).archetype).toBe(ARCHETYPE_NAMES[seed % 5]);
+	it("generateMap derives archetype = archetypeForPhrase(seedPhrase)", () => {
+		for (const phrase of [
+			"test-11",
+			"test-1",
+			"test-3",
+			"test-33",
+			"test-0",
+			"gen-42",
+			"gen-99999",
+		]) {
+			expect(generateMap(phrase).archetype).toBe(archetypeForPhrase(phrase));
 		}
 	});
 
-	it("generateMap(0).archetype is the frozen corridor anchor", () => {
-		expect(generateMap(0).archetype).toBe("corridor");
+	it("CANONICAL_SEED_PHRASE is the frozen corridor anchor", () => {
+		expect(generateMap(CANONICAL_SEED_PHRASE).archetype).toBe("corridor");
 	});
 
 	it("pickArchetype(map) returns the stored map.archetype field", () => {
@@ -46,7 +55,7 @@ describe("E13 — archetype pick", () => {
 		// echo them regardless of seed (CONV3 — denormalized).
 		for (const name of ARCHETYPE_NAMES) {
 			const base = loadRefLevel(0);
-			const map = { ...base, seed: 42, archetype: name };
+			const map = { ...base, seedPhrase: "fixture-42", archetype: name };
 			expect(pickArchetype(map)).toBe(name);
 		}
 	});

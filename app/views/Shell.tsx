@@ -15,6 +15,8 @@ import {
 } from "@audio/sfx";
 import type { BoneBusterMap, PickupKind } from "@engine/engine";
 import { addBoneBusterListener, dispatch } from "@engine/events";
+import { createEventPrng, createFreshEventSeed, cyrb128 } from "@engine/rng";
+import { CANONICAL_SEED_PHRASE, randomSeedPhrase } from "@engine/seedPhrase";
 import { loadSettings, saveSettings } from "@platform/persistence/settingsStore";
 import { Canvas } from "@react-three/fiber";
 import { PLAYER_MAX_HP } from "@shared/constants";
@@ -39,7 +41,7 @@ import { ROLE, SCALE } from "@styles/tokens/index";
 import { BoneBusterHUD } from "@views/HUD";
 import { BoneBusterLanding } from "@views/Landing";
 import { BoneBusterScene } from "@views/Scene";
-import { debugHooksEnabled, readArchetypeFromUrl, readBaseSeedFromUrl } from "@views/urlFlags";
+import { debugHooksEnabled, readArchetypeFromUrl, readSeedPhraseFromUrl } from "@views/urlFlags";
 import { applyArchetypeOverride } from "@world/archetype";
 import { buildMap } from "@world/buildMap";
 import { pickLevelName, WELCOME_WING_NAME } from "@world/levelNames";
@@ -214,8 +216,12 @@ const baseOwnedWeapons = (): Record<WeaponId, boolean> => ({
 // URL-flag parsing lives in @views/urlFlags (CR-F6 — extracted so the
 // app's only external-input boundary is unit-testable). This composes the
 // base seed with the archetype override.
-function readSeedFromUrl(): number {
-	const base = readBaseSeedFromUrl();
+function readSeedFromUrl(): string {
+	// SEED2 — the map identity is now a seed PHRASE. Use the URL phrase if
+	// present, else a deterministic default (SEED3 will mint from the event
+	// PRNG / New Game modal). The archetype override appends a suffix that
+	// re-hashes onto the requested archetype.
+	const base = readSeedPhraseFromUrl() ?? CANONICAL_SEED_PHRASE;
 	return applyArchetypeOverride(base, readArchetypeFromUrl());
 }
 
@@ -245,7 +251,7 @@ declare global {
 }
 
 export function BoneBusterShell() {
-	const [seed, setSeed] = useState(readSeedFromUrl);
+	const [seedPhrase, setSeedPhrase] = useState(readSeedFromUrl);
 	// INF3 — when `?bonebusterArchetype` is present, switch the level to
 	// procedural so the seed rewrite (and thus the archetype pick)
 	// actually drives map generation. Without this override the default
@@ -308,16 +314,19 @@ export function BoneBusterShell() {
 	const map: BoneBusterMap = useMemo(
 		// I4 — difficulty plumbed through so ManyEnemies (class 9) expands
 		// per the ref formula. Procedural maps don't read it.
-		() => buildMap(seed, settings.level, settings.difficulty),
-		[seed, settings.level, settings.difficulty],
+		() => buildMap(seedPhrase, settings.level, settings.difficulty),
+		[seedPhrase, settings.level, settings.difficulty],
 	);
 	// D8 — alliterative level name. refLevel(0) tutorial (LEVEL_CHOICE 1)
 	// is fixed at "Welcome Wing"; every other map rolls from its
 	// archetype's pool via the NAME-tagged PRNG so the name is stable
 	// across reloads of the same seed.
 	const levelName = useMemo(
-		() => (settings.level === 1 ? WELCOME_WING_NAME : pickLevelName(map.archetype, seed)),
-		[settings.level, map.archetype, seed],
+		() =>
+			settings.level === 1
+				? WELCOME_WING_NAME
+				: pickLevelName(map.archetype, cyrb128(seedPhrase)[3]),
+		[settings.level, map.archetype, seedPhrase],
 	);
 
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
@@ -398,7 +407,7 @@ export function BoneBusterShell() {
 		triggerFadeRef,
 		settings,
 		tuning,
-		seed,
+		seedPhrase,
 		level: settings.level,
 	});
 
@@ -459,7 +468,7 @@ export function BoneBusterShell() {
 			// (dead, won) or there's no live run to resume from.
 			const preserveSeed = prev.status === "paused" || prev.status === "playing";
 			if (!preserveSeed) {
-				setSeed(Date.now() & 0xffffffff);
+				setSeedPhrase(randomSeedPhrase(createEventPrng(createFreshEventSeed())));
 			}
 			return { ...prev, status: "landing" };
 		});
@@ -591,7 +600,7 @@ export function BoneBusterShell() {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: map.seed is the trigger for the reset, not a body-read; biome's stricter inference would auto-fix to [] which breaks the level-transition reset.
 	useEffect(() => {
 		setBossActiveCount(0);
-	}, [map.seed]);
+	}, [map.seedPhrase]);
 
 	useEffect(() => {
 		if (!settings.soundEnabled) return;
@@ -675,7 +684,7 @@ export function BoneBusterShell() {
 		if (state.status !== "transitioning") return;
 		const timer = window.setTimeout(() => {
 			if (settings.level === "procedural") {
-				setSeed(Date.now() & 0xffffffff);
+				setSeedPhrase(randomSeedPhrase(createEventPrng(createFreshEventSeed())));
 			} else {
 				const next = advanceLevel(settings.level, state.run.runLevelsCleared);
 				if (next !== null && next !== "procedural") {
@@ -951,7 +960,7 @@ export function BoneBusterShell() {
 								    reset between levels. Without this, Section B level
 								    transitions silently inherit dead state from level 1. */}
 								<BoneBusterScene
-									key={`${settings.level}-${seed}-${map.seed}`}
+									key={`${settings.level}-${seedPhrase}-${map.seedPhrase}`}
 									map={map}
 									active={state.status === "playing"}
 									hasKey={state.hasKey}

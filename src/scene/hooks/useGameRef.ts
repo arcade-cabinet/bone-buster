@@ -25,6 +25,7 @@
 import { playFlashlightClick, playHitSting, playPickup, playPlayerDeath } from "@audio/sfx";
 import type { PickupKind } from "@engine/engine";
 import { dispatch } from "@engine/events";
+import { cyrb128 } from "@engine/rng";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import { advanceLevel, runStatsReducer } from "@store/runStats";
 import type { BoneBusterSettings, DifficultyTuning, LevelChoice } from "@store/settings";
@@ -83,7 +84,7 @@ export type UseGameRefDeps = Readonly<{
 	triggerFadeRef: React.RefObject<(kind: FadeKind, intensity?: number) => void>;
 	settings: BoneBusterSettings;
 	tuning: DifficultyTuning;
-	seed: number;
+	seedPhrase: string;
 	level: LevelChoice;
 }>;
 
@@ -263,7 +264,7 @@ export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 			return consumed;
 		},
 		onCollectPickup: (kind) => {
-			const { setState, triggerFadeRef, seed } = depsRef.current;
+			const { setState, triggerFadeRef, seedPhrase } = depsRef.current;
 			// POL30 — fire pickup-collected event for PickupChip HUD overlay.
 			// Key pickups don't route here — they have onPickupKey + POL22.
 			dispatch({ type: "pickupCollected", kind });
@@ -317,7 +318,7 @@ export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 					}
 					if (action === "loot") {
 						// COV12 step-2 — kind-specific bonus from pickLootKind(seed).
-						const lootKind = pickLootKind(seed);
+						const lootKind = pickLootKind(cyrb128(seedPhrase)[2] >>> 0);
 						if (lootKind === "bottles") {
 							// +LOOT_BONUSES.bottlesHp (potion stash) — clamp to maxHp.
 							return {

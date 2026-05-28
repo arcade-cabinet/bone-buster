@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 
 const farSector: BoneBusterSectorMap = {
 	kind: "sectors",
-	seed: 0,
+	seedPhrase: "fixture-0",
 	archetype: "corridor",
 	sectors: [
 		{

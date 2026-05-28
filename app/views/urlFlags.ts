@@ -71,6 +71,24 @@ export function readArchetypeFromUrl(): string | null {
 }
 
 /**
+ * SEED2 — the map seed PHRASE from the live URL. `?bonebusterSeed=<value>`
+ * is used directly as the phrase (legacy numeric values are accepted as a
+ * phrase string — they hash the same way via cyrb128). When absent, returns
+ * null so the caller mints a phrase (SEED3: from the event PRNG / New Game
+ * modal; for now a deterministic default keeps the harness stable).
+ */
+export function readSeedPhraseFromUrl(): string | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const url = new URL(window.location.href);
+		const raw = url.searchParams.get("bonebusterSeed") ?? url.searchParams.get("objexoomSeed");
+		return raw && raw.length > 0 ? raw : null;
+	} catch {
+		return null;
+	}
+}
+
+/**
  * Debug hooks are installed ONLY in non-production builds AND only when the
  * flag is present — so the `window.__bonebuster` cheat surface can never
  * leak into a shipped build regardless of URL.

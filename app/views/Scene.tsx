@@ -27,6 +27,7 @@ import {
 	stepEnemyBullet,
 } from "@engine/engine";
 import { addBoneBusterListener, dispatch } from "@engine/events";
+import { cyrb128 } from "@engine/rng";
 import { useFrame, useThree } from "@react-three/fiber";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { PLAYER_HEIGHT, TILE } from "@shared/constants";
@@ -162,13 +163,19 @@ export function BoneBusterScene({
 	hasUvFlashlight,
 }: SceneProps) {
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
+	// SEED2 — a phrase-stable numeric for the cosmetic pickers + door/vehicle
+	// variant tags that still take a numeric seed (meleeProfile, pistolProfile,
+	// chaingunProfile, spiritBoxPhoneme, doors, vehicle wreck, hue). Same value
+	// every render for a given phrase, matching the pre-SEED2 single-seed
+	// behavior. Stream-seeded systems (enemy mix, scatter) take the phrase.
+	const mapSeedNum = cyrb128(map.seedPhrase)[0] >>> 0;
 	// E13 step-3 — per-archetype enemy mix. Remap spawn `kind`s through
 	// the archetype's weight table before spawnEnemies consumes them.
 	// pickArchetype is pure + trivial; safe to call inline for the
 	// useRef initializer.
 	const initialEnemies = spawnEnemies(
 		map,
-		remapEnemyMix(map.enemySpawns, pickArchetype(map), map.seed),
+		remapEnemyMix(map.enemySpawns, pickArchetype(map), map.seedPhrase),
 	).map((e) => {
 		const scaledHp = Math.max(1, Math.round(e.hp * tuning.enemyHpMultiplier));
 		return { ...e, hp: scaledHp, maxHp: scaledHp };
@@ -201,7 +208,7 @@ export function BoneBusterScene({
 	// the lit-subset's `on` flag and wire pointLights.
 	const lampsRef = useRef<LampInstance[]>(spawnLamps(map));
 	// E13 step-1 — pick the map's archetype deterministically from
-	// `map.seed % 5`. Step-1 only wires the prop-pool axis; future
+	// `mapSeedNum % 5`. Step-1 only wires the prop-pool axis; future
 	// steps will add lighting palette + enemy mix + SFX bed axes per
 	// PRD §E13. The archetype is constant for the lifetime of the
 	// Scene mount (re-keyed on level change).
@@ -887,13 +894,13 @@ export function BoneBusterScene({
 	// PB4 — per-run melee profile resolved from level.seed; pairs with
 	// the viewmodel's pickMeleeSkin so the visible weapon and the damage
 	// numbers stay in lockstep.
-	const meleeProfile = useMemo(() => pickMeleeProfile(map.seed), [map.seed]);
+	const meleeProfile = useMemo(() => pickMeleeProfile(mapSeedNum), [mapSeedNum]);
 	// PD1 — same pattern for the pistol skin: per-seed profile pairs
 	// with WeaponViewmodel's pickPistolSkin so viewmodel and damage
 	// numbers stay in lockstep.
-	const pistolProfile = useMemo(() => pickPistolProfile(map.seed), [map.seed]);
+	const pistolProfile = useMemo(() => pickPistolProfile(mapSeedNum), [mapSeedNum]);
 	// PD3 — chaingun skin profile pairs with pickChaingunSkin.
-	const chaingunProfile = useMemo(() => pickChaingunProfile(map.seed), [map.seed]);
+	const chaingunProfile = useMemo(() => pickChaingunProfile(mapSeedNum), [mapSeedNum]);
 
 	// ARCH2b — single-shot resolution moved to src/scene/tick/fireResolution.ts.
 	// The useEffect that wires `bonebuster:fire` stays here (it owns the
@@ -990,7 +997,7 @@ export function BoneBusterScene({
 	// response dispatch. Walks the same enemiesRef pool as the EMF
 	// dispatch above; when the nearest live enemy is within
 	// SPIRIT_BOX_TRIGGER_RADIUS tiles and the cooldown has expired,
-	// picks a deterministic phoneme keyed off (map.seed, triggerIndex)
+	// picks a deterministic phoneme keyed off (mapSeedNum, triggerIndex)
 	// and emits the typed event. The HUD bubble subscribes; the audio
 	// sting (future commit) can subscribe to the same event.
 	const lastSpiritBoxTriggerAtRef = useRef(0);
@@ -1010,7 +1017,7 @@ export function BoneBusterScene({
 		}
 		if (nearestSq > radiusSq) return;
 		lastSpiritBoxTriggerAtRef.current = now;
-		const phoneme = pickSpiritBoxPhoneme(map.seed, spiritBoxTriggerCountRef.current);
+		const phoneme = pickSpiritBoxPhoneme(mapSeedNum, spiritBoxTriggerCountRef.current);
 		spiritBoxTriggerCountRef.current += 1;
 		dispatch({ type: "spiritBoxResponse", phoneme });
 	});
@@ -1110,7 +1117,7 @@ export function BoneBusterScene({
 			<ExitPortal
 				position={map.exitPosition}
 				unlocked={hasKey && allBossesDead}
-				hueIndex={(map.seed >>> 0) % 5}
+				hueIndex={(mapSeedNum >>> 0) % 5}
 			/>
 			{/* POL23 — exit-portal approach FOV-widen slot per
 			    docs/SLOT-ARCHITECTURE.md. The base FOV of 75 mirrors
@@ -1120,7 +1127,11 @@ export function BoneBusterScene({
 				unlocked={hasKey && allBossesDead}
 				baseFov={75}
 			/>
-			<RealDoor position={map.exitPosition} unlocked={hasKey && allBossesDead} mapSeed={map.seed} />
+			<RealDoor
+				position={map.exitPosition}
+				unlocked={hasKey && allBossesDead}
+				mapSeed={mapSeedNum}
+			/>
 			<TreasureChest position={map.exitPosition} />
 			{/* H8 — second RealDoor at the original spawn. Opens during the
 			    going_back phase so the player has a clear visual goal to
@@ -1128,7 +1139,9 @@ export function BoneBusterScene({
 			<RealDoor
 				position={map.playerSpawn}
 				unlocked={phase === "going_back"}
-				mapSeed={map.seed ^ 0x676f6e67 /* "gong" tag — different variant for the spawn-side door */}
+				mapSeed={
+					mapSeedNum ^ 0x676f6e67 /* "gong" tag — different variant for the spawn-side door */
+				}
 			/>
 
 			{/* E6 — secret switches + their hidden walls. Empty when the
@@ -1143,7 +1156,7 @@ export function BoneBusterScene({
 
 			{/* COV4 + E3 — decorative prop scatter from PSX Mega Pack II
 			    Props pool. Step-1: "corridor" archetype default for
-			    every sector; E13 will pick archetypes per map.seed. */}
+			    every sector; E13 will pick archetypes per mapSeedNum. */}
 			<PropField props={propsRef.current} />
 
 			{/* COV2 step-2 — anchor-piece large-prop scatter (1-2 per
@@ -1183,7 +1196,7 @@ export function BoneBusterScene({
 
 			{/* COV10 step-2 — one RV wreck at the courtyard archetype's
 			    farthest-sector centroid. Null on non-courtyard maps. */}
-			{wreckPosition && <VehicleWreck position={wreckPosition} seed={map.seed} />}
+			{wreckPosition && <VehicleWreck position={wreckPosition} seed={mapSeedNum} />}
 
 			{enemiesRef.current.map((enemy) => (
 				<group key={enemy.id}>
@@ -1217,7 +1230,7 @@ export function BoneBusterScene({
 				<PickupMesh
 					key={pickup.id}
 					pickup={pickup}
-					mapSeed={map.seed}
+					mapSeed={mapSeedNum}
 					register={(group) => {
 						if (group) pickupMeshes.current.set(pickup.id, group);
 						else pickupMeshes.current.delete(pickup.id);
@@ -1244,7 +1257,7 @@ export function BoneBusterScene({
 			<DamageNumberField />
 			<WeaponViewmodel
 				weapon={weapon}
-				mapSeed={map.seed}
+				mapSeed={mapSeedNum}
 				onMuzzleAnchor={onMuzzleAnchor}
 				swapDipOffsetRef={weaponSwapDipOffsetRef}
 			/>

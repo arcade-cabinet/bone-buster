@@ -10,7 +10,15 @@
  */
 
 import type { BoneBusterMap } from "@engine/engine";
+import { cyrb128 } from "@engine/rng";
 import type { PropArchetype } from "@world/scatter/propPool";
+
+/** The archetype a given seed phrase hashes to (`cyrb128[0] % 5`). */
+export function archetypeForPhrase(seedPhrase: string): PropArchetype {
+	const a = ARCHETYPE_NAMES[cyrb128(seedPhrase)[0] % ARCHETYPE_NAMES.length];
+	if (a === undefined) throw new RangeError("archetypeForPhrase: index out of bounds");
+	return a;
+}
 
 /**
  * Canonical archetype order. The index of an archetype here IS its
@@ -37,19 +45,25 @@ export function pickArchetype(map: BoneBusterMap): PropArchetype {
 }
 
 /**
- * INF3 — rewrite a seed so its `seed % 5` index lands on the named
- * archetype. Caller is the Shell URL-flag plumbing (`?bonebusterArchetype=`).
- * Pure function — lives here (not in the view layer) so unit tests
- * can pin the invariant without importing any TSX.
+ * INF3 / SEED2 — rewrite a seed PHRASE so it hashes to the named archetype.
+ * Caller is the Shell URL-flag plumbing (`?bonebusterArchetype=`). Since the
+ * archetype now derives from `cyrb128(phrase)[0] % 5` (not `seed % 5`), we
+ * can't arithmetically rewrite the value — instead we append a numeric suffix
+ * to the phrase and increment until the hash lands on the target archetype.
+ * Deterministic (no RNG) and always terminates fast (each suffix is ~1/5 to
+ * match). Pure function — lives here so unit tests pin it without any TSX.
  *
- * Contract: after override, `(returnedSeed % 5) === ARCHETYPE_NAMES.indexOf(archetype)`
- * for every input seed. Unknown archetype names return the seed
- * unchanged.
+ * Contract: after override, `archetypeForPhrase(returned) === archetype`.
+ * Unknown archetype names return the phrase unchanged.
  */
-export function applyArchetypeOverride(seed: number, archetype: string | null): number {
-	if (!archetype) return seed;
+export function applyArchetypeOverride(seedPhrase: string, archetype: string | null): string {
+	if (!archetype) return seedPhrase;
 	const idx = ARCHETYPE_NAMES.indexOf(archetype as PropArchetype);
-	if (idx < 0) return seed;
-	const s = seed >>> 0;
-	return ((s - (s % ARCHETYPE_NAMES.length) + idx) >>> 0) & 0xffffffff;
+	if (idx < 0) return seedPhrase;
+	if (cyrb128(seedPhrase)[0] % ARCHETYPE_NAMES.length === idx) return seedPhrase;
+	for (let n = 1; n < 1000; n++) {
+		const candidate = `${seedPhrase}-${n}`;
+		if (cyrb128(candidate)[0] % ARCHETYPE_NAMES.length === idx) return candidate;
+	}
+	return seedPhrase; // unreachable in practice (each suffix ~1/5 chance)
 }

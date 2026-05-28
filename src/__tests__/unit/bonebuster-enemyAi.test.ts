@@ -29,7 +29,7 @@ function makeEnemy(partial: Partial<Enemy> = {}): Enemy {
 }
 
 describe("bonebuster enemyAi FSM (C3)", () => {
-	const map = generateMap(12345) as BoneBusterGridMap;
+	const map = generateMap("gen-12345") as BoneBusterGridMap;
 	const ctx = { doorOpen: false };
 
 	it("state 0 stays in 0 when player is far + no LOS", () => {

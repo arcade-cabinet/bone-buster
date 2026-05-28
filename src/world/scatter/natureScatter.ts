@@ -18,7 +18,7 @@
 
 import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
-import { mulberry32, RNG_TAGS, taggedSeed } from "@engine/prng";
+import { cyrb128, forkStream } from "@engine/rng";
 import { pickArchetype } from "@world/archetype";
 import { pickNaturePlant } from "@world/nature";
 
@@ -79,7 +79,7 @@ export function spawnNature(map: BoneBusterMap): NatureInstance[] {
 	if (map.kind !== "sectors") return [];
 	if (pickArchetype(map) !== "courtyard") return [];
 	const out: NatureInstance[] = [];
-	const rng = mulberry32(taggedSeed(map.seed, RNG_TAGS.NATU));
+	const rng = forkStream(map.seedPhrase, "NATU");
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 
 	for (const sector of map.sectors) {
@@ -111,7 +111,7 @@ export function spawnNature(map: BoneBusterMap): NatureInstance[] {
 				position: accepted,
 				yaw: rng() * Math.PI * 2,
 				scale: SCALE_MIN + rng() * (SCALE_MAX - SCALE_MIN),
-				url: pickNaturePlant(id, map.seed),
+				url: pickNaturePlant(id, cyrb128(map.seedPhrase)[0]),
 			});
 		}
 	}

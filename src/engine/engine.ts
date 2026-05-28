@@ -1,4 +1,5 @@
-import { mulberry32, RNG_TAGS, seedFrom } from "@engine/prng";
+import { createMapPrng, cyrb128, forkStream } from "@engine/rng";
+import { CANONICAL_SEED_PHRASE } from "@engine/seedPhrase";
 import { PISTOL_MAX_RANGE, PLAYER_RADIUS, RATTLER_HP, TILE } from "@shared/constants";
 import type { PropArchetype } from "@world/scatter/propPool";
 
@@ -114,16 +115,22 @@ export type Room = Readonly<{
  * representation embed this.
  */
 export type BoneBusterMapBase = Readonly<{
-	seed: number;
+	/**
+	 * SEED2 — the adjective-adjective-noun seed PHRASE is the map identity
+	 * (replaces the old numeric `seed`). All procedural streams derive from
+	 * it via `forkStream(seedPhrase, tag)`; same phrase → same map.
+	 * See docs/specs/96-prng-and-landing.md.
+	 */
+	seedPhrase: string;
 	/**
 	 * CONV3 — denormalized archetype dispatch. Populated once at map
-	 * construction (generateMap / loadRefLevel) via `ARCHETYPE_NAMES[seed % 5]`.
-	 * Every consumer reads `map.archetype` instead of recomputing the
-	 * modulus inline. `pickArchetype(map)` is a trivial accessor for
-	 * legacy call-site readability.
+	 * construction (generateMap / loadRefLevel) via
+	 * `ARCHETYPE_NAMES[cyrb128(seedPhrase)[0] % 5]`. Every consumer reads
+	 * `map.archetype` instead of recomputing it. `pickArchetype(map)` is a
+	 * trivial accessor for legacy call-site readability.
 	 *
-	 * Canonical-byte-stability invariant: seed 0 → "corridor". Don't
-	 * recompute this from another source — buildMap is the only writer.
+	 * Canonical-byte-stability invariant: CANONICAL_SEED_PHRASE → "corridor".
+	 * Don't recompute this from another source — buildMap is the only writer.
 	 */
 	archetype: PropArchetype;
 	playerSpawn: Vec2;
@@ -329,8 +336,8 @@ function roomsIntersect(a: Room, b: Room, padding: number) {
 	);
 }
 
-export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterGridMap {
-	const rand = mulberry32(seedFrom(seed));
+export function generateMap(seedPhrase: string, shape?: GenerateMapShape): BoneBusterGridMap {
+	const rand = createMapPrng(seedPhrase);
 	const width = MAP_WIDTH;
 	const height = MAP_HEIGHT;
 	const minRoom = shape?.minRoom ?? MIN_ROOM;
@@ -458,12 +465,12 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 		enemyCandidates[i] = cj;
 		enemyCandidates[j] = ci;
 	}
-	// E13 step-10 — per-archetype enemy-count multiplier. Resolved
-	// inline as `(seed >>> 0) % 5` because we're building the map and
-	// `pickArchetype` operates on a built map. CONV3 (2026-05-15)
-	// denormalized `archetype` onto the map type; that field is set in
-	// the return value below using this same idx, keeping the one
-	// source-of-truth invariant: seed 0 → idx 0 → "corridor".
+	// E13 step-10 — per-archetype enemy-count multiplier. SEED2: the
+	// archetype index now derives from the seed phrase via
+	// `cyrb128(phrase)[0] % 5` (replaces the old `seed % 5`). CONV3
+	// denormalized `archetype` onto the map type; that field is set in the
+	// return value below using this same idx, keeping the one-source-of-truth
+	// invariant: CANONICAL_SEED_PHRASE → idx 0 → "corridor".
 	const ARCHETYPE_ENEMY_MULTIPLIER = [1.0, 1.4, 0.9, 1.1, 0.8] as const;
 	const ARCHETYPE_NAMES_INLINE = [
 		"corridor",
@@ -472,7 +479,7 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 		"sewer",
 		"library",
 	] as const satisfies readonly PropArchetype[];
-	const archetypeIdx = (seed >>> 0) % 5;
+	const archetypeIdx = cyrb128(seedPhrase)[0] % 5;
 	const archetype = at(ARCHETYPE_NAMES_INLINE, archetypeIdx);
 	const baseEnemyCount = Math.max(6, Math.floor(rooms.length * 1.2));
 	const totalEnemies = Math.min(
@@ -516,7 +523,11 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 		pickupCandidates.length,
 		Math.max(4, Math.round(basePickupCount * at(ARCHETYPE_PICKUP_MULTIPLIER, archetypeIdx))),
 	);
-	const wantsFlame = (seed >>> 0) % 3 === 0;
+	// SEED2 — tool-spawn cadence derives from a phrase-stable numeric
+	// (cyrb128 word [1], independent of the archetype's word [0]) replacing
+	// the old `seed % N`.
+	const seedNum = cyrb128(seedPhrase)[1] >>> 0;
+	const wantsFlame = seedNum % 3 === 0;
 	// PB5 step-2 — EMF reader spawns on every 4th seed (seed%4==0). One
 	// per map. Ownership resets on level transition — Shell.tsx
 	// re-initializes hasEmfReader: false alongside hasFlashlight at
@@ -524,18 +535,18 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 	// the reader on each EMF-eligible level. Keeping the cadence sparse
 	// so the tool reads as a discovery beat rather than a guaranteed
 	// every-map find.
-	const wantsEmf = (seed >>> 0) % 4 === 0;
+	const wantsEmf = seedNum % 4 === 0;
 	// PC2 — Spirit box spawns on every 5th seed (offset from EMF's %4
 	// so the two tools don't co-spawn on every shared multiple). Same
 	// per-level ownership semantics as EMF.
-	const wantsSpiritBox = (seed >>> 0) % 5 === 0;
+	const wantsSpiritBox = seedNum % 5 === 0;
 	// PC3 — UV flashlight spawns on every 6th seed (offset from EMF
 	// and spirit box). Per-level ownership reset.
-	const wantsUv = (seed >>> 0) % 6 === 0;
+	const wantsUv = seedNum % 6 === 0;
 	// PC4 — Crucifix spawns on every 7th seed. Inventory counter
 	// resets per level alongside the other tool flags; the player
 	// re-builds a small crucifix stockpile on each eligible map.
-	const wantsCrucifix = (seed >>> 0) % 7 === 0;
+	const wantsCrucifix = seedNum % 7 === 0;
 	const reserved: PickupKind[] = ["chaingunAmmo", "shotgunAmmo"];
 	if (wantsFlame) reserved.push("flamethrowerAmmo");
 	if (wantsEmf) reserved.push("emfReader");
@@ -567,7 +578,7 @@ export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterG
 
 	return {
 		kind: "grid",
-		seed,
+		seedPhrase,
 		archetype,
 		width,
 		height,
@@ -828,22 +839,24 @@ export function spawnEnemies(map: BoneBusterMap, spawnsOverride?: readonly Enemy
 			lastShotAt: 0,
 			...(isBoss ? { tier: "boss" as const } : {}),
 			// PC3 — UV-hidden tag, applied to ~1-in-8 non-boss enemies.
-			// Deterministic per (map.seed, spawnIndex) so the same seed
+			// Deterministic per (seedPhrase, spawnIndex) so the same phrase
 			// always hides the same enemies. Bosses never hide — the
 			// goal-boss must remain visible without the UV reveal.
-			uvHidden: isBoss ? false : pickUvHidden(map.seed, i),
+			uvHidden: isBoss ? false : pickUvHidden(map.seedPhrase, i),
 		};
 	});
 }
 
-// PC3 — ~12.5% of non-boss enemies hide. `seed === 0` (refLevel anchor)
-// short-circuits to keep the canonical screenshot baseline. Routes through
-// canonical mulberry32 with the ENMX tag; spawnIndex is golden-ratio-mixed
-// before XOR so adjacent indices avalanche cleanly into the PRNG seed.
-export function pickUvHidden(seed: number, spawnIndex: number): boolean {
-	if (seed >>> 0 === 0) return false;
-	const mixed = ((seed >>> 0) ^ Math.imul(spawnIndex >>> 0, 0x9e3779b1) ^ RNG_TAGS.ENMX) >>> 0;
-	return mulberry32(seedFrom(mixed))() < 0.125;
+// PC3 — ~12.5% of non-boss enemies hide. SEED2: forks the per-phrase ENMX
+// stream and reads the spawnIndex-th draw, so the same phrase always hides
+// the same enemies (replaces the old numeric mulberry32 + ENMX XOR). The
+// CANONICAL_SEED_PHRASE short-circuit keeps the canonical screenshot baseline.
+export function pickUvHidden(seedPhrase: string, spawnIndex: number): boolean {
+	if (seedPhrase === CANONICAL_SEED_PHRASE) return false;
+	const rng = forkStream(seedPhrase, "ENMX-UV");
+	let draw = 0;
+	for (let k = 0; k <= spawnIndex; k++) draw = rng();
+	return draw < 0.125;
 }
 
 export type Pickup = {

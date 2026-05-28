@@ -31,7 +31,7 @@ describe("D5 — remapEnemyMix", () => {
 	it("preserves total spawn count for every archetype", () => {
 		const spawns = makeSpawns(20);
 		for (const archetype of ARCHETYPE_NAMES) {
-			const out = remapEnemyMix(spawns, archetype, 12345);
+			const out = remapEnemyMix(spawns, archetype, "mix-12345");
 			expect(out.length).toBe(spawns.length);
 		}
 	});
@@ -39,7 +39,7 @@ describe("D5 — remapEnemyMix", () => {
 	it("preserves position + order (only `kind` may change)", () => {
 		const spawns = makeSpawns(15);
 		for (const archetype of ARCHETYPE_NAMES) {
-			const out = remapEnemyMix(spawns, archetype, 7);
+			const out = remapEnemyMix(spawns, archetype, "mix-7");
 			for (let i = 0; i < spawns.length; i += 1) {
 				const oi = out[i];
 				const si = spawns[i];
@@ -62,8 +62,8 @@ describe("D5 — remapEnemyMix", () => {
 	it("determinism — same seed yields same kind sequence", () => {
 		const spawns = makeSpawns(30);
 		for (const archetype of ARCHETYPE_NAMES) {
-			const a = remapEnemyMix(spawns, archetype, 4242);
-			const b = remapEnemyMix(spawns, archetype, 4242);
+			const a = remapEnemyMix(spawns, archetype, "mix-4242");
+			const b = remapEnemyMix(spawns, archetype, "mix-4242");
 			expect(a.map((s) => s.kind)).toEqual(b.map((s) => s.kind));
 		}
 	});
@@ -71,10 +71,10 @@ describe("D5 — remapEnemyMix", () => {
 	it("different seeds produce different mixes", () => {
 		const spawns = makeSpawns(40);
 		for (const archetype of ARCHETYPE_NAMES) {
-			const a = remapEnemyMix(spawns, archetype, 1)
+			const a = remapEnemyMix(spawns, archetype, "mix-1")
 				.map((s) => s.kind)
 				.join(",");
-			const b = remapEnemyMix(spawns, archetype, 99999)
+			const b = remapEnemyMix(spawns, archetype, "mix-99999")
 				.map((s) => s.kind)
 				.join(",");
 			expect(a).not.toBe(b);
@@ -83,7 +83,7 @@ describe("D5 — remapEnemyMix", () => {
 
 	it("corridor headline kinds dominate over a large sample", () => {
 		const spawns = makeSpawns(500);
-		const out = remapEnemyMix(spawns, "corridor", 1234);
+		const out = remapEnemyMix(spawns, "corridor", "mix-1234");
 		const rattler = out.filter((s) => s.kind === "rattler").length;
 		const bouncer = out.filter((s) => s.kind === "bouncer").length;
 		// Corridor table puts rattler at weight 6 (largest); rattler
@@ -94,7 +94,7 @@ describe("D5 — remapEnemyMix", () => {
 
 	it("arena headline kinds dominate — bighoss + goliath > phaser-class spawns", () => {
 		const spawns = makeSpawns(500);
-		const out = remapEnemyMix(spawns, "arena", 1234);
+		const out = remapEnemyMix(spawns, "arena", "mix-1234");
 		const heavyTanks =
 			out.filter((s) => s.kind === "bighoss").length +
 			out.filter((s) => s.kind === "goliath").length;
@@ -105,7 +105,7 @@ describe("D5 — remapEnemyMix", () => {
 
 	it("library headline kinds dominate — plaguebeak + gawker + reverend > all others", () => {
 		const spawns = makeSpawns(500);
-		const out = remapEnemyMix(spawns, "library", 1234);
+		const out = remapEnemyMix(spawns, "library", "mix-1234");
 		const headlines =
 			out.filter((s) => s.kind === "plaguebeak").length +
 			out.filter((s) => s.kind === "gawker").length +
@@ -118,7 +118,7 @@ describe("D5 — remapEnemyMix", () => {
 	it("devil (boss-tier) never appears in any archetype's regular mix", () => {
 		const spawns = makeSpawns(1000);
 		for (const archetype of ARCHETYPE_NAMES) {
-			const out = remapEnemyMix(spawns, archetype, 7777);
+			const out = remapEnemyMix(spawns, archetype, "mix-7777");
 			const devilCount = out.filter((s) => s.kind === "devil").length;
 			expect(devilCount).toBe(0);
 		}
@@ -155,7 +155,7 @@ describe("D5 — remapEnemyMix", () => {
 		]);
 		const spawns = makeSpawns(50);
 		for (const archetype of ARCHETYPE_NAMES) {
-			for (const s of remapEnemyMix(spawns, archetype, 3)) {
+			for (const s of remapEnemyMix(spawns, archetype, "mix-3")) {
 				expect(valid.has(s.kind)).toBe(true);
 			}
 		}
@@ -174,7 +174,7 @@ describe("D5 — remapEnemyMix", () => {
 		const reached = new Set<EnemyKind>();
 		for (let seed = 1; seed <= 100; seed += 1) {
 			for (const archetype of ARCHETYPE_NAMES) {
-				for (const s of remapEnemyMix(spawns, archetype, seed)) {
+				for (const s of remapEnemyMix(spawns, archetype, `mix-${seed}`)) {
 					reached.add(s.kind);
 				}
 			}
@@ -185,7 +185,7 @@ describe("D5 — remapEnemyMix", () => {
 
 	it("empty spawn list passes through without error for every archetype", () => {
 		for (const archetype of ARCHETYPE_NAMES) {
-			expect(remapEnemyMix([], archetype, 0)).toEqual([]);
+			expect(remapEnemyMix([], archetype, "mix-0")).toEqual([]);
 		}
 	});
 });

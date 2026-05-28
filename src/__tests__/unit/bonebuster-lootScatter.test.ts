@@ -17,7 +17,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 
 const SECTOR_FIXTURE: BoneBusterSectorMap = {
 	kind: "sectors",
-	seed: 0,
+	seedPhrase: "fixture-0",
 	archetype: "corridor",
 	sectors: [
 		{ id: 0, vertices: bigSquare(0, 0, 10), floorHeight: 0, ceilingHeight: 10 },
@@ -33,8 +33,8 @@ const SECTOR_FIXTURE: BoneBusterSectorMap = {
 	bounds: { minX: -10, minY: -10, maxX: 70, maxY: 70 },
 };
 
-function reseed(seed: number): BoneBusterSectorMap {
-	return { ...SECTOR_FIXTURE, seed };
+function reseed(seedPhrase: string): BoneBusterSectorMap {
+	return { ...SECTOR_FIXTURE, seedPhrase };
 }
 
 describe("COV12 step-2 — pickLootSpawn", () => {
@@ -53,15 +53,15 @@ describe("COV12 step-2 — pickLootSpawn", () => {
 
 	it("lootKind picks deterministically per seed", () => {
 		// pickLootKind cycles through ["bottles", "books", "treasure"].
-		expect(pickLootSpawn(reseed(0))?.lootKind).toBe("bottles");
-		expect(pickLootSpawn(reseed(1))?.lootKind).toBe("books");
-		expect(pickLootSpawn(reseed(2))?.lootKind).toBe("treasure");
-		expect(pickLootSpawn(reseed(3))?.lootKind).toBe("bottles");
+		expect(pickLootSpawn(reseed("loot-0"))?.lootKind).toBe("bottles");
+		expect(pickLootSpawn(reseed("loot-6"))?.lootKind).toBe("books");
+		expect(pickLootSpawn(reseed("loot-1"))?.lootKind).toBe("treasure");
+		expect(pickLootSpawn(reseed("loot-0"))?.lootKind).toBe("bottles");
 	});
 
 	it("is deterministic — same seed → same spawn", () => {
-		const a = pickLootSpawn(reseed(42));
-		const b = pickLootSpawn(reseed(42));
+		const a = pickLootSpawn(reseed("loot-d42"));
+		const b = pickLootSpawn(reseed("loot-d42"));
 		expect(a).toEqual(b);
 	});
 

@@ -8,8 +8,8 @@ import { loadRefLevel } from "@world/refLevel";
 import { blockerCirclesOf, spawnLargeProps } from "@world/scatter/largePropScatter";
 import { describe, expect, it } from "vitest";
 
-function reseed(map: BoneBusterSectorMap, seed: number): BoneBusterSectorMap {
-	return { ...map, seed };
+function reseed(map: BoneBusterSectorMap, seedPhrase: string): BoneBusterSectorMap {
+	return { ...map, seedPhrase };
 }
 
 function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
@@ -23,7 +23,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 
 const SECTOR_FIXTURE: BoneBusterSectorMap = {
 	kind: "sectors",
-	seed: 0,
+	seedPhrase: "fixture-0",
 	archetype: "corridor",
 	sectors: [
 		{ id: 0, vertices: bigSquare(0, 0, 10), floorHeight: 0, ceilingHeight: 10 },
@@ -40,7 +40,7 @@ const SECTOR_FIXTURE: BoneBusterSectorMap = {
 
 describe("COV2 — spawnLargeProps determinism", () => {
 	it("is deterministic across reloads", () => {
-		const map = reseed(SECTOR_FIXTURE, 12345);
+		const map = reseed(SECTOR_FIXTURE, "lp-12345");
 		const a = spawnLargeProps(map);
 		const b = spawnLargeProps(map);
 		expect(a.length).toBe(b.length);
@@ -57,8 +57,8 @@ describe("COV2 — spawnLargeProps determinism", () => {
 	});
 
 	it("different seeds produce different layouts", () => {
-		const a = spawnLargeProps(reseed(SECTOR_FIXTURE, 1));
-		const b = spawnLargeProps(reseed(SECTOR_FIXTURE, 2));
+		const a = spawnLargeProps(reseed(SECTOR_FIXTURE, "lp-1"));
+		const b = spawnLargeProps(reseed(SECTOR_FIXTURE, "lp-2"));
 		// Compare positions and ids — likelihood of identical scatter at
 		// two random seeds across 2 sectors with mulberry32 is effectively 0.
 		const aSig = a.map((i) => `${i.id}:${i.position.x.toFixed(3)}:${i.def.id}`).join("|");
@@ -69,7 +69,7 @@ describe("COV2 — spawnLargeProps determinism", () => {
 
 describe("COV2 — large-prop scatter shape", () => {
 	it("places ≤2 anchors per sector (sparser than props/debris)", () => {
-		const map = reseed(SECTOR_FIXTURE, 99);
+		const map = reseed(SECTOR_FIXTURE, "lp-99");
 		const out = spawnLargeProps(map);
 		const perSector = new Map<number, number>();
 		for (const inst of out) {
@@ -83,20 +83,20 @@ describe("COV2 — large-prop scatter shape", () => {
 	});
 
 	it("ids are unique per map", () => {
-		const out = spawnLargeProps(reseed(SECTOR_FIXTURE, 7));
+		const out = spawnLargeProps(reseed(SECTOR_FIXTURE, "lp-7"));
 		const ids = new Set(out.map((i) => i.id));
 		expect(ids.size).toBe(out.length);
 	});
 
 	it("every def is a LARGE_PROPS entry", () => {
-		const out = spawnLargeProps(reseed(SECTOR_FIXTURE, 11));
+		const out = spawnLargeProps(reseed(SECTOR_FIXTURE, "lp-11"));
 		for (const inst of out) {
 			expect(LARGE_PROPS).toContain(inst.def);
 		}
 	});
 
 	it("yaw is finite and in [0, 2π)", () => {
-		const out = spawnLargeProps(reseed(SECTOR_FIXTURE, 13));
+		const out = spawnLargeProps(reseed(SECTOR_FIXTURE, "lp-13"));
 		for (const inst of out) {
 			expect(Number.isFinite(inst.yaw)).toBe(true);
 			expect(inst.yaw).toBeGreaterThanOrEqual(0);
@@ -105,7 +105,7 @@ describe("COV2 — large-prop scatter shape", () => {
 	});
 
 	it("respects 5-tile skip-radius from playerSpawn / exit / key", () => {
-		const map = reseed(SECTOR_FIXTURE, 21);
+		const map = reseed(SECTOR_FIXTURE, "lp-21");
 		const anchors = [map.playerSpawn, map.exitPosition, map.keyPosition];
 		for (const inst of spawnLargeProps(map)) {
 			for (const a of anchors) {
@@ -127,7 +127,7 @@ describe("COV2 — large-prop scatter shape", () => {
 
 describe("COV2 — blockerCirclesOf", () => {
 	it("filters down to blocking entries only", () => {
-		const map = reseed(SECTOR_FIXTURE, 5);
+		const map = reseed(SECTOR_FIXTURE, "lp-5");
 		const all = spawnLargeProps(map);
 		const blockers = blockerCirclesOf(all);
 		for (const b of blockers) {

@@ -17,7 +17,7 @@
 
 import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
-import { mulberry32, RNG_TAGS, taggedSeed } from "@engine/prng";
+import { forkStream } from "@engine/rng";
 import { pickArchetype } from "@world/archetype";
 import { DEBRIS_VARIANTS, pickDebrisUrl } from "@world/debris";
 import type { PropArchetype } from "@world/scatter/propPool";
@@ -52,7 +52,7 @@ export interface DebrisInstance {
 export function spawnDebris(map: BoneBusterMap): DebrisInstance[] {
 	if (map.kind !== "sectors") return [];
 	const out: DebrisInstance[] = [];
-	const rng = mulberry32(taggedSeed(map.seed, RNG_TAGS.DEBR));
+	const rng = forkStream(map.seedPhrase, "DEBR");
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 	const archetype = pickArchetype(map);
 	const [minPerSector, maxPerSector] = DENSITY_BY_ARCHETYPE[archetype];

@@ -222,7 +222,11 @@ export function loadRefLevel(
 
 	return {
 		kind: "sectors",
-		seed: index,
+		// SEED2 — ref levels are curated (not procedurally hashed); their
+		// identity phrase is `reflevel-N` and their archetype stays fixed by
+		// index (index % 5), independent of the phrase-hash used by procedural
+		// maps. Ref level 0 → corridor, preserving the canonical anchor.
+		seedPhrase: `reflevel-${index}`,
 		archetype: (() => {
 			// (index >>> 0) % ARCHETYPE_NAMES.length is provably in [0, length).
 			const a = ARCHETYPE_NAMES[(index >>> 0) % ARCHETYPE_NAMES.length];

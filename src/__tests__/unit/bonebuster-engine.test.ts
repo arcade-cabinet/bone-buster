@@ -23,10 +23,11 @@ import {
 	resolveCollisionSectors,
 	type Vec2,
 } from "@engine/engine";
+import { CANONICAL_SEED_PHRASE } from "@engine/seedPhrase";
 import { TILE } from "@shared/constants";
 import { describe, expect, it } from "vitest";
 
-const SEED = 0xdeadbeef;
+const SEED = "deadbeef-test-phrase";
 
 describe("bonebuster engine — map generation", () => {
 	it("is deterministic for a given seed", () => {
@@ -75,13 +76,21 @@ describe("bonebuster engine — map generation", () => {
 		// Arena should have strictly more enemies than library on the same
 		// procedural map shape (room count differs by seed, so use the same
 		// seed % 5 = 1 vs 4 inputs and assert directionality, not magnitude).
-		const arena = generateMap(1);
-		const library = generateMap(4);
+		const arena = generateMap("test-1");
+		const library = generateMap("test-0");
 		expect(arena.enemySpawns.length).toBeGreaterThan(library.enemySpawns.length);
 	});
 
 	it("E13 step-10 — enemy count stays within the clamp [4, 16]", () => {
-		for (const seed of [0, 1, 2, 3, 4, 100, 999]) {
+		for (const seed of [
+			"test-11",
+			"test-1",
+			"test-3",
+			"test-33",
+			"test-0",
+			"test-100",
+			"test-999",
+		]) {
 			const map = generateMap(seed);
 			expect(map.enemySpawns.length).toBeGreaterThanOrEqual(4);
 			expect(map.enemySpawns.length).toBeLessThanOrEqual(16);
@@ -227,7 +236,7 @@ describe("bonebuster engine — sector containment + lookup", () => {
 		];
 		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
-			seed: 0,
+			seedPhrase: "fixture-phrase",
 			archetype: "corridor",
 			sectors,
 			playerSpawn: { x: 0, y: 0 },
@@ -255,7 +264,7 @@ describe("bonebuster engine — sector containment + lookup", () => {
 		];
 		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
-			seed: 0,
+			seedPhrase: "fixture-phrase",
 			archetype: "corridor",
 			sectors,
 			playerSpawn: { x: 0, y: 0 },
@@ -295,7 +304,7 @@ describe("bonebuster engine — sector containment + lookup", () => {
 	it("castRaySectors: hits the nearest sector edge in front", () => {
 		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
-			seed: 0,
+			seedPhrase: "fixture-phrase",
 			archetype: "corridor",
 			sectors: [{ id: 0, vertices: square(0, 0, 5), floorHeight: 0, ceilingHeight: 10 }],
 			playerSpawn: { x: 0, y: 0 },
@@ -314,7 +323,7 @@ describe("bonebuster engine — sector containment + lookup", () => {
 	it("castRaySectors: returns maxDist + null when nothing in front", () => {
 		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
-			seed: 0,
+			seedPhrase: "fixture-phrase",
 			archetype: "corridor",
 			sectors: [
 				{
@@ -340,7 +349,7 @@ describe("bonebuster engine — sector containment + lookup", () => {
 	it("hasLineOfSightSectors: same sector → has LOS; through-wall → no LOS", () => {
 		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
-			seed: 0,
+			seedPhrase: "fixture-phrase",
 			archetype: "corridor",
 			sectors: [
 				{
@@ -372,7 +381,7 @@ describe("bonebuster engine — sector containment + lookup", () => {
 	it("computePortalEdges: shared edges with matching heights are portals", () => {
 		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
-			seed: 0,
+			seedPhrase: "fixture-phrase",
 			archetype: "corridor",
 			sectors: [
 				{
@@ -414,7 +423,7 @@ describe("bonebuster engine — sector containment + lookup", () => {
 	it("computePortalEdges: differing floor heights leave the shared edge as wall", () => {
 		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
-			seed: 0,
+			seedPhrase: "fixture-phrase",
 			archetype: "corridor",
 			sectors: [
 				{
@@ -455,7 +464,7 @@ describe("bonebuster engine — sector containment + lookup", () => {
 	it("resolveCollisionSectors: pushes out of a wall it has clipped into", () => {
 		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
-			seed: 0,
+			seedPhrase: "fixture-phrase",
 			archetype: "corridor",
 			sectors: [
 				{
@@ -487,7 +496,7 @@ describe("bonebuster engine — sector containment + lookup", () => {
 	it("resolveCollisionSectors: portal edge does not block", () => {
 		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
-			seed: 0,
+			seedPhrase: "fixture-phrase",
 			archetype: "corridor",
 			sectors: [
 				{
@@ -539,7 +548,7 @@ describe("bonebuster engine — sector containment + lookup", () => {
 		];
 		const sectorMap: BoneBusterSectorMap = {
 			kind: "sectors",
-			seed: 0,
+			seedPhrase: "fixture-phrase",
 			archetype: "corridor",
 			sectors,
 			playerSpawn: { x: 0, y: 0 },
@@ -564,7 +573,7 @@ describe("bonebuster engine — sector containment + lookup", () => {
 describe("bonebuster engine — Section H (jump/fall/lava/heights)", () => {
 	const sectorMap: BoneBusterSectorMap = {
 		kind: "sectors",
-		seed: 0,
+		seedPhrase: "fixture-phrase",
 		archetype: "corridor",
 		sectors: [
 			{
@@ -661,13 +670,13 @@ describe("PC3 — pickUvHidden", () => {
 		// them invisible and break the screenshot. The seed=0
 		// special-case keeps the canonical screenshot stable.
 		for (let i = 0; i < 50; i += 1) {
-			expect(pickUvHidden(0, i)).toBe(false);
+			expect(pickUvHidden(CANONICAL_SEED_PHRASE, i)).toBe(false);
 		}
 	});
 
 	it("is deterministic per (seed, spawnIndex) pair", () => {
-		expect(pickUvHidden(42, 7)).toBe(pickUvHidden(42, 7));
-		expect(pickUvHidden(0xdeadbeef, 12)).toBe(pickUvHidden(0xdeadbeef, 12));
+		expect(pickUvHidden("uv-42", 7)).toBe(pickUvHidden("uv-42", 7));
+		expect(pickUvHidden("uv-deadbeef", 12)).toBe(pickUvHidden("uv-deadbeef", 12));
 	});
 
 	it("produces a non-empty subset of hides at non-zero seeds", () => {
@@ -676,7 +685,7 @@ describe("PC3 — pickUvHidden", () => {
 		// or 100% true result would indicate a broken mix.
 		let trueCount = 0;
 		for (let i = 0; i < 100; i += 1) {
-			if (pickUvHidden(0xabcdef, i)) trueCount += 1;
+			if (pickUvHidden("uv-abcdef", i)) trueCount += 1;
 		}
 		expect(trueCount).toBeGreaterThan(0);
 		expect(trueCount).toBeLessThan(100);
@@ -689,7 +698,7 @@ describe("PC3 — pickUvHidden", () => {
 		let trueCount = 0;
 		for (let s = 1; s <= 100; s += 1) {
 			for (let i = 0; i < 80; i += 1) {
-				if (pickUvHidden(s, i)) trueCount += 1;
+				if (pickUvHidden(`uv-${s}`, i)) trueCount += 1;
 			}
 		}
 		const rate = trueCount / 8000;
