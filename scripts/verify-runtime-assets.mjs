@@ -1,7 +1,8 @@
 /**
  * Verify that every GLB referenced from src/models.ts actually exists
- * at the resolved path under public/assets/models/. Runs as part of
- * `pnpm verify`.
+ * at the resolved path under public/assets/models/ AND is a well-formed
+ * binary glTF (12-byte header: "glTF" magic, version 2, length matches
+ * file size). Runs as part of `pnpm verify`.
  *
  * Source-of-truth: parse src/models.ts for `A("/assets/models/...")`
  * literals, strip the helper, stat the result. Anything missing
@@ -15,8 +16,40 @@
  * needs to fail the build on a missing file, not a vitest assertion.
  */
 
-import { readFile, stat } from "node:fs/promises";
+import { open, readFile, stat } from "node:fs/promises";
 import { resolve } from "node:path";
+
+const GLB_MAGIC = 0x46546c67; // "glTF" little-endian
+
+/**
+ * Validate a binary glTF (.glb) 12-byte header: magic must be "glTF",
+ * container version 2, and the declared total length must equal the file
+ * size. Catches the zero-magic / truncated corruption class that a plain
+ * existence check (stat) misses — two such GLBs shipped corrupt-on-disk
+ * (born broken in #75) and only a runtime parse error surfaced them.
+ * Returns an error string, or null if the header is well-formed.
+ */
+async function validateGlbHeader(onDisk, fileSize) {
+	const fh = await open(onDisk, "r");
+	try {
+		const buf = Buffer.alloc(12);
+		const { bytesRead } = await fh.read(buf, 0, 12, 0);
+		if (bytesRead < 12) return `truncated GLB header (${bytesRead} bytes)`;
+		const magic = buf.readUInt32LE(0);
+		if (magic !== GLB_MAGIC) {
+			return `bad GLB magic 0x${magic.toString(16).padStart(8, "0")} (expected "glTF")`;
+		}
+		const version = buf.readUInt32LE(4);
+		if (version !== 2) return `unsupported GLB container version ${version} (expected 2)`;
+		const declaredLen = buf.readUInt32LE(8);
+		if (declaredLen !== fileSize) {
+			return `GLB length mismatch: header says ${declaredLen}, file is ${fileSize}`;
+		}
+		return null;
+	} finally {
+		await fh.close();
+	}
+}
 
 const root = resolve(import.meta.dirname, "..");
 // Source files that contribute A("/assets/models/...") references.
@@ -87,6 +120,21 @@ for (const url of urls) {
 	if (!info.isFile()) {
 		errors.push(`NOT-A-FILE: ${url}`);
 		continue;
+	}
+	if (url.endsWith(".glb")) {
+		let headerErr;
+		try {
+			headerErr = await validateGlbHeader(onDisk, info.size);
+		} catch (e) {
+			// open()/read() can throw if the file vanishes or perms change
+			// between the stat above and here — report it tidily instead of
+			// crashing the gate with an unhandled rejection.
+			headerErr = `unreadable GLB: ${e.message}`;
+		}
+		if (headerErr) {
+			errors.push(`CORRUPT-GLB: ${url} — ${headerErr}`);
+			continue;
+		}
 	}
 	summary.push({ url, cat: categoryOf(url), size: info.size });
 }

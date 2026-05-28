@@ -119,12 +119,9 @@ export const LARGE_PROPS: readonly LargePropDef[] = [
 		blocking: true,
 		blockingRadius: 1.0,
 	},
-	{
-		id: "wires_holder_hr_large_1",
-		url: A("/assets/models/props/large/wires_holder_hr_large_1.glb"),
-		blocking: false,
-		blockingRadius: 0,
-	},
+	// NOTE: wires_holder_hr_large_1 was dropped — its GLB shipped corrupt
+	// (zero-magic, born broken in #75) with no recoverable source. The
+	// sibling wires_hr_1 covers the "wires" set-dressing slot.
 	{
 		id: "wires_hr_1",
 		url: A("/assets/models/props/large/wires_hr_1.glb"),
