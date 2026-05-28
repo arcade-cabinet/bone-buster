@@ -24,13 +24,7 @@ import { PLAYER_MAX_HP } from "@shared/constants";
 import { computeFadePeak, FADE_COLOR_BY_KIND } from "@shared/fadeTriggers";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
 import { openRunHistory, type RunHistory } from "@store/runHistory";
-import {
-	advanceLevel,
-	makeInitialRunStats,
-	nextStatusAfterTransition,
-	type RunStats,
-	runStatsReducer,
-} from "@store/runStats";
+import { makeInitialRunStats, type RunStats, runStatsReducer } from "@store/runStats";
 import {
 	type BoneBusterSettings,
 	DEFAULT_SETTINGS,
@@ -49,6 +43,7 @@ import { pickLevelName, WELCOME_WING_NAME } from "@world/levelNames";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGameRef } from "../../src/scene/hooks/useGameRef";
+import { useLevelTransition } from "./hooks/useLevelTransition";
 
 export type GameStatus = "landing" | "playing" | "paused" | "dead" | "transitioning" | "won";
 
@@ -127,15 +122,10 @@ export type GameState = {
 	goingBackDeadlineMs: number | null;
 };
 
-export const TRANSITION_HOLD_MS = 800;
-export const RUN_LENGTH = 5;
-/**
- * POL37 — total budget the player has to retrace from the goal back
- * to spawn after the boss + key are taken. 30s is long enough to
- * traverse any procedural map at a brisk walk; too short feels like
- * a punish, too long defeats the "urgent retreat" reading.
- */
-export const GOING_BACK_BUDGET_MS = 30_000;
+// CR-H1scene step-d — the lifecycle constants live in @views/gameConstants
+// (a leaf module) to break the value-import cycle with gameReducer +
+// useLevelTransition; Shell imports them like every other consumer (see the
+// import block above).
 
 export type WeaponState = {
 	weapon: WeaponId;
@@ -710,47 +700,37 @@ export function BoneBusterShell() {
 		})();
 	}, [state.status, state.run, settings.level]);
 
-	// B1/B4 — when a level is cleared on a chained run, hold for
-	// TRANSITION_HOLD_MS to let the fade play, then advance settings.level
-	// (or re-roll the seed for procedural mode) and flip back to "playing"
-	// with HP/ammo/key reset (run stats preserved).
-	useEffect(() => {
-		if (state.status !== "transitioning") return;
-		const timer = window.setTimeout(() => {
-			if (settings.level === "procedural") {
-				rollSeedPhrase();
-			} else {
-				const next = advanceLevel(settings.level, state.run.runLevelsCleared);
-				if (next !== null && next !== "procedural") {
-					setSettings((prev) => ({ ...prev, level: next }));
-				}
-			}
-			// PT1E — pure function decides "playing" vs "won". Bug
-			// before: unconditionally set "playing", leaving the
-			// player stuck at spawn with phase=going_back +
-			// lastReachedSpawnAt=true on the final map (no remount
-			// since level didn't advance, key didn't change).
-			const nextStatus = nextStatusAfterTransition(settings.level, state.run.runLevelsCleared);
-			setState((prev) => ({
-				...prev,
-				status: nextStatus,
-				hp: prev.maxHp,
-				kills: 0,
-				score: 0,
-				hasKey: false,
-				hasFlashlight: false,
-				hasEmfReader: false,
-				hasSpiritBox: false,
-				hasUvFlashlight: false,
-				crucifixes: 0,
-				weapon: "pistol",
-				ammo: baseAmmo(),
-				ownedWeapons: baseOwnedWeapons(),
-				damageFlashAt: 0,
-			}));
-		}, TRANSITION_HOLD_MS);
-		return () => window.clearTimeout(timer);
-	}, [state.status, state.run.runLevelsCleared, settings.level, rollSeedPhrase]);
+	// B1/B4 — level-transition lifecycle (hold-for-fade → advance/re-roll →
+	// reset the per-level slice → "playing"/"won") lives in useLevelTransition.
+	// `freshLevelSlice` is the HP/ammo/key/tools reset merged over prev; run
+	// stats are preserved by NOT including them here.
+	const freshLevelSlice = useCallback(
+		(): Partial<GameState> => ({
+			hp: maxHp,
+			kills: 0,
+			score: 0,
+			hasKey: false,
+			hasFlashlight: false,
+			hasEmfReader: false,
+			hasSpiritBox: false,
+			hasUvFlashlight: false,
+			crucifixes: 0,
+			weapon: "pistol",
+			ammo: baseAmmo(),
+			ownedWeapons: baseOwnedWeapons(),
+			damageFlashAt: 0,
+		}),
+		[maxHp],
+	);
+	useLevelTransition({
+		status: state.status,
+		runLevelsCleared: state.run.runLevelsCleared,
+		level: settings.level,
+		setState,
+		setSettings,
+		rollSeedPhrase,
+		freshLevelSlice,
+	});
 
 	// Debug hooks for headed e2e tests. Only attached when ?bonebusterDebug is
 	// present AND not in production. The contract is the only stable way to

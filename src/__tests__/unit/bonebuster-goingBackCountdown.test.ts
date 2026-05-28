@@ -1,5 +1,5 @@
+import { GOING_BACK_BUDGET_MS } from "@views/gameConstants";
 import { formatCountdown } from "@views/hudOverlays/GoingBackOverlay";
-import { GOING_BACK_BUDGET_MS } from "@views/Shell";
 import { describe, expect, it } from "vitest";
 
 /**

@@ -21,8 +21,8 @@ import type { PickupKind } from "@engine/mapTypes";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import { advanceLevel, runStatsReducer } from "@store/runStats";
 import type { DifficultyTuning, LevelChoice } from "@store/settings";
+import { GOING_BACK_BUDGET_MS } from "@views/gameConstants";
 import type { GameState } from "@views/Shell";
-import { GOING_BACK_BUDGET_MS } from "@views/Shell";
 import { LOOT_BONUSES } from "@world/loot";
 
 /** Fade overlay kinds (mirror of Shell's FadeKind without importing the React side). */
