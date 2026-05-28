@@ -3,6 +3,20 @@ import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { SCALE } from "@styles/tokens/index";
 import { useEffect, useRef, useState } from "react";
+import type { Group } from "three";
+
+// Minimal structural surface of a drei <Text> we mutate imperatively in
+// the frame loop (troika exposes these as live props + a sync()).
+type MutableText = {
+	fontSize: number;
+	fillOpacity: number;
+	outlineOpacity: number;
+	text: string;
+	color: string;
+	outlineWidth: number;
+	fontWeight: number;
+	sync: () => void;
+};
 
 /**
  * POL11-v2 — modernized-DOOM floating damage numbers.
@@ -81,10 +95,26 @@ function tierBaseScale(amount: number, killed: boolean): number {
 	return 0.36;
 }
 
+// CR-R1 — fixed pre-mounted slot pool. Each of MAX_NUMBERS slots is a
+// group + (shadow text, main text) mounted ONCE; the frame loop drives
+// position / scale / opacity / label imperatively and toggles `visible`.
+// The React tree only re-renders when the slot↔number ASSIGNMENT changes
+// (spawn/despawn), never per frame — the old code called force() every
+// frame, re-running the whole .map() + re-instantiating troika SDF text
+// at frame cadence during combat.
+type SlotRefs = {
+	group: Group | null;
+	shadow: MutableText | null;
+	main: MutableText | null;
+};
+
 export function DamageNumberField() {
 	const [, force] = useState(0);
 	const numbersRef = useRef<DamageNumber[]>([]);
 	const nextId = useRef(1);
+	const slotRefs = useRef<SlotRefs[]>(
+		Array.from({ length: MAX_NUMBERS }, () => ({ group: null, shadow: null, main: null })),
+	);
 
 	useEffect(() => {
 		return addBoneBusterListener("damageNumber", (d: EventOf<"damageNumber">) => {
@@ -110,6 +140,8 @@ export function DamageNumberField() {
 					// first-hit spot.
 					slot.x = d.x;
 					slot.y = d.y;
+					// Merge mutates an existing slot's label/amount — re-render
+					// once so the (rarely-changing) text content updates.
 					force((n) => n + 1);
 					return;
 				}
@@ -125,57 +157,90 @@ export function DamageNumberField() {
 				lastStackAt: now,
 			});
 			while (numbersRef.current.length > MAX_NUMBERS) numbersRef.current.shift();
+			// Spawn changes the slot assignment → one re-render to bind labels.
 			force((n) => n + 1);
 		});
 	}, []);
 
 	useFrame(() => {
 		const now = performance.now();
-		const before = numbersRef.current.length;
-		numbersRef.current = numbersRef.current.filter((n) => now - n.createdAt < TTL_MS);
-		if (numbersRef.current.length !== before) force((n) => n + 1);
+		const numbers = numbersRef.current;
+		// Despawn expired in place; re-render only if the set actually shrank.
+		const before = numbers.length;
+		let w = 0;
+		for (let r = 0; r < numbers.length; r++) {
+			const n = numbers[r];
+			if (n === undefined) continue;
+			if (now - n.createdAt >= TTL_MS) continue;
+			numbers[w++] = n;
+		}
+		numbers.length = w;
+		// Drive every slot imperatively — no per-frame React render.
+		const slots = slotRefs.current;
+		for (let i = 0; i < MAX_NUMBERS; i++) {
+			const slot = slots[i];
+			const n = numbers[i];
+			if (!slot?.group) continue;
+			if (n === undefined) {
+				slot.group.visible = false;
+				continue;
+			}
+			const age = (now - n.createdAt) / TTL_MS; // 0..1
+			const opacity = Math.max(0, 1 - age * age); // ease-in fade
+			const floatSpeed = n.killed ? FLOAT_SPEED_KILL : FLOAT_SPEED_HIT;
+			const lift = age * floatSpeed * (TTL_MS / 1000);
+			const punchT = Math.min(1, (now - n.createdAt) / PUNCH_MS);
+			const punchEase = 1 - (1 - punchT) * (1 - punchT); // ease-out quad
+			const punchScale = 1.25 - 0.25 * punchEase;
+			const fontSize = tierBaseScale(n.amount, n.killed) * punchScale;
+			slot.group.visible = true;
+			slot.group.position.set(n.x, 1.6 + lift, n.y);
+			if (slot.shadow) {
+				slot.shadow.fontSize = fontSize;
+				slot.shadow.fillOpacity = opacity * 0.55;
+				slot.shadow.sync();
+			}
+			if (slot.main) {
+				slot.main.fontSize = fontSize;
+				slot.main.fillOpacity = opacity;
+				slot.main.outlineOpacity = opacity * 0.85;
+				slot.main.sync();
+			}
+		}
+		if (w !== before) force((k) => k + 1); // set shrank → rebind labels
 	});
 
+	// Mount a fixed pool of slots once. Label/color/weight come from the
+	// number currently assigned to each slot index (stable across frames;
+	// only changes on the spawn/despawn/merge re-renders above).
 	return (
 		<group>
-			{numbersRef.current.map((n) => {
-				const now = performance.now();
-				const age = (now - n.createdAt) / TTL_MS; // 0..1
-				const opacity = Math.max(0, 1 - age * age); // ease-in fade — visible longer up front
-				const floatSpeed = n.killed ? FLOAT_SPEED_KILL : FLOAT_SPEED_HIT;
-				const lift = age * floatSpeed * (TTL_MS / 1000);
-				// Punch-in scale: 1.25× → 1.0× ease-out over PUNCH_MS.
-				const punchT = Math.min(1, (now - n.createdAt) / PUNCH_MS);
-				const punchEase = 1 - (1 - punchT) * (1 - punchT); // ease-out quad
-				const punchScale = 1.25 - 0.25 * punchEase;
-				const baseScale = tierBaseScale(n.amount, n.killed);
-				const fontSize = baseScale * punchScale;
-				const color = tierColor(n.amount, n.killed);
-				const label = n.killed ? `✦${n.amount}` : String(n.amount);
+			{Array.from({ length: MAX_NUMBERS }, (_, i) => {
+				const n = numbersRef.current[i];
+				const label = n ? (n.killed ? `✦${n.amount}` : String(n.amount)) : "";
+				const color = n ? tierColor(n.amount, n.killed) : "#ffffff";
+				const killed = n?.killed ?? false;
 				return (
-					<group key={n.id} position={[n.x, 1.6 + lift, n.y]}>
-						{/* Drop shadow — second darker text behind, slight z offset. */}
+					// biome-ignore lint/suspicious/noArrayIndexKey: fixed-size slot pool keyed by index by design
+					<group key={i} visible={false} ref={(g) => bindSlot(slotRefs.current, i, "group", g)}>
 						<Text
 							position={[0.02, -0.02, -0.012]}
-							fontSize={fontSize}
 							color="#000000"
 							anchorX="center"
 							anchorY="middle"
-							fillOpacity={opacity * 0.55}
 							outlineWidth={0}
+							ref={(t) => bindSlot(slotRefs.current, i, "shadow", t)}
 						>
 							{label}
 						</Text>
 						<Text
-							fontSize={fontSize}
 							color={color}
 							anchorX="center"
 							anchorY="middle"
-							fillOpacity={opacity}
-							outlineWidth={n.killed ? 0.035 : 0.022}
+							outlineWidth={killed ? 0.035 : 0.022}
 							outlineColor="#1a0606"
-							outlineOpacity={opacity * 0.85}
-							fontWeight={n.killed ? 900 : 700}
+							fontWeight={killed ? 900 : 700}
+							ref={(t) => bindSlot(slotRefs.current, i, "main", t)}
 						>
 							{label}
 						</Text>
@@ -184,4 +249,11 @@ export function DamageNumberField() {
 			})}
 		</group>
 	);
+}
+
+function bindSlot(slots: SlotRefs[], i: number, key: keyof SlotRefs, node: unknown): void {
+	const slot = slots[i];
+	if (!slot) return;
+	// biome-ignore lint/suspicious/noExplicitAny: r3f ref node typed structurally as the field
+	(slot as any)[key] = node ?? null;
 }

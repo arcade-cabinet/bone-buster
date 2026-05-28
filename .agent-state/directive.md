@@ -37,7 +37,7 @@ Dependency-ordered. Drain top-down on a single branch.
   - DONE + COMMITTED: `src/scene/effects/instancedParticles.ts` (shared `InstancedParticlePool` + per-instance-alpha material via onBeforeCompile) + ParticleBurstField → one InstancedMesh. tsc clean, dispose test green, LIT visual capture confirmed the motes render with correct warm color + glow at the fire point.
   - DONE + COMMITTED: ShellEjectField → 1 InstancedMesh (per-instance rotation accumulator); BodyPartField → 2 InstancedMeshes (shard pool + flat decal pool). tsc clean, all 3 dispose tests green (1/1/2 InstancedMeshes), LIT visual capture confirmed shells + gibs + motes render with correct warm color/glow at the fire point.
   - DONE: added a `peakHowls` probe (`globalThis.Howler._howls.length`) to obs3-perf-snapshot's sample window + an OBS3_HOWL_BUDGET=64 gate, so a regression of the CR-M1 one-shot leak fails the perf job. Draw calls were already sampled from the OBS1 fpsUpdate stream (`gl.info.render.calls`) — the instancing win shows there + in the committed baselines. CR-H1perf COMPLETE.
-- [ ] CR-R1 Fix `DamageNumberField`'s per-frame `force()` — render the pool once, animate imperatively in `useFrame` (full-review R-1).
+- [x] CR-R1 Fixed `DamageNumberField`'s per-frame `force()` — render the pool once, animate imperatively in `useFrame` (full-review R-1).
 - [x] CR-M1audio Cache one-shot Howls per variant file (ONESHOT_POOL keyed by variant path) so rapid fire reuses Howls + layers via Howler sound-ids instead of allocating + leaking a fresh Howl per `play()`; resetForTesting unloads the pool. Pinned by bonebuster-howlerOneshotCache.test.ts (40 plays → ≤3 constructions) (full-review M1).
 
 ### Structural decomposition
