@@ -58,24 +58,28 @@ function CaptureScene({
 }
 
 async function mountField(node: React.ReactNode) {
+	const { driver } = await mountFieldUnmountable(node);
+	return driver;
+}
+
+async function mountFieldUnmountable(node: React.ReactNode) {
 	let advance!: (t: number) => void;
 	let scene!: THREE.Scene;
-	const ready = new Promise<void>((resolve) => {
-		render(
-			<Canvas frameloop="never">
-				<CaptureScene
-					onReady={(a, s) => {
-						advance = a;
-						scene = s;
-						resolve();
-					}}
-				/>
-				{node}
-			</Canvas>,
-		);
+	const result = render(
+		<Canvas frameloop="never">
+			<CaptureScene
+				onReady={(a, s) => {
+					advance = a;
+					scene = s;
+				}}
+			/>
+			{node}
+		</Canvas>,
+	);
+	await vi.waitFor(() => {
+		if (!scene) throw new Error("scene not ready");
 	});
-	await ready;
-	return {
+	const driver = {
 		step(timeMs: number) {
 			advance(timeMs / 1000);
 		},
@@ -88,6 +92,18 @@ async function mountField(node: React.ReactNode) {
 			return out;
 		},
 	};
+	return { driver, unmount: () => result.unmount() };
+}
+
+/** Generic: returns true once `.dispose()` has been observed on the object. */
+function watchObjDispose(obj: { dispose: () => void }): () => boolean {
+	let disposed = false;
+	const orig = obj.dispose.bind(obj);
+	obj.dispose = () => {
+		disposed = true;
+		orig();
+	};
+	return () => disposed;
 }
 
 /** Returns true once `.dispose()` has been observed on the material. */
@@ -113,23 +129,28 @@ function watchGeometryDispose(geometry: THREE.BufferGeometry): () => boolean {
 }
 
 describe("effect-field GPU-resource disposal (H2 / F1)", () => {
-	it("ParticleBurstField disposes per-instance material on despawn; shared geometry survives", async () => {
-		const driver = await mountField(<ParticleBurstField />);
+	it("ParticleBurstField renders ONE InstancedMesh for all motes and disposes it on unmount", async () => {
+		// CR-H1perf — converted from per-mote Mesh+material to a single
+		// InstancedMesh (1 draw call). The leak that H2 fixed is now
+		// structurally impossible (no per-instance materials); the contract
+		// becomes: exactly one mesh regardless of mote count, and it's
+		// disposed on unmount (shared geometry + material survive).
+		const { driver, unmount } = await mountFieldUnmountable(<ParticleBurstField />);
 
-		dispatch({ type: "burst", kind: "damage", x: 0, y: 0 }); // createdAt = clock(0)
-		driver.step(16); // first tick → meshes now live
+		dispatch({ type: "burst", kind: "damage", x: 0, y: 0 });
+		driver.step(16); // first tick → InstancedMesh created + motes written
 
 		const meshes = driver.liveMeshes();
-		expect(meshes.length).toBeGreaterThan(0);
-		const matWatch = meshes.map((m) => watchDispose(m.material as THREE.Material));
-		const mesh0 = meshes[0];
-		if (!mesh0) throw new Error("meshes[0] missing after length > 0 check");
-		const geoWatch = watchGeometryDispose(mesh0.geometry); // shared MOTE_GEOMETRY
+		// One InstancedMesh, not one-per-mote.
+		expect(meshes.length).toBe(1);
+		const inst = meshes[0] as THREE.InstancedMesh;
+		expect(inst.isInstancedMesh).toBe(true);
+		expect(inst.count).toBeGreaterThan(0); // motes are drawn
+		const meshDisposed = watchObjDispose(inst); // InstancedMesh.dispose
+		const geoWatch = watchGeometryDispose(inst.geometry); // shared MOTE_GEOMETRY
 
-		clock = 10_000; // well past mote TTL (350ms)
-		driver.step(32); // step a frame → expiry branch disposes despawned materials
-
-		expect(matWatch.every((w) => w())).toBe(true); // every material freed
+		unmount();
+		expect(meshDisposed()).toBe(true); // InstancedMesh freed
 		expect(geoWatch()).toBe(false); // shared geometry untouched
 	});
 

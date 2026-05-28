@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { BONE_BUSTER_PALETTE, SCALE } from "@styles/tokens/index";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { InstancedParticlePool, makeInstancedAlphaMaterial } from "./instancedParticles";
 
 const COLOR_BOUNCER = new THREE.Color(BONE_BUSTER_PALETTE.enemyImpMagma).getHex();
 const COLOR_AMBER = new THREE.Color(BONE_BUSTER_PALETTE.actionPickupGlow).getHex();
@@ -37,6 +38,12 @@ const MAX_MOTES = 280;
 // PERF audit quick-win #3.
 const MOTE_GEOMETRY = /*@__PURE__*/ new THREE.SphereGeometry(1, 6, 6);
 
+// CR-H1perf — one shared emissive material for ALL motes; per-mote color +
+// alpha ride instance attributes (see instancedParticles). emissiveIntensity
+// was previously per-material; folded into a single bright value since the
+// per-mote variation is dominated by color + the alpha fade.
+const MOTE_MATERIAL = /*@__PURE__*/ makeInstancedAlphaMaterial({ emissiveIntensity: 2.2 });
+
 /**
  * D4/D5 + POL16 — particle bursts. Listens for `bonebuster:burst` events:
  *
@@ -61,21 +68,18 @@ const MOTE_GEOMETRY = /*@__PURE__*/ new THREE.SphereGeometry(1, 6, 6);
 export function ParticleBurstField() {
 	const motesRef = useRef<Mote[]>([]);
 	const groupRef = useRef<THREE.Group | null>(null);
-	const meshes = useRef<Map<number, THREE.Mesh>>(new Map());
 	const nextId = useRef(1);
-	// Reused across frames so the tick loop allocates no per-frame Set
-	// (was a fresh `new Set()` every frame — minor-GC pressure on mobile).
-	const seenScratch = useRef<Set<number>>(new Set());
+	// CR-H1perf — one InstancedMesh for every mote (1 draw call) instead of
+	// up to MAX_MOTES individual meshes. Lazily created on first frame so the
+	// group ref exists.
+	const poolRef = useRef<InstancedParticlePool | null>(null);
 
-	// Drain the mesh pool on unmount so a level transition (Scene re-key)
-	// doesn't strand per-instance materials on the GPU.
+	// Dispose the InstancedMesh on unmount (shared geometry + material are
+	// module-scope and survive).
 	useEffect(() => {
-		const pool = meshes.current;
 		return () => {
-			for (const mesh of pool.values()) {
-				(mesh.material as THREE.Material).dispose();
-			}
-			pool.clear();
+			poolRef.current?.dispose();
+			poolRef.current = null;
 		};
 	}, []);
 
@@ -261,13 +265,19 @@ export function ParticleBurstField() {
 	}, []);
 
 	useFrame((_, dt) => {
-		if (!groupRef.current) return;
+		const group = groupRef.current;
+		if (!group) return;
+		// Lazily create the InstancedMesh pool once the group exists.
+		let pool = poolRef.current;
+		if (!pool) {
+			pool = new InstancedParticlePool(MOTE_GEOMETRY, MOTE_MATERIAL, MAX_MOTES);
+			group.add(pool.mesh);
+			poolRef.current = pool;
+		}
 		const now = performance.now();
 		// Compact the live list in place (write-index) — no per-frame array
-		// allocation. `seen` is a reused Set, cleared each frame.
+		// allocation — and write each survivor to an instance slot.
 		const motes = motesRef.current;
-		const seen = seenScratch.current;
-		seen.clear();
 		let w = 0;
 		for (let r = 0; r < motes.length; r++) {
 			const mote = motes[r];
@@ -278,45 +288,14 @@ export function ParticleBurstField() {
 			mote.pos.y += mote.vel.y * dt;
 			mote.pos.z += mote.vel.z * dt;
 			mote.vel.y -= mote.gravity * dt; // per-mote gravity (smoke floats, sparks fall)
-			let mesh = meshes.current.get(mote.id);
-			if (!mesh) {
-				// QW3 — share MOTE_GEOMETRY (unit sphere); scale per-mote
-				// so per-radius size renders correctly. Material stays
-				// per-mesh because per-mote color + opacity decay
-				// independently.
-				const m = new THREE.Mesh(
-					MOTE_GEOMETRY,
-					new THREE.MeshStandardMaterial({
-						color: mote.color,
-						emissive: mote.color,
-						emissiveIntensity: mote.emissiveIntensity,
-						transparent: true,
-					}),
-				);
-				m.scale.setScalar(mote.radius);
-				groupRef.current.add(m);
-				meshes.current.set(mote.id, m);
-				mesh = m;
-			}
-			mesh.position.set(mote.pos.x, mote.pos.y, mote.pos.z);
 			const fade = 1 - age / mote.ttlMs;
-			(mesh.material as THREE.MeshStandardMaterial).opacity = fade;
-			mesh.visible = true;
-			seen.add(mote.id);
+			if (w < MAX_MOTES) {
+				pool.write(w, mote.pos.x, mote.pos.y, mote.pos.z, mote.radius, mote.color, fade);
+			}
 			motes[w++] = mote;
 		}
 		motes.length = w;
-		for (const [id, mesh] of meshes.current) {
-			if (!seen.has(id)) {
-				mesh.visible = false;
-				groupRef.current.remove(mesh);
-				// Dispose the per-instance material (shared MOTE_GEOMETRY is
-				// NOT disposed — it's module-scope and reused). Without this
-				// the GPU material accumulates monotonically under combat.
-				(mesh.material as THREE.Material).dispose();
-				meshes.current.delete(id);
-			}
-		}
+		pool.commit(Math.min(w, MAX_MOTES));
 	});
 
 	return (
