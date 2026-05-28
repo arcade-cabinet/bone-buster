@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with: { version: 10.2.0 }
       - uses: actions/setup-node@v6
         with:
@@ -41,6 +41,64 @@ jobs:
       - name: Build
         run: pnpm build
 
+  # C-1 (full-review) — the documented merge gate is `pnpm verify`, which
+  # includes test:browser + assets:verify-runtime + audio:verify-runtime.
+  # CI previously ran only lint+check+unit+build, so the real-Chromium tier
+  # (the only one exercising WebGL/GLB/AudioContext/the shadow-map composite)
+  # and the asset/audio runtime checks never ran in CI — a renderer or
+  # asset-URL regression could pass every check and deploy. This job runs
+  # the rest of the gate.
+  browser:
+    runs-on: ubuntu-latest
+    needs: verify
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        with: { version: 10.2.0 }
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Real-Chromium browser tests
+        run: pnpm test:browser
+      - name: Verify runtime asset + audio bundles
+        run: pnpm assets:verify-runtime && pnpm audio:verify-runtime
+
+  # C-1 / C-2 (full-review) — the canonical visual e2e suite. The screenshot
+  # specs self-launch the `--use-angle=gl` + CDP path (default headless
+  # SwiftShader deadlocks on the shadow-map composite — never revert), so
+  # they run headless on the runner once Chromium + system deps are present.
+  # Pairs with the in-spec pixel assertions to give CI a real visual gate.
+  e2e:
+    runs-on: ubuntu-latest
+    needs: verify
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        with: { version: 10.2.0 }
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Canonical + per-archetype screenshots
+        # Playwright's webServer config auto-launches `pnpm dev` on :5191
+        # (reuseExistingServer is false under CI) and waits for it, so no
+        # explicit server/build step is needed here.
+        run: pnpm test:e2e:screenshots && pnpm test:e2e:archetype-screenshots
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: e2e-screenshots
+          path: docs/assets/screenshots/
+
   # Lighthouse — Core Web Vitals gate on the prerendered bundle.
   # Runs three Lighthouse passes against the static `dist/client/` build
   # (no dev server needed; LHCI serves it) and asserts the Vike prerender
@@ -53,7 +111,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with: { version: 10.2.0 }
       - uses: actions/setup-node@v6
         with:
@@ -83,7 +141,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with: { version: 10.2.0 }
       - uses: actions/setup-node@v6
         with:
@@ -120,7 +178,7 @@ jobs:
     needs: verify
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with: { version: 10.2.0 }
       - uses: actions/setup-node@v6
         with:
@@ -128,7 +186,7 @@ jobs:
           cache: pnpm
       - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: '21' }
-      - uses: android-actions/setup-android@v4
+      - uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
       - run: pnpm install --frozen-lockfile
       - name: Build web bundle
         run: pnpm build
@@ -165,7 +223,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with: { version: 10.2.0 }
       - uses: actions/setup-node@v6
         with:
@@ -173,7 +231,7 @@ jobs:
           cache: pnpm
       - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: '21' }
-      - uses: android-actions/setup-android@v4
+      - uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
       - run: pnpm install --frozen-lockfile
       - name: Install Playwright Chromium (CDP client only — no browser launch)
         # `--with-deps` mirrors the `perf` job above. CDP-only usage
@@ -195,7 +253,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Run mobile perf probe in Pixel 5a AVD
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2.37.0
         with:
           api-level: 33
           target: google_apis
