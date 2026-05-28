@@ -32,17 +32,17 @@ describe("T1 — POL1 score wiring", () => {
 		expect(LOOT_BONUSES.bottlesHp).toBe(5);
 	});
 
-	it("useGameRef reads from LOOT_BONUSES (not magic numbers)", async () => {
-		const useGameRefSrc = await readFile(
-			resolve(__dirname, "../../scene/hooks/useGameRef.ts"),
-			"utf-8",
-		);
-		expect(useGameRefSrc).toContain("LOOT_BONUSES.treasureScore");
-		expect(useGameRefSrc).toContain("LOOT_BONUSES.bottlesHp");
+	it("gameReducer's loot arm reads from LOOT_BONUSES (not magic numbers)", async () => {
+		// CR-H1scene step-d — the loot logic moved from useGameRef.onCollectPickup
+		// into the pure gameReducer's `collectPickup` arm. Assert against its
+		// new home.
+		const reducerSrc = await readFile(resolve(__dirname, "../../store/gameReducer.ts"), "utf-8");
+		expect(reducerSrc).toContain("LOOT_BONUSES.treasureScore");
+		expect(reducerSrc).toContain("LOOT_BONUSES.bottlesHp");
 		// Magic numbers in the loot branch would indicate someone bypassed
 		// the constants module.
-		expect(useGameRefSrc).not.toMatch(/score:\s*prev\.score\s*\+\s*50/);
-		expect(useGameRefSrc).not.toMatch(/hp:\s*Math\.min\(prev\.maxHp,\s*prev\.hp\s*\+\s*5\)/);
+		expect(reducerSrc).not.toMatch(/score:\s*state\.score\s*\+\s*50/);
+		expect(reducerSrc).not.toMatch(/hp:\s*Math\.min\(state\.maxHp,\s*state\.hp\s*\+\s*5\)/);
 	});
 
 	it("HUD score chip is gated by score > 0", async () => {

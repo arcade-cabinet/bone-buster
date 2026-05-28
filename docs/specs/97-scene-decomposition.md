@@ -89,6 +89,78 @@ already cohesive — extracting them would be churn for no readability gain.)
 **Rejected — `<SceneTickDriver>` child component:** would re-home the
 shared-ref web and risk frame-order drift; relocates rather than decomposes.
 
+## Step-d — Shell GameState → pure `gameReducer` + effects channel (folds in CR-F8)
+
+### Use-case enumeration — what `useGameRef` actually is
+
+`useGameRef` (370 lines) exposes a `GameRef` of 8 event handlers — `onHit`,
+`onKill`, `onPickupKey`, `onWin`, `onReachSpawn`, `onSpendAmmo`,
+`onConsumeCrucifix`, `onCollectPickup`. EVERY one has the same shape:
+
+1. read `prev` state via `setState((prev) => ...)`,
+2. compute the next state,
+3. AND fire side-effects — `dispatch(...)` typed events, audio (`playHurt`,
+   `playHitSting`, …), and fade overlays (`triggerFadeRef.current(...)`).
+
+Three of them (`onWin`, `onCollectPickup`, `onConsumeCrucifix`) wrap the
+updater in **`flushSync`** for one reason: the side-effect dispatches must fire
+AFTER the state commit, never inside the updater (dispatching inside an updater
+fires listener setStates mid-render of BoneBusterShell → React's "Cannot update
+a component while rendering a different component" error). flushSync forces the
+updater to run synchronously so a buffer populated inside it can be drained
+right after.
+
+`onConsumeCrucifix` additionally uses flushSync to read back a `consumed`
+boolean (atomic check-and-decrement) so the Scene knows whether to place a
+crucifix.
+
+### Decision — a pure `gameReducer(state, action) → { state, effects }`
+
+The shape every handler already has — `(prev, ctx) → {next, bufferedEffects}` —
+IS a reducer with an effects channel. Promote it:
+
+- `type GameAction` — discriminated union: `{type:"hit",damage}`,
+  `{type:"kill"}`, `{type:"pickupKey"}`, `{type:"win"}`, `{type:"reachSpawn"}`,
+  `{type:"spendAmmo",weapon,amount}`, `{type:"consumeCrucifix"}`,
+  `{type:"collectPickup",kind}`.
+- `type GameEffect` — typed side-effect: `{kind:"dispatch",event}`,
+  `{kind:"audio",sound}`, `{kind:"fade",fadeKind,intensity?}`. Returned as
+  DATA, not executed in the reducer (keeps it pure + unit-testable).
+- `gameReducer(state, action, ctx) → { state, effects: GameEffect[] }` — pure,
+  no React, no `dispatch`, no audio calls, no `performance.now()` (time + the
+  iframe/acquired dedup that depend on mutable refs are passed IN via `ctx`).
+- `useGameRef` becomes a thin adapter: for each handler, build the action, call
+  `gameReducer`, `setState(result.state)`, then run `result.effects` AFTER the
+  setState call returns. **flushSync goes away** — effects are returned data
+  drained after commit, so there's no mid-render dispatch to force-order. The
+  `onConsumeCrucifix` read-back becomes a field on the reducer result
+  (`{state, effects, consumed}`) instead of a flushSync-observed closure var.
+
+**CR-F8 folds in here:** the `collectPickup` action's reducer arm IS the
+table-driven `Record<PickupAction, (prev,ctx)→{next,effects}>` F8 asked for —
+not a standalone change. Each pickup kind (health / flashlight / emfReader /
+spiritBox / uvFlashlight / crucifix / loot / weapon-ammo) is one table entry.
+
+### `useLevelTransition` extraction
+
+The level-transition machinery in Shell.tsx (the `flushSync`-buffered
+status→"transitioning"→next-map remount, the `runId`/`prevStatusRef`/
+`lastPhaseRef` bookkeeping around lines 521-680) extracts into a
+`useLevelTransition(...)` hook. The `gameReducer` returning `status:
+"transitioning"` is the clean trigger; the hook owns the remount + run-history
+record + phase reset, with no flushSync (the reducer already settled the status
+before the hook's effect reads it).
+
+### Risk + verification
+
+Medium — this is real logic movement, not a JSX relocation. Pinned by:
+- a new `gameReducer` unit test enumerating every action × relevant state
+  (hit/iframe, kill/clamp, collectPickup × each kind, win/weapon-grant,
+  reachSpawn/advance-vs-win) — milestone-TDD: write the reducer's failing tests
+  first, then make them green.
+- `BoneBusterShell.browser.test.tsx` (real Shell mount) stays green.
+- the 5 canonical e2e screenshots stay byte-for-byte.
+
 ## Verification bar (every step)
 
 `pnpm verify` green + the 5 canonical e2e screenshots pass byte-for-byte

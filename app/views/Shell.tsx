@@ -379,6 +379,13 @@ export function BoneBusterShell() {
 		phase: "out",
 		goingBackDeadlineMs: null,
 	}));
+	// CR-H1scene step-d — authoritative current state, kept fresh every render.
+	// useGameRef's reducer adapter reads `stateRef.current` (and writes the
+	// reduced result back to it) so synchronous same-batch GameRef calls
+	// accumulate correctly without a functional setState updater. Declared here
+	// (above the useGameRef call) so it can be passed in as a dep.
+	const stateRef = useRef(state);
+	stateRef.current = state;
 	const [touchMode, setTouchMode] = useState<boolean>(() =>
 		resolveTouchMode(settings.touchControls),
 	);
@@ -430,6 +437,7 @@ export function BoneBusterShell() {
 	// table, and all 7 callback bodies. Shell only declares the deps.
 	const gameRef = useGameRef({
 		setState,
+		stateRef,
 		triggerFadeRef,
 		settings,
 		tuning,
@@ -753,8 +761,7 @@ export function BoneBusterShell() {
 	// state/map change. Re-install caused a tiny window where the global
 	// was undefined; e2e loops calling start → triggerWin → next-level
 	// six times in a row hit that window often enough to flake.
-	const stateRef = useRef(state);
-	stateRef.current = state;
+	// (stateRef is declared above, before the useGameRef call — step-d.)
 	const mapRef = useRef(map);
 	mapRef.current = map;
 	const settingsRef = useRef(settings);
