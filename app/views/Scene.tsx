@@ -273,6 +273,9 @@ export function BoneBusterScene({
 	const barrelMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const camera = useThree((s) => s.camera);
 	const lastFireAt = useRef(0);
+	// CR-F7 — per-shot counter for the reproducible pellet-spread stream.
+	// resolveFire reads + increments it on each shot that clears the gates.
+	const shotCounterRef = useRef(0);
 	const lastWonAt = useRef(false);
 	const lastReachedSpawnAt = useRef(false);
 	const lastLavaTickAt = useRef(0);
@@ -746,6 +749,7 @@ export function BoneBusterScene({
 				muzzleIntensityScaleRef,
 				timeScaleBus: timeScaleBusRef.current,
 				explodeBarrel: (b) => explodeBarrelRef.current(b),
+				shotCounterRef,
 				meleeProfile,
 				pistolProfile,
 				chaingunProfile,

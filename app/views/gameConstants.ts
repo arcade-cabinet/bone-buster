@@ -7,7 +7,8 @@
  */
 
 export const TRANSITION_HOLD_MS = 800;
-export const RUN_LENGTH = 5;
+// (RUN_LENGTH lives in @store/runStats — advanceLevel/nextStatusAfterTransition
+// own it; no duplicate here.)
 /**
  * POL37 — total budget the player has to retrace from the goal back
  * to spawn after the boss + key are taken. 30s is long enough to
