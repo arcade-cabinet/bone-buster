@@ -100,6 +100,22 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 	// as long as the gib it belongs to.
 	const decalMeshes = useRef<Map<number, THREE.Mesh>>(new Map());
 	const nextId = useRef(1);
+	// Reused so the tick loop allocates no per-frame Set (was `new Set()`/frame).
+	const seenScratch = useRef<Set<number>>(new Set());
+
+	// Drain both pools on unmount so a level transition doesn't strand
+	// per-instance materials on the GPU. Shared module-scope geometries
+	// (SHARD_GEOMETRY / DECAL_GEOMETRY) are intentionally NOT disposed.
+	useEffect(() => {
+		const shardPool = meshes.current;
+		const decalPool = decalMeshes.current;
+		return () => {
+			for (const mesh of shardPool.values()) (mesh.material as THREE.Material).dispose();
+			for (const decal of decalPool.values()) (decal.material as THREE.Material).dispose();
+			shardPool.clear();
+			decalPool.clear();
+		};
+	}, []);
 
 	useEffect(() => {
 		return addBoneBusterListener("bodyParts", (detail) => {
@@ -142,9 +158,13 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 	useFrame((_, dt) => {
 		if (!groupRef.current) return;
 		const now = performance.now();
-		const live: BodyShard[] = [];
-		const seen = new Set<number>();
-		for (const shard of shardsRef.current) {
+		// Compact in place (write-index) — no per-frame array alloc.
+		const shards = shardsRef.current;
+		const seen = seenScratch.current;
+		seen.clear();
+		let w = 0;
+		for (let r = 0; r < shards.length; r++) {
+			const shard = shards[r];
 			const age = now - shard.createdAt;
 			if (age > timings.ttl) continue;
 			// POL40 — capture the rest XZ position on the motion→settle
@@ -237,13 +257,15 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 				(decal.material as THREE.MeshBasicMaterial).opacity = 0.55 * opacity;
 			}
 			seen.add(shard.id);
-			live.push(shard);
+			shards[w++] = shard;
 		}
-		shardsRef.current = live;
+		shards.length = w;
 		for (const [id, mesh] of meshes.current) {
 			if (!seen.has(id)) {
 				mesh.visible = false;
 				groupRef.current.remove(mesh);
+				// Dispose per-instance material (shared SHARD_GEOMETRY is not).
+				(mesh.material as THREE.Material).dispose();
 				meshes.current.delete(id);
 			}
 		}
@@ -251,7 +273,9 @@ export function BodyPartField({ archetype }: { archetype?: PropArchetype } = {})
 		for (const [id, decal] of decalMeshes.current) {
 			if (!seen.has(id)) {
 				groupRef.current.remove(decal);
-				decal.geometry.dispose();
+				// Dispose only the per-instance material — DECAL_GEOMETRY is
+				// a shared module-scope geometry (do NOT dispose it; doing so
+				// broke every subsequent decal once the first one despawned).
 				(decal.material as THREE.Material).dispose();
 				decalMeshes.current.delete(id);
 			}
