@@ -29,7 +29,7 @@ Dependency-ordered. Drain top-down on a single branch.
 
 ### Determinism rigor (partly shipped — tail)
 - [x] CR-TS1 Flipped `noUncheckedIndexedAccess: true`; resolved all 482 surfaced sites across 78 files with considered guards (hoist-and-narrow in loops, throwing `at()` helpers for proven picks, honest miss-handling for lookups) — zero `!`/`as T`/reordering, verified by an independent pass. 1270 unit + 9 browser green. Applied via a 7-cluster workflow (full-review TS-1).
-- [ ] CR-TS4 Brand `Seed` (`type Seed = number & {__seed}`) so `mulberry32(entityId)` / raw-tag XOR is a compile error (full-review TS-4).
+- [x] CR-TS4 Branded `Seed` (`type Seed = number & {__seed}`) so `mulberry32(entityId)` / raw-tag XOR is a compile error (full-review TS-4).
 - [x] CR-F6 Extracted the URL-flag parsers to `app/views/urlFlags.ts` (pure `*FromHref` forms + thin window wrappers); Shell.tsx imports them. Table-tested the parse boundary in bonebuster-urlFlags.test.ts (17 cases: decimal/legacy-alias accept, signed-32-bit mask quirk documented, negative/hex/scientific/float/junk/empty reject, canonical-wins, unparseable-href→null) (full-review F6).
 
 ### The big perf + reconciliation win

@@ -14,8 +14,30 @@
  * for each (seed, tag) pair used in production.
  */
 
-export function mulberry32(seed: number): () => number {
-	let s = seed >>> 0;
+/**
+ * CR-TS4 — branded seed type. A `Seed` is a 32-bit value that has been
+ * deliberately constructed as a PRNG seed (a raw map seed, or a map seed
+ * XOR'd with a registered per-system tag). The brand makes it a COMPILE
+ * ERROR to feed an arbitrary `number` — an entity id, a frame counter, a
+ * raw-hex literal — straight into `mulberry32`: every seed must flow
+ * through `seedFrom` (a raw map seed) or `taggedSeed` (map seed ⊕ tag),
+ * which documents intent + keeps the determinism contract type-enforced.
+ * Pairs with the raw-hex-XOR commit-gate ban.
+ */
+export type Seed = number & { readonly __seed: unique symbol };
+
+/** Construct a Seed from a raw map seed (masked to unsigned 32-bit). */
+export function seedFrom(mapSeed: number): Seed {
+	return (mapSeed >>> 0) as number as Seed;
+}
+
+/** Construct a per-system Seed: `mapSeed ⊕ tag`, the only sanctioned mix. */
+export function taggedSeed(mapSeed: number, tag: number): Seed {
+	return (((mapSeed >>> 0) ^ tag) >>> 0) as number as Seed;
+}
+
+export function mulberry32(seed: Seed): () => number {
+	let s = (seed as number) >>> 0;
 	return () => {
 		s = (s + 0x6d2b79f5) >>> 0;
 		let t = s;

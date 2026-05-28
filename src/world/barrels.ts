@@ -21,7 +21,7 @@
  */
 
 import type { BoneBusterMap, Vec2 } from "@engine/engine";
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, seedFrom } from "@engine/prng";
 
 /** Default barrel HP. Tuned so a pistol shot doesn't pop a barrel on
  * the first hit (you need to actually aim at it), but the shotgun
@@ -64,7 +64,7 @@ export type Barrel = {
 export function spawnBarrels(map: BoneBusterMap): Barrel[] {
 	if (map.pickupSpawns.length === 0) return [];
 	const out: Barrel[] = [];
-	const rng = mulberry32(map.seed >>> 0);
+	const rng = mulberry32(seedFrom(map.seed));
 	const targetCount = Math.min(3, Math.floor(map.pickupSpawns.length / 2));
 	const indexPool = [...map.pickupSpawns.keys()];
 	// Fisher-Yates with seeded rng, then take the first `targetCount`.

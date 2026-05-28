@@ -1,4 +1,4 @@
-import { mulberry32, RNG_TAGS } from "@engine/prng";
+import { mulberry32, RNG_TAGS, seedFrom } from "@engine/prng";
 import { PISTOL_MAX_RANGE, PLAYER_RADIUS, RATTLER_HP, TILE } from "@shared/constants";
 import type { PropArchetype } from "@world/scatter/propPool";
 
@@ -330,7 +330,7 @@ function roomsIntersect(a: Room, b: Room, padding: number) {
 }
 
 export function generateMap(seed: number, shape?: GenerateMapShape): BoneBusterGridMap {
-	const rand = mulberry32(seed);
+	const rand = mulberry32(seedFrom(seed));
 	const width = MAP_WIDTH;
 	const height = MAP_HEIGHT;
 	const minRoom = shape?.minRoom ?? MIN_ROOM;
@@ -843,7 +843,7 @@ export function spawnEnemies(map: BoneBusterMap, spawnsOverride?: readonly Enemy
 export function pickUvHidden(seed: number, spawnIndex: number): boolean {
 	if (seed >>> 0 === 0) return false;
 	const mixed = ((seed >>> 0) ^ Math.imul(spawnIndex >>> 0, 0x9e3779b1) ^ RNG_TAGS.ENMX) >>> 0;
-	return mulberry32(mixed)() < 0.125;
+	return mulberry32(seedFrom(mixed))() < 0.125;
 }
 
 export type Pickup = {

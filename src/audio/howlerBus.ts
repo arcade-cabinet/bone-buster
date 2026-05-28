@@ -17,7 +17,7 @@
  */
 
 import { A } from "@assets/assetUrl";
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, seedFrom } from "@engine/prng";
 import { Howl, Howler } from "howler";
 
 export type SlugCategory =
@@ -218,10 +218,10 @@ function dbToLinear(db: number): number {
  * RNG is module-scoped + seeded by the engine on every fresh run
  * via setHowlerSeed.
  */
-let variantRng = mulberry32(1);
+let variantRng = mulberry32(seedFrom(1));
 
 export function setHowlerSeed(seed: number): void {
-	variantRng = mulberry32(seed >>> 0);
+	variantRng = mulberry32(seedFrom(seed));
 }
 
 function pickVariantIndex(count: number): number {
@@ -401,5 +401,5 @@ export function resetForTesting(): void {
 	HOWL_POOL.clear();
 	for (const h of ONESHOT_POOL.values()) h.unload();
 	ONESHOT_POOL.clear();
-	variantRng = mulberry32(1);
+	variantRng = mulberry32(seedFrom(1));
 }

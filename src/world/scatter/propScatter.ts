@@ -26,7 +26,7 @@
 
 import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
-import { mulberry32, RNG_TAGS } from "@engine/prng";
+import { mulberry32, RNG_TAGS, taggedSeed } from "@engine/prng";
 import type { PropArchetype, PropDef } from "@world/scatter/propPool";
 import { POOLS } from "@world/scatter/propPool";
 
@@ -97,7 +97,7 @@ export function spawnProps(map: BoneBusterMap, archetype: PropArchetype): PropIn
 	if (pool.length === 0) return [];
 
 	const out: PropInstance[] = [];
-	const rng = mulberry32((map.seed >>> 0) ^ RNG_TAGS.PROP);
+	const rng = mulberry32(taggedSeed(map.seed, RNG_TAGS.PROP));
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 	const [minPerSector, maxPerSector] = DENSITY_BY_ARCHETYPE[archetype];
 

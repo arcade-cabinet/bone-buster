@@ -17,7 +17,7 @@
 
 import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
-import { mulberry32, RNG_TAGS } from "@engine/prng";
+import { mulberry32, RNG_TAGS, taggedSeed } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
 import { KITCHEN_PROPS } from "@world/kitchen";
 
@@ -70,7 +70,7 @@ export function spawnKitchen(map: BoneBusterMap): KitchenInstance[] {
 	if (map.kind !== "sectors") return [];
 	if (pickArchetype(map) !== "library") return [];
 	const out: KitchenInstance[] = [];
-	const rng = mulberry32((map.seed >>> 0) ^ RNG_TAGS.KTCH);
+	const rng = mulberry32(taggedSeed(map.seed, RNG_TAGS.KTCH));
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 
 	for (const sector of map.sectors) {

@@ -24,7 +24,7 @@
  * onboarding-fixed; their identity is the name itself, not a roll.
  */
 
-import { mulberry32, RNG_TAGS } from "@engine/prng";
+import { mulberry32, RNG_TAGS, taggedSeed } from "@engine/prng";
 import type { PropArchetype } from "@world/scatter/propPool";
 
 export const WELCOME_WING_NAME = "Welcome Wing";
@@ -90,7 +90,7 @@ export const LEVEL_NAME_POOLS: Readonly<Record<PropArchetype, readonly string[]>
  */
 export function pickLevelName(archetype: PropArchetype, seed: number): string {
 	const pool = LEVEL_NAME_POOLS[archetype];
-	const rng = mulberry32((seed >>> 0) ^ RNG_TAGS.NAME);
+	const rng = mulberry32(taggedSeed(seed, RNG_TAGS.NAME));
 	// Math.floor(rng()*pool.length)%pool.length is provably in [0, pool.length)
 	// when pool is non-empty (all archetype pools have 8 entries).
 	const idx = Math.floor(rng() * pool.length) % pool.length;

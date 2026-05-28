@@ -1,4 +1,4 @@
-import { mulberry32, RNG_TAGS } from "@engine/prng";
+import { mulberry32, RNG_TAGS, seedFrom, taggedSeed } from "@engine/prng";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -15,7 +15,7 @@ import { describe, expect, it } from "vitest";
 
 describe("CONV1 — mulberry32 byte-stability", () => {
 	it("seed=0 produces canonical-anchor stream", () => {
-		const rng = mulberry32(0);
+		const rng = mulberry32(seedFrom(0));
 		expect([rng(), rng(), rng(), rng(), rng()]).toEqual([
 			0.26642920868471265, 0.0003297457005828619, 0.2232720274478197, 0.1462021479383111,
 			0.46732782293111086,
@@ -23,7 +23,7 @@ describe("CONV1 — mulberry32 byte-stability", () => {
 	});
 
 	it("seed=12345 produces stable stream", () => {
-		const rng = mulberry32(12345);
+		const rng = mulberry32(seedFrom(12345));
 		expect([rng(), rng(), rng(), rng(), rng()]).toEqual([
 			0.9797282677609473, 0.3067522644996643, 0.484205421525985, 0.817934412509203,
 			0.5094283693470061,
@@ -31,7 +31,7 @@ describe("CONV1 — mulberry32 byte-stability", () => {
 	});
 
 	it("seed=0xdeadbeef produces stable stream", () => {
-		const rng = mulberry32(0xdeadbeef);
+		const rng = mulberry32(seedFrom(0xdeadbeef));
 		expect([rng(), rng(), rng(), rng(), rng()]).toEqual([
 			0.9413696140982211, 0.26719574979506433, 0.772033357527107, 0.35816076025366783,
 			0.47554167779162526,
@@ -39,7 +39,7 @@ describe("CONV1 — mulberry32 byte-stability", () => {
 	});
 
 	it("each per-archetype canonical seed produces a distinct first value", () => {
-		const heads = [0, 1, 2, 3, 4].map((s) => mulberry32(s)());
+		const heads = [0, 1, 2, 3, 4].map((s) => mulberry32(seedFrom(s))());
 		// Must all be distinct — if any two collide the scatter streams
 		// for two archetypes would align.
 		expect(new Set(heads).size).toBe(5);
@@ -68,8 +68,8 @@ describe("CONV1 — RNG_TAGS registry", () => {
 
 	it("tagged stream diverges from untagged for same map seed", () => {
 		const seed = 12345;
-		const untagged = mulberry32(seed)();
-		const tagged = mulberry32((seed >>> 0) ^ RNG_TAGS.PROP)();
+		const untagged = mulberry32(seedFrom(seed))();
+		const tagged = mulberry32(taggedSeed(seed, RNG_TAGS.PROP))();
 		expect(untagged).not.toBe(tagged);
 	});
 });
