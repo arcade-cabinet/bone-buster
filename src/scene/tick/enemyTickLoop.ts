@@ -35,12 +35,11 @@ import {
 	type BoneBusterMap,
 	type CollisionContext,
 	type Enemy,
-	type EnemyBullet,
 	hasLineOfSightAny,
-	makeEnemyBullet,
 	resolveCollisionAny,
 } from "@engine/engine";
 import { dispatch } from "@engine/events";
+import { type EnemyBullet, makeEnemyBullet } from "@engine/projectiles";
 import {
 	RATTLER_ATTACK_COOLDOWN_MS,
 	RATTLER_ATTACK_RANGE,

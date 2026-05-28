@@ -56,9 +56,17 @@ async function mount() {
 			<DamageNumberField />
 		</Canvas>,
 	);
-	await vi.waitFor(() => {
-		if (!scene) throw new Error("scene not ready");
-	});
+	// vi.waitFor defaults to a 1000ms window — too tight for R3F's first
+	// effect commit under parallel browser-mode file execution (the Canvas
+	// mount + useThree capture genuinely takes >1s when several browser test
+	// files contend for the single Chromium instance). Give it the same
+	// generous settle budget the suite already grants via testTimeout.
+	await vi.waitFor(
+		() => {
+			if (!scene) throw new Error("scene not ready");
+		},
+		{ timeout: 10_000, interval: 50 },
+	);
 	// A slot group is a group with ≥2 children, NONE of which are groups
 	// (the slot's children are the two drei <Text> meshes). This is purely
 	// STRUCTURAL — it does NOT depend on troika's async `.text` population,
@@ -78,9 +86,12 @@ async function mount() {
 	// Wait until the fixed slot pool has mounted (the field renders
 	// MAX_NUMBERS=24 slots once). Structural detector above doesn't race
 	// troika, but the React commit itself is async — wait for the full pool.
-	await vi.waitFor(() => {
-		if (slotGroups().length < 24) throw new Error("slot pool not fully mounted yet");
-	});
+	await vi.waitFor(
+		() => {
+			if (slotGroups().length < 24) throw new Error("slot pool not fully mounted yet");
+		},
+		{ timeout: 10_000, interval: 50 },
+	);
 	return {
 		step: (ms: number) => advance(ms / 1000),
 		visibleSlotCount: () => slotGroups().filter((o) => o.visible).length,

@@ -16,17 +16,15 @@ import { PlayerController } from "@components/PlayerController";
 import {
 	type BoneBusterMap,
 	computePortalEdges,
-	ENEMY_BULLET_DAMAGE,
 	type Enemy,
-	type EnemyBullet,
 	isSectorMap,
 	type Pickup,
 	polygonContains,
 	spawnEnemies,
 	spawnPickups,
-	stepEnemyBullet,
 } from "@engine/engine";
 import { addBoneBusterListener, dispatch } from "@engine/events";
+import { ENEMY_BULLET_DAMAGE, type EnemyBullet, stepEnemyBullet } from "@engine/projectiles";
 import { cyrb128 } from "@engine/rng";
 import { useFrame, useThree } from "@react-three/fiber";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
