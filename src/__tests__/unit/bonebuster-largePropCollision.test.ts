@@ -3,8 +3,8 @@
  * Pins resolveCollisionAny's blocker-pushout behavior.
  */
 
-import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
-import { resolveCollisionAny } from "@engine/engine";
+import { resolveCollisionAny } from "@engine/collisionAny";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/mapTypes";
 import { describe, expect, it } from "vitest";
 
 const farSector: BoneBusterSectorMap = {

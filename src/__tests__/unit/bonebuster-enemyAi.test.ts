@@ -8,8 +8,8 @@ import {
 	WANDER_JITTER_RAD_PER_SEC,
 	WANDER_RADIUS,
 } from "@ai/enemyAi";
-import type { BoneBusterGridMap, Enemy } from "@engine/engine";
-import { generateMap } from "@engine/engine";
+import { generateMap } from "@engine/gridGen";
+import type { BoneBusterGridMap, Enemy } from "@engine/mapTypes";
 import { describe, expect, it } from "vitest";
 
 function makeEnemy(partial: Partial<Enemy> = {}): Enemy {

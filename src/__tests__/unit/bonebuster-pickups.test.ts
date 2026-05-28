@@ -21,8 +21,9 @@
  * behavior is tested separately (see useGameRef tests).
  */
 
-import { generateMap, spawnPickups } from "@engine/engine";
+import { generateMap } from "@engine/gridGen";
 import { cyrb128 } from "@engine/rng";
+import { spawnPickups } from "@engine/spawn";
 import { TILE } from "@shared/constants";
 import { describe, expect, it } from "vitest";
 

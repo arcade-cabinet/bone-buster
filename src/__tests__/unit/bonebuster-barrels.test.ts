@@ -11,7 +11,7 @@
  *    player-included
  */
 
-import type { BoneBusterMap } from "@engine/engine";
+import type { BoneBusterMap } from "@engine/mapTypes";
 import {
 	BARREL_AOE_DAMAGE,
 	BARREL_AOE_RADIUS,

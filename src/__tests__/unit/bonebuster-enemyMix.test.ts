@@ -16,7 +16,7 @@
  */
 
 import { ENEMY_MIX_TABLES, remapEnemyMix } from "@ai/enemyMix";
-import type { EnemyKind, EnemySpawn } from "@engine/engine";
+import type { EnemyKind, EnemySpawn } from "@engine/mapTypes";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 import { describe, expect, it } from "vitest";
 

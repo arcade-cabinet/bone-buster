@@ -16,8 +16,8 @@
  * flag.
  */
 
-import type { BoneBusterMap, PickupSpawn, Vec2 } from "@engine/engine";
-import { isSectorMap } from "@engine/engine";
+import type { BoneBusterMap, PickupSpawn, Vec2 } from "@engine/mapTypes";
+import { isSectorMap } from "@engine/mapTypes";
 import { cyrb128 } from "@engine/rng";
 import { type LootKind, pickLootKind } from "@world/loot";
 

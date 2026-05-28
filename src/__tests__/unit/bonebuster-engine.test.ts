@@ -1,29 +1,28 @@
 import {
-	type BoneBusterGridMap,
-	type BoneBusterSectorMap,
 	castRay,
-	castRaySectors,
 	cellAt,
+	hasLineOfSight,
+	isBlocking,
+	resolveCollision,
+} from "@engine/gridCollision";
+import { generateMap } from "@engine/gridGen";
+import type { BoneBusterGridMap, BoneBusterSectorMap, MapSector, Vec2 } from "@engine/mapTypes";
+import {
+	castRaySectors,
 	computePortalEdges,
-	generateMap,
 	getCeilingHeightAt,
 	getCeilingHeightAtAny,
 	getFloorHeightAt,
 	getFloorHeightAtAny,
 	getSectorAtPoint,
-	hasLineOfSight,
 	hasLineOfSightSectors,
-	isBlocking,
-	type MapSector,
 	newSectorCache,
-	pickUvHidden,
 	polygonContains,
 	rayHitsSegment,
-	resolveCollision,
 	resolveCollisionSectors,
-	type Vec2,
-} from "@engine/engine";
+} from "@engine/sectors";
 import { CANONICAL_SEED_PHRASE } from "@engine/seedPhrase";
+import { pickUvHidden } from "@engine/spawn";
 import { TILE } from "@shared/constants";
 import { describe, expect, it } from "vitest";
 

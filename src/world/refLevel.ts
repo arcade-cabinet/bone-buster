@@ -13,7 +13,13 @@
  */
 
 import { decodeRefLevel, levelBounds, type RefLevelIndex } from "@ai/turtle";
-import type { BoneBusterSectorMap, EnemySpawn, MapSector, PickupSpawn, Vec2 } from "@engine/engine";
+import type {
+	BoneBusterSectorMap,
+	EnemySpawn,
+	MapSector,
+	PickupSpawn,
+	Vec2,
+} from "@engine/mapTypes";
 import type { Difficulty } from "@store/settings";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 

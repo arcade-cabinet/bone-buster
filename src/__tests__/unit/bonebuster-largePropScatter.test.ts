@@ -2,7 +2,7 @@
  * COV2 step-2 — anchor-piece scatter contract.
  */
 
-import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/mapTypes";
 import { LARGE_PROPS } from "@world/largeProps";
 import { loadRefLevel } from "@world/refLevel";
 import { blockerCirclesOf, spawnLargeProps } from "@world/scatter/largePropScatter";

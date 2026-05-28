@@ -11,7 +11,7 @@
  * See docs/specs / full-review M-1.
  */
 
-import type { Vec2 } from "@engine/engine";
+import type { Vec2 } from "@engine/mapTypes";
 
 /**
  * Axis-aligned bounding box of a sector polygon's vertices. Used to seed

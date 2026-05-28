@@ -13,19 +13,12 @@ import {
 	stopAmbient,
 } from "@audio/sfx";
 import { PlayerController } from "@components/PlayerController";
-import {
-	type BoneBusterMap,
-	computePortalEdges,
-	type Enemy,
-	isSectorMap,
-	type Pickup,
-	polygonContains,
-	spawnEnemies,
-	spawnPickups,
-} from "@engine/engine";
 import { addBoneBusterListener, dispatch } from "@engine/events";
+import { type BoneBusterMap, type Enemy, isSectorMap, type Pickup } from "@engine/mapTypes";
 import { ENEMY_BULLET_DAMAGE, type EnemyBullet, stepEnemyBullet } from "@engine/projectiles";
 import { cyrb128 } from "@engine/rng";
+import { computePortalEdges, polygonContains } from "@engine/sectors";
+import { spawnEnemies, spawnPickups } from "@engine/spawn";
 import { useFrame, useThree } from "@react-three/fiber";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { PLAYER_HEIGHT, TILE } from "@shared/constants";

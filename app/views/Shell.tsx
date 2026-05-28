@@ -13,8 +13,8 @@ import {
 	stopAmbient,
 	stopMusic,
 } from "@audio/sfx";
-import type { BoneBusterMap, PickupKind } from "@engine/engine";
 import { addBoneBusterListener, dispatch } from "@engine/events";
+import type { BoneBusterMap, PickupKind } from "@engine/mapTypes";
 import { createEventPrng, createFreshEventSeed, cyrb128 } from "@engine/rng";
 import { CANONICAL_SEED_PHRASE, randomSeedPhrase } from "@engine/seedPhrase";
 import { advanceAndPersistEventSeed, loadEventSeed } from "@platform/persistence/eventSeed";

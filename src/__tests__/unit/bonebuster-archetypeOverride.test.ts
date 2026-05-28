@@ -4,7 +4,7 @@
  * requested archetype regardless of the input phrase.
  */
 
-import type { BoneBusterMap } from "@engine/engine";
+import type { BoneBusterMap } from "@engine/mapTypes";
 import {
 	ARCHETYPE_NAMES,
 	applyArchetypeOverride,

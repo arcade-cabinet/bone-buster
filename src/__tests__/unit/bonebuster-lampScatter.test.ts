@@ -8,7 +8,7 @@
  * slice.
  */
 
-import type { BoneBusterGridMap, BoneBusterMap } from "@engine/engine";
+import type { BoneBusterGridMap, BoneBusterMap } from "@engine/mapTypes";
 import {
 	countLampVariants,
 	LAMP_VARIANTS_OFF,

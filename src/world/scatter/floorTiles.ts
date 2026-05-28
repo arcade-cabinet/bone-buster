@@ -21,9 +21,9 @@
  */
 
 import { A } from "@assets/assetUrl";
-import type { BoneBusterMap, Vec2 } from "@engine/engine";
-import { polygonContains } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/mapTypes";
 import { forkStream } from "@engine/rng";
+import { polygonContains } from "@engine/sectors";
 
 export const FLOOR_TILE_VARIANTS: readonly string[] = [
 	A("/assets/models/structures/asphalt_hr_1.glb"),

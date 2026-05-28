@@ -9,7 +9,7 @@
  *  - `pickArchetype(map)` returns `map.archetype`
  */
 
-import { generateMap } from "@engine/engine";
+import { generateMap } from "@engine/gridGen";
 import { CANONICAL_SEED_PHRASE } from "@engine/seedPhrase";
 import { ARCHETYPE_NAMES, archetypeForPhrase, pickArchetype } from "@world/archetype";
 import { loadRefLevel } from "@world/refLevel";

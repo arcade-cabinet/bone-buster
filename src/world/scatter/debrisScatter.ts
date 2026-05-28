@@ -15,9 +15,9 @@
  *    floorTiles (FLRT) sequences.
  */
 
-import type { BoneBusterMap, Vec2 } from "@engine/engine";
-import { polygonContains } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/mapTypes";
 import { forkStream } from "@engine/rng";
+import { polygonContains } from "@engine/sectors";
 import { pickArchetype } from "@world/archetype";
 import { DEBRIS_VARIANTS, pickDebrisUrl } from "@world/debris";
 import type { PropArchetype } from "@world/scatter/propPool";

@@ -9,8 +9,8 @@
  *  - Grid maps return [].
  */
 
-import type { BoneBusterGridMap, BoneBusterMap } from "@engine/engine";
-import { polygonContains } from "@engine/engine";
+import type { BoneBusterGridMap, BoneBusterMap } from "@engine/mapTypes";
+import { polygonContains } from "@engine/sectors";
 import { loadRefLevel } from "@world/refLevel";
 import { FLOOR_TILE_VARIANTS, floorTileUrlFor, spawnFloorTiles } from "@world/scatter/floorTiles";
 import { describe, expect, it } from "vitest";

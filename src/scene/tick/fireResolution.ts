@@ -30,9 +30,9 @@ import {
 	playShotgun,
 	playSkeletonDeath,
 } from "@audio/sfx";
-import type { CollisionContext } from "@engine/engine";
-import { type BoneBusterMap, castRayAny, type Enemy } from "@engine/engine";
+import { castRayAny } from "@engine/collisionAny";
 import { dispatch } from "@engine/events";
+import type { BoneBusterMap, CollisionContext, Enemy } from "@engine/mapTypes";
 import { applyVulnerabilityMultiplier } from "@engine/vulnerability";
 import { PLAYER_RADIUS, TILE } from "@shared/constants";
 import { WEAPONS, type WeaponId } from "@shared/weapons";

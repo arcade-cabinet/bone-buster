@@ -2,7 +2,7 @@
  * COV11 step-2 — courtyard-archetype nature scatter contract.
  */
 
-import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/mapTypes";
 import { archetypeForPhrase } from "@world/archetype";
 import { spawnNature } from "@world/scatter/natureScatter";
 import { describe, expect, it } from "vitest";

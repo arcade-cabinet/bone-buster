@@ -48,11 +48,15 @@ When two docs disagree, use this order:
 
 Full diagram in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
-- **`src/engine/engine.ts` + `src/world/buildMap.ts` + `src/ai/turtle.ts`** — pure-TS
+- **`src/engine/*` + `src/world/buildMap.ts` + `src/ai/turtle.ts`** — pure-TS
   sim. Maps, raycasts, collision, spawning. No DOM, no three.js, no
-  `Math.random()` in sim code (use seedable RNG).
+  `Math.random()` in sim code (use seedable RNG). `src/engine/` is
+  decomposed along type seams: `mapTypes` (types + guards), `gridGen`
+  (`generateMap`), `gridCollision` + `sectors` (per-representation
+  primitives), `collisionAny` (kind-agnostic dispatchers), `spawn`
+  (entity spawning), `projectiles` (enemy-bullet sim).
 - **`src/world/barrels.ts`** — pure-sim destructible barrel registry. Spawn,
-  ray-test, AoE resolution. Mirrors `engine.ts` shape: returns IDs +
+  ray-test, AoE resolution. Mirrors the engine modules' shape: returns IDs +
   flags to the caller, no side effects. 14 unit tests in
   `src/__tests__/unit/bone-buster-barrels.test.ts`.
 - **`src/ai/enemyAi.ts`** — FSM tick function with explicit states
@@ -177,7 +181,7 @@ harness before the feature.
 
 - `console.log` in committed source (use a typed logger if added).
 - `// TODO`, `// FIXME`, `// stub`, `placeholder` in committed source.
-- `Math.random()` in `engine.ts`, `enemyAi.ts`, `buildMap.ts`,
+- `Math.random()` in `src/engine/*`, `enemyAi.ts`, `buildMap.ts`,
   `turtle.ts`, `runStats.ts` (deterministic RNG only).
 - Pushing to `main` directly without a PR.
 - `--no-verify` on commits or pushes.

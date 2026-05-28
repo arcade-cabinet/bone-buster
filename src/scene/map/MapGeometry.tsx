@@ -1,4 +1,4 @@
-import type { BoneBusterGridMap } from "@engine/engine";
+import type { BoneBusterGridMap } from "@engine/mapTypes";
 import { useGLTF, useTexture } from "@react-three/drei";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { TILE } from "@shared/constants";

@@ -1,4 +1,4 @@
-import type { Enemy } from "@engine/engine";
+import type { Enemy } from "@engine/mapTypes";
 import { useFrame } from "@react-three/fiber";
 import { SCALE } from "@styles/tokens/index";
 import { useEffect, useRef } from "react";

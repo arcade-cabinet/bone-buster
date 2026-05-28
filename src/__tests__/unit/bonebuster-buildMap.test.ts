@@ -1,4 +1,4 @@
-import { isGridMap, isSectorMap } from "@engine/engine";
+import { isGridMap, isSectorMap } from "@engine/mapTypes";
 import type { LevelChoice } from "@store/settings";
 import { buildMap } from "@world/buildMap";
 import { describe, expect, it } from "vitest";

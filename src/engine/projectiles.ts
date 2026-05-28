@@ -9,7 +9,8 @@
  */
 
 import { yukaProjectileStep } from "@ai/yukaIntegration";
-import { type BoneBusterMap, type CollisionContext, castRayAny, type Vec2 } from "@engine/engine";
+import { castRayAny } from "@engine/collisionAny";
+import type { BoneBusterMap, CollisionContext, Vec2 } from "@engine/mapTypes";
 import { TILE } from "@shared/constants";
 
 export const ENEMY_BULLET_SPEED = 1.4 * TILE; // ≈ 1 cell / second

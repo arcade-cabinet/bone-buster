@@ -14,7 +14,7 @@
  */
 
 import { A } from "@assets/assetUrl";
-import type { BoneBusterMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/mapTypes";
 import { forkStream } from "@engine/rng";
 
 /**

@@ -9,7 +9,7 @@
  * cycle through every run. Same seed → same archetype across reloads.
  */
 
-import type { BoneBusterMap } from "@engine/engine";
+import type { BoneBusterMap } from "@engine/mapTypes";
 import { cyrb128 } from "@engine/rng";
 import type { PropArchetype } from "@world/scatter/propPool";
 

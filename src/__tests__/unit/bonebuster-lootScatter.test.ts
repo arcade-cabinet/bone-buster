@@ -2,7 +2,7 @@
  * COV12 step-2 — loot scatter contract.
  */
 
-import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/mapTypes";
 import { lootPickupSpawn, pickLootSpawn } from "@world/scatter/lootScatter";
 import { describe, expect, it } from "vitest";
 

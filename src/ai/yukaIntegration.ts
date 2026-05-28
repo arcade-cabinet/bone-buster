@@ -22,7 +22,7 @@
  *   https://mugen87.github.io/yuka/examples/
  */
 
-import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/mapTypes";
 import * as Yuka from "yuka";
 
 // Singleton — there's exactly one OBJEXOOM scene at a time so a

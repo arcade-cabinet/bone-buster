@@ -29,7 +29,7 @@
  * XOR 0x454E4D58) so same seed → same kind sequence per archetype.
  */
 
-import type { EnemyKind, EnemySpawn } from "@engine/engine";
+import type { EnemyKind, EnemySpawn } from "@engine/mapTypes";
 import { forkStream } from "@engine/rng";
 import type { PropArchetype } from "@world/scatter/propPool";
 

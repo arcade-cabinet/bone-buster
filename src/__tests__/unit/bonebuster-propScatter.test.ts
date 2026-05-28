@@ -10,7 +10,7 @@
  *  - Every prop is in the matching archetype bucket.
  */
 
-import type { BoneBusterGridMap, BoneBusterMap } from "@engine/engine";
+import type { BoneBusterGridMap, BoneBusterMap } from "@engine/mapTypes";
 import { loadRefLevel } from "@world/refLevel";
 import { POOLS, type PropArchetype } from "@world/scatter/propPool";
 import { PROPS_PER_SECTOR_MAX, spawnProps } from "@world/scatter/propScatter";

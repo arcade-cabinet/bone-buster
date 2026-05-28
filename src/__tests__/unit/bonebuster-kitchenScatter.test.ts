@@ -2,7 +2,7 @@
  * COV13 step-2 — kitchen scatter contract.
  */
 
-import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/mapTypes";
 import { ARCHETYPE_NAMES, archetypeForPhrase } from "@world/archetype";
 import { KITCHEN_PROPS } from "@world/kitchen";
 import { spawnKitchen } from "@world/scatter/kitchenScatter";

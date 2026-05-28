@@ -2,7 +2,7 @@
  * E13 step-5 — per-archetype sector density / size contract.
  */
 
-import { generateMap } from "@engine/engine";
+import { generateMap } from "@engine/gridGen";
 import { CANONICAL_SEED_PHRASE } from "@engine/seedPhrase";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 import { ARCHETYPE_MAP_SHAPES, getArchetypeMapShape } from "@world/archetypeMapShape";

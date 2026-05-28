@@ -18,9 +18,9 @@
  *    `blocking: true` + a `blockingRadius` consumed by collision).
  */
 
-import type { BoneBusterMap, Vec2 } from "@engine/engine";
-import { polygonContains } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/mapTypes";
 import { forkStream } from "@engine/rng";
+import { polygonContains } from "@engine/sectors";
 import { pickArchetype } from "@world/archetype";
 import type { LargePropDef } from "@world/largeProps";
 import { LARGE_PROPS, pickLargePropDef } from "@world/largeProps";

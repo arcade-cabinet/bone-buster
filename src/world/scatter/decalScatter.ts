@@ -13,7 +13,7 @@
  * survives map mutations to other sectors.
  */
 
-import type { BoneBusterMap, MapSector, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, MapSector, Vec2 } from "@engine/mapTypes";
 import { pickArchetype } from "@world/archetype";
 import { pickDecalUrlByArchetype } from "@world/decals";
 import type { PropArchetype } from "@world/scatter/propPool";

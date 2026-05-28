@@ -23,8 +23,8 @@
  */
 
 import { playFlashlightClick, playHitSting, playPickup, playPlayerDeath } from "@audio/sfx";
-import type { PickupKind } from "@engine/engine";
 import { dispatch } from "@engine/events";
+import type { PickupKind } from "@engine/mapTypes";
 import { cyrb128 } from "@engine/rng";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import { advanceLevel, runStatsReducer } from "@store/runStats";

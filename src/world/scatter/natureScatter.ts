@@ -16,9 +16,9 @@
  * every other scatter sequence.
  */
 
-import type { BoneBusterMap, Vec2 } from "@engine/engine";
-import { polygonContains } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/mapTypes";
 import { cyrb128, forkStream } from "@engine/rng";
+import { polygonContains } from "@engine/sectors";
 import { pickArchetype } from "@world/archetype";
 import { pickNaturePlant } from "@world/nature";
 import { bboxOf, nearAny, scatterId } from "@world/scatter/sampling";

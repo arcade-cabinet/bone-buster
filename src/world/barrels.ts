@@ -20,7 +20,7 @@
  *    accidentally counts as a kill or vice versa.
  */
 
-import type { BoneBusterMap, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, Vec2 } from "@engine/mapTypes";
 import { forkStream } from "@engine/rng";
 
 /** Default barrel HP. Tuned so a pistol shot doesn't pop a barrel on

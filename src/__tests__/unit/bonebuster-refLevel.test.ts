@@ -1,5 +1,6 @@
 import type { RefLevelIndex } from "@ai/turtle";
-import { getSectorAtPoint, isSectorMap } from "@engine/engine";
+import { isSectorMap } from "@engine/mapTypes";
+import { getSectorAtPoint } from "@engine/sectors";
 import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
 

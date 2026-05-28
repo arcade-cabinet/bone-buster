@@ -1,4 +1,5 @@
-import { type BoneBusterSectorMap, computePortalEdges, edgeKey } from "@engine/engine";
+import type { BoneBusterSectorMap } from "@engine/mapTypes";
+import { computePortalEdges, edgeKey } from "@engine/sectors";
 import { useGLTF } from "@react-three/drei";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";

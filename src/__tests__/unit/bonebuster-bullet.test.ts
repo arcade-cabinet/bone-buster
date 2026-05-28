@@ -1,4 +1,4 @@
-import { generateMap } from "@engine/engine";
+import { generateMap } from "@engine/gridGen";
 import { ENEMY_BULLET_TTL_MS, makeEnemyBullet, stepEnemyBullet } from "@engine/projectiles";
 import { describe, expect, it } from "vitest";
 

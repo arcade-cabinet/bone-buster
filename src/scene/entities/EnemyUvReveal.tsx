@@ -1,4 +1,4 @@
-import type { Enemy } from "@engine/engine";
+import type { Enemy } from "@engine/mapTypes";
 import { useFrame, useThree } from "@react-three/fiber";
 import { isInUvCone } from "@world/ghostHunting";
 import { useEffect } from "react";

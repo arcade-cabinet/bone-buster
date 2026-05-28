@@ -1,4 +1,4 @@
-import type { MapSector } from "@engine/engine";
+import type { MapSector } from "@engine/mapTypes";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";

@@ -12,7 +12,7 @@
  */
 
 import { A } from "@assets/assetUrl";
-import type { EnemyKind } from "@engine/engine";
+import type { EnemyKind } from "@engine/mapTypes";
 import type { WeaponId } from "@shared/weapons";
 
 export type EnemyAnimSet = {

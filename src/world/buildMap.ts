@@ -1,4 +1,5 @@
-import { type BoneBusterMap, generateMap } from "@engine/engine";
+import { generateMap } from "@engine/gridGen";
+import type { BoneBusterMap } from "@engine/mapTypes";
 import { cyrb128 } from "@engine/rng";
 import type { Difficulty, LevelChoice } from "@store/settings";
 import { ARCHETYPE_NAMES } from "@world/archetype";

@@ -2,7 +2,7 @@
  * COV8 step-2 — trap scatter + tick-damage contract.
  */
 
-import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/mapTypes";
 import {
 	disarmSector,
 	isTrapVisible,
