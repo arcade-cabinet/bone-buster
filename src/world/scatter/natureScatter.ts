@@ -18,7 +18,7 @@
 
 import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, RNG_TAGS } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
 import { pickNaturePlant } from "@world/nature";
 
@@ -79,7 +79,7 @@ export function spawnNature(map: BoneBusterMap): NatureInstance[] {
 	if (map.kind !== "sectors") return [];
 	if (pickArchetype(map) !== "courtyard") return [];
 	const out: NatureInstance[] = [];
-	const rng = mulberry32((map.seed >>> 0) ^ 0x4e415455);
+	const rng = mulberry32((map.seed >>> 0) ^ RNG_TAGS.NATU);
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 
 	for (const sector of map.sectors) {

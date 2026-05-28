@@ -24,7 +24,7 @@
 
 import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, RNG_TAGS } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
 import { type NpcKind, pickNpcKind } from "@world/npcs";
 
@@ -76,7 +76,7 @@ export function spawnNpcs(map: BoneBusterMap): NpcInstance[] {
 	if (map.kind !== "sectors") return [];
 	if (pickArchetype(map) !== "library") return [];
 	const out: NpcInstance[] = [];
-	const rng = mulberry32((map.seed >>> 0) ^ 0x4e504353);
+	const rng = mulberry32((map.seed >>> 0) ^ RNG_TAGS.NPCS);
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 
 	for (const sector of map.sectors) {

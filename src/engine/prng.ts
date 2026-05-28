@@ -30,11 +30,14 @@ export function mulberry32(seed: number): () => number {
  * before passing to mulberry32 so independent systems' streams diverge
  * even when they share a map seed.
  *
- * Tag values are ASCII codes packed big-endian (e.g. "LMPP" → 0x4c4d5050).
- * Changing any value here breaks canonical-byte-stability — DON'T.
+ * Tag values are ASCII codes packed big-endian (e.g. "PROP" → 0x50524f50).
+ * Most are 4 bytes; LMP is 3 ("LMP", 0x4c4d50). Changing any value here
+ * breaks canonical-byte-stability — DON'T. Always reference these named
+ * constants at call sites; a raw-hex XOR is banned by the commit-gate so
+ * the determinism contract keeps a single source of truth.
  */
 export const RNG_TAGS = {
-	/** Lamp scatter — "LMPP" */
+	/** Lamp scatter — "LMP" (3 bytes; value frozen for byte-stability) */
 	LMP: 0x4c4d50,
 	/** Prop scatter — "PROP" */
 	PROP: 0x50524f50,
@@ -54,7 +57,9 @@ export const RNG_TAGS = {
 	NPCS: 0x4e504353,
 	/** Enemy mix — "ENMX" */
 	ENMX: 0x454e4d58,
-} as const;
+	/** Level names — "NAME" */
+	NAME: 0x4e414d45,
+} as const satisfies Record<string, number>;
 
 export type RngTag = keyof typeof RNG_TAGS;
 

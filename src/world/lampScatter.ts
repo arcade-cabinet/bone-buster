@@ -15,7 +15,7 @@
 
 import { A } from "@assets/assetUrl";
 import type { BoneBusterMap, Vec2 } from "@engine/engine";
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, RNG_TAGS } from "@engine/prng";
 
 /**
  * The 10 PSX Mega Pack II lamp GLBs, split by on/off state.
@@ -76,7 +76,7 @@ export interface LampInstance {
 export function spawnLamps(map: BoneBusterMap): LampInstance[] {
 	if (map.kind !== "sectors") return [];
 	const out: LampInstance[] = [];
-	const rng = mulberry32((map.seed >>> 0) ^ 0x4c4d50); // mix in a "LMP" tag
+	const rng = mulberry32((map.seed >>> 0) ^ RNG_TAGS.LMP); // mix in a "LMP" tag
 	const skipRadius = 3;
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 

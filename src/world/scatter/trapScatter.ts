@@ -20,7 +20,7 @@
 
 import type { BoneBusterMap, Vec2 } from "@engine/engine";
 import { polygonContains } from "@engine/engine";
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, RNG_TAGS } from "@engine/prng";
 import { pickArchetype } from "@world/archetype";
 import type { PropArchetype } from "@world/scatter/propPool";
 import { TRAPS, type TrapDef, type TrapKind } from "@world/traps";
@@ -101,7 +101,7 @@ export function spawnTraps(map: BoneBusterMap): TrapInstance[] {
 	const out: TrapInstance[] = [];
 	const archetype = pickArchetype(map);
 	const [hazardMin, hazardMax] = HAZARD_PER_SECTOR[archetype];
-	const rng = mulberry32((map.seed >>> 0) ^ 0x54524150);
+	const rng = mulberry32((map.seed >>> 0) ^ RNG_TAGS.TRAP);
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 
 	for (const sector of map.sectors) {
