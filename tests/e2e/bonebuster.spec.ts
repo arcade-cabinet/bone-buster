@@ -1,5 +1,5 @@
 /**
- * OBJEXOOM end-to-end smoke. Drives the easter-egg in a real Chromium
+ * Bone Buster end-to-end smoke. Drives the game in a real Chromium
  * via Playwright. Tests cover:
  *   - landing page renders + screenshots
  *   - NEW GAME → difficulty → level → game start
@@ -31,18 +31,20 @@ const PLAYER_HUD = "[data-testid='bonebuster-hp']";
 const KILLS_HUD = "[data-testid='bonebuster-kills']";
 const KEY_HUD = "[data-testid='bonebuster-key']";
 
-test.describe("OBJEXOOM easter egg — headed Chromium", () => {
+test.describe("Bone Buster — headed Chromium", () => {
 	test("landing page renders the DOOM menu", async ({ page }) => {
 		await page.goto(DEBUG_URL);
 
-		await expect(page.getByRole("heading", { name: /OBJEXOOM/ })).toBeVisible();
+		// R8 rebrand — the wordmark is an SVG with role="img" aria-label="Bone
+		// Buster" (no text heading). Was a stale `/OBJEXOOM/` heading assertion.
+		await expect(page.getByRole("img", { name: /Bone Buster/i })).toBeVisible();
 		await expect(page.getByRole("button", { name: /NEW GAME/ })).toBeVisible();
 		await expect(page.getByRole("button", { name: /OPTIONS/ })).toBeVisible();
 		await expect(page.getByRole("button", { name: /HOW TO PLAY/ })).toBeVisible();
 		await expect(page.getByRole("button", { name: /QUIT/ })).toBeVisible();
 
 		await page.screenshot({
-			path: "test-results/objexoom-landing.png",
+			path: "test-results/bonebuster-landing.png",
 			fullPage: true,
 			animations: "disabled",
 			caret: "hide",
@@ -59,6 +61,10 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
 		await expect(page.getByRole("button", { name: /^RANDOM$/ })).toBeVisible();
 		await page.getByRole("button", { name: /^RANDOM$/ }).click();
+		// SEED3 — the procedural ("RANDOM") level now routes through the seed
+		// pane; BEGIN starts the run on the suggested phrase.
+		await expect(page.getByRole("button", { name: /^BEGIN$/ })).toBeVisible();
+		await page.getByRole("button", { name: /^BEGIN$/ }).click();
 
 		// Game should be playing — HUD elements appear.
 		await expect(page.locator(PLAYER_HUD)).toBeVisible({ timeout: 5_000 });
@@ -73,7 +79,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		expect((state as { status: string }).status).toBe("playing");
 
 		await page.screenshot({
-			path: "test-results/objexoom-ingame.png",
+			path: "test-results/bonebuster-ingame.png",
 			fullPage: true,
 			animations: "disabled",
 			caret: "hide",
@@ -86,6 +92,10 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
 		await page.getByRole("button", { name: /^RANDOM$/ }).click();
+		// SEED3 — the procedural ("RANDOM") level now routes through the seed
+		// pane; BEGIN starts the run on the suggested phrase.
+		await expect(page.getByRole("button", { name: /^BEGIN$/ })).toBeVisible();
+		await page.getByRole("button", { name: /^BEGIN$/ }).click();
 		await expect(page.locator(PLAYER_HUD)).toBeVisible({ timeout: 5_000 });
 
 		const initialHp = await page.locator(PLAYER_HUD).innerText();
@@ -133,6 +143,10 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
 		await page.getByRole("button", { name: /^RANDOM$/ }).click();
+		// SEED3 — the procedural ("RANDOM") level now routes through the seed
+		// pane; BEGIN starts the run on the suggested phrase.
+		await expect(page.getByRole("button", { name: /^BEGIN$/ })).toBeVisible();
+		await page.getByRole("button", { name: /^BEGIN$/ }).click();
 		await expect(page.locator(KILLS_HUD)).toBeVisible({ timeout: 5_000 });
 
 		const before = await page.locator(KILLS_HUD).innerText();
@@ -174,6 +188,10 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
 		await page.getByRole("button", { name: /^RANDOM$/ }).click();
+		// SEED3 — the procedural ("RANDOM") level now routes through the seed
+		// pane; BEGIN starts the run on the suggested phrase.
+		await expect(page.getByRole("button", { name: /^BEGIN$/ })).toBeVisible();
+		await page.getByRole("button", { name: /^BEGIN$/ }).click();
 		await expect(page.locator(KEY_HUD)).toContainText(/FIND THE KEY/, {
 			timeout: 5_000,
 		});
@@ -192,6 +210,10 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
 		await page.getByRole("button", { name: /^RANDOM$/ }).click();
+		// SEED3 — the procedural ("RANDOM") level now routes through the seed
+		// pane; BEGIN starts the run on the suggested phrase.
+		await expect(page.getByRole("button", { name: /^BEGIN$/ })).toBeVisible();
+		await page.getByRole("button", { name: /^BEGIN$/ }).click();
 		await expect(page.locator(PLAYER_HUD)).toBeVisible({ timeout: 5_000 });
 
 		await page.evaluate(() => {
@@ -206,7 +228,7 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		});
 
 		await page.screenshot({
-			path: "test-results/objexoom-level-complete.png",
+			path: "test-results/bonebuster-level-complete.png",
 			animations: "disabled",
 			caret: "hide",
 			timeout: 45_000,
@@ -218,6 +240,10 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
 		await page.getByRole("button", { name: /^RANDOM$/ }).click();
+		// SEED3 — the procedural ("RANDOM") level now routes through the seed
+		// pane; BEGIN starts the run on the suggested phrase.
+		await expect(page.getByRole("button", { name: /^BEGIN$/ })).toBeVisible();
+		await page.getByRole("button", { name: /^BEGIN$/ }).click();
 		await expect(page.locator(PLAYER_HUD)).toBeVisible({ timeout: 5_000 });
 
 		// Drive 5 wins. Each onWin() flips status to transitioning, holds 800ms,
@@ -249,6 +275,10 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
 		await page.getByRole("button", { name: /^RANDOM$/ }).click();
+		// SEED3 — the procedural ("RANDOM") level now routes through the seed
+		// pane; BEGIN starts the run on the suggested phrase.
+		await expect(page.getByRole("button", { name: /^BEGIN$/ })).toBeVisible();
+		await page.getByRole("button", { name: /^BEGIN$/ }).click();
 		await expect(page.locator(PLAYER_HUD)).toBeVisible({ timeout: 5_000 });
 
 		for (let level = 0; level < 2; level += 1) {
@@ -331,6 +361,10 @@ test.describe("OBJEXOOM easter egg — headed Chromium", () => {
 		await page.getByRole("button", { name: /NEW GAME/ }).click();
 		await page.getByRole("button", { name: /HURT ME PLENTY/ }).click();
 		await page.getByRole("button", { name: /^RANDOM$/ }).click();
+		// SEED3 — the procedural ("RANDOM") level now routes through the seed
+		// pane; BEGIN starts the run on the suggested phrase.
+		await expect(page.getByRole("button", { name: /^BEGIN$/ })).toBeVisible();
+		await page.getByRole("button", { name: /^BEGIN$/ }).click();
 		await expect(page.locator(PLAYER_HUD)).toBeVisible({ timeout: 5_000 });
 
 		// Capture starting positions for the round-trip teleport.
