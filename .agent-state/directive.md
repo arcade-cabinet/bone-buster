@@ -17,7 +17,23 @@
 5. Flip `[ ]` → `[x]` in the same commit; **delete the item from this file** in the next forward-going commit (per the prune-shipped-from-directive rule).
 6. Keep ALL work on the single long-running branch. Open the PR + gather remote feedback + squash-merge only when the whole queue below is drained — not per commit, not per slice. The work is the directive; wall-clock and size never gate it.
 
-## Queue — comprehensive-review remediation (one branch)
+## Queue — PRIORITY: family PRNG + seedphrase (one branch)
+
+User-directed (2026-05-28): adopt the `~/src/arcade-cabinet` family seed
+architecture — two-PRNG seedrandom model with a surfaced
+adjective-adjective-noun seedphrase set in the New Game modal. FULL REWRITE
+to match the sibling exactly (not a numeric bridge). Spec:
+[`docs/specs/96-prng-and-landing.md`](../docs/specs/96-prng-and-landing.md).
+Reference impl: `~/src/arcade-cabinet/Aethelgard-Chronicles-of-Strata/src/core/{rng,seed-phrase}.ts`.
+
+Step-sequenced (each step informs the next; don't pre-build later steps):
+- [x] SEED1 Added `src/engine/rng.ts` (family pattern): `cyrb128`, `createMapPrng(phrase)`, `forkStream(phrase, tag)`, `createEventPrng`/`createFreshEventSeed`/`advanceEventSeed`. Add `src/engine/seedPhrase.ts` (bone-buster-flavored adjective-adjective-noun word lists + `randomSeedPhrase(eventRng)`). Unit-test the hash + phrase generation. Keep mulberry32 in place for now (no callers switched yet).
+- [ ] SEED2 Switch `generateMap` + all procedural consumers (scatter ×9, enemyMix, levelNames, barrels, pickUvHidden) from `mulberry32(numericSeed)`/`taggedSeed` to `forkStream(phrase, tag)`. `map.seed: number` → `map.seedPhrase: string`. Re-bless the determinism tests against the new streams + a `CANONICAL_SEED_PHRASE`. Remove mulberry32/RNG_TAGS/seedFrom/taggedSeed.
+- [ ] SEED3 New Game modal: add the seed step to Landing (suggested phrase from event PRNG, editable, randomize button); thread `{seedPhrase, eventSeed}` through Shell's start flow. `?bonebusterSeed=<phrase>` overrides; legacy numeric accepted as a phrase string.
+- [ ] SEED4 Event PRNG persistence: bury `eventPrngSeed` in Capacitor Preferences (first-launch mint via crypto, advance-on-New-Game, restore-on-Continue). Wire combat/loot variance + the phrase randomizer to the event stream.
+- [ ] SEED5 Re-bless canonical + per-archetype screenshots against the canonical phrase; update CLAUDE.md/STANDARDS/DECISIONS (supersede D19); visual-verify the New Game modal + a phrase-seeded run live.
+
+## Queue — comprehensive-review remediation (one branch, after SEED*)
 
 Dependency-ordered. Drain top-down on a single branch.
 
