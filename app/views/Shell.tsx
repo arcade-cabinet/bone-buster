@@ -39,6 +39,7 @@ import { ROLE, SCALE } from "@styles/tokens/index";
 import { BoneBusterHUD } from "@views/HUD";
 import { BoneBusterLanding } from "@views/Landing";
 import { BoneBusterScene } from "@views/Scene";
+import { debugHooksEnabled, readArchetypeFromUrl, readBaseSeedFromUrl } from "@views/urlFlags";
 import { applyArchetypeOverride } from "@world/archetype";
 import { buildMap } from "@world/buildMap";
 import { pickLevelName, WELCOME_WING_NAME } from "@world/levelNames";
@@ -210,51 +211,12 @@ const baseOwnedWeapons = (): Record<WeaponId, boolean> => ({
 	flamethrower: false,
 });
 
+// URL-flag parsing lives in @views/urlFlags (CR-F6 — extracted so the
+// app's only external-input boundary is unit-testable). This composes the
+// base seed with the archetype override.
 function readSeedFromUrl(): number {
 	const base = readBaseSeedFromUrl();
 	return applyArchetypeOverride(base, readArchetypeFromUrl());
-}
-
-// R8b — URL parameter migration. The post-rebrand canonical names
-// are `bonebusterSeed` / `bonebusterArchetype` / `bonebusterDebug`;
-// the legacy `objexoom*` names are accepted as fallbacks so existing
-// bookmarks + e2e harness URLs keep working. New param wins when
-// both are present.
-function readBaseSeedFromUrl(): number {
-	if (typeof window === "undefined") return Date.now() & 0xffffffff;
-	try {
-		const url = new URL(window.location.href);
-		const raw = url.searchParams.get("bonebusterSeed") ?? url.searchParams.get("objexoomSeed");
-		if (raw && /^[0-9]+$/.test(raw)) {
-			return Number.parseInt(raw, 10) & 0xffffffff;
-		}
-	} catch {
-		// fall through
-	}
-	return Date.now() & 0xffffffff;
-}
-
-function readArchetypeFromUrl(): string | null {
-	if (typeof window === "undefined") return null;
-	try {
-		const url = new URL(window.location.href);
-		return url.searchParams.get("bonebusterArchetype") ?? url.searchParams.get("objexoomArchetype");
-	} catch {
-		return null;
-	}
-}
-
-function debugHooksEnabled(): boolean {
-	if (typeof window === "undefined") return false;
-	if (process.env.NODE_ENV === "production") return false;
-	try {
-		const params = new URL(window.location.href).searchParams;
-		// R8b — accept either name; bonebusterDebug is the canonical
-		// post-rebrand spelling, objexoomDebug is the legacy alias.
-		return params.has("bonebusterDebug") || params.has("objexoomDebug");
-	} catch {
-		return false;
-	}
 }
 
 declare global {
@@ -885,6 +847,9 @@ export function BoneBusterShell() {
 			if (owned.length < 2) return;
 			const idx = owned.indexOf(state.weapon);
 			const next = owned[(idx + (e.deltaY > 0 ? 1 : owned.length - 1)) % owned.length];
+			// next is provably defined: the modulo operand is owned.length
+			// (≥2 after the guard above) so the result is always in-bounds.
+			if (next === undefined) return;
 			onSelectWeapon(next);
 		};
 		window.addEventListener("wheel", onWheel, { passive: false });
