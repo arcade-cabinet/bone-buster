@@ -401,7 +401,11 @@ Source: `src/platform/persistence/createDatabase.ts`, `src/platform/persistence/
 
 ## D19 — Dual-PRNG architecture: canonical mulberry32 + cosmetic seedrandom (alea)
 
-**Status:** Locked.
+**Status:** Amended by D21 on 2026-05-28 — the world-shape stream moved from
+numeric `mulberry32(seed ^ TAG)` to phrase-keyed `forkStream(phrase, "TAG")`
+(seedrandom). The cosmetic-vs-canonical SPLIT this decision established still
+holds; only the canonical engine + its seed type changed. Historical text
+retained below.
 **Date:** 2026-05-17
 
 PRNG usage in Bone Buster is split into two streams with **separate engines, separate seed-derivation, separate byte-stability contracts**:
@@ -462,6 +466,43 @@ also dropped a heavy dependency from the bundle.
   models, two bundles; not worth it once SFX moved to samples.
 - *Web Audio API directly* — Howler already wraps it with pooling,
   format fallback, and mobile-unlock handling we'd otherwise re-implement.
+
+---
+
+## D21 — Family two-PRNG seedphrase model (SEED1-5)
+
+**Status:** Locked. **Amends D19 (world-shape clause).**
+**Date:** 2026-05-28 (user-directed)
+
+bone-buster adopts the `~/src/arcade-cabinet` family seed architecture
+(reference: `Aethelgard-Chronicles-of-Strata/src/core/{rng,seed-phrase}`).
+The adjective-adjective-noun seed PHRASE is the human-facing map identity,
+set in the New Game modal. Full design: `docs/specs/96-prng-and-landing.md`.
+
+- **Map PRNG** — `createMapPrng(phrase)` + per-system `forkStream(phrase,
+  "TAG")` (`src/engine/rng.ts`, cyrb128 → seedrandom). Drives ALL procedural
+  generation (archetype, grid carve, all 9 scatter systems, enemy mix, level
+  names, barrels, tool cadence). Same phrase → same map. Replaces the numeric
+  `mulberry32(seed ^ RNG_TAGS.X)` world-shape stream from D19.
+- **Event PRNG** — seed buried in Capacitor Preferences (`eventPrngSeed`),
+  minted on first launch (crypto), advanced per New Game. Drives combat/loot
+  variance + the seed-phrase randomizer. Device state, not game state.
+- **Archetype** = `cyrb128(phrase)[0] % 5`. Canonical anchor
+  `CANONICAL_SEED_PHRASE = "marrowed-vile-sepulcher"` → corridor (replaces the
+  old "seed 0 = corridor" byte-stability anchor; pins canonical screenshots).
+- `mulberry32`/`RNG_TAGS`/`seedFrom`/`taggedSeed` retained ONLY for the
+  numeric-hash-keyed level-name picker + the D19 cosmetic-audio variant RNG.
+
+**Why:** one seed architecture across the whole arcade-cabinet collection;
+the phrase is shareable map identity; "same map, different fight" and "replay
+this fight on a new map" become orthogonal (the two-PRNG split). Full rewrite
+(not a numeric bridge) was the user's explicit call — bone-buster stops being
+a snowflake.
+
+**Rejected:**
+- *Numeric bridge (phrase → cyrb128 → numeric seed → existing mulberry32).*
+  Lower churn, but keeps bone-buster's bespoke canonical engine — diverges
+  from the family. The user chose the full rewrite.
 
 ---
 
