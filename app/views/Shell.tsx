@@ -122,10 +122,10 @@ export type GameState = {
 	goingBackDeadlineMs: number | null;
 };
 
-// CR-H1scene step-d — the lifecycle constants live in @views/gameConstants
-// (a leaf module) to break the value-import cycle with gameReducer +
-// useLevelTransition; Shell imports them like every other consumer (see the
-// import block above).
+// PREP-C2 (OVERHAUL2) — the lifecycle constants live in @store/gameConstants
+// (a src/ leaf) so the pure gameReducer + useLevelTransition import them
+// DOWN/sideways, not up into app/views. Shell doesn't import them itself
+// (referenced only in the GameState JSDoc above).
 
 export type WeaponState = {
 	weapon: WeaponId;

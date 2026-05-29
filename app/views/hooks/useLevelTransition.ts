@@ -14,9 +14,9 @@
  * is a plain timeout.
  */
 
+import { TRANSITION_HOLD_MS } from "@store/gameConstants";
 import { advanceLevel, nextStatusAfterTransition } from "@store/runStats";
 import type { BoneBusterSettings } from "@store/settings";
-import { TRANSITION_HOLD_MS } from "@views/gameConstants";
 import type { GameState } from "@views/Shell";
 import { useEffect } from "react";
 

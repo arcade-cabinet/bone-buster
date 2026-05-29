@@ -19,9 +19,9 @@
 import type { BoneBusterEvent } from "@engine/events";
 import type { PickupKind } from "@engine/mapTypes";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
+import { GOING_BACK_BUDGET_MS } from "@store/gameConstants";
 import { advanceLevel, runStatsReducer } from "@store/runStats";
 import type { DifficultyTuning, LevelChoice } from "@store/settings";
-import { GOING_BACK_BUDGET_MS } from "@views/gameConstants";
 import type { GameState } from "@views/Shell";
 import { LOOT_BONUSES } from "@world/loot";
 

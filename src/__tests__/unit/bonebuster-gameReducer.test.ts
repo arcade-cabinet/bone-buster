@@ -6,10 +6,10 @@
  */
 
 import { WEAPONS } from "@shared/weapons";
+import { GOING_BACK_BUDGET_MS } from "@store/gameConstants";
 import { type GameAction, type GameReducerCtx, gameReducer } from "@store/gameReducer";
 import { makeInitialRunStats } from "@store/runStats";
 import { DIFFICULTY_TUNING } from "@store/settings";
-import { GOING_BACK_BUDGET_MS } from "@views/gameConstants";
 import type { GameState } from "@views/Shell";
 import { LOOT_BONUSES } from "@world/loot";
 import { describe, expect, it } from "vitest";
