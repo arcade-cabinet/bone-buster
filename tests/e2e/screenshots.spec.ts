@@ -107,9 +107,12 @@ async function waitForSceneReady(page: Page, timeoutMs = 12_000): Promise<void> 
 			const canvas = document.querySelector("canvas");
 			if (!canvas || canvas.width === 0 || canvas.height === 0) return false;
 			// Downscale the canvas into a small 2D surface and read the center
-			// region's mean luminance. preserveDrawingBuffer is NOT set on the
-			// game canvas, but drawImage(canvas) composites the live front buffer
-			// into the 2D context within the same task, which is reliable.
+			// region's mean luminance. This readback is reliable ONLY because the
+			// game <Canvas> runs with `preserveDrawingBuffer: true` under the
+			// `?bonebusterDebug` flag (captureModeEnabled() → Shell.tsx). Without
+			// it Chrome auto-clears the WebGL drawing buffer between frames and
+			// drawImage(canvas) would read all-zero (black) → this poll would
+			// always time out. DEBUG_URL carries that flag; keep them coupled.
 			const w = 64;
 			const h = 40;
 			const tmp = document.createElement("canvas");

@@ -1,6 +1,6 @@
 import type { MapSector } from "@engine/mapTypes";
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 /**
@@ -48,6 +48,17 @@ export function WaterSurface({ sector, color }: { sector: MapSector; color: stri
 		t.needsUpdate = true;
 		return t;
 	}, []);
+
+	// PREP-BP1 — the DataTexture is a GPU resource; without explicit disposal
+	// it leaks one 64×64 RGBA texture per water sector on every map load (the
+	// <shapeGeometry> is R3F-managed and freed on unmount, but the texture we
+	// `new` ourselves is not). Dispose on unmount / before a new texture is
+	// memoized.
+	useEffect(() => {
+		return () => {
+			tex.dispose();
+		};
+	}, [tex]);
 
 	useFrame(({ clock }) => {
 		const mat = materialRef.current;
