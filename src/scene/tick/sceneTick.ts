@@ -199,7 +199,9 @@ export function runSceneTick(deps: SceneTickDeps): void {
 		strobeFrameRef.current = (strobeFrameRef.current + 1) % 200;
 		const bright = strobeFrameRef.current < 10;
 		if (ambientLightRef.current) {
-			ambientLightRef.current.intensity = (bright ? 1.6 : 0.95) * lightPalette.ambientMul;
+			// VIS3 — trough tracks the raised flood floor (1.25, matching the JSX
+			// base); peak lifts above it for the going-back "alarm" pulse.
+			ambientLightRef.current.intensity = (bright ? 1.9 : 1.25) * lightPalette.ambientMul;
 		}
 		if (directionalLightRef.current) {
 			directionalLightRef.current.intensity = (bright ? 2.2 : 1.1) * lightPalette.directionalMul;

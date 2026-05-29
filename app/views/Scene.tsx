@@ -902,7 +902,12 @@ export function BoneBusterScene({
 			    PSX shape/contrast. Per-archetype mul still tints the mood. */}
 			<ambientLight
 				ref={ambientLightRef}
-				intensity={0.95 * lightPalette.ambientMul}
+				// VIS3 — raised the flood floor (0.95 → 1.25) so the washed-out PSX
+				// brick/floor textures read clearly across the whole corridor
+				// (user: "brighter, more readable" — modernized DOOM, visibility
+				// first). Mood now comes from fog + directional shape, not from a
+				// dim base.
+				intensity={1.25 * lightPalette.ambientMul}
 				color={lightPalette.ambientColor}
 			/>
 			<directionalLight
@@ -946,14 +951,21 @@ export function BoneBusterScene({
 			    owner-gate) — empty list collapses to one Array.map. */}
 			<CrucifixField crucifixes={activeCrucifixesRef.current} version={crucifixesVersion} />
 
-			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.7]} />
+			{/* VIS3 — hemisphere up (0.7 → 0.95) adds sky/ground fill so floors +
+			    ceilings aren't lost to shadow; complements the raised ambient. */}
+			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.95]} />
 			{/* I11 — muzzle-flash point light. Lives at camera position,
 			    driven by useFrame so it can decay between renders. */}
 			<pointLight ref={muzzleLightRef} intensity={0} distance={8} decay={1.5} />
 			{/* E13 step-4 — per-archetype fog tint. Dominant depth-fade
 			    signal in low-lit play; biggest visual lever for archetype-
 			    distinctness. Corridor still resolves to BONE_BUSTER_PALETTE.ink. */}
-			<fog attach="fog" args={[lightPalette.fogColor, 8, TILE * lightPalette.fogFarTiles]} />
+			{/* VIS3 — fog near pushed 8 → 18 so the haze starts well down the
+			    corridor instead of forming a near "blue wall" right in front of
+			    the player; the far plane (TILE × fogFarTiles) still culls the
+			    horizon + supplies depth. Reads as atmospheric depth, not a
+			    flat-colour gradient on the nearest wall. */}
+			<fog attach="fog" args={[lightPalette.fogColor, 18, TILE * lightPalette.fogFarTiles]} />
 			<color attach="background" args={[lightPalette.fogColor]} />
 
 			{map.kind === "grid" ? (
