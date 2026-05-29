@@ -34,9 +34,9 @@ Capture+expand PRD/directive as findings come in (this lane is itself such a cap
 - [ ] HUD1 Frame the scene, dark/gritty/chrome, right tactical info (not boxy floating panels). [PRD HUD1]
 - [ ] HUD2 Own-only weapon display (DOOM model), no always-5 boxy bar. [PRD HUD2]
 - [ ] HUD3 In-world weapon/loot pickups + chests feed the arsenal/HUD. [PRD HUD3]
-- [ ] STRUCT1 Commit fully to procedural; drop the 1-5 picker + LevelChoice union; refLevels become archetype-style MODELS only. [PRD STRUCT1]
-- [ ] STRUCT2 Each level = procedural maze in an archetype style, boss-capped. [PRD STRUCT2]
-- [ ] STRUCT3 Logarithmic difficulty scaling + unit test. [PRD STRUCT3]
+- [ ] STRUCT1 Extract a base `MazeGenerator` core (lowest layer) + commit fully to procedural; drop the 1-5 picker + LevelChoice union; refLevels become biome STYLE models only. [PRD STRUCT1]
+- [ ] STRUCT2 One generator PER BIOME (sewer/cathedral/underwater/etc) built on the maze core — each owns biome structure/scatter/hazards + custom triggers/traps/code; level N = a biome maze, boss-capped. Composes natively with seed forks (same phrase → same biome maze). [PRD STRUCT2]
+- [ ] STRUCT3 Logarithmic difficulty scaling (enemies/tier/density/maze-size) + unit test. [PRD STRUCT3]
 
 ## Queue — PRIORITY: family PRNG + seedphrase (one branch)
 

@@ -111,24 +111,44 @@ user story, surfaces, and an acceptance bar.
   weapon pickup model spawns in the maze, collecting it adds the weapon to the
   HUD + arsenal.
 
-**STRUCT — fully procedural, archetype-styled, scaling**
+**STRUCT — fully procedural, BIOME generators, scaling**
 
-- **STRUCT1 — commit fully to procedural; refLevels are archetype MODELS.** The
-  hand-authored sector refLevels are REFERENCE MODELS demonstrating each
-  archetype's spatial style/scale (per docs/DESIGN.md + refLevel.ts) — NOT
-  separate playable levels. Remove the 1-5 fixed-level picker + the
+Architecture (user-directed 2026-05-28): the 5 archetypes are **BIOMES**, not
+replayable reference levels — each is a distinct *kind of place* (e.g. sewer,
+cathedral, underwater, library, arena). The clean design is a **base procedural
+maze generator at the lowest layer**, with **each biome as its OWN generator
+built on top of it** (a `MazeGenerator` core + a per-biome generator that layers
+that biome's structure, scatter, hazards, AND custom triggers/traps/code). This
+beats a "pick a refLevel template" approach because each biome generator can own
+bespoke logic (biome-specific traps, triggers, set-pieces, win/hazard rules).
+The hand-authored refLevels remain only as STYLE/scale MODELS that inform each
+biome generator's parameters — not playable levels.
+
+This composes naturally with the family seed model (SEED1-5): the maze core +
+each biome generator fork their OWN deterministic `forkStream(phrase, tag)`
+streams, so a seed phrase fully reproduces the same maze in the same biome at
+the same depth — fun, scalable (add a biome = add a generator module), and
+seeding-native (no special-casing; every layer just forks a tagged stream).
+
+- **STRUCT1 — base maze generator + commit fully to procedural.** Extract a
+  reusable `MazeGenerator` core (the lowest layer: carve a connected maze of
+  rooms/corridors at a given size/seed). Remove the 1-5 fixed-level picker + the
   `LevelChoice = "procedural"|1..5` union; every run is procedural. Landing flow
-  becomes NEW GAME → seed → BEGIN (no level pane). *Acceptance:* no level picker
-  in the New Game flow; every run generates a procedural maze; refLevels remain
-  only as the per-archetype style/scale models the generator emulates.
-- **STRUCT2 — each level = a procedural maze in an archetype style, boss-capped.**
-  Level N picks an archetype style (modeled on its refLevel) + generates a maze
-  within it, ending in a boss. *Acceptance:* consecutive levels visibly differ
-  in archetype style + each ends with a boss gate.
+  becomes NEW GAME → seed → BEGIN (no level pane). *Acceptance:* no level picker;
+  every run generates via the maze core; `LevelChoice` union is gone.
+- **STRUCT2 — one generator PER BIOME, built on the maze core, boss-capped.**
+  Each of the 5 biomes is its own generator composing `MazeGenerator` + biome
+  structure/scatter/hazards + **custom triggers/traps/code**, modeled on its
+  refLevel's style/scale. Level N selects a biome + generates a maze in it,
+  ending in a boss. *Acceptance:* each biome generator is a distinct module
+  (e.g. `src/world/biomes/<biome>.ts`) over a shared maze core; consecutive
+  levels visibly differ in biome + each ends with a boss gate; a biome can
+  inject bespoke triggers/traps the others don't have.
 - **STRUCT3 — logarithmic difficulty + fun scaling.** Difficulty (enemy count /
-  tier / density) scales logarithmically with level depth so early levels are
-  approachable and depth ramps without becoming impossible. *Acceptance:* a
-  documented scaling curve + a unit test pinning monotonic-but-logarithmic growth.
+  tier / density / maze size) scales logarithmically with level depth so early
+  levels are approachable and depth ramps without becoming impossible.
+  *Acceptance:* a documented scaling curve + a unit test pinning
+  monotonic-but-logarithmic growth.
 
 **ERR — failure surfacing (arcade-cabinet parity)**
 
