@@ -29,7 +29,10 @@ type BoneBusterDebugHooks = {
 	triggerWin: () => void;
 };
 
-const DEBUG_URL = "/?bonebusterDebug&bonebusterSeed=12345";
+// VIS-AUTO — pin the canonical phrase so the in-game flood baseline is a
+// stable corridor every run (cyrb128("marrowed-vile-sepulcher")[0]%5 → corridor;
+// CLAUDE.md CANONICAL_SEED_PHRASE). The landing pose ignores the seed.
+const DEBUG_URL = "/?bonebusterDebug&bonebusterSeed=marrowed-vile-sepulcher";
 const OUT_DIR = "test-results/objexoom-screenshots";
 const VIEWPORT = { width: 1440, height: 900 } as const;
 
@@ -78,6 +81,78 @@ async function waitForFrames(page: Page, frameCount: number): Promise<void> {
 			}),
 		frameCount,
 	);
+}
+
+/**
+ * VIS-AUTO — wait until the in-game 3D scene has actually PAINTED, then settle.
+ *
+ * Root cause of the long-standing "in-game capture is black" bug (mis-blamed on
+ * a SwiftShader shadow-map deadlock): the scene needs real WALL-CLOCK time to
+ * stream its PSX map GLBs + textures and run the level-intro before the first
+ * lit frame. `waitForFrames` resolves in milliseconds under headless throttling
+ * (its setTimeout fallback fires instantly), so capture happened in the
+ * pre-paint black window. The fix is to poll the actual painted canvas for a
+ * non-black center region — a deterministic scene-ready signal, NOT a frame
+ * count or magic sleep. Verified: with this wait, headless `channel:"chrome"` +
+ * ANGLE-GL renders the scene fully lit.
+ *
+ * Samples the canvas center via a 2D-context readback of a downscaled copy
+ * (cheap, avoids reading the full WebGL buffer). "Ready" = the mean luminance
+ * of the center 25% exceeds a small floor for 2 consecutive polls (debounced so
+ * a single mid-fade frame can't false-trigger).
+ */
+async function waitForSceneReady(page: Page, timeoutMs = 12_000): Promise<void> {
+	await page.waitForFunction(
+		() => {
+			const canvas = document.querySelector("canvas");
+			if (!canvas || canvas.width === 0 || canvas.height === 0) return false;
+			// Downscale the canvas into a small 2D surface and read the center
+			// region's mean luminance. preserveDrawingBuffer is NOT set on the
+			// game canvas, but drawImage(canvas) composites the live front buffer
+			// into the 2D context within the same task, which is reliable.
+			const w = 64;
+			const h = 40;
+			const tmp = document.createElement("canvas");
+			tmp.width = w;
+			tmp.height = h;
+			const ctx = tmp.getContext("2d", { willReadFrequently: true });
+			if (!ctx) return false;
+			try {
+				ctx.drawImage(canvas, 0, 0, w, h);
+			} catch {
+				return false;
+			}
+			// Center 25% box.
+			const x0 = Math.floor(w * 0.375);
+			const y0 = Math.floor(h * 0.375);
+			const bw = Math.ceil(w * 0.25);
+			const bh = Math.ceil(h * 0.25);
+			const { data } = ctx.getImageData(x0, y0, bw, bh);
+			let sum = 0;
+			let count = 0;
+			for (let i = 0; i + 2 < data.length; i += 4) {
+				const r = data[i] ?? 0;
+				const g = data[i + 1] ?? 0;
+				const b = data[i + 2] ?? 0;
+				sum += 0.2126 * r + 0.7152 * g + 0.0722 * b;
+				count += 1;
+			}
+			const meanLum = count > 0 ? sum / count : 0;
+			// Debounce across polls via a window-scoped counter so a single
+			// transient lit frame mid-transition doesn't false-positive.
+			const ww = window as unknown as { __sceneReadyHits?: number };
+			if (meanLum > 6) {
+				ww.__sceneReadyHits = (ww.__sceneReadyHits ?? 0) + 1;
+			} else {
+				ww.__sceneReadyHits = 0;
+			}
+			return (ww.__sceneReadyHits ?? 0) >= 2;
+		},
+		undefined,
+		{ timeout: timeoutMs, polling: 250 },
+	);
+	// A short settle once painted, so shadows/postprocessing land.
+	await waitForFrames(page, 20);
 }
 
 // Flags lifted from tests/e2e/route-screenshots.spec.ts — these enable
@@ -231,15 +306,12 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 					window as unknown as { __bonebuster: BoneBusterDebugHooks }
 				).__bonebuster.collectAllPickups();
 			});
-			// T7 — 45 frames (≈750ms @60fps) settles SpotLight + shadow map composite.
-			await waitForFrames(page, 45);
-			// CR-e2e — capture-only (snapshotName=null). The in-game 3D scene does
-			// NOT composite reliably under CI's headless-Linux GL (renders black
-			// where the local darwin run renders lit), so a Linux baseline would
-			// lock in a black frame. The artifact is still written for human review;
-			// the OVERHAUL2 lane re-establishes deliberate in-game baselines. The
-			// stable structural gate stays on the landing pose (UI, no 3D).
-			await captureViaCDP(page, `${OUT_DIR}/ingame-flashlight-on.png`, null);
+			// VIS-AUTO — wait for the scene to actually PAINT (PSX GLB stream +
+			// intro), not a frame count. With this, the in-game flood pose is a
+			// REAL baseline-asserted gate again (was capture-only after the prior
+			// black-frame misdiagnosis). The canonical phrase pins corridor.
+			await waitForSceneReady(page);
+			await captureViaCDP(page, `${OUT_DIR}/ingame-flashlight-on.png`, "ingame-flood.png", 0.04);
 		});
 	});
 
@@ -256,10 +328,11 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 				(window as unknown as { __bonebuster: BoneBusterDebugHooks }).__bonebuster.start();
 			});
 			await page.locator("[data-testid='bonebuster-hp']").waitFor();
-			// T7 — 30 frames (≈500ms @60fps) for the dark-mode pose.
-			await waitForFrames(page, 30);
-			// CR-e2e — capture-only (see the flashlight-ON pose): headless-Linux CI
-			// renders the 3D scene black, so no baseline assertion here.
+			// VIS-AUTO — wait for real paint. VIS1 retired the dark/flashlight-
+			// reveal mode, so this pose is now the same flood as 02 from the
+			// no-pickups state; kept capture-only (02 carries the asserted
+			// baseline) for the human-facing artifact + a second paint check.
+			await waitForSceneReady(page);
 			await captureViaCDP(page, `${OUT_DIR}/ingame-flashlight-off.png`, null);
 		});
 	});

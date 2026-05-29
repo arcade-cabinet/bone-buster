@@ -44,7 +44,12 @@ import { ROLE, SCALE } from "@styles/tokens/index";
 import { BoneBusterHUD } from "@views/HUD";
 import { BoneBusterLanding } from "@views/Landing";
 import { BoneBusterScene } from "@views/Scene";
-import { debugHooksEnabled, readArchetypeFromUrl, readSeedPhraseFromUrl } from "@views/urlFlags";
+import {
+	captureModeEnabled,
+	debugHooksEnabled,
+	readArchetypeFromUrl,
+	readSeedPhraseFromUrl,
+} from "@views/urlFlags";
 import { applyArchetypeOverride } from "@world/archetype";
 import { buildMap } from "@world/buildMap";
 import { pickLevelName, WELCOME_WING_NAME } from "@world/levelNames";
@@ -245,6 +250,10 @@ export function BoneBusterShell() {
 		if (!settingsHydratedRef.current) return;
 		void saveSettings(settings);
 	}, [settings]);
+	// VIS-AUTO — resolved once; the e2e harness needs a readable drawing buffer.
+	// useState initializer (not useMemo) so it's evaluated exactly once on mount
+	// and never re-reads window during the session.
+	const [preserveDrawingBuffer] = useState(captureModeEnabled);
 	const map: BoneBusterMap = useMemo(
 		// I4 — difficulty plumbed through so ManyEnemies (class 9) expands
 		// per the ref formula. Procedural maps don't read it.
@@ -882,7 +891,7 @@ export function BoneBusterShell() {
 									far: 200,
 									position: [0, 1.7, 0],
 								}}
-								gl={{ antialias: false, powerPreference: "low-power" }}
+								gl={{ antialias: false, powerPreference: "low-power", preserveDrawingBuffer }}
 								style={{ width: "100%", height: "100%", display: "block" }}
 								dpr={[1, 1.5]}
 								// J4 — enable shadow mapping. The flashlight + sun cast;

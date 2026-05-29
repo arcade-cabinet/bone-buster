@@ -98,3 +98,18 @@ export function debugHooksEnabled(): boolean {
 	if (process.env.NODE_ENV === "production") return false;
 	return hasDebugFlagInHref(window.location.href);
 }
+
+/**
+ * VIS-AUTO — capture mode. When the debug flag is present we enable the WebGL
+ * `preserveDrawingBuffer` so the e2e harness can read the painted canvas back
+ * (via `drawImage(canvas)` for the scene-ready luminance poll, and so CDP
+ * captures are frame-stable). Unlike `debugHooksEnabled`, this is NOT gated on
+ * NODE_ENV — the post-deploy Pages smoke test runs the PRODUCTION build with
+ * `?bonebusterDebug` and still needs a readable buffer. `preserveDrawingBuffer`
+ * is not a cheat surface, so exposing it on the flagged URL is safe; it carries
+ * a small per-frame cost, hence it stays OFF for normal play (no flag).
+ */
+export function captureModeEnabled(): boolean {
+	if (typeof window === "undefined") return false;
+	return hasDebugFlagInHref(window.location.href);
+}

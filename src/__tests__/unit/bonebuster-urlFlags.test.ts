@@ -5,8 +5,13 @@
  * forms take an href string — no window stubbing needed.
  */
 
-import { hasDebugFlagInHref, parseArchetypeFromHref, parseSeedFromHref } from "@views/urlFlags";
-import { describe, expect, it } from "vitest";
+import {
+	captureModeEnabled,
+	hasDebugFlagInHref,
+	parseArchetypeFromHref,
+	parseSeedFromHref,
+} from "@views/urlFlags";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const U = (qs: string) => `https://example.test/${qs}`;
 
@@ -68,5 +73,43 @@ describe("CR-F6 — hasDebugFlagInHref", () => {
 		expect(hasDebugFlagInHref(U("?objexoomDebug"))).toBe(true);
 		expect(hasDebugFlagInHref(U("?other=1"))).toBe(false);
 		expect(hasDebugFlagInHref(U(""))).toBe(false);
+	});
+});
+
+describe("VIS-AUTO — captureModeEnabled", () => {
+	const setHref = (href: string) => {
+		vi.stubGlobal("window", { location: { href } });
+	};
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it("tracks the debug flag from the live URL", () => {
+		setHref(U("?bonebusterDebug"));
+		expect(captureModeEnabled()).toBe(true);
+		setHref(U("?objexoomDebug"));
+		expect(captureModeEnabled()).toBe(true);
+		setHref(U("?other=1"));
+		expect(captureModeEnabled()).toBe(false);
+	});
+
+	it("is NOT gated on NODE_ENV — capture mode works on the production build", () => {
+		// The post-deploy Pages smoke test runs the production bundle with
+		// ?bonebusterDebug and still needs a readable drawing buffer, so unlike
+		// debugHooksEnabled this MUST stay true in production.
+		const prev = process.env.NODE_ENV;
+		try {
+			vi.stubEnv("NODE_ENV", "production");
+			setHref(U("?bonebusterDebug"));
+			expect(captureModeEnabled()).toBe(true);
+		} finally {
+			vi.unstubAllEnvs();
+			if (prev !== undefined) process.env.NODE_ENV = prev;
+		}
+	});
+
+	it("returns false when window is undefined (SSR)", () => {
+		vi.stubGlobal("window", undefined);
+		expect(captureModeEnabled()).toBe(false);
 	});
 });
