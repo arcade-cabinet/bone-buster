@@ -171,9 +171,9 @@ async function snapshotArchetype(archetype) {
 					sampleHowls();
 					frames += 1;
 				};
-				window.addEventListener("objexoom:fpsUpdate", handler);
+				window.addEventListener("bonebuster:fpsUpdate", handler);
 				setTimeout(() => {
-					window.removeEventListener("objexoom:fpsUpdate", handler);
+					window.removeEventListener("bonebuster:fpsUpdate", handler);
 					resolve({
 						peakCalls,
 						peakTris,
