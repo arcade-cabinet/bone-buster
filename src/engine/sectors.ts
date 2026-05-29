@@ -142,6 +142,39 @@ export function rayHitsSegment(origin: Vec2, dir: Vec2, p1: Vec2, p2: Vec2): num
  * between sectors). A4 will add edge-sharing detection so the player can
  * walk through doorways.
  */
+/**
+ * PREP-PERF1 — per-sector AABB cache for the castRaySectors broad-phase. Keyed
+ * on the sector array (stable per map), computed once. A WeakMap so it's GC'd
+ * with the map. Each entry is `[minX, minY, maxX, maxY]` per sector, indexed by
+ * position in `map.sectors`.
+ */
+const SECTOR_BBOX_CACHE = new WeakMap<readonly MapSector[], Float64Array>();
+
+function sectorBboxes(sectors: readonly MapSector[]): Float64Array {
+	const cached = SECTOR_BBOX_CACHE.get(sectors);
+	if (cached) return cached;
+	const out = new Float64Array(sectors.length * 4);
+	for (let s = 0; s < sectors.length; s += 1) {
+		const sector = at(sectors, s);
+		let minX = Number.POSITIVE_INFINITY;
+		let minY = Number.POSITIVE_INFINITY;
+		let maxX = Number.NEGATIVE_INFINITY;
+		let maxY = Number.NEGATIVE_INFINITY;
+		for (const v of sector.vertices) {
+			if (v.x < minX) minX = v.x;
+			if (v.y < minY) minY = v.y;
+			if (v.x > maxX) maxX = v.x;
+			if (v.y > maxY) maxY = v.y;
+		}
+		out[s * 4] = minX;
+		out[s * 4 + 1] = minY;
+		out[s * 4 + 2] = maxX;
+		out[s * 4 + 3] = maxY;
+	}
+	SECTOR_BBOX_CACHE.set(sectors, out);
+	return out;
+}
+
 export function castRaySectors(
 	origin: Vec2,
 	dir: Vec2,
@@ -153,7 +186,24 @@ export function castRaySectors(
 } {
 	let bestDist = maxDist;
 	let bestHit: { sectorId: number; edgeIndex: number } | null = null;
-	for (const sector of map.sectors) {
+	// PREP-PERF1 broad-phase: the ray segment is origin → origin + dir*maxDist.
+	// Skip any sector whose AABB the segment's AABB can't overlap before walking
+	// its edges. Pure reject — identical hit results, just fewer rayHitsSegment
+	// calls (the LOS + fire-raycast hot path scales with sector count at depth).
+	const segMinX = Math.min(origin.x, origin.x + dir.x * maxDist);
+	const segMaxX = Math.max(origin.x, origin.x + dir.x * maxDist);
+	const segMinY = Math.min(origin.y, origin.y + dir.y * maxDist);
+	const segMaxY = Math.max(origin.y, origin.y + dir.y * maxDist);
+	const bboxes = sectorBboxes(map.sectors);
+	for (let s = 0; s < map.sectors.length; s += 1) {
+		const bMinX = bboxes[s * 4] as number;
+		const bMinY = bboxes[s * 4 + 1] as number;
+		const bMaxX = bboxes[s * 4 + 2] as number;
+		const bMaxY = bboxes[s * 4 + 3] as number;
+		// AABB-vs-AABB reject (conservative — the segment's bbox is a superset of
+		// the segment, so a true edge hit is never skipped).
+		if (segMaxX < bMinX || segMinX > bMaxX || segMaxY < bMinY || segMinY > bMaxY) continue;
+		const sector = at(map.sectors, s);
 		const verts = sector.vertices;
 		const len = verts.length;
 		for (let i = 0; i < len; i += 1) {
