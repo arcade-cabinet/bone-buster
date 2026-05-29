@@ -130,6 +130,13 @@ streams, so a seed phrase fully reproduces the same maze in the same biome at
 the same depth — fun, scalable (add a biome = add a generator module), and
 seeding-native (no special-casing; every layer just forks a tagged stream).
 
+**Extensibility is the headline win:** to add a new area, write a new biome
+generator + wire in its assets — done. Suddenly there are 6 (or N) level types
+and, because each is an infinite seeded procedural maze, a player can play for
+HOURS regardless of how many biomes exist. The biome count is content breadth;
+the procedural maze + seeding is the endless-replay depth. This is the target:
+endless, varied, reproducible runs from a small set of well-built generators.
+
 - **STRUCT1 — base maze generator + commit fully to procedural.** Extract a
   reusable `MazeGenerator` core (the lowest layer: carve a connected maze of
   rooms/corridors at a given size/seed). Remove the 1-5 fixed-level picker + the
