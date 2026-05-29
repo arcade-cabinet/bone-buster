@@ -1,21 +1,26 @@
 /**
- * INF3 — `?bonebusterArchetype` URL override invariants.
- * Pins the seed-rewrite so pickArchetype lands on the requested name
- * regardless of the input seed.
+ * INF3 / SEED2 — `?bonebusterArchetype` URL override invariants.
+ * Pins the seed-PHRASE rewrite so the resulting phrase hashes to the
+ * requested archetype regardless of the input phrase.
  */
 
-import type { BoneBusterMap } from "@engine/engine";
-import { ARCHETYPE_NAMES, applyArchetypeOverride, pickArchetype } from "@world/archetype";
+import type { BoneBusterMap } from "@engine/mapTypes";
+import {
+	ARCHETYPE_NAMES,
+	applyArchetypeOverride,
+	archetypeForPhrase,
+	pickArchetype,
+} from "@world/archetype";
 import { describe, expect, it } from "vitest";
 
-function fakeMap(seed: number): BoneBusterMap {
-	// CONV3 — archetype is now denormalized onto the map type. The fake
-	// here mirrors what `generateMap`/`loadRefLevel` would have set so
-	// `pickArchetype(map)` round-trips correctly.
+function fakeMap(seedPhrase: string): BoneBusterMap {
+	// CONV3 — archetype is denormalized onto the map type. The fake here
+	// mirrors what generateMap/loadRefLevel would have set (archetype derived
+	// from the phrase hash) so pickArchetype(map) round-trips correctly.
 	return {
 		kind: "grid",
-		seed,
-		archetype: ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length],
+		seedPhrase,
+		archetype: archetypeForPhrase(seedPhrase),
 		width: 1,
 		height: 1,
 		cells: [[]],
@@ -23,38 +28,39 @@ function fakeMap(seed: number): BoneBusterMap {
 		playerYaw: 0,
 		exitPosition: { x: 0, y: 0 },
 		keyPosition: { x: 0, y: 0 },
-		doorPosition: { x: 0, y: 0 },
-		doorOrientation: "horizontal",
-		barrelSpawns: [],
+		doorCell: { gx: 0, gy: 0 },
+		rooms: [],
 		enemySpawns: [],
 		pickupSpawns: [],
-		secretCells: [],
 	} as unknown as BoneBusterMap;
 }
 
-describe("INF3 — applyArchetypeOverride", () => {
-	it("returns the seed unchanged when archetype is null", () => {
-		for (const seed of [0, 1, 12345, 0xdeadbeef]) {
-			expect(applyArchetypeOverride(seed, null)).toBe(seed >>> 0);
+const PHRASES = ["test-0", "test-1", "test-3", "test-11", "test-33", "gen-99", "gen-12345"];
+
+describe("INF3 — applyArchetypeOverride (phrase)", () => {
+	it("returns the phrase unchanged when archetype is null", () => {
+		for (const p of PHRASES) {
+			expect(applyArchetypeOverride(p, null)).toBe(p);
 		}
 	});
 
-	it("returns the seed unchanged when archetype is unknown", () => {
-		expect(applyArchetypeOverride(42, "nope")).toBe(42);
+	it("returns the phrase unchanged when archetype is unknown", () => {
+		expect(applyArchetypeOverride("test-0", "nope")).toBe("test-0");
 	});
 
-	it("forces pickArchetype to the requested name for every input seed", () => {
+	it("rewrites the phrase so it hashes to the requested archetype, for every input", () => {
 		for (const name of ARCHETYPE_NAMES) {
-			for (const seed of [0, 1, 2, 3, 4, 5, 99, 12345, 0xdeadbeef >>> 0]) {
-				const rewritten = applyArchetypeOverride(seed, name);
+			for (const p of PHRASES) {
+				const rewritten = applyArchetypeOverride(p, name);
+				expect(archetypeForPhrase(rewritten)).toBe(name);
 				expect(pickArchetype(fakeMap(rewritten))).toBe(name);
 			}
 		}
 	});
 
-	it("is idempotent — applying twice yields the same seed", () => {
+	it("is idempotent — applying twice yields the same phrase", () => {
 		for (const name of ARCHETYPE_NAMES) {
-			const once = applyArchetypeOverride(98765, name);
+			const once = applyArchetypeOverride("gen-98765", name);
 			const twice = applyArchetypeOverride(once, name);
 			expect(twice).toBe(once);
 		}

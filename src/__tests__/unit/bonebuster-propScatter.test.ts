@@ -10,7 +10,7 @@
  *  - Every prop is in the matching archetype bucket.
  */
 
-import type { BoneBusterGridMap, BoneBusterMap } from "@engine/engine";
+import type { BoneBusterGridMap, BoneBusterMap } from "@engine/mapTypes";
 import { loadRefLevel } from "@world/refLevel";
 import { POOLS, type PropArchetype } from "@world/scatter/propPool";
 import { PROPS_PER_SECTOR_MAX, spawnProps } from "@world/scatter/propScatter";
@@ -47,11 +47,14 @@ describe("E3 — sector prop scatter", () => {
 		const b = spawnProps(map, "corridor");
 		expect(a).toHaveLength(b.length);
 		for (let i = 0; i < a.length; i += 1) {
-			expect(a[i].id).toBe(b[i].id);
-			expect(a[i].position.x).toBe(b[i].position.x);
-			expect(a[i].position.y).toBe(b[i].position.y);
-			expect(a[i].yaw).toBe(b[i].yaw);
-			expect(a[i].prop.id).toBe(b[i].prop.id);
+			const ai = a[i];
+			const bi = b[i];
+			if (!ai || !bi) throw new Error(`scatter missing element at index ${i}`);
+			expect(ai.id).toBe(bi.id);
+			expect(ai.position.x).toBe(bi.position.x);
+			expect(ai.position.y).toBe(bi.position.y);
+			expect(ai.yaw).toBe(bi.yaw);
+			expect(ai.prop.id).toBe(bi.prop.id);
 		}
 	});
 
@@ -92,10 +95,10 @@ describe("E3 — sector prop scatter", () => {
 		for (const [, list] of bySector) {
 			for (let i = 0; i < list.length; i += 1) {
 				for (let j = i + 1; j < list.length; j += 1) {
-					const d = Math.hypot(
-						list[i].position.x - list[j].position.x,
-						list[i].position.y - list[j].position.y,
-					);
+					const li = list[i];
+					const lj = list[j];
+					if (!li || !lj) throw new Error(`list element missing at ${i}/${j}`);
+					const d = Math.hypot(li.position.x - lj.position.x, li.position.y - lj.position.y);
 					expect(d, "two props in same sector too close").toBeGreaterThanOrEqual(1.4);
 				}
 			}

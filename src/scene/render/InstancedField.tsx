@@ -197,7 +197,10 @@ export function InstancedField({
 		if (!im) return;
 		const cap = Math.min(instances.length, maxInstances);
 		for (let i = 0; i < cap; i += 1) {
-			im.setMatrixAt(i, composeInstanceMatrix(instances[i]));
+			const inst = instances[i];
+			// inst is provably defined: i < cap ≤ instances.length.
+			if (inst === undefined) continue;
+			im.setMatrixAt(i, composeInstanceMatrix(inst));
 		}
 		im.count = cap;
 		im.instanceMatrix.needsUpdate = true;
@@ -305,13 +308,16 @@ function InstancedMultiSubmesh({
 		if (!im) return;
 		const cap = Math.min(instances.length, maxInstances);
 		for (let i = 0; i < cap; i += 1) {
+			const inst = instances[i];
+			// inst is provably defined: i < cap ≤ instances.length.
+			if (inst === undefined) continue;
 			// Multiply local sub-mesh transform on the RIGHT of the
 			// instance transform so the final composition is
 			// `instance × local × vertex`. composeInstanceMatrix writes
 			// into SCRATCH_MATRIX in place; we then post-multiply
 			// localMatrix to add the sub-mesh offset before InstancedMesh
 			// copies the matrix into its internal buffer.
-			composeInstanceMatrix(instances[i]);
+			composeInstanceMatrix(inst);
 			SCRATCH_MATRIX.multiply(localMatrix);
 			im.setMatrixAt(i, SCRATCH_MATRIX);
 		}

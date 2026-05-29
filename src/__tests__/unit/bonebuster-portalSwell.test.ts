@@ -35,7 +35,10 @@ describe("POL38 portal swell gain curve", () => {
 	it("monotonically increases from radius-edge silent to portal-touch full", () => {
 		const samples = [4, 3, 2, 1, 0].map((d) => targetDb(d, RADIUS));
 		for (let i = 1; i < samples.length; i++) {
-			expect(samples[i]).toBeGreaterThan(samples[i - 1]);
+			const cur = samples[i];
+			const prev = samples[i - 1];
+			if (cur === undefined || prev === undefined) throw new RangeError(`samples missing at ${i}`);
+			expect(cur).toBeGreaterThan(prev);
 		}
 	});
 

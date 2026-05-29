@@ -1,12 +1,7 @@
-import {
-	type BoneBusterMap,
-	computePortalEdges,
-	getFloorHeightAtAny,
-	isInWaterAt,
-	resolveCollisionAny,
-	WATER_SPEED_MULTIPLIER,
-} from "@engine/engine";
+import { resolveCollisionAny } from "@engine/collisionAny";
 import { addBoneBusterListener, dispatch } from "@engine/events";
+import { type BoneBusterMap, WATER_SPEED_MULTIPLIER } from "@engine/mapTypes";
+import { computePortalEdges, getFloorHeightAtAny, isInWaterAt } from "@engine/sectors";
 import { useFrame, useThree } from "@react-three/fiber";
 import { PLAYER_HEIGHT, PLAYER_MOVE_SPEED, PLAYER_TURN_SENSITIVITY } from "@shared/constants";
 import type { BoneBusterSettings } from "@store/settings";

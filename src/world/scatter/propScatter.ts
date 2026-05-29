@@ -24,11 +24,12 @@
  * sample.
  */
 
-import type { BoneBusterMap, Vec2 } from "@engine/engine";
-import { polygonContains } from "@engine/engine";
-import { mulberry32, RNG_TAGS } from "@engine/prng";
+import type { BoneBusterMap, Vec2 } from "@engine/mapTypes";
+import { forkStream } from "@engine/rng";
+import { polygonContains } from "@engine/sectors";
 import type { PropArchetype, PropDef } from "@world/scatter/propPool";
 import { POOLS } from "@world/scatter/propPool";
+import { bboxOf, nearAny, scatterId } from "@world/scatter/sampling";
 
 const SKIP_RADIUS = 4;
 const MIN_PROP_SPACING = 1.4;
@@ -64,25 +65,6 @@ export interface PropInstance {
 	readonly prop: PropDef;
 }
 
-function bboxOf(verts: readonly Vec2[]): {
-	minX: number;
-	maxX: number;
-	minY: number;
-	maxY: number;
-} {
-	let minX = Infinity;
-	let maxX = -Infinity;
-	let minY = Infinity;
-	let maxY = -Infinity;
-	for (const v of verts) {
-		if (v.x < minX) minX = v.x;
-		if (v.x > maxX) maxX = v.x;
-		if (v.y < minY) minY = v.y;
-		if (v.y > maxY) maxY = v.y;
-	}
-	return { minX, maxX, minY, maxY };
-}
-
 /**
  * Deterministic per-map prop scatter. Same seed → byte-identical
  * layout. Grid maps return [] (no sector geometry).
@@ -97,7 +79,7 @@ export function spawnProps(map: BoneBusterMap, archetype: PropArchetype): PropIn
 	if (pool.length === 0) return [];
 
 	const out: PropInstance[] = [];
-	const rng = mulberry32((map.seed >>> 0) ^ RNG_TAGS.PROP);
+	const rng = forkStream(map.seedPhrase, "PROP");
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 	const [minPerSector, maxPerSector] = DENSITY_BY_ARCHETYPE[archetype];
 
@@ -122,10 +104,13 @@ export function spawnProps(map: BoneBusterMap, archetype: PropArchetype): PropIn
 			if (accepted === null) continue; // sector too crowded or too small — move on.
 
 			placed.push(accepted);
+			// Math.floor(rng()*pool.length) with rng ∈ [0,1) is provably in [0, pool.length).
+			// pool.length > 0 is checked above before the sector loop.
 			const prop = pool[Math.floor(rng() * pool.length)];
+			if (prop === undefined) throw new RangeError("spawnProps: prop pool index out of bounds");
 			const yaw = rng() * Math.PI * 2;
 			out.push({
-				id: sector.id * ID_STRIDE + placed.length - 1,
+				id: scatterId(sector.id, placed.length - 1),
 				position: accepted,
 				yaw,
 				prop,
@@ -165,12 +150,4 @@ function sampleAcceptablePoint(
 	return null;
 }
 
-function nearAny(point: Vec2, others: readonly Vec2[], radius: number): boolean {
-	for (const o of others) {
-		if (Math.hypot(o.x - point.x, o.y - point.y) < radius) return true;
-	}
-	return false;
-}
-
-/** Max props per sector for id-collision safety. `PROPS_PER_SECTOR_MAX <= ID_STRIDE`. */
-const ID_STRIDE = 1000;
+/** Max props per sector for id-collision safety. `PROPS_PER_SECTOR_MAX <= SCATTER_ID_STRIDE`. */

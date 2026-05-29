@@ -50,7 +50,10 @@ describe("PA-MOD7 — muzzleBboxFrac authoring contract", () => {
 		// or beside the visible barrel.
 		for (const [id, model] of Object.entries(WEAPON_MODELS)) {
 			const sorted = [...model.muzzleBboxFrac].sort((a, b) => b - a);
-			const [, mid, lo] = sorted;
+			const mid = sorted[1];
+			const lo = sorted[2];
+			if (mid === undefined || lo === undefined)
+				throw new RangeError(`${id} muzzleBboxFrac has fewer than 3 elements`);
 			expect(mid, `${id} second-tip axis frac=${mid} should be near center`).toBeGreaterThanOrEqual(
 				0.3,
 			);
@@ -97,8 +100,19 @@ describe("PA-MOD7 — muzzleBboxFrac authoring contract", () => {
 			// Tip-displacement on the long axis should be > 30% of half-span.
 			let maxDelta = 0;
 			for (let i = 0; i < 3; i += 1) {
-				const span = (max[i] - min[i]) * 0.5;
-				const delta = Math.abs(muzzle[i] - center[i]);
+				const maxI = max[i];
+				const minI = min[i];
+				const muzzleI = muzzle[i];
+				const centerI = center[i];
+				if (
+					maxI === undefined ||
+					minI === undefined ||
+					muzzleI === undefined ||
+					centerI === undefined
+				)
+					throw new RangeError(`bbox/muzzle/center index ${i} out of bounds`);
+				const span = (maxI - minI) * 0.5;
+				const delta = Math.abs(muzzleI - centerI);
 				if (span > 0) maxDelta = Math.max(maxDelta, delta / span);
 			}
 			expect(

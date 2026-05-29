@@ -20,5 +20,8 @@ export const VEHICLE_VARIANTS: readonly string[] = [
 /** Deterministic vehicle-variant pick by seed. */
 export function pickVehicleUrl(seed: number): string {
 	const idx = (seed >>> 0) % VEHICLE_VARIANTS.length;
-	return VEHICLE_VARIANTS[idx];
+	const url = VEHICLE_VARIANTS[idx];
+	if (url === undefined)
+		throw new RangeError(`pickVehicleUrl: index ${idx} of ${VEHICLE_VARIANTS.length}`);
+	return url;
 }

@@ -42,7 +42,10 @@ describe("POL39 flashlight boost envelope", () => {
 			computeBoostedIntensity(1000 + dt, 1000),
 		);
 		for (let i = 1; i < samples.length; i++) {
-			expect(samples[i]).toBeLessThanOrEqual(samples[i - 1] + 1e-6);
+			const cur = samples[i];
+			const prev = samples[i - 1];
+			if (cur === undefined || prev === undefined) throw new RangeError(`samples missing at ${i}`);
+			expect(cur).toBeLessThanOrEqual(prev + 1e-6);
 		}
 	});
 

@@ -30,9 +30,10 @@ import {
 	playShotgun,
 	playSkeletonDeath,
 } from "@audio/sfx";
-import type { CollisionContext } from "@engine/engine";
-import { type BoneBusterMap, castRayAny, type Enemy } from "@engine/engine";
+import { castRayAny } from "@engine/collisionAny";
 import { dispatch } from "@engine/events";
+import type { BoneBusterMap, CollisionContext, Enemy } from "@engine/mapTypes";
+import { forkStream } from "@engine/rng";
 import { applyVulnerabilityMultiplier } from "@engine/vulnerability";
 import { PLAYER_RADIUS, TILE } from "@shared/constants";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
@@ -87,6 +88,17 @@ export interface FireResolutionContext {
 	};
 	explodeBarrel: (barrel: Barrel) => void;
 	/**
+	 * CR-F7 — per-shot counter for the reproducible pellet-spread stream.
+	 * resolveFire increments it AFTER the cooldown + ammo gates pass (so only
+	 * shots that actually fire advance the sequence), then forks
+	 * `forkStream(map.seedPhrase, "FIRE-<n>")` for the spread draws. This makes
+	 * which-enemy-a-pellet-hits reproducible per (seed, shot index) — a given
+	 * seed + input sequence yields identical hits, enabling deterministic
+	 * combat tests. (Shell-eject + particle jitter stay Math.random — they're
+	 * render-only and never affect the sim outcome.)
+	 */
+	shotCounterRef: { current: number };
+	/**
 	 * PB4 step-2 — per-run melee profile resolved from level.seed via
 	 * `pickMeleeProfile`. Multipliers compose against the base
 	 * WEAPONS.melee spec (damage 55 / cooldown 420ms) so the canonical
@@ -135,6 +147,7 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		muzzleIntensityScaleRef,
 		timeScaleBus,
 		explodeBarrel,
+		shotCounterRef,
 		meleeProfile = DEFAULT_MELEE_PROFILE,
 		pistolProfile = DEFAULT_PISTOL_PROFILE,
 		chaingunProfile = DEFAULT_CHAINGUN_PROFILE,
@@ -168,6 +181,14 @@ export function resolveFire(ctx: FireResolutionContext): void {
 
 	lastFireAtRef.current = now;
 	gameRef.current.onSpendAmmo(weapon, spec.ammoCostPerShot);
+
+	// CR-F7 — this shot fired (cooldown + ammo gates passed). Advance the
+	// per-shot counter and fork a reproducible spread stream keyed on
+	// (map.seedPhrase, shotIndex), so the pellet directions — and therefore
+	// which enemy each pellet hits — are deterministic per seed + input
+	// sequence. Replaces the prior `Math.random()` spread.
+	const shotIndex = shotCounterRef.current++;
+	const pelletSpreadRng = forkStream(map.seedPhrase, `FIRE-${shotIndex}`);
 
 	// I11 — muzzle-flash light. 80 ms of weapon-colored bloom. The light
 	// decays in the per-frame block and tracks the muzzle anchor (PA-MOD7).
@@ -245,8 +266,8 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	let killsThisShot = 0;
 	let bossKillsThisShot = 0;
 	for (let pelletIdx = 0; pelletIdx < spec.pellets; pelletIdx += 1) {
-		const spreadX = (Math.random() - 0.5) * spec.spreadRad;
-		const spreadY = (Math.random() - 0.5) * spec.spreadRad;
+		const spreadX = (pelletSpreadRng() - 0.5) * spec.spreadRad;
+		const spreadY = (pelletSpreadRng() - 0.5) * spec.spreadRad;
 		// QW1 — reuse module-scope _forwardPellet; copy forwardBase then
 		// apply spread in place. Avoids 1 Vector3 clone + 2 unit-vector
 		// allocs per pellet (shotgun = 7 pellets/shot pre-QW1).
@@ -381,41 +402,8 @@ export function resolveFire(ctx: FireResolutionContext): void {
 				enemyId: bestEnemy.id,
 			});
 			if (bestEnemy.hp <= 0) {
-				bestEnemy.dead = true;
 				killsThisShot += 1;
-				// POL10 — track boss kills in this shot so we can layer the
-				// boss-down sting on top of the standard rattler-death cue.
-				if (bestEnemy.tier === "boss") {
-					bossKillsThisShot += 1;
-					// POL36 — boss-defeated banner. Per-enemy dispatch (not
-					// shot-level) so multi-boss maps fire one banner per
-					// boss-down. The audio is carried by POL10-v2's
-					// playBossDeath() which fires once per shot at line ~310.
-					dispatch({ type: "bossDefeated", enemyId: bestEnemy.id });
-				} else {
-					// PB2 — non-boss kill banner. The KillBanner overlay
-					// debounces multi-kill bursts so a 3-shot chaingun
-					// volley shows one "BUSTED 3" stack, not three
-					// individual cards.
-					dispatch({ type: "enemyKilled", enemyId: bestEnemy.id, kind: bestEnemy.kind });
-				}
-				const mesh = enemyMeshesRef.current.get(bestEnemy.id);
-				if (mesh) mesh.visible = false;
-				if (bestEnemy.kind === "bouncer") {
-					dispatch({
-						type: "burst",
-						x: bestEnemy.position.x,
-						y: bestEnemy.position.y,
-						kind: "explode",
-					});
-				}
-				// I1 — body-part physics on death.
-				dispatch({
-					type: "bodyParts",
-					x: bestEnemy.position.x,
-					y: bestEnemy.position.y,
-					kind: bestEnemy.kind,
-				});
+				if (onEnemyKilled(bestEnemy, enemyMeshesRef)) bossKillsThisShot += 1;
 			}
 		}
 	}
@@ -436,4 +424,40 @@ export function resolveFire(ctx: FireResolutionContext): void {
 		if (bossKillsThisShot > 0) playBossDeath();
 		if (settings.soundEnabled) playBoom();
 	}
+}
+
+/**
+ * CR-F7 — enemy-death side-effects, extracted from the resolveFire pellet
+ * loop. Marks the enemy dead, hides its mesh, fires the per-enemy death
+ * dispatches (boss-defeated vs kill banner, bouncer explode burst, body
+ * parts). Returns `true` if the killed enemy was a boss so the caller can
+ * tally `bossKillsThisShot` for the shot-level audio sting. Does NOT touch
+ * the shot-level kill counter or the hitstop reservation — those stay in
+ * resolveFire because they aggregate across the whole shot.
+ */
+function onEnemyKilled(
+	enemy: Enemy,
+	enemyMeshesRef: { current: Map<number, THREE.Group> },
+): boolean {
+	enemy.dead = true;
+	const isBoss = enemy.tier === "boss";
+	if (isBoss) {
+		// POL36 — boss-defeated banner. Per-enemy dispatch (not shot-level) so
+		// multi-boss maps fire one banner per boss-down. The audio is carried
+		// by POL10-v2's playBossDeath() once per shot in resolveFire.
+		dispatch({ type: "bossDefeated", enemyId: enemy.id });
+	} else {
+		// PB2 — non-boss kill banner. The KillBanner overlay debounces
+		// multi-kill bursts so a 3-shot chaingun volley shows one "BUSTED 3"
+		// stack, not three individual cards.
+		dispatch({ type: "enemyKilled", enemyId: enemy.id, kind: enemy.kind });
+	}
+	const mesh = enemyMeshesRef.current.get(enemy.id);
+	if (mesh) mesh.visible = false;
+	if (enemy.kind === "bouncer") {
+		dispatch({ type: "burst", x: enemy.position.x, y: enemy.position.y, kind: "explode" });
+	}
+	// I1 — body-part physics on death.
+	dispatch({ type: "bodyParts", x: enemy.position.x, y: enemy.position.y, kind: enemy.kind });
+	return isBoss;
 }

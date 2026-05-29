@@ -81,13 +81,30 @@ async function waitForFrames(page: Page, frameCount: number): Promise<void> {
 	await page.evaluate(
 		(n) =>
 			new Promise<void>((resolve) => {
+				// CR-rAF — see screenshots.spec.ts: race rAF against a setTimeout
+				// fallback so a stalled requestAnimationFrame (canvas torn down
+				// mid-transition on the CI headless-GL backend) can't hang the
+				// countdown.
 				let remaining = n;
-				const tick = () => {
+				const step = () => {
 					remaining -= 1;
-					if (remaining <= 0) resolve();
-					else requestAnimationFrame(tick);
+					if (remaining <= 0) {
+						resolve();
+						return;
+					}
+					schedule();
 				};
-				requestAnimationFrame(tick);
+				const schedule = () => {
+					let done = false;
+					const once = () => {
+						if (done) return;
+						done = true;
+						step();
+					};
+					requestAnimationFrame(once);
+					setTimeout(once, 32);
+				};
+				schedule();
 			}),
 		frameCount,
 	);

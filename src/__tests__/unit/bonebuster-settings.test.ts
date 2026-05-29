@@ -20,23 +20,31 @@ describe("bonebuster settings — DIFFICULTY_TUNING", () => {
 
 	it("I5: playerIframeMs follows ref formula `450 - 50 * difficultyIdx`", () => {
 		for (let i = 0; i < ORDER.length; i += 1) {
+			const difficulty = ORDER[i];
+			if (!difficulty) throw new RangeError(`ORDER[${i}] out of bounds`);
 			const expected = 450 - 50 * i;
-			expect(DIFFICULTY_TUNING[ORDER[i]].playerIframeMs).toBe(expected);
+			expect(DIFFICULTY_TUNING[difficulty].playerIframeMs).toBe(expected);
 		}
 	});
 
 	it("enemyHpMultiplier is monotonically non-decreasing across registers", () => {
 		for (let i = 1; i < ORDER.length; i += 1) {
-			const prev = DIFFICULTY_TUNING[ORDER[i - 1]].enemyHpMultiplier;
-			const cur = DIFFICULTY_TUNING[ORDER[i]].enemyHpMultiplier;
+			const dPrev = ORDER[i - 1];
+			const dCur = ORDER[i];
+			if (!dPrev || !dCur) throw new RangeError(`ORDER index out of bounds at ${i}`);
+			const prev = DIFFICULTY_TUNING[dPrev].enemyHpMultiplier;
+			const cur = DIFFICULTY_TUNING[dCur].enemyHpMultiplier;
 			expect(cur).toBeGreaterThanOrEqual(prev);
 		}
 	});
 
 	it("playerHpMultiplier is monotonically non-increasing across registers", () => {
 		for (let i = 1; i < ORDER.length; i += 1) {
-			const prev = DIFFICULTY_TUNING[ORDER[i - 1]].playerHpMultiplier;
-			const cur = DIFFICULTY_TUNING[ORDER[i]].playerHpMultiplier;
+			const dPrev = ORDER[i - 1];
+			const dCur = ORDER[i];
+			if (!dPrev || !dCur) throw new RangeError(`ORDER index out of bounds at ${i}`);
+			const prev = DIFFICULTY_TUNING[dPrev].playerHpMultiplier;
+			const cur = DIFFICULTY_TUNING[dCur].playerHpMultiplier;
 			expect(cur).toBeLessThanOrEqual(prev);
 		}
 	});

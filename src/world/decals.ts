@@ -46,8 +46,11 @@ export const DECAL_VARIANTS_ALL: readonly string[] = [
  * helper → render the resulting GLB on the wall face.
  */
 export function pickDecalUrl(tileHash: number): string {
+	// (tileHash >>> 0) % length is provably in [0, length) for a non-empty array.
 	const idx = (tileHash >>> 0) % DECAL_VARIANTS_ALL.length;
-	return DECAL_VARIANTS_ALL[idx];
+	const url = DECAL_VARIANTS_ALL[idx];
+	if (url === undefined) throw new RangeError(`pickDecalUrl: idx ${idx} out of bounds`);
+	return url;
 }
 
 /**
@@ -72,6 +75,12 @@ export const DECALS_BY_ARCHETYPE: Readonly<Record<PropArchetype, readonly string
  */
 export function pickDecalUrlByArchetype(archetype: PropArchetype, tileHash: number): string {
 	const pool = DECALS_BY_ARCHETYPE[archetype];
+	// (tileHash >>> 0) % pool.length is provably in [0, pool.length) for a non-empty pool.
 	const idx = (tileHash >>> 0) % pool.length;
-	return pool[idx];
+	const url = pool[idx];
+	if (url === undefined)
+		throw new RangeError(
+			`pickDecalUrlByArchetype: idx ${idx} out of bounds for archetype ${archetype}`,
+		);
+	return url;
 }

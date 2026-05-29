@@ -55,11 +55,27 @@ export const DEFAULT_PISTOL_PROFILE: PistolProfile = {
  *   revolver   — balanced upgrade. +15% damage, +5% cooldown.
  *   allegiance — SMG-style fast-weak. -30% damage, -30% cooldown.
  */
+// PISTOL_SKIN_URLS is a fixed-length array; every index below is provably
+// in-bounds. Hoisting each entry into a named const documents the invariant
+// and satisfies noUncheckedIndexedAccess.
+function pistolSkinUrl(i: number): string {
+	const v = PISTOL_SKIN_URLS[i];
+	if (v === undefined)
+		throw new RangeError(
+			`pistolSkinUrl: index ${i} out of bounds (len ${PISTOL_SKIN_URLS.length})`,
+		);
+	return v;
+}
+const _ps0 = pistolSkinUrl(0);
+const _ps1 = pistolSkinUrl(1);
+const _ps2 = pistolSkinUrl(2);
+const _ps3 = pistolSkinUrl(3);
+
 export const PISTOL_PROFILES: Readonly<Record<string, PistolProfile>> = {
-	[PISTOL_SKIN_URLS[0]]: DEFAULT_PISTOL_PROFILE, // usp (canonical)
-	[PISTOL_SKIN_URLS[1]]: { damageMul: 1.4, cooldownMul: 1.3 }, // handcannon
-	[PISTOL_SKIN_URLS[2]]: { damageMul: 1.15, cooldownMul: 1.05 }, // revolver
-	[PISTOL_SKIN_URLS[3]]: { damageMul: 0.7, cooldownMul: 0.7 }, // allegiance
+	[_ps0]: DEFAULT_PISTOL_PROFILE, // usp (canonical)
+	[_ps1]: { damageMul: 1.4, cooldownMul: 1.3 }, // handcannon
+	[_ps2]: { damageMul: 1.15, cooldownMul: 1.05 }, // revolver
+	[_ps3]: { damageMul: 0.7, cooldownMul: 0.7 }, // allegiance
 };
 
 export function profileForPistolSkin(url: string): PistolProfile {

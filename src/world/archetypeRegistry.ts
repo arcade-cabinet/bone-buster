@@ -129,7 +129,7 @@ export const ARCHETYPE_AXES: readonly ArchetypeAxis[] = [
 	},
 	{
 		axisName: "enemy-count multiplier",
-		module: "src/engine/engine.ts",
+		module: "src/engine/gridGen.ts",
 		axisDescription:
 			"ARCHETYPE_ENEMY_MULTIPLIER inside generateMap — scales total enemy count per archetype.",
 	},

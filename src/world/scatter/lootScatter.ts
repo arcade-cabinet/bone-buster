@@ -16,8 +16,9 @@
  * flag.
  */
 
-import type { BoneBusterMap, PickupSpawn, Vec2 } from "@engine/engine";
-import { isSectorMap } from "@engine/engine";
+import type { BoneBusterMap, PickupSpawn, Vec2 } from "@engine/mapTypes";
+import { isSectorMap } from "@engine/mapTypes";
+import { cyrb128 } from "@engine/rng";
 import { type LootKind, pickLootKind } from "@world/loot";
 
 export interface LootSpawn {
@@ -32,7 +33,11 @@ export interface LootSpawn {
 export function pickLootSpawn(map: BoneBusterMap): LootSpawn | null {
 	if (!isSectorMap(map)) return null;
 	if (map.sectors.length === 0) return null;
-	let best = map.sectors[0];
+	// map.sectors.length > 0 at this point — index 0 is provably in-bounds.
+	const sector0 = map.sectors[0];
+	if (sector0 === undefined)
+		throw new RangeError("pickLootSpawn: impossible — sectors non-empty but index 0 missing");
+	let best = sector0;
 	let bestDistSq = Number.NEGATIVE_INFINITY;
 	for (const sector of map.sectors) {
 		if (sector.vertices.length < 3) continue;
@@ -60,7 +65,7 @@ export function pickLootSpawn(map: BoneBusterMap): LootSpawn | null {
 	}
 	return {
 		position: { x: cx / best.vertices.length, y: cy / best.vertices.length },
-		lootKind: pickLootKind(map.seed),
+		lootKind: pickLootKind(cyrb128(map.seedPhrase)[2] >>> 0),
 	};
 }
 

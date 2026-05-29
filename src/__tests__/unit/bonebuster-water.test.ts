@@ -10,8 +10,9 @@
  *  - WATER_SPEED_MULTIPLIER is in a sensible range.
  */
 
-import type { BoneBusterGridMap, BoneBusterMap } from "@engine/engine";
-import { isInWaterAt, polygonContains, WATER_SPEED_MULTIPLIER } from "@engine/engine";
+import type { BoneBusterGridMap, BoneBusterMap } from "@engine/mapTypes";
+import { WATER_SPEED_MULTIPLIER } from "@engine/mapTypes";
+import { isInWaterAt, polygonContains } from "@engine/sectors";
 import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
 

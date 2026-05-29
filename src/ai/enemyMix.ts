@@ -29,8 +29,8 @@
  * XOR 0x454E4D58) so same seed → same kind sequence per archetype.
  */
 
-import type { EnemyKind, EnemySpawn } from "@engine/engine";
-import { mulberry32, RNG_TAGS } from "@engine/prng";
+import type { EnemyKind, EnemySpawn } from "@engine/mapTypes";
+import { forkStream } from "@engine/rng";
 import type { PropArchetype } from "@world/scatter/propPool";
 
 export type EnemyMixTable = Readonly<Record<EnemyKind, number>>;
@@ -145,7 +145,10 @@ function pickKindFromTable(table: EnemyMixTable, rng: () => number): EnemyKind {
 	}
 	// Falls through only on floating-point edge — return last non-zero kind.
 	for (let i = ALL_KINDS.length - 1; i >= 0; i -= 1) {
-		if (table[ALL_KINDS[i]] > 0) return ALL_KINDS[i];
+		// i is in [0, ALL_KINDS.length) by loop condition — provably in-bounds.
+		const k = ALL_KINDS[i];
+		if (k === undefined) throw new RangeError(`pickKindFromTable: ALL_KINDS[${i}] missing`);
+		if (table[k] > 0) return k;
 	}
 	return "rattler"; // unreachable given normalize() guarantees > 0
 }
@@ -170,10 +173,10 @@ function pickKindFromTable(table: EnemyMixTable, rng: () => number): EnemyKind {
 export function remapEnemyMix(
 	spawns: readonly EnemySpawn[],
 	archetype: PropArchetype,
-	seed: number,
+	seedPhrase: string,
 ): readonly EnemySpawn[] {
 	const table = ENEMY_MIX_TABLES[archetype];
-	const rng = mulberry32((seed >>> 0) ^ RNG_TAGS.ENMX);
+	const rng = forkStream(seedPhrase, "ENMX");
 	return spawns.map((spawn) => ({
 		...spawn,
 		kind: pickKindFromTable(table, rng),

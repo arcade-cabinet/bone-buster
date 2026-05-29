@@ -1,4 +1,4 @@
-import type { EnemyBullet } from "@engine/engine";
+import type { EnemyBullet } from "@engine/projectiles";
 import { useFrame } from "@react-three/fiber";
 import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
 import { type RefObject, useRef } from "react";

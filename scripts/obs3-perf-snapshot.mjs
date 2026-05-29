@@ -71,6 +71,11 @@ const REGRESSION_RATIO = 1.1; // 10% above baseline = fail
 // mobile (Pixel 5a class) is enforced separately by T5's emulator job
 // when that lands.
 const OBS3_FPS_FLOOR = 50;
+// CR-H1perf/F1 — live Howl-pool ceiling. The game uses well under this many
+// distinct audio files; pre-CR-M1 a one-shot leak grew the pool per shot.
+// A generous fixed ceiling catches a regression of that leak without being
+// brittle to legitimate new SFX.
+const OBS3_HOWL_BUDGET = 64;
 
 const LAUNCH_ARGS = [
 	"--no-sandbox",
@@ -143,6 +148,15 @@ async function snapshotArchetype(archetype) {
 				let peakTris = 0;
 				let frames = 0;
 				let minFps = Infinity;
+				// CR-H1perf/F1 — track the peak live Howl count across the
+				// window. Pre-CR-M1 every one-shot SFX leaked a Howl, so this
+				// grew unbounded under fire; it must now plateau at the small
+				// fixed pool of distinct audio files.
+				let peakHowls = 0;
+				const sampleHowls = () => {
+					const n = globalThis.Howler?._howls?.length ?? 0;
+					if (n > peakHowls) peakHowls = n;
+				};
 				const handler = (e) => {
 					const detail = e.detail ?? {};
 					if (typeof detail.drawCalls === "number" && detail.drawCalls > peakCalls) {
@@ -154,6 +168,7 @@ async function snapshotArchetype(archetype) {
 					if (typeof detail.fps === "number" && detail.fps < minFps) {
 						minFps = detail.fps;
 					}
+					sampleHowls();
 					frames += 1;
 				};
 				window.addEventListener("objexoom:fpsUpdate", handler);
@@ -164,6 +179,7 @@ async function snapshotArchetype(archetype) {
 						peakTris,
 						frames,
 						minFps: Number.isFinite(minFps) ? minFps : null,
+						peakHowls,
 					});
 				}, 3000);
 			}),
@@ -191,12 +207,17 @@ for (const archetype of ARCHETYPES) {
 	const minFpsDisplay =
 		sample.minFps != null ? `${sample.minFps.toFixed(1)} (floor ${OBS3_FPS_FLOOR})` : "n/a";
 	console.log(
-		`  → calls peak ${sample.peakCalls} (budget ${OBS3_CALL_BUDGET}) · tris peak ${sample.peakTris} (budget ${OBS3_TRI_BUDGET}) · minFps ${minFpsDisplay} · frames sampled ${sample.frames}`,
+		`  → calls peak ${sample.peakCalls} (budget ${OBS3_CALL_BUDGET}) · tris peak ${sample.peakTris} (budget ${OBS3_TRI_BUDGET}) · minFps ${minFpsDisplay} · howls peak ${sample.peakHowls ?? "n/a"} (budget ${OBS3_HOWL_BUDGET}) · frames sampled ${sample.frames}`,
 	);
 
 	// OBS3 budget check.
 	if (sample.peakCalls > OBS3_CALL_BUDGET) {
 		failures.push(`${archetype}: calls peak ${sample.peakCalls} > OBS3 budget ${OBS3_CALL_BUDGET}`);
+	}
+	if (typeof sample.peakHowls === "number" && sample.peakHowls > OBS3_HOWL_BUDGET) {
+		failures.push(
+			`${archetype}: live Howls peak ${sample.peakHowls} > budget ${OBS3_HOWL_BUDGET} (one-shot leak regressed?)`,
+		);
 	}
 	if (sample.peakTris > OBS3_TRI_BUDGET) {
 		failures.push(

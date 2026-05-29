@@ -145,10 +145,11 @@ export async function openRunHistory(): Promise<RunHistory> {
 		// + ordered descending). Simpler than threading rowid through
 		// the adapter contract.
 		const rows = await db.query<RunRow>(`SELECT * FROM runs ORDER BY id DESC LIMIT ?`, [1]);
-		if (rows.length === 0) {
+		const inserted = rows[0];
+		if (inserted === undefined) {
 			throw new Error("runHistory.insert: row not found after INSERT");
 		}
-		return rowToRecord(rows[0]);
+		return rowToRecord(inserted);
 	};
 
 	const listRecent: RunHistory["listRecent"] = async (limit) => {
@@ -165,7 +166,8 @@ export async function openRunHistory(): Promise<RunHistory> {
 			`SELECT * FROM runs ORDER BY levels_cleared DESC, total_kills DESC, ended_at ASC LIMIT ?`,
 			[1],
 		);
-		return rows.length === 0 ? null : rowToRecord(rows[0]);
+		const best = rows[0];
+		return best === undefined ? null : rowToRecord(best);
 	};
 
 	const runCount: RunHistory["runCount"] = async () => {

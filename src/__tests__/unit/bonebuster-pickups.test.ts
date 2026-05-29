@@ -21,11 +21,24 @@
  * behavior is tested separately (see useGameRef tests).
  */
 
-import { generateMap, spawnPickups } from "@engine/engine";
+import { generateMap } from "@engine/gridGen";
+import { cyrb128 } from "@engine/rng";
+import { spawnPickups } from "@engine/spawn";
 import { TILE } from "@shared/constants";
 import { describe, expect, it } from "vitest";
 
-const SEEDS = [12345, 67890, 42, 1729, 99, 1000, 2026, 314159, 27, 8675309];
+const SEEDS = [
+	"pk-12345",
+	"pk-67890",
+	"pk-42",
+	"pk-1729",
+	"pk-99",
+	"pk-1000",
+	"pk-2026",
+	"pk-314159",
+	"pk-27",
+	"pk-8675309",
+];
 
 describe("D2 — procedural pickup contract", () => {
 	for (const seed of SEEDS) {
@@ -44,7 +57,7 @@ describe("D2 — procedural pickup contract", () => {
 		it(`seed=${seed}: flamethrowerAmmo spawns every 3rd map (gated by seed%3)`, () => {
 			const map = generateMap(seed);
 			const flameCount = map.pickupSpawns.filter((p) => p.kind === "flamethrowerAmmo").length;
-			if (seed % 3 === 0) {
+			if (cyrb128(seed)[1] % 3 === 0) {
 				expect(flameCount).toBeGreaterThanOrEqual(1);
 			}
 			// Non-3rd maps: the gate is "no guarantee" so flameCount can
@@ -95,16 +108,16 @@ describe("D2 — per-archetype pickup bias", () => {
 	// The simplest verifiable form is "archetype-X seeds
 	// have at least N of the biased kind", with N=2 (the
 	// guaranteed-min is 1, so bias must add at least 1 more).
-	function pickFor(archetypeIdx: number, count: number): number[] {
-		// Pick `count` seeds where seed%5 === archetypeIdx + filter
-		// the every-3rd-flamethrower interaction by avoiding seed%3==0
-		// for non-library bias checks (library 3rd-map signal mixes
-		// with the archetype bias and is harder to read independently).
-		const out: number[] = [];
-		let s = archetypeIdx + 5;
-		while (out.length < count) {
-			if (s % 5 === archetypeIdx) out.push(s);
-			s += 5;
+	function pickFor(archetypeIdx: number, count: number): string[] {
+		// SEED2 — pick `count` seed PHRASES that hash to the given archetype
+		// (cyrb128(phrase)[0] % 5 === archetypeIdx), replacing the old numeric
+		// `seed % 5` selection.
+		const out: string[] = [];
+		let n = 0;
+		while (out.length < count && n < 100000) {
+			const p = `bias-${archetypeIdx}-${n}`;
+			if (cyrb128(p)[0] % 5 === archetypeIdx) out.push(p);
+			n += 1;
 		}
 		return out;
 	}

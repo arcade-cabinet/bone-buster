@@ -13,20 +13,12 @@ import {
 	stopAmbient,
 } from "@audio/sfx";
 import { PlayerController } from "@components/PlayerController";
-import {
-	type BoneBusterMap,
-	computePortalEdges,
-	ENEMY_BULLET_DAMAGE,
-	type Enemy,
-	type EnemyBullet,
-	isSectorMap,
-	type Pickup,
-	polygonContains,
-	spawnEnemies,
-	spawnPickups,
-	stepEnemyBullet,
-} from "@engine/engine";
 import { addBoneBusterListener, dispatch } from "@engine/events";
+import { type BoneBusterMap, type Enemy, isSectorMap, type Pickup } from "@engine/mapTypes";
+import type { EnemyBullet } from "@engine/projectiles";
+import { cyrb128 } from "@engine/rng";
+import { computePortalEdges } from "@engine/sectors";
+import { spawnEnemies, spawnPickups } from "@engine/spawn";
 import { useFrame, useThree } from "@react-three/fiber";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { PLAYER_HEIGHT, TILE } from "@shared/constants";
@@ -49,17 +41,7 @@ import { lootPickupSpawn } from "@world/scatter/lootScatter";
 import { type NatureInstance, spawnNature } from "@world/scatter/natureScatter";
 import { type NpcInstance, spawnNpcs } from "@world/scatter/npcScatter";
 import { type PropInstance, spawnProps } from "@world/scatter/propScatter";
-import {
-	disarmSector,
-	spawnTraps,
-	TRAP_OVERLAP_RADIUS,
-	TRAP_TICK_COOLDOWN_MS,
-	TRAP_TICK_DAMAGE,
-	TRIGGER_OVERLAP_RADIUS,
-	type TrapInstance,
-	trapAt,
-	triggerAt,
-} from "@world/scatter/trapScatter";
+import { spawnTraps, type TrapInstance } from "@world/scatter/trapScatter";
 import { type Secret, spawnSecrets } from "@world/secrets";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -67,46 +49,30 @@ import * as THREE from "three";
 import type * as Yuka from "yuka";
 import {
 	AdaptiveResolution,
-	BarrelMesh,
 	BodyPartField,
 	BulletField,
 	CrucifixField,
 	DamageNumberField,
-	DebrisField,
-	DecalField,
-	EnemyHitFlash,
-	EnemyMesh,
-	EnemyUvBaseHide,
-	EnemyUvReveal,
 	ExitPortal,
 	ExitPortalApproach,
 	Flashlight,
-	FloorTileField,
 	KeyMarker,
-	KitchenField,
-	LampField,
-	LargePropField,
 	MapGeometry,
-	NatureField,
-	NpcField,
 	ParticleBurstField,
-	PickupMesh,
 	PostprocessingChain,
-	PropField,
 	RealDoor,
 	ReturnToSpawnBearingWriter,
-	SecretField,
 	SectorMapGeometry,
 	ShellEjectField,
-	TrapField,
 	TreasureChest,
 	UvFlashlight,
-	VehicleWreck,
 	WeaponSwapDip,
 	WeaponViewmodel,
 } from "../../src/scene";
-import { tickEnemyLoop } from "../../src/scene/tick/enemyTickLoop";
+import { EntityMeshes } from "../../src/scene/fields/EntityMeshes";
+import { ScatterFields } from "../../src/scene/fields/ScatterFields";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
+import { runSceneTick } from "../../src/scene/tick/sceneTick";
 import { createTimeScaleBus } from "../../src/scene/tick/timeScaleBus";
 import { pickChaingunProfile } from "../../src/world/chaingunSkins";
 import {
@@ -162,13 +128,19 @@ export function BoneBusterScene({
 	hasUvFlashlight,
 }: SceneProps) {
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
+	// SEED2 — a phrase-stable numeric for the cosmetic pickers + door/vehicle
+	// variant tags that still take a numeric seed (meleeProfile, pistolProfile,
+	// chaingunProfile, spiritBoxPhoneme, doors, vehicle wreck, hue). Same value
+	// every render for a given phrase, matching the pre-SEED2 single-seed
+	// behavior. Stream-seeded systems (enemy mix, scatter) take the phrase.
+	const mapSeedNum = cyrb128(map.seedPhrase)[0] >>> 0;
 	// E13 step-3 — per-archetype enemy mix. Remap spawn `kind`s through
 	// the archetype's weight table before spawnEnemies consumes them.
 	// pickArchetype is pure + trivial; safe to call inline for the
 	// useRef initializer.
 	const initialEnemies = spawnEnemies(
 		map,
-		remapEnemyMix(map.enemySpawns, pickArchetype(map), map.seed),
+		remapEnemyMix(map.enemySpawns, pickArchetype(map), map.seedPhrase),
 	).map((e) => {
 		const scaledHp = Math.max(1, Math.round(e.hp * tuning.enemyHpMultiplier));
 		return { ...e, hp: scaledHp, maxHp: scaledHp };
@@ -201,7 +173,7 @@ export function BoneBusterScene({
 	// the lit-subset's `on` flag and wire pointLights.
 	const lampsRef = useRef<LampInstance[]>(spawnLamps(map));
 	// E13 step-1 — pick the map's archetype deterministically from
-	// `map.seed % 5`. Step-1 only wires the prop-pool axis; future
+	// `mapSeedNum % 5`. Step-1 only wires the prop-pool axis; future
 	// steps will add lighting palette + enemy mix + SFX bed axes per
 	// PRD §E13. The archetype is constant for the lifetime of the
 	// Scene mount (re-keyed on level change).
@@ -258,7 +230,10 @@ export function BoneBusterScene({
 	const wreckPosition = useMemo(() => {
 		if (archetype !== "courtyard") return null;
 		if (!isSectorMap(map) || map.sectors.length === 0) return null;
-		let best = map.sectors[0];
+		const firstSector = map.sectors[0];
+		// firstSector is provably defined: we returned null when sectors.length === 0.
+		if (firstSector === undefined) return null;
+		let best = firstSector;
 		let bestDistSq = Number.NEGATIVE_INFINITY;
 		for (const sector of map.sectors) {
 			let cx = 0;
@@ -298,6 +273,9 @@ export function BoneBusterScene({
 	const barrelMeshes = useRef<Map<number, THREE.Group>>(new Map());
 	const camera = useThree((s) => s.camera);
 	const lastFireAt = useRef(0);
+	// CR-F7 — per-shot counter for the reproducible pellet-spread stream.
+	// resolveFire reads + increments it on each shot that clears the gates.
+	const shotCounterRef = useRef(0);
 	const lastWonAt = useRef(false);
 	const lastReachedSpawnAt = useRef(false);
 	const lastLavaTickAt = useRef(0);
@@ -534,199 +512,54 @@ export function BoneBusterScene({
 		};
 	}, []);
 
+	// CR-H1scene step-c — the 200-line per-frame MAIN tick body lives in
+	// src/scene/tick/sceneTick.ts. The useFrame REGISTRATION stays here (so
+	// frame-callback ordering vs the aux loops + the priority-pinned muzzle
+	// block is byte-identical — see docs/specs/97-scene-decomposition.md);
+	// the body is a single runSceneTick({...}) call. Pure relocation.
 	useFrame((_, deltaSeconds) => {
 		if (!active) return;
-		const dt = Math.min(0.05, deltaSeconds);
-		const now = performance.now();
-		// Y7 — advance the yuka EntityManager once per frame. Today no
-		// entities are registered (the FSM still drives behavior via the
-		// existing loop below); the tick is wired so Y1-Y6 follow-ups
-		// have a working scheduler the moment they register entities.
-		tickYuka(dt);
-
-		const px = camera.position.x;
-		const py = camera.position.z;
-
-		// Y3 — derive player XZ velocity from prev-frame position. Smooth
-		// against a tiny floor so a stationary player gives the bouncer a
-		// zero-lead (i.e. it just Seeks the current position).
-		if (prevPlayerPosRef.current && dt > 1e-6) {
-			playerVelocityRef.current = {
-				x: (px - prevPlayerPosRef.current.x) / dt,
-				y: (py - prevPlayerPosRef.current.y) / dt,
-			};
-		}
-		prevPlayerPosRef.current = { x: px, y: py };
-
-		// H8 — phase-aware win condition.
-		//   phase === "out":         crossing the goal portal flips to "going_back".
-		//   phase === "going_back":  reaching the original playerSpawn clears.
-		const currentPhase = phaseRef.current;
-		if (currentPhase === "out") {
-			const dxExit = px - map.exitPosition.x;
-			const dyExit = py - map.exitPosition.y;
-			// E2 — portal stays locked until every boss enemy is dead, even
-			// if the key has been collected. Sync the reactive flag on the
-			// same tick so the visual portal/door reflects the gate state.
-			const allBossesDeadNow = enemiesRef.current.every((e) => e.tier !== "boss" || e.dead);
-			if (allBossesDeadNow !== allBossesDead) setAllBossesDead(allBossesDeadNow);
-			if (hasKey && allBossesDeadNow && dxExit * dxExit + dyExit * dyExit < TILE * TILE * 0.4) {
-				if (!lastWonAt.current) {
-					lastWonAt.current = true;
-					gameRef.current.onWin();
-					playPortal();
-				}
-			}
-		} else {
-			const dxSpawn = px - map.playerSpawn.x;
-			const dySpawn = py - map.playerSpawn.y;
-			if (dxSpawn * dxSpawn + dySpawn * dySpawn < TILE * TILE * 0.4) {
-				if (!lastReachedSpawnAt.current) {
-					lastReachedSpawnAt.current = true;
-					gameRef.current.onReachSpawn();
-					playPortal();
-				}
-			}
-		}
-
-		// H8 — light strobe during going_back. 200-frame cycle, 10 frames bright.
-		// POL27 — strobe levels respect per-archetype darkness multipliers
-		// so a dark-sewer going_back still flickers proportionally to the
-		// archetype's lighting baseline rather than blasting bright.
-		if (currentPhase === "going_back") {
-			strobeFrameRef.current = (strobeFrameRef.current + 1) % 200;
-			const bright = strobeFrameRef.current < 10;
-			if (ambientLightRef.current) {
-				ambientLightRef.current.intensity = (bright ? 1.4 : 0.2) * lightPalette.ambientMul;
-			}
-			if (directionalLightRef.current) {
-				directionalLightRef.current.intensity = (bright ? 2.0 : 0.35) * lightPalette.directionalMul;
-			}
-		}
-
-		// H5 — Lava damage. Grid maps: cell type "lava". Sector maps: any
-		// polygon whose floorHeight is negative (matches reference's pallet
-		// trigger). Cadence: 600 ms, 8 HP per tick.
-		let standingOnLava = false;
-		if (map.kind === "grid") {
-			const playerCell = {
-				gx: Math.floor(px / TILE),
-				gy: Math.floor(py / TILE),
-			};
-			const standingCell = map.cells[playerCell.gy]?.[playerCell.gx] ?? "wall";
-			standingOnLava = standingCell === "lava";
-		} else {
-			// Sector map: floorHeight < 0 == lava (renderer's heuristic).
-			for (const sector of map.sectors) {
-				if (sector.floorHeight >= 0) continue;
-				if (polygonContains({ x: px, y: py + 1e-6 }, sector.vertices)) {
-					standingOnLava = true;
-					break;
-				}
-			}
-		}
-		if (standingOnLava && now - lastLavaTickAt.current > 600) {
-			lastLavaTickAt.current = now;
-			gameRef.current.onHit(8);
-			playHurt();
-		}
-
-		// COV8 step-2 — trap tick damage + lever-disarm-sector.
-		// First check for trigger overlap (disarms the whole sector).
-		const trigger = triggerAt(trapsRef.current, { x: px, y: py }, TRIGGER_OVERLAP_RADIUS);
-		if (trigger) {
-			trigger.disarmed = true;
-			const count = disarmSector(trapsRef.current, trigger.sectorId);
-			if (count > 1) playPickup();
-			// PT1 — bump the version so TrapField re-memos the visible
-			// filter and the disarmed hazards drop from the instanced
-			// buffer this render cycle (not on whatever next ambient
-			// render happens to fire).
-			setTrapsDisarmedVersion((v) => v + 1);
-		}
-		// Then check for hazard overlap (per-trap ticked damage).
-		const hazard = trapAt(trapsRef.current, { x: px, y: py }, TRAP_OVERLAP_RADIUS);
-		if (hazard) {
-			const lastTick = lastTrapTickAt.current.get(hazard.id) ?? 0;
-			if (now - lastTick > TRAP_TICK_COOLDOWN_MS) {
-				lastTrapTickAt.current.set(hazard.id, now);
-				const kind = hazard.def.kind;
-				const damage =
-					kind === "spike" || kind === "blade" || kind === "rolling" ? TRAP_TICK_DAMAGE[kind] : 0;
-				if (damage > 0) {
-					gameRef.current.onHit(damage);
-					playHurt();
-				}
-			}
-		}
-
-		// Pickup collection
-		for (const pickup of pickupsRef.current) {
-			if (pickup.collected) continue;
-			const dx = px - pickup.position.x;
-			const dy = py - pickup.position.y;
-			if (dx * dx + dy * dy < 1.4 * 1.4) {
-				pickup.collected = true;
-				const mesh = pickupMeshes.current.get(pickup.id);
-				if (mesh) mesh.visible = false;
-				gameRef.current.onCollectPickup(pickup.kind);
-				playPickup();
-				dispatch({
-					type: "burst",
-					x: pickup.position.x,
-					y: pickup.position.y,
-					kind: "pickup",
-				});
-			}
-		}
-
-		// ARCH2a — per-frame enemy AI loop lives in src/scene/tick/enemyTickLoop.ts.
-		// Behavior is byte-identical; this call site is a pure relocation.
-		tickEnemyLoop({
+		runSceneTick({
+			deltaSeconds,
+			camera,
+			map,
+			settings,
+			hasKey,
+			lightPalette,
+			gameRef,
+			prevPlayerPosRef,
+			playerVelocityRef,
+			phaseRef,
+			allBossesDead,
+			setAllBossesDead,
+			lastWonAtRef: lastWonAt,
+			lastReachedSpawnAtRef: lastReachedSpawnAt,
+			strobeFrameRef,
+			ambientLightRef,
+			directionalLightRef,
+			lastLavaTickAtRef: lastLavaTickAt,
+			trapsRef,
+			lastTrapTickAtRef: lastTrapTickAt,
+			bumpTrapsDisarmedVersion: () => setTrapsDisarmedVersion((v) => v + 1),
+			pickupsRef,
+			pickupMeshesRef: pickupMeshes,
 			enemiesRef,
-			yukaEntitiesRef,
-			bulletsRef,
-			nextBulletIdRef,
 			enemyMeshesRef: enemyMeshes,
+			yukaEntitiesRef,
 			lastSeenRef,
 			aggroFiredRef,
 			bossSpottedFiredRef,
 			collisionCtxRef,
-			gameRef,
-			map,
-			camera,
-			settings,
-			playerVelocity: playerVelocityRef.current,
-			playerX: px,
-			playerY: py,
-			now,
-			dt,
-			timeScaleBus: timeScaleBusRef.current,
+			timeScaleBusRef,
 			crucifixesRef: activeCrucifixesRef,
+			bulletsRef,
+			nextBulletIdRef,
+			bulletMeshesRef: bulletMeshes,
+			tickYuka,
+			playPortal,
+			playHurt,
+			playPickup,
 		});
-
-		// Bullet integration — advance, check wall/player, retire dead bullets.
-		const bullets = bulletsRef.current;
-		const playerPos = { x: px, y: py };
-		let writeIdx = 0;
-		for (let i = 0; i < bullets.length; i += 1) {
-			const bullet = bullets[i];
-			const step = stepEnemyBullet(bullet, dt, now, playerPos, map, collisionCtxRef.current);
-			if (step.kind === "hitPlayer") {
-				gameRef.current.onHit(ENEMY_BULLET_DAMAGE);
-				playHurt();
-				const bm = bulletMeshes.current.get(bullet.id);
-				if (bm) bm.visible = false;
-				continue;
-			}
-			if (step.kind === "hitWall" || step.kind === "expired") {
-				const bm = bulletMeshes.current.get(bullet.id);
-				if (bm) bm.visible = false;
-				continue;
-			}
-			bullets[writeIdx++] = bullet;
-		}
-		bullets.length = writeIdx;
 	});
 
 	// Debug listeners (e2e harness). No-ops in production. The
@@ -882,13 +715,13 @@ export function BoneBusterScene({
 	// PB4 — per-run melee profile resolved from level.seed; pairs with
 	// the viewmodel's pickMeleeSkin so the visible weapon and the damage
 	// numbers stay in lockstep.
-	const meleeProfile = useMemo(() => pickMeleeProfile(map.seed), [map.seed]);
+	const meleeProfile = useMemo(() => pickMeleeProfile(mapSeedNum), [mapSeedNum]);
 	// PD1 — same pattern for the pistol skin: per-seed profile pairs
 	// with WeaponViewmodel's pickPistolSkin so viewmodel and damage
 	// numbers stay in lockstep.
-	const pistolProfile = useMemo(() => pickPistolProfile(map.seed), [map.seed]);
+	const pistolProfile = useMemo(() => pickPistolProfile(mapSeedNum), [mapSeedNum]);
 	// PD3 — chaingun skin profile pairs with pickChaingunSkin.
-	const chaingunProfile = useMemo(() => pickChaingunProfile(map.seed), [map.seed]);
+	const chaingunProfile = useMemo(() => pickChaingunProfile(mapSeedNum), [mapSeedNum]);
 
 	// ARCH2b — single-shot resolution moved to src/scene/tick/fireResolution.ts.
 	// The useEffect that wires `bonebuster:fire` stays here (it owns the
@@ -916,6 +749,7 @@ export function BoneBusterScene({
 				muzzleIntensityScaleRef,
 				timeScaleBus: timeScaleBusRef.current,
 				explodeBarrel: (b) => explodeBarrelRef.current(b),
+				shotCounterRef,
 				meleeProfile,
 				pistolProfile,
 				chaingunProfile,
@@ -985,7 +819,7 @@ export function BoneBusterScene({
 	// response dispatch. Walks the same enemiesRef pool as the EMF
 	// dispatch above; when the nearest live enemy is within
 	// SPIRIT_BOX_TRIGGER_RADIUS tiles and the cooldown has expired,
-	// picks a deterministic phoneme keyed off (map.seed, triggerIndex)
+	// picks a deterministic phoneme keyed off (mapSeedNum, triggerIndex)
 	// and emits the typed event. The HUD bubble subscribes; the audio
 	// sting (future commit) can subscribe to the same event.
 	const lastSpiritBoxTriggerAtRef = useRef(0);
@@ -1005,7 +839,7 @@ export function BoneBusterScene({
 		}
 		if (nearestSq > radiusSq) return;
 		lastSpiritBoxTriggerAtRef.current = now;
-		const phoneme = pickSpiritBoxPhoneme(map.seed, spiritBoxTriggerCountRef.current);
+		const phoneme = pickSpiritBoxPhoneme(mapSeedNum, spiritBoxTriggerCountRef.current);
 		spiritBoxTriggerCountRef.current += 1;
 		dispatch({ type: "spiritBoxResponse", phoneme });
 	});
@@ -1105,7 +939,7 @@ export function BoneBusterScene({
 			<ExitPortal
 				position={map.exitPosition}
 				unlocked={hasKey && allBossesDead}
-				hueIndex={(map.seed >>> 0) % 5}
+				hueIndex={(mapSeedNum >>> 0) % 5}
 			/>
 			{/* POL23 — exit-portal approach FOV-widen slot per
 			    docs/SLOT-ARCHITECTURE.md. The base FOV of 75 mirrors
@@ -1115,7 +949,11 @@ export function BoneBusterScene({
 				unlocked={hasKey && allBossesDead}
 				baseFov={75}
 			/>
-			<RealDoor position={map.exitPosition} unlocked={hasKey && allBossesDead} mapSeed={map.seed} />
+			<RealDoor
+				position={map.exitPosition}
+				unlocked={hasKey && allBossesDead}
+				mapSeed={mapSeedNum}
+			/>
 			<TreasureChest position={map.exitPosition} />
 			{/* H8 — second RealDoor at the original spawn. Opens during the
 			    going_back phase so the player has a clear visual goal to
@@ -1123,113 +961,46 @@ export function BoneBusterScene({
 			<RealDoor
 				position={map.playerSpawn}
 				unlocked={phase === "going_back"}
-				mapSeed={map.seed ^ 0x676f6e67 /* "gong" tag — different variant for the spawn-side door */}
+				mapSeed={
+					mapSeedNum ^ 0x676f6e67 /* "gong" tag — different variant for the spawn-side door */
+				}
 			/>
 
-			{/* E6 — secret switches + their hidden walls. Empty when the
-			    current map has no `secrets` field (grid maps + future
-			    secret-free ref levels). */}
-			<SecretField secretsRef={secretsRef} />
+			{/* CR-H1scene — the presentational scatter cluster (secrets,
+			    lamps, props, large props, traps, kitchen, nature, NPCs,
+			    floor tiles, debris, decals, RV wreck). Each child is a
+			    pure render of a spawned instance list owned by a ref here. */}
+			<ScatterFields
+				secretsRef={secretsRef}
+				lamps={lampsRef.current}
+				lampLightColor={lightPalette.lampLightColor}
+				props={propsRef.current}
+				largeProps={largePropsRef.current}
+				traps={trapsRef.current}
+				trapsDisarmedVersion={trapsDisarmedVersion}
+				kitchen={kitchenRef.current}
+				nature={natureRef.current}
+				npcs={npcsRef.current}
+				floorTiles={floorTilesRef.current}
+				debris={debrisRef.current}
+				decals={decalsRef.current}
+				wreckPosition={wreckPosition}
+				mapSeedNum={mapSeedNum}
+			/>
 
-			{/* COV1 — PSX Mega Pack II lamp scatter. Empty on grid maps
-			    in this slice. E4 will flip a subset to `on` + wire
-			    scoped pointLights. */}
-			<LampField lamps={lampsRef.current} lightColor={lightPalette.lampLightColor} />
-
-			{/* COV4 + E3 — decorative prop scatter from PSX Mega Pack II
-			    Props pool. Step-1: "corridor" archetype default for
-			    every sector; E13 will pick archetypes per map.seed. */}
-			<PropField props={propsRef.current} />
-
-			{/* COV2 step-2 — anchor-piece large-prop scatter (1-2 per
-			    sector). Blocking entries (machinery, shipping container)
-			    push the player out via the collision blocker list. */}
-			<LargePropField props={largePropsRef.current} />
-
-			{/* COV8 step-2 — trap scatter (0-2 hazards + 1 trigger per
-			    sector, archetype-biased). Tick damage + lever-disarm
-			    flow lives in the per-frame loop in BoneBusterScene. */}
-			<TrapField traps={trapsRef.current} disarmedVersion={trapsDisarmedVersion} />
-
-			{/* COV13 step-2 — library-archetype kitchen scatter.
-			    Empty on non-library archetypes. */}
-			<KitchenField props={kitchenRef.current} />
-
-			{/* COV11 step-2 — courtyard-archetype nature scatter.
-			    Empty on non-courtyard archetypes. */}
-			<NatureField instances={natureRef.current} />
-
-			{/* COV14 step-2 — library-archetype ambient NPCs. Pure
-			    set-dressing; no AI/LOS/damage tracks. */}
-			<NpcField instances={npcsRef.current} />
-
-			{/* COV3 step-1 — modular asphalt floor tiles. Empty unless
-			    the map opts in via `useModularFloor: true`. */}
-			<FloorTileField tiles={floorTilesRef.current} />
-
-			{/* COV5 step-2 — sector-body debris scatter (3-5 per sector,
-			    skip-radius 4 from spawn/exit/key). Reads as "overrun." */}
-			<DebrisField debris={debrisRef.current} />
-
-			{/* COV6 step-2.1 — wall-face decals as billboard quads with
-			    the GLB's primary texture extracted onto a 1.2×0.8 plane
-			    aligned to the sector edge normal. */}
-			<DecalField decals={decalsRef.current} />
-
-			{/* COV10 step-2 — one RV wreck at the courtyard archetype's
-			    farthest-sector centroid. Null on non-courtyard maps. */}
-			{wreckPosition && <VehicleWreck position={wreckPosition} seed={map.seed} />}
-
-			{enemiesRef.current.map((enemy) => (
-				<group key={enemy.id}>
-					<EnemyMesh
-						enemy={enemy}
-						register={(group) => {
-							if (group) enemyMeshes.current.set(enemy.id, group);
-							else enemyMeshes.current.delete(enemy.id);
-						}}
-					/>
-					{/* POL19 — hit-flash slot. Sibling to EnemyMesh per
-					    docs/SLOT-ARCHITECTURE.md. Reads enemy.staggerUntil,
-					    looks up the registered mesh via enemyMeshes, clones
-					    + modulates materials. Returns null. */}
-					<EnemyHitFlash enemy={enemy} meshLookup={enemyMeshes} />
-					{/* PC3 — UV reveal / baseline-hide slot. uvHidden enemies
-					    are invisible by default; UV flashlight cone reveals
-					    them per-frame. The two slots are mutually exclusive
-					    based on hasUvFlashlight so the no-tool path pays
-					    zero per-frame UV cost. */}
-					{enemy.uvHidden &&
-						(hasUvFlashlight ? (
-							<EnemyUvReveal enemy={enemy} meshLookup={enemyMeshes} />
-						) : (
-							<EnemyUvBaseHide enemy={enemy} meshLookup={enemyMeshes} />
-						))}
-				</group>
-			))}
-
-			{pickupsRef.current.map((pickup) => (
-				<PickupMesh
-					key={pickup.id}
-					pickup={pickup}
-					mapSeed={map.seed}
-					register={(group) => {
-						if (group) pickupMeshes.current.set(pickup.id, group);
-						else pickupMeshes.current.delete(pickup.id);
-					}}
-				/>
-			))}
-
-			{barrelsRef.current.map((barrel) => (
-				<BarrelMesh
-					key={barrel.id}
-					barrel={barrel}
-					register={(group) => {
-						if (group) barrelMeshes.current.set(barrel.id, group);
-						else barrelMeshes.current.delete(barrel.id);
-					}}
-				/>
-			))}
+			{/* CR-H1scene — dynamic-entity mesh cluster (enemies + hit-flash
+			    + UV slots, pickups, barrels). Each registers its group into
+			    the parent-owned lookup map the per-frame tick addresses. */}
+			<EntityMeshes
+				enemies={enemiesRef.current}
+				enemyMeshes={enemyMeshes}
+				hasUvFlashlight={hasUvFlashlight}
+				pickups={pickupsRef.current}
+				pickupMeshes={pickupMeshes}
+				barrels={barrelsRef.current}
+				barrelMeshes={barrelMeshes}
+				mapSeedNum={mapSeedNum}
+			/>
 
 			<BulletField bulletsRef={bulletsRef} register={bulletMeshes} />
 			<ParticleBurstField />
@@ -1239,7 +1010,7 @@ export function BoneBusterScene({
 			<DamageNumberField />
 			<WeaponViewmodel
 				weapon={weapon}
-				mapSeed={map.seed}
+				mapSeed={mapSeedNum}
 				onMuzzleAnchor={onMuzzleAnchor}
 				swapDipOffsetRef={weaponSwapDipOffsetRef}
 			/>

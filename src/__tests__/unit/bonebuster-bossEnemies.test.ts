@@ -10,12 +10,8 @@
  *  - Maps with no enemy spawns produce no bosses (defensive).
  */
 
-import {
-	BOSS_HP_MULTIPLIER,
-	BOSS_VISUAL_SCALE,
-	pickBossSpawnIndex,
-	spawnEnemies,
-} from "@engine/engine";
+import { BOSS_HP_MULTIPLIER, BOSS_VISUAL_SCALE } from "@engine/mapTypes";
+import { pickBossSpawnIndex, spawnEnemies } from "@engine/spawn";
 import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
 
@@ -29,6 +25,7 @@ describe("E2 — boss spawn selection", () => {
 
 			// Verify no other spawn is farther from playerSpawn.
 			const bossSpawn = map.enemySpawns[bossIdx];
+			if (!bossSpawn) throw new RangeError(`enemySpawns[${bossIdx}] missing after bounds-check`);
 			const dBoss = Math.hypot(
 				bossSpawn.position.x - map.playerSpawn.x,
 				bossSpawn.position.y - map.playerSpawn.y,
@@ -109,5 +106,18 @@ describe("E2 — boss HP scaling", () => {
 		const bossA = a.findIndex((e) => e.tier === "boss");
 		const bossB = b.findIndex((e) => e.tier === "boss");
 		expect(bossA).toBe(bossB);
+	});
+
+	it("accepts a same-length spawnsOverride", () => {
+		const map = loadRefLevel(0);
+		const override = map.enemySpawns.map((s) => ({ ...s }));
+		expect(() => spawnEnemies(map, override)).not.toThrow();
+		expect(spawnEnemies(map, override)).toHaveLength(map.enemySpawns.length);
+	});
+
+	it("throws on a spawnsOverride whose length ≠ map.enemySpawns (boss/uvHidden indices would misalign)", () => {
+		const map = loadRefLevel(0);
+		const tooShort = map.enemySpawns.slice(0, Math.max(0, map.enemySpawns.length - 1));
+		expect(() => spawnEnemies(map, tooShort)).toThrow(/spawnsOverride length/);
 	});
 });

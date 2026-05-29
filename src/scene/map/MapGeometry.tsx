@@ -1,4 +1,4 @@
-import type { BoneBusterGridMap } from "@engine/engine";
+import type { BoneBusterGridMap } from "@engine/mapTypes";
 import { useGLTF, useTexture } from "@react-three/drei";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { TILE } from "@shared/constants";
@@ -81,7 +81,16 @@ function TexturedFloorInner({
 	floorSize: number;
 	floorCenter: number;
 }) {
-	const [colorMap, normalMap] = useTexture([set.color, set.normal]);
+	const textures = useTexture([set.color, set.normal]);
+	const colorMap = textures[0];
+	const normalMap = textures[1];
+	// colorMap and normalMap are provably defined: useTexture is called
+	// with a 2-element array and returns one texture per URL, so indices
+	// 0 and 1 are always present. The guard documents the invariant and
+	// fails loudly if the contract ever breaks.
+	if (colorMap === undefined || normalMap === undefined) {
+		throw new RangeError("useTexture returned fewer textures than expected");
+	}
 	// Configure repeat/wrap for tile-style scaling. drei's useTexture
 	// returns shared textures; setting wrap/repeat here mutates the
 	// underlying THREE.Texture which is fine (each archetype has its
@@ -113,8 +122,10 @@ export function MapGeometry({ map, doorOpen }: { map: BoneBusterGridMap; doorOpe
 	const walls = useMemo(() => {
 		const out: { x: number; z: number; hash: number }[] = [];
 		for (let gy = 0; gy < map.height; gy += 1) {
+			const row = map.cells[gy];
+			if (row === undefined) continue;
 			for (let gx = 0; gx < map.width; gx += 1) {
-				if (map.cells[gy][gx] !== "wall") continue;
+				if (row[gx] !== "wall") continue;
 				out.push({ x: (gx + 0.5) * TILE, z: (gy + 0.5) * TILE, hash: gx * 31 + gy * 17 });
 			}
 		}
@@ -124,8 +135,10 @@ export function MapGeometry({ map, doorOpen }: { map: BoneBusterGridMap; doorOpe
 	const lavaTiles = useMemo(() => {
 		const out: { x: number; z: number }[] = [];
 		for (let gy = 0; gy < map.height; gy += 1) {
+			const row = map.cells[gy];
+			if (row === undefined) continue;
 			for (let gx = 0; gx < map.width; gx += 1) {
-				if (map.cells[gy][gx] !== "lava") continue;
+				if (row[gx] !== "lava") continue;
 				out.push({ x: (gx + 0.5) * TILE, z: (gy + 0.5) * TILE });
 			}
 		}

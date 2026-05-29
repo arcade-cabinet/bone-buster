@@ -8,7 +8,7 @@
  * slice.
  */
 
-import type { BoneBusterGridMap, BoneBusterMap } from "@engine/engine";
+import type { BoneBusterGridMap, BoneBusterMap } from "@engine/mapTypes";
 import {
 	countLampVariants,
 	LAMP_VARIANTS_OFF,
@@ -53,8 +53,12 @@ describe("COV1 — lamp variant URL pool", () => {
 	it("lampUrlFor picks off when on=false and on when on=true", () => {
 		const off = lampUrlFor({ id: 0, position: { x: 0, y: 0 }, variantIndex: 2, on: false });
 		const on = lampUrlFor({ id: 0, position: { x: 0, y: 0 }, variantIndex: 2, on: true });
-		expect(off).toBe(LAMP_VARIANTS_OFF[2]);
-		expect(on).toBe(LAMP_VARIANTS_ON[2]);
+		const expectedOff = LAMP_VARIANTS_OFF[2];
+		const expectedOn = LAMP_VARIANTS_ON[2];
+		if (expectedOff === undefined || expectedOn === undefined)
+			throw new RangeError("LAMP_VARIANTS pool too small");
+		expect(off).toBe(expectedOff);
+		expect(on).toBe(expectedOn);
 	});
 });
 
@@ -79,10 +83,13 @@ describe("COV1 — sector-map lamp scatter", () => {
 		const b = spawnLamps(map);
 		expect(a).toHaveLength(b.length);
 		for (let i = 0; i < a.length; i += 1) {
-			expect(a[i].id).toBe(b[i].id);
-			expect(a[i].variantIndex).toBe(b[i].variantIndex);
-			expect(a[i].position.x).toBe(b[i].position.x);
-			expect(a[i].position.y).toBe(b[i].position.y);
+			const ai = a[i];
+			const bi = b[i];
+			if (!ai || !bi) throw new Error(`scatter missing element at index ${i}`);
+			expect(ai.id).toBe(bi.id);
+			expect(ai.variantIndex).toBe(bi.variantIndex);
+			expect(ai.position.x).toBe(bi.position.x);
+			expect(ai.position.y).toBe(bi.position.y);
 		}
 	});
 
@@ -114,8 +121,10 @@ describe("COV1 — sector-map lamp scatter", () => {
 		expect(litCount).toBe(Math.min(MAX_LIT_LAMPS, lamps.length));
 		// Lit subset is the prefix, off subset is the suffix.
 		for (let i = 0; i < lamps.length; i += 1) {
-			if (i < MAX_LIT_LAMPS) expect(lamps[i].on).toBe(true);
-			else expect(lamps[i].on).toBe(false);
+			const lamp = lamps[i];
+			if (!lamp) throw new RangeError(`lamps[${i}] missing`);
+			if (i < MAX_LIT_LAMPS) expect(lamp.on).toBe(true);
+			else expect(lamp.on).toBe(false);
 		}
 	});
 

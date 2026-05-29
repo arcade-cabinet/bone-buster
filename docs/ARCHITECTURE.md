@@ -30,7 +30,7 @@ domain: technical
 │  │        │                                            │  │
 │  │  ┌─────▼─────────────────────────────────────────┐  │  │
 │  │  │  Pure-TS simulation                           │  │  │
-│  │  │  engine.ts | buildMap.ts | turtle.ts |        │  │  │
+│  │  │  engine/* | buildMap.ts | turtle.ts |         │  │  │
 │  │  │  enemyAi.ts | yukaIntegration.ts | runStats   │  │  │
 │  │  └───────────────────────────────────────────────┘  │  │
 │  └─────────────────────────────────────────────────────┘  │
@@ -54,7 +54,13 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 | Module | Owns |
 | --- | --- |
-| `src/engine/engine.ts` | Map types (`BoneBusterGridMap`, `BoneBusterSectorMap`), raycasts, collision, enemy/bullet/pickup types, sector portal computation, `polygonContains` |
+| `src/engine/mapTypes.ts` | Core map + entity TYPES (`BoneBusterGridMap`, `BoneBusterSectorMap`, `Enemy`, `Pickup`, `CollisionContext`, `Vec2`) + the `isGridMap`/`isSectorMap` guards + tunable consts (`BOSS_HP_MULTIPLIER`, `WATER_SPEED_MULTIPLIER`, `EPS`) |
+| `src/engine/gridGen.ts` | Procedural grid-map generation (`generateMap`) — rooms, corridors, BFS reachability, per-archetype enemy/pickup tables |
+| `src/engine/gridCollision.ts` | Grid-map collision + raycast primitives (`resolveCollision`, `castRay`, `hasLineOfSight`, `cellAt`, `isBlocking`, `inBounds`) |
+| `src/engine/sectors.ts` | Polygonal-sector primitives (`polygonContains`, `getSectorAtPoint`, `castRaySectors`, `computePortalEdges`, floor/ceiling lookups, `resolveCollisionSectors`) |
+| `src/engine/spawn.ts` | Entity spawning from a map (`spawnEnemies`, `spawnPickups`, `pickBossSpawnIndex`, `pickUvHidden`) |
+| `src/engine/collisionAny.ts` | Map-kind-agnostic dispatchers (`resolveCollisionAny`, `castRayAny`, `hasLineOfSightAny`) routing to grid vs sector primitives + COV2 blocker pushout |
+| `src/engine/projectiles.ts` | Enemy projectile sim (`EnemyBullet`, `makeEnemyBullet`, `stepEnemyBullet`) — the one engine module that depends on `@ai` (yuka), in-direction |
 | `src/world/buildMap.ts` | Procedural map generation (grid + sector variants) from a seed |
 | `src/ai/turtle.ts` | Logo-style turtle DSL used by `buildMap` for shape generation |
 | `src/ai/enemyAi.ts` | Per-enemy FSM tick (patrol → approach → shoot). Pure function `tickEnemyFsm(enemy, ctx) → next` |
@@ -68,7 +74,7 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 | Module | Owns |
 | --- | --- |
-| `app/views/Scene.tsx` | r3f Canvas root, scene composition, MapGeometry, SectorMapGeometry, EnemyMesh, WeaponViewmodel, KeyMarker, ExitPortal, RealDoor, TreasureChest — **flagged for decomposition; see DECISIONS** |
+| `app/views/Scene.tsx` | r3f Canvas root, scene composition, MapGeometry, SectorMapGeometry, EnemyMesh, WeaponViewmodel, KeyMarker, ExitPortal, RealDoor, TreasureChest — **flagged for decomposition (comprehensive-review CR-H1scene backlog; no binding DECISIONS record yet)** |
 | `app/components/PlayerController.tsx` | Camera + movement input (pointer-lock + touch sticks), pointer-lock state |
 | `src/assets/models.ts` | Enemy + weapon + prop GLB registry + per-kind skin rosters, BASE_URL-aware URL helper `A()` |
 | `app/components/RefLevelMap.tsx` | Renderer for reference-clone level layouts |
@@ -166,7 +172,7 @@ URL param — neither alone enables it.
 
 ## Critical contracts
 
-- **Sim purity.** Anything imported by `engine.ts` / `buildMap.ts` /
+- **Sim purity.** Anything imported by `src/engine/*` / `buildMap.ts` /
   `enemyAi.ts` / `turtle.ts` / `runStats.ts` MUST be deterministic.
   No `Math.random()`, no `Date.now()`, no module-level mutable state.
   The commit-gate enforces this.

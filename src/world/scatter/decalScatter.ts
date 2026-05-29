@@ -13,7 +13,7 @@
  * survives map mutations to other sectors.
  */
 
-import type { BoneBusterMap, MapSector, Vec2 } from "@engine/engine";
+import type { BoneBusterMap, MapSector, Vec2 } from "@engine/mapTypes";
 import { pickArchetype } from "@world/archetype";
 import { pickDecalUrlByArchetype } from "@world/decals";
 import type { PropArchetype } from "@world/scatter/propPool";
@@ -128,8 +128,11 @@ export function spawnDecals(map: BoneBusterMap): DecalInstance[] {
 	for (const sector of map.sectors) {
 		if (sector.vertices.length < 3) continue;
 		for (let i = 0; i < sector.vertices.length; i += 1) {
+			// i is in [0, length) by loop condition; (i+1)%length is also in [0, length).
 			const a = sector.vertices[i];
 			const b = sector.vertices[(i + 1) % sector.vertices.length];
+			if (a === undefined || b === undefined)
+				throw new RangeError(`spawnDecals: vertex index out of bounds (i=${i})`);
 			out.push(...decalsOnEdge(sector, i, a, b, densityMultiplier, archetype));
 		}
 	}

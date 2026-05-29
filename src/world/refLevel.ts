@@ -13,7 +13,13 @@
  */
 
 import { decodeRefLevel, levelBounds, type RefLevelIndex } from "@ai/turtle";
-import type { BoneBusterSectorMap, EnemySpawn, MapSector, PickupSpawn, Vec2 } from "@engine/engine";
+import type {
+	BoneBusterSectorMap,
+	EnemySpawn,
+	MapSector,
+	PickupSpawn,
+	Vec2,
+} from "@engine/mapTypes";
 import type { Difficulty } from "@store/settings";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 
@@ -222,8 +228,18 @@ export function loadRefLevel(
 
 	return {
 		kind: "sectors",
-		seed: index,
-		archetype: ARCHETYPE_NAMES[(index >>> 0) % ARCHETYPE_NAMES.length],
+		// SEED2 — ref levels are curated (not procedurally hashed); their
+		// identity phrase is `reflevel-N` and their archetype stays fixed by
+		// index (index % 5), independent of the phrase-hash used by procedural
+		// maps. Ref level 0 → corridor, preserving the canonical anchor.
+		seedPhrase: `reflevel-${index}`,
+		archetype: (() => {
+			// (index >>> 0) % ARCHETYPE_NAMES.length is provably in [0, length).
+			const a = ARCHETYPE_NAMES[(index >>> 0) % ARCHETYPE_NAMES.length];
+			if (a === undefined)
+				throw new RangeError(`loadRefLevel: ARCHETYPE_NAMES index out of bounds`);
+			return a;
+		})(),
 		sectors,
 		playerSpawn,
 		playerYaw: 0,
@@ -256,15 +272,27 @@ export { REF_TO_RUNTIME_SCALE };
  */
 function pickWaterSectorId(sectors: readonly MapSector[]): number {
 	if (sectors.length < 2) return -1;
-	const anchor = polygonCentroid(sectors[0].vertices);
+	// sectors.length >= 2, so index 0 is provably in-bounds.
+	const sector0 = sectors[0];
+	if (sector0 === undefined)
+		throw new RangeError(
+			"pickWaterSectorId: impossible — sectors.length >= 2 but element 0 missing",
+		);
+	const anchor = polygonCentroid(sector0.vertices);
 	let bestId = -1;
 	let bestDistSq = Number.NEGATIVE_INFINITY;
 	for (let i = 1; i < sectors.length; i += 1) {
-		const c = polygonCentroid(sectors[i].vertices);
+		// i < sectors.length by loop condition — provably in-bounds.
+		const si = sectors[i];
+		if (si === undefined)
+			throw new RangeError(
+				`pickWaterSectorId: impossible — i ${i} < sectors.length ${sectors.length} but element missing`,
+			);
+		const c = polygonCentroid(si.vertices);
 		const d2 = (c.x - anchor.x) ** 2 + (c.y - anchor.y) ** 2;
 		if (d2 > bestDistSq) {
 			bestDistSq = d2;
-			bestId = sectors[i].id;
+			bestId = si.id;
 		}
 	}
 	return bestId;

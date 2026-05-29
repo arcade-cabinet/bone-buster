@@ -17,7 +17,7 @@
  */
 
 import { A } from "@assets/assetUrl";
-import { mulberry32 } from "@engine/prng";
+import { mulberry32, seedFrom } from "@engine/prng";
 import { Howl, Howler } from "howler";
 
 export type SlugCategory =
@@ -177,10 +177,23 @@ const LOOPING_SLUGS = new Set([
 
 /**
  * Cache of loop-Howls so the same instance survives stop/resume
- * cycles. Non-loop slugs aren't cached; their Howls get GC'd after
- * playback completes.
+ * cycles.
  */
 const HOWL_POOL: Map<string, Howl> = new Map();
+
+/**
+ * CR-M1 — cache of one-shot Howls keyed by variant FILE path (not slug,
+ * since one-shots sample a variant per play). Previously every one-shot
+ * `play()` constructed a fresh `new Howl` that was never `.unload()`d, so
+ * rapid fire (pistol semi-auto + per-kill hit stings, ~5-15/sec in a busy
+ * fight) accumulated decoded AudioBuffers + Web-Audio source nodes until
+ * GC — a steady heap/node leak. Howler plays overlapping instances of one
+ * Howl concurrently (each `.play()` returns a distinct sound id), so one
+ * cached Howl per distinct file layers shots naturally with zero per-play
+ * allocation. The cache is bounded by the (small, fixed) number of audio
+ * files in the bundle.
+ */
+const ONESHOT_POOL: Map<string, Howl> = new Map();
 
 // Pending stop timers from crossfade(). Keyed by slug so a quick
 // archetype flip (A → B → A) cancels the first transition's stop
@@ -205,10 +218,10 @@ function dbToLinear(db: number): number {
  * RNG is module-scoped + seeded by the engine on every fresh run
  * via setHowlerSeed.
  */
-let variantRng = mulberry32(1);
+let variantRng = mulberry32(seedFrom(1));
 
 export function setHowlerSeed(seed: number): void {
-	variantRng = mulberry32(seed >>> 0);
+	variantRng = mulberry32(seedFrom(seed));
 }
 
 function pickVariantIndex(count: number): number {
@@ -233,9 +246,10 @@ function makeHowl(slug: string, variantPath: string): Howl {
 }
 
 /**
- * Play a slug. Variant pool is sampled via the seeded PRNG. Loop
- * slugs reuse a cached Howl; one-shots construct a fresh one (the
- * Howl is fire-and-forget — its lifecycle ends when playback does).
+ * Play a slug. Variant pool is sampled via the seeded PRNG. Loop slugs
+ * reuse a cached Howl; one-shots reuse a per-variant-file cached Howl
+ * (CR-M1) and layer concurrent shots via Howler's per-`play()` sound ids,
+ * so repeated fire allocates nothing and leaks nothing.
  */
 export function play(slug: string): number | null {
 	clearPendingStop(slug);
@@ -255,7 +269,11 @@ export function play(slug: string): number | null {
 		if (h.playing()) return null;
 		return h.play();
 	}
-	const h = makeHowl(slug, variantPath);
+	let h = ONESHOT_POOL.get(variantPath);
+	if (!h) {
+		h = makeHowl(slug, variantPath);
+		ONESHOT_POOL.set(variantPath, h);
+	}
 	return h.play();
 }
 
@@ -381,5 +399,7 @@ export function resetForTesting(): void {
 	PENDING_STOPS.clear();
 	for (const h of HOWL_POOL.values()) h.unload();
 	HOWL_POOL.clear();
-	variantRng = mulberry32(1);
+	for (const h of ONESHOT_POOL.values()) h.unload();
+	ONESHOT_POOL.clear();
+	variantRng = mulberry32(seedFrom(1));
 }

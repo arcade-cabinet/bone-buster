@@ -31,16 +31,10 @@
 import { tickEnemyFsm } from "@ai/enemyAi";
 import { removeYukaEntity } from "@ai/yukaIntegration";
 import { panForPosition, playAggroAlert, playHurt } from "@audio/sfx";
-import {
-	type BoneBusterMap,
-	type CollisionContext,
-	type Enemy,
-	type EnemyBullet,
-	hasLineOfSightAny,
-	makeEnemyBullet,
-	resolveCollisionAny,
-} from "@engine/engine";
+import { hasLineOfSightAny, resolveCollisionAny } from "@engine/collisionAny";
 import { dispatch } from "@engine/events";
+import type { BoneBusterMap, CollisionContext, Enemy } from "@engine/mapTypes";
+import { type EnemyBullet, makeEnemyBullet } from "@engine/projectiles";
 import {
 	RATTLER_ATTACK_COOLDOWN_MS,
 	RATTLER_ATTACK_RANGE,

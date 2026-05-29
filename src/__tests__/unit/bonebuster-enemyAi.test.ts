@@ -8,8 +8,8 @@ import {
 	WANDER_JITTER_RAD_PER_SEC,
 	WANDER_RADIUS,
 } from "@ai/enemyAi";
-import type { BoneBusterGridMap, Enemy } from "@engine/engine";
-import { generateMap } from "@engine/engine";
+import { generateMap } from "@engine/gridGen";
+import type { BoneBusterGridMap, Enemy } from "@engine/mapTypes";
 import { describe, expect, it } from "vitest";
 
 function makeEnemy(partial: Partial<Enemy> = {}): Enemy {
@@ -29,7 +29,7 @@ function makeEnemy(partial: Partial<Enemy> = {}): Enemy {
 }
 
 describe("bonebuster enemyAi FSM (C3)", () => {
-	const map = generateMap(12345) as BoneBusterGridMap;
+	const map = generateMap("gen-12345") as BoneBusterGridMap;
 	const ctx = { doorOpen: false };
 
 	it("state 0 stays in 0 when player is far + no LOS", () => {

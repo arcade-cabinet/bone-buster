@@ -2,8 +2,8 @@
  * COV14 step-2 — ambient NPC scatter contract.
  */
 
-import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
-import { ARCHETYPE_NAMES } from "@world/archetype";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/mapTypes";
+import { archetypeForPhrase } from "@world/archetype";
 import { spawnNpcs } from "@world/scatter/npcScatter";
 import { describe, expect, it } from "vitest";
 
@@ -17,7 +17,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 }
 
 // Library archetype = seed % 5 === 4.
-function libraryMap(seed: number): BoneBusterSectorMap {
+function libraryMap(seedPhrase: string): BoneBusterSectorMap {
 	const sectors = [];
 	for (let i = 0; i < 20; i += 1) {
 		sectors.push({
@@ -29,8 +29,8 @@ function libraryMap(seed: number): BoneBusterSectorMap {
 	}
 	return {
 		kind: "sectors",
-		seed,
-		archetype: ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length],
+		seedPhrase,
+		archetype: archetypeForPhrase(seedPhrase),
 		sectors,
 		playerSpawn: { x: -100, y: -100 },
 		playerYaw: 0,
@@ -44,42 +44,45 @@ function libraryMap(seed: number): BoneBusterSectorMap {
 
 describe("COV14 step-2 — spawnNpcs archetype gating", () => {
 	it("returns [] on non-library archetypes", () => {
-		expect(spawnNpcs(libraryMap(0))).toEqual([]); // corridor
+		expect(spawnNpcs(libraryMap("test-11"))).toEqual([]); // corridor
 	});
 
 	it("returns [] for grid maps", () => {
-		const grid = { ...libraryMap(4), kind: "grid" } as unknown as BoneBusterSectorMap;
+		const grid = { ...libraryMap("test-0"), kind: "grid" } as unknown as BoneBusterSectorMap;
 		expect(spawnNpcs(grid)).toEqual([]);
 	});
 
 	it("populates instances on library-archetype maps", () => {
-		const out = spawnNpcs(libraryMap(4));
+		const out = spawnNpcs(libraryMap("test-0"));
 		expect(out.length).toBeGreaterThan(0);
 	});
 });
 
 describe("COV14 step-2 — spawnNpcs invariants", () => {
 	it("is deterministic — same seed → byte-identical layout", () => {
-		const a = spawnNpcs(libraryMap(4));
-		const b = spawnNpcs(libraryMap(4));
+		const a = spawnNpcs(libraryMap("test-0"));
+		const b = spawnNpcs(libraryMap("test-0"));
 		expect(a.length).toBe(b.length);
 		for (let i = 0; i < a.length; i += 1) {
-			expect(a[i].id).toBe(b[i].id);
-			expect(a[i].position.x).toBe(b[i].position.x);
-			expect(a[i].position.y).toBe(b[i].position.y);
-			expect(a[i].yaw).toBe(b[i].yaw);
-			expect(a[i].kind).toBe(b[i].kind);
+			const ai = a[i];
+			const bi = b[i];
+			if (!ai || !bi) throw new Error(`scatter missing element at index ${i}`);
+			expect(ai.id).toBe(bi.id);
+			expect(ai.position.x).toBe(bi.position.x);
+			expect(ai.position.y).toBe(bi.position.y);
+			expect(ai.yaw).toBe(bi.yaw);
+			expect(ai.kind).toBe(bi.kind);
 		}
 	});
 
 	it("ids are unique per map", () => {
-		const out = spawnNpcs(libraryMap(4));
+		const out = spawnNpcs(libraryMap("test-0"));
 		const ids = new Set(out.map((i) => i.id));
 		expect(ids.size).toBe(out.length);
 	});
 
 	it("yaw is finite and in [0, 2π)", () => {
-		for (const inst of spawnNpcs(libraryMap(4))) {
+		for (const inst of spawnNpcs(libraryMap("test-0"))) {
 			expect(Number.isFinite(inst.yaw)).toBe(true);
 			expect(inst.yaw).toBeGreaterThanOrEqual(0);
 			expect(inst.yaw).toBeLessThan(Math.PI * 2);
@@ -87,7 +90,7 @@ describe("COV14 step-2 — spawnNpcs invariants", () => {
 	});
 
 	it("respects 4-tile skip-radius from spawn/exit/key", () => {
-		const m = libraryMap(4);
+		const m = libraryMap("test-0");
 		const anchors = [m.playerSpawn, m.exitPosition, m.keyPosition];
 		for (const inst of spawnNpcs(m)) {
 			for (const a of anchors) {
@@ -99,13 +102,13 @@ describe("COV14 step-2 — spawnNpcs invariants", () => {
 
 	it("kinds are valid NpcKind values", () => {
 		const valid = new Set(["archer", "knight", "merchant", "ninja", "student", "basemesh"]);
-		for (const inst of spawnNpcs(libraryMap(4))) {
+		for (const inst of spawnNpcs(libraryMap("test-0"))) {
 			expect(valid.has(inst.kind)).toBe(true);
 		}
 	});
 
 	it("per-sector count never exceeds 2", () => {
-		const out = spawnNpcs(libraryMap(4));
+		const out = spawnNpcs(libraryMap("test-0"));
 		const perSector = new Map<number, number>();
 		for (const inst of out) {
 			const sid = Math.floor(inst.id / 100);
@@ -117,7 +120,7 @@ describe("COV14 step-2 — spawnNpcs invariants", () => {
 	});
 
 	it("over a large sample, multiple NpcKinds appear (no monoculture)", () => {
-		const out = spawnNpcs(libraryMap(4));
+		const out = spawnNpcs(libraryMap("test-0"));
 		const kinds = new Set(out.map((i) => i.kind));
 		expect(kinds.size).toBeGreaterThanOrEqual(2);
 	});

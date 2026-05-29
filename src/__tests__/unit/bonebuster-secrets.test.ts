@@ -21,7 +21,9 @@ function makeSecret(over: Partial<SecretSpec> = {}): Secret {
 		wallRestY: over.wallRestY ?? 1.2,
 		wallLiftY: over.wallLiftY ?? 2.4,
 	};
-	return spawnSecrets([spec])[0];
+	const result = spawnSecrets([spec])[0];
+	if (!result) throw new Error("spawnSecrets([spec]) returned no element");
+	return result;
 }
 
 describe("E6 — secret switch hit detection", () => {
@@ -107,9 +109,11 @@ describe("E6 — secret state machine", () => {
 			},
 		]);
 		expect(secrets).toHaveLength(1);
-		expect(secrets[0].id).toBe(7);
-		expect(secrets[0].triggered).toBe(false);
-		expect(secrets[0].liftProgress).toBe(0);
+		const s0 = secrets[0];
+		if (!s0) throw new Error("secrets[0] missing after toHaveLength(1)");
+		expect(s0.id).toBe(7);
+		expect(s0.triggered).toBe(false);
+		expect(s0.liftProgress).toBe(0);
 	});
 });
 
@@ -134,7 +138,7 @@ describe("E6 — ref-level secret synthesis", () => {
 
 	it("secret positions across the 3 ref levels are distinct", () => {
 		const positions = [0, 1, 2].map(
-			(i) => loadRefLevel(i as 0 | 1 | 2).secrets?.[0].switchPosition,
+			(i) => loadRefLevel(i as 0 | 1 | 2).secrets?.[0]?.switchPosition,
 		);
 		// Each level centers at a different place after REF_TO_RUNTIME_SCALE,
 		// so the switch positions diverge across levels.

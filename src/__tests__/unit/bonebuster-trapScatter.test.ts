@@ -2,7 +2,7 @@
  * COV8 step-2 — trap scatter + tick-damage contract.
  */
 
-import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/mapTypes";
 import {
 	disarmSector,
 	isTrapVisible,
@@ -25,7 +25,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 
 const SECTOR_FIXTURE: BoneBusterSectorMap = {
 	kind: "sectors",
-	seed: 1, // % 5 = 1 → arena (heavier trap density)
+	seedPhrase: "fixture-1", // % 5 = 1 → arena (heavier trap density)
 	archetype: "arena",
 	sectors: [
 		{ id: 0, vertices: bigSquare(0, 0, 10), floorHeight: 0, ceilingHeight: 10 },
@@ -41,20 +41,23 @@ const SECTOR_FIXTURE: BoneBusterSectorMap = {
 	bounds: { minX: -10, minY: -10, maxX: 40, maxY: 40 },
 };
 
-function reseed(seed: number): BoneBusterSectorMap {
-	return { ...SECTOR_FIXTURE, seed };
+function reseed(seedPhrase: string): BoneBusterSectorMap {
+	return { ...SECTOR_FIXTURE, seedPhrase };
 }
 
 describe("COV8 step-2 — spawnTraps determinism", () => {
 	it("same seed → byte-identical scatter", () => {
-		const a = spawnTraps(reseed(42));
-		const b = spawnTraps(reseed(42));
+		const a = spawnTraps(reseed("tr-42"));
+		const b = spawnTraps(reseed("tr-42"));
 		expect(a.length).toBe(b.length);
 		for (let i = 0; i < a.length; i += 1) {
-			expect(a[i].id).toBe(b[i].id);
-			expect(a[i].position.x).toBe(b[i].position.x);
-			expect(a[i].position.y).toBe(b[i].position.y);
-			expect(a[i].def.id).toBe(b[i].def.id);
+			const ai = a[i];
+			const bi = b[i];
+			if (!ai || !bi) throw new Error(`scatter missing element at index ${i}`);
+			expect(ai.id).toBe(bi.id);
+			expect(ai.position.x).toBe(bi.position.x);
+			expect(ai.position.y).toBe(bi.position.y);
+			expect(ai.def.id).toBe(bi.def.id);
 		}
 	});
 
@@ -64,13 +67,13 @@ describe("COV8 step-2 — spawnTraps determinism", () => {
 	});
 
 	it("places at least one trap on arena-archetype maps (heavy density)", () => {
-		const arena = reseed(1); // arena archetype
+		const arena = reseed("tr-1"); // arena archetype
 		const out = spawnTraps(arena);
 		expect(out.length).toBeGreaterThan(0);
 	});
 
 	it("respects skip-radius from spawn/exit/key (≥3 tiles)", () => {
-		const map = reseed(7);
+		const map = reseed("tr-7");
 		const anchors = [map.playerSpawn, map.exitPosition, map.keyPosition];
 		for (const t of spawnTraps(map)) {
 			for (const a of anchors) {
@@ -81,7 +84,7 @@ describe("COV8 step-2 — spawnTraps determinism", () => {
 	});
 
 	it("yaw is finite + in [0, 2π)", () => {
-		for (const t of spawnTraps(reseed(11))) {
+		for (const t of spawnTraps(reseed("tr-11"))) {
 			expect(Number.isFinite(t.yaw)).toBe(true);
 			expect(t.yaw).toBeGreaterThanOrEqual(0);
 			expect(t.yaw).toBeLessThan(Math.PI * 2);
@@ -89,13 +92,13 @@ describe("COV8 step-2 — spawnTraps determinism", () => {
 	});
 
 	it("ids are unique per map", () => {
-		const out = spawnTraps(reseed(99));
+		const out = spawnTraps(reseed("tr-99"));
 		const ids = new Set(out.map((t) => t.id));
 		expect(ids.size).toBe(out.length);
 	});
 
 	it("disarmed flag starts false on every instance", () => {
-		for (const t of spawnTraps(reseed(3))) {
+		for (const t of spawnTraps(reseed("tr-3"))) {
 			expect(t.disarmed).toBe(false);
 		}
 	});
@@ -103,9 +106,10 @@ describe("COV8 step-2 — spawnTraps determinism", () => {
 
 describe("COV8 step-2 — disarmSector + triggerAt + trapAt", () => {
 	it("disarmSector flips every trap in the matching sector", () => {
-		const traps = spawnTraps(reseed(1));
+		const traps = spawnTraps(reseed("tr-1"));
 		const sectorIds = new Set(traps.map((t) => t.sectorId));
 		const targetSector = [...sectorIds][0];
+		if (targetSector === undefined) throw new Error("expected at least one sector");
 		const targetCount = traps.filter((t) => t.sectorId === targetSector).length;
 
 		const disarmed = disarmSector(traps, targetSector);
@@ -117,15 +121,17 @@ describe("COV8 step-2 — disarmSector + triggerAt + trapAt", () => {
 	});
 
 	it("disarmSector returns 0 when called twice on the same sector", () => {
-		const traps = spawnTraps(reseed(1));
+		const traps = spawnTraps(reseed("tr-1"));
 		if (traps.length === 0) return; // trivially pass
-		const sid = traps[0].sectorId;
+		const first = traps[0];
+		if (!first) throw new Error("traps[0] unexpectedly missing after length check");
+		const sid = first.sectorId;
 		disarmSector(traps, sid);
 		expect(disarmSector(traps, sid)).toBe(0);
 	});
 
 	it("trapAt finds hazards within radius and ignores disarmed/trigger entries", () => {
-		const traps = spawnTraps(reseed(1));
+		const traps = spawnTraps(reseed("tr-1"));
 		const hazard = traps.find((t) => t.def.kind !== "trigger");
 		if (!hazard) return;
 		expect(trapAt(traps, hazard.position, TRAP_OVERLAP_RADIUS)).toBe(hazard);
@@ -134,7 +140,7 @@ describe("COV8 step-2 — disarmSector + triggerAt + trapAt", () => {
 	});
 
 	it("triggerAt only matches trigger-kind entries", () => {
-		const traps = spawnTraps(reseed(1));
+		const traps = spawnTraps(reseed("tr-1"));
 		const trigger = traps.find((t) => t.def.kind === "trigger");
 		const hazard = traps.find((t) => t.def.kind !== "trigger");
 		if (!trigger || !hazard) return;
@@ -143,7 +149,7 @@ describe("COV8 step-2 — disarmSector + triggerAt + trapAt", () => {
 	});
 
 	it("trapAt returns null when no overlap", () => {
-		const traps = spawnTraps(reseed(1));
+		const traps = spawnTraps(reseed("tr-1"));
 		expect(trapAt(traps, { x: 9999, y: 9999 }, TRAP_OVERLAP_RADIUS)).toBeNull();
 	});
 });

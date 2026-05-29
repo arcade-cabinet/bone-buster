@@ -13,21 +13,18 @@ import {
 	stopAmbient,
 	stopMusic,
 } from "@audio/sfx";
-import type { BoneBusterMap, PickupKind } from "@engine/engine";
 import { addBoneBusterListener, dispatch } from "@engine/events";
+import type { BoneBusterMap, PickupKind } from "@engine/mapTypes";
+import { createEventPrng, createFreshEventSeed, cyrb128 } from "@engine/rng";
+import { CANONICAL_SEED_PHRASE, randomSeedPhrase } from "@engine/seedPhrase";
+import { advanceAndPersistEventSeed, loadEventSeed } from "@platform/persistence/eventSeed";
 import { loadSettings, saveSettings } from "@platform/persistence/settingsStore";
 import { Canvas } from "@react-three/fiber";
 import { PLAYER_MAX_HP } from "@shared/constants";
 import { computeFadePeak, FADE_COLOR_BY_KIND } from "@shared/fadeTriggers";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
 import { openRunHistory, type RunHistory } from "@store/runHistory";
-import {
-	advanceLevel,
-	makeInitialRunStats,
-	nextStatusAfterTransition,
-	type RunStats,
-	runStatsReducer,
-} from "@store/runStats";
+import { makeInitialRunStats, type RunStats, runStatsReducer } from "@store/runStats";
 import {
 	type BoneBusterSettings,
 	DEFAULT_SETTINGS,
@@ -39,12 +36,14 @@ import { ROLE, SCALE } from "@styles/tokens/index";
 import { BoneBusterHUD } from "@views/HUD";
 import { BoneBusterLanding } from "@views/Landing";
 import { BoneBusterScene } from "@views/Scene";
+import { debugHooksEnabled, readArchetypeFromUrl, readSeedPhraseFromUrl } from "@views/urlFlags";
 import { applyArchetypeOverride } from "@world/archetype";
 import { buildMap } from "@world/buildMap";
 import { pickLevelName, WELCOME_WING_NAME } from "@world/levelNames";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGameRef } from "../../src/scene/hooks/useGameRef";
+import { useLevelTransition } from "./hooks/useLevelTransition";
 
 export type GameStatus = "landing" | "playing" | "paused" | "dead" | "transitioning" | "won";
 
@@ -123,15 +122,10 @@ export type GameState = {
 	goingBackDeadlineMs: number | null;
 };
 
-export const TRANSITION_HOLD_MS = 800;
-export const RUN_LENGTH = 5;
-/**
- * POL37 — total budget the player has to retrace from the goal back
- * to spawn after the boss + key are taken. 30s is long enough to
- * traverse any procedural map at a brisk walk; too short feels like
- * a punish, too long defeats the "urgent retreat" reading.
- */
-export const GOING_BACK_BUDGET_MS = 30_000;
+// CR-H1scene step-d — the lifecycle constants live in @views/gameConstants
+// (a leaf module) to break the value-import cycle with gameReducer +
+// useLevelTransition; Shell imports them like every other consumer (see the
+// import block above).
 
 export type WeaponState = {
 	weapon: WeaponId;
@@ -210,51 +204,16 @@ const baseOwnedWeapons = (): Record<WeaponId, boolean> => ({
 	flamethrower: false,
 });
 
-function readSeedFromUrl(): number {
-	const base = readBaseSeedFromUrl();
+// URL-flag parsing lives in @views/urlFlags (CR-F6 — extracted so the
+// app's only external-input boundary is unit-testable). This composes the
+// base seed with the archetype override.
+function readSeedFromUrl(): string {
+	// SEED2 — the map identity is now a seed PHRASE. Use the URL phrase if
+	// present, else a deterministic default (SEED3 will mint from the event
+	// PRNG / New Game modal). The archetype override appends a suffix that
+	// re-hashes onto the requested archetype.
+	const base = readSeedPhraseFromUrl() ?? CANONICAL_SEED_PHRASE;
 	return applyArchetypeOverride(base, readArchetypeFromUrl());
-}
-
-// R8b — URL parameter migration. The post-rebrand canonical names
-// are `bonebusterSeed` / `bonebusterArchetype` / `bonebusterDebug`;
-// the legacy `objexoom*` names are accepted as fallbacks so existing
-// bookmarks + e2e harness URLs keep working. New param wins when
-// both are present.
-function readBaseSeedFromUrl(): number {
-	if (typeof window === "undefined") return Date.now() & 0xffffffff;
-	try {
-		const url = new URL(window.location.href);
-		const raw = url.searchParams.get("bonebusterSeed") ?? url.searchParams.get("objexoomSeed");
-		if (raw && /^[0-9]+$/.test(raw)) {
-			return Number.parseInt(raw, 10) & 0xffffffff;
-		}
-	} catch {
-		// fall through
-	}
-	return Date.now() & 0xffffffff;
-}
-
-function readArchetypeFromUrl(): string | null {
-	if (typeof window === "undefined") return null;
-	try {
-		const url = new URL(window.location.href);
-		return url.searchParams.get("bonebusterArchetype") ?? url.searchParams.get("objexoomArchetype");
-	} catch {
-		return null;
-	}
-}
-
-function debugHooksEnabled(): boolean {
-	if (typeof window === "undefined") return false;
-	if (process.env.NODE_ENV === "production") return false;
-	try {
-		const params = new URL(window.location.href).searchParams;
-		// R8b — accept either name; bonebusterDebug is the canonical
-		// post-rebrand spelling, objexoomDebug is the legacy alias.
-		return params.has("bonebusterDebug") || params.has("objexoomDebug");
-	} catch {
-		return false;
-	}
 }
 
 declare global {
@@ -283,7 +242,47 @@ declare global {
 }
 
 export function BoneBusterShell() {
-	const [seed, setSeed] = useState(readSeedFromUrl);
+	const [seedPhrase, setSeedPhrase] = useState(readSeedFromUrl);
+	// SEED4 — the device-persistent event-PRNG seed (Capacitor Preferences).
+	// Loaded once on mount; `rollSeedPhrase` advances it (persisting the new
+	// value) and draws a fresh suggested phrase, so each roll/new-game uses a
+	// deterministic-but-fresh event stream rather than an inline crypto mint.
+	const eventSeedRef = useRef<string | null>(null);
+	// SEED4 — true once a roll (or any advance) has taken ownership of the
+	// event stream. Guards against the bootstrap loadEventSeed().then() landing
+	// LATE and rewinding eventSeedRef back to the persisted value after the user
+	// already randomized — which would replay a stale stream head on the next roll.
+	const eventSeedOwnedRef = useRef(false);
+	useEffect(() => {
+		let cancelled = false;
+		void loadEventSeed().then((s) => {
+			if (!cancelled && !eventSeedOwnedRef.current) eventSeedRef.current = s;
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+	const rollSeedPhrase = useCallback(() => {
+		// Draw the suggested phrase from the current event stream, then advance
+		// + persist the buried seed for the next roll. Falls back to a fresh
+		// mint if Preferences hasn't resolved yet (first frames after mount).
+		const seed = eventSeedRef.current ?? createFreshEventSeed();
+		// INF3 — preserve a forced `?bonebusterArchetype` across rerolls: rewrite
+		// the freshly drawn phrase so it still hashes to the chosen archetype,
+		// exactly as the initial URL-seed path (readSeedFromUrl) does. Without
+		// this, RANDOMIZE on a forced-archetype run would escape to whatever the
+		// raw phrase hashes to.
+		const phrase = applyArchetypeOverride(
+			randomSeedPhrase(createEventPrng(seed)),
+			readArchetypeFromUrl(),
+		);
+		setSeedPhrase(phrase);
+		// Take ownership so a late bootstrap load can't rewind the stream head.
+		eventSeedOwnedRef.current = true;
+		void advanceAndPersistEventSeed(seed).then((next) => {
+			eventSeedRef.current = next;
+		});
+	}, []);
 	// INF3 — when `?bonebusterArchetype` is present, switch the level to
 	// procedural so the seed rewrite (and thus the archetype pick)
 	// actually drives map generation. Without this override the default
@@ -346,16 +345,19 @@ export function BoneBusterShell() {
 	const map: BoneBusterMap = useMemo(
 		// I4 — difficulty plumbed through so ManyEnemies (class 9) expands
 		// per the ref formula. Procedural maps don't read it.
-		() => buildMap(seed, settings.level, settings.difficulty),
-		[seed, settings.level, settings.difficulty],
+		() => buildMap(seedPhrase, settings.level, settings.difficulty),
+		[seedPhrase, settings.level, settings.difficulty],
 	);
 	// D8 — alliterative level name. refLevel(0) tutorial (LEVEL_CHOICE 1)
 	// is fixed at "Welcome Wing"; every other map rolls from its
 	// archetype's pool via the NAME-tagged PRNG so the name is stable
 	// across reloads of the same seed.
 	const levelName = useMemo(
-		() => (settings.level === 1 ? WELCOME_WING_NAME : pickLevelName(map.archetype, seed)),
-		[settings.level, map.archetype, seed],
+		() =>
+			settings.level === 1
+				? WELCOME_WING_NAME
+				: pickLevelName(map.archetype, cyrb128(seedPhrase)[3]),
+		[settings.level, map.archetype, seedPhrase],
 	);
 
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
@@ -382,6 +384,13 @@ export function BoneBusterShell() {
 		phase: "out",
 		goingBackDeadlineMs: null,
 	}));
+	// CR-H1scene step-d — authoritative current state, kept fresh every render.
+	// useGameRef's reducer adapter reads `stateRef.current` (and writes the
+	// reduced result back to it) so synchronous same-batch GameRef calls
+	// accumulate correctly without a functional setState updater. Declared here
+	// (above the useGameRef call) so it can be passed in as a dep.
+	const stateRef = useRef(state);
+	stateRef.current = state;
 	const [touchMode, setTouchMode] = useState<boolean>(() =>
 		resolveTouchMode(settings.touchControls),
 	);
@@ -433,10 +442,11 @@ export function BoneBusterShell() {
 	// table, and all 7 callback bodies. Shell only declares the deps.
 	const gameRef = useGameRef({
 		setState,
+		stateRef,
 		triggerFadeRef,
 		settings,
 		tuning,
-		seed,
+		seedPhrase,
 		level: settings.level,
 	});
 
@@ -497,11 +507,11 @@ export function BoneBusterShell() {
 			// (dead, won) or there's no live run to resume from.
 			const preserveSeed = prev.status === "paused" || prev.status === "playing";
 			if (!preserveSeed) {
-				setSeed(Date.now() & 0xffffffff);
+				rollSeedPhrase();
 			}
 			return { ...prev, status: "landing" };
 		});
-	}, []);
+	}, [rollSeedPhrase]);
 
 	// E3 — surface a "resume run" affordance on the landing when we have a
 	// paused run that can be picked up. The user has to have actually clicked
@@ -629,7 +639,7 @@ export function BoneBusterShell() {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: map.seed is the trigger for the reset, not a body-read; biome's stricter inference would auto-fix to [] which breaks the level-transition reset.
 	useEffect(() => {
 		setBossActiveCount(0);
-	}, [map.seed]);
+	}, [map.seedPhrase]);
 
 	useEffect(() => {
 		if (!settings.soundEnabled) return;
@@ -705,47 +715,37 @@ export function BoneBusterShell() {
 		})();
 	}, [state.status, state.run, settings.level]);
 
-	// B1/B4 — when a level is cleared on a chained run, hold for
-	// TRANSITION_HOLD_MS to let the fade play, then advance settings.level
-	// (or re-roll the seed for procedural mode) and flip back to "playing"
-	// with HP/ammo/key reset (run stats preserved).
-	useEffect(() => {
-		if (state.status !== "transitioning") return;
-		const timer = window.setTimeout(() => {
-			if (settings.level === "procedural") {
-				setSeed(Date.now() & 0xffffffff);
-			} else {
-				const next = advanceLevel(settings.level, state.run.runLevelsCleared);
-				if (next !== null && next !== "procedural") {
-					setSettings((prev) => ({ ...prev, level: next }));
-				}
-			}
-			// PT1E — pure function decides "playing" vs "won". Bug
-			// before: unconditionally set "playing", leaving the
-			// player stuck at spawn with phase=going_back +
-			// lastReachedSpawnAt=true on the final map (no remount
-			// since level didn't advance, key didn't change).
-			const nextStatus = nextStatusAfterTransition(settings.level, state.run.runLevelsCleared);
-			setState((prev) => ({
-				...prev,
-				status: nextStatus,
-				hp: prev.maxHp,
-				kills: 0,
-				score: 0,
-				hasKey: false,
-				hasFlashlight: false,
-				hasEmfReader: false,
-				hasSpiritBox: false,
-				hasUvFlashlight: false,
-				crucifixes: 0,
-				weapon: "pistol",
-				ammo: baseAmmo(),
-				ownedWeapons: baseOwnedWeapons(),
-				damageFlashAt: 0,
-			}));
-		}, TRANSITION_HOLD_MS);
-		return () => window.clearTimeout(timer);
-	}, [state.status, state.run.runLevelsCleared, settings.level]);
+	// B1/B4 — level-transition lifecycle (hold-for-fade → advance/re-roll →
+	// reset the per-level slice → "playing"/"won") lives in useLevelTransition.
+	// `freshLevelSlice` is the HP/ammo/key/tools reset merged over prev; run
+	// stats are preserved by NOT including them here.
+	const freshLevelSlice = useCallback(
+		(): Partial<GameState> => ({
+			hp: maxHp,
+			kills: 0,
+			score: 0,
+			hasKey: false,
+			hasFlashlight: false,
+			hasEmfReader: false,
+			hasSpiritBox: false,
+			hasUvFlashlight: false,
+			crucifixes: 0,
+			weapon: "pistol",
+			ammo: baseAmmo(),
+			ownedWeapons: baseOwnedWeapons(),
+			damageFlashAt: 0,
+		}),
+		[maxHp],
+	);
+	useLevelTransition({
+		status: state.status,
+		runLevelsCleared: state.run.runLevelsCleared,
+		level: settings.level,
+		setState,
+		setSettings,
+		rollSeedPhrase,
+		freshLevelSlice,
+	});
 
 	// Debug hooks for headed e2e tests. Only attached when ?bonebusterDebug is
 	// present AND not in production. The contract is the only stable way to
@@ -756,8 +756,7 @@ export function BoneBusterShell() {
 	// state/map change. Re-install caused a tiny window where the global
 	// was undefined; e2e loops calling start → triggerWin → next-level
 	// six times in a row hit that window often enough to flake.
-	const stateRef = useRef(state);
-	stateRef.current = state;
+	// (stateRef is declared above, before the useGameRef call — step-d.)
 	const mapRef = useRef(map);
 	mapRef.current = map;
 	const settingsRef = useRef(settings);
@@ -885,6 +884,9 @@ export function BoneBusterShell() {
 			if (owned.length < 2) return;
 			const idx = owned.indexOf(state.weapon);
 			const next = owned[(idx + (e.deltaY > 0 ? 1 : owned.length - 1)) % owned.length];
+			// next is provably defined: the modulo operand is owned.length
+			// (≥2 after the guard above) so the result is always in-bounds.
+			if (next === undefined) return;
 			onSelectWeapon(next);
 		};
 		window.addEventListener("wheel", onWheel, { passive: false });
@@ -955,6 +957,9 @@ export function BoneBusterShell() {
 								onQuit={onQuit}
 								canResume={hasPausedRun}
 								onResume={onResumeRun}
+								seedPhrase={seedPhrase}
+								onSeedPhraseChange={setSeedPhrase}
+								onRandomizeSeedPhrase={() => rollSeedPhrase()}
 							/>
 						</motion.div>
 					)}
@@ -986,7 +991,7 @@ export function BoneBusterShell() {
 								    reset between levels. Without this, Section B level
 								    transitions silently inherit dead state from level 1. */}
 								<BoneBusterScene
-									key={`${settings.level}-${seed}-${map.seed}`}
+									key={`${settings.level}-${seedPhrase}-${map.seedPhrase}`}
 									map={map}
 									active={state.status === "playing"}
 									hasKey={state.hasKey}

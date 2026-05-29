@@ -14,8 +14,8 @@
  */
 
 import { A } from "@assets/assetUrl";
-import type { BoneBusterMap, Vec2 } from "@engine/engine";
-import { mulberry32, RNG_TAGS } from "@engine/prng";
+import type { BoneBusterMap, Vec2 } from "@engine/mapTypes";
+import { forkStream } from "@engine/rng";
 
 /**
  * The 10 PSX Mega Pack II lamp GLBs, split by on/off state.
@@ -76,7 +76,7 @@ export interface LampInstance {
 export function spawnLamps(map: BoneBusterMap): LampInstance[] {
 	if (map.kind !== "sectors") return [];
 	const out: LampInstance[] = [];
-	const rng = mulberry32((map.seed >>> 0) ^ RNG_TAGS.LMP); // mix in a "LMP" tag
+	const rng = forkStream(map.seedPhrase, "LMP"); // mix in a "LMP" tag
 	const skipRadius = 3;
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 
@@ -104,9 +104,14 @@ export function spawnLamps(map: BoneBusterMap): LampInstance[] {
 	// lamp landed on the same variantIndex, nudge the second one to a
 	// neighbor index so the variant count >= 2.
 	if (out.length >= 2) {
-		const firstVar = out[0].variantIndex;
+		// out.length >= 2, so indices 0 and 1 are provably in-bounds.
+		const first = out[0];
+		const second = out[1];
+		if (first === undefined || second === undefined)
+			throw new RangeError("spawnLamps: impossible — out.length >= 2 but element missing");
+		const firstVar = first.variantIndex;
 		if (out.every((lamp) => lamp.variantIndex === firstVar)) {
-			out[1].variantIndex = (firstVar + 1) % LAMP_VARIANTS_OFF.length;
+			second.variantIndex = (firstVar + 1) % LAMP_VARIANTS_OFF.length;
 		}
 	}
 
@@ -116,7 +121,13 @@ export function spawnLamps(map: BoneBusterMap): LampInstance[] {
 	// bounded; lamps past the cap render with the OFF variant and
 	// contribute zero per-frame light cost.
 	for (let i = 0; i < Math.min(MAX_LIT_LAMPS, out.length); i += 1) {
-		out[i].on = true;
+		// i < out.length by loop condition — provably in-bounds.
+		const lamp = out[i];
+		if (lamp === undefined)
+			throw new RangeError(
+				`spawnLamps: impossible — i ${i} < out.length ${out.length} but element missing`,
+			);
+		lamp.on = true;
 	}
 
 	return out;
@@ -124,9 +135,14 @@ export function spawnLamps(map: BoneBusterMap): LampInstance[] {
 
 /** Resolve the GLB URL for an instance based on its on/off state. */
 export function lampUrlFor(instance: LampInstance): string {
-	return instance.on
+	// variantIndex is set by spawnLamps to Math.floor(rng()*length) which
+	// is provably in [0, length), so the pool access never misses.
+	const url = instance.on
 		? LAMP_VARIANTS_ON[instance.variantIndex]
 		: LAMP_VARIANTS_OFF[instance.variantIndex];
+	if (url === undefined)
+		throw new RangeError(`lampUrlFor: variantIndex ${instance.variantIndex} out of bounds`);
+	return url;
 }
 
 /** Returns the count of distinct variantIndex values across a scatter. */

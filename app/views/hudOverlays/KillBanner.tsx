@@ -1,6 +1,6 @@
 import { pickEnemySkin } from "@assets/models";
-import type { EnemyKind } from "@engine/engine";
 import { addBoneBusterListener } from "@engine/events";
+import type { EnemyKind } from "@engine/mapTypes";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE } from "@styles/tokens/index";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";

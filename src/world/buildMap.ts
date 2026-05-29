@@ -1,4 +1,6 @@
-import { type BoneBusterMap, generateMap } from "@engine/engine";
+import { generateMap } from "@engine/gridGen";
+import type { BoneBusterMap } from "@engine/mapTypes";
+import { cyrb128 } from "@engine/rng";
 import type { Difficulty, LevelChoice } from "@store/settings";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 import { getArchetypeMapShape } from "@world/archetypeMapShape";
@@ -18,19 +20,23 @@ import { loadRefLevel } from "@world/refLevel";
  * unchanged (their geometry is decoded from the reference clone).
  */
 export function buildMap(
-	seed: number,
+	seedPhrase: string,
 	level: LevelChoice,
 	difficulty: Difficulty = "hurtMePlenty",
 ): BoneBusterMap {
 	if (level === "procedural") {
-		// CONV3 — this is the ONE place we recompute the archetype
-		// modulus, because `getArchetypeMapShape` needs it BEFORE
-		// `generateMap` runs to pick the per-archetype sector density.
-		// `generateMap` re-derives the same archetype internally and
-		// writes it onto the returned map's `archetype` field, so this
-		// pre-computation is a temporary the caller doesn't see.
-		const archetype = ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length];
-		return generateMap(seed, getArchetypeMapShape(archetype));
+		// CONV3 — this is the ONE place we recompute the archetype index,
+		// because `getArchetypeMapShape` needs it BEFORE `generateMap` runs
+		// to pick the per-archetype sector density. `generateMap` re-derives
+		// the same `cyrb128(seedPhrase)[0] % len` internally and writes it
+		// onto the returned map's `archetype` field.
+		const archetypeIdx = cyrb128(seedPhrase)[0] % ARCHETYPE_NAMES.length;
+		const archetype = ARCHETYPE_NAMES[archetypeIdx];
+		if (archetype === undefined)
+			throw new RangeError(
+				`buildMap: archetype index ${archetypeIdx} of ${ARCHETYPE_NAMES.length}`,
+			);
+		return generateMap(seedPhrase, getArchetypeMapShape(archetype));
 	}
 	const refIdx = (level - 1) as 0 | 1 | 2 | 3 | 4;
 	return loadRefLevel(refIdx, difficulty);

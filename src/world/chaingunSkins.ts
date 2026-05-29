@@ -61,18 +61,36 @@ export const DEFAULT_CHAINGUN_PROFILE: ChaingunProfile = {
  *                          stays its own weapon with its own particle
  *                          path — this entry is the model only.
  */
+// CHAINGUN_SKIN_URLS is a fixed-length array; every index below is provably
+// in-bounds. Hoisting each entry into a named const documents the invariant
+// and satisfies noUncheckedIndexedAccess.
+function chaingunSkinUrl(i: number): string {
+	const v = CHAINGUN_SKIN_URLS[i];
+	if (v === undefined)
+		throw new RangeError(
+			`chaingunSkinUrl: index ${i} out of bounds (len ${CHAINGUN_SKIN_URLS.length})`,
+		);
+	return v;
+}
+const _cg0 = chaingunSkinUrl(0);
+const _cg1 = chaingunSkinUrl(1);
+const _cg2 = chaingunSkinUrl(2);
+const _cg3 = chaingunSkinUrl(3);
+const _cg4 = chaingunSkinUrl(4);
+const _cg5 = chaingunSkinUrl(5);
+
 export const CHAINGUN_PROFILES: Readonly<Record<string, ChaingunProfile>> = {
-	[CHAINGUN_SKIN_URLS[0]]: DEFAULT_CHAINGUN_PROFILE, // canonical
-	[CHAINGUN_SKIN_URLS[1]]: { damageMul: 0.85, cooldownMul: 0.85 }, // uzi
-	[CHAINGUN_SKIN_URLS[2]]: { damageMul: 1.3, cooldownMul: 1.25 }, // flamethrower
+	[_cg0]: DEFAULT_CHAINGUN_PROFILE, // canonical
+	[_cg1]: { damageMul: 0.85, cooldownMul: 0.85 }, // uzi
+	[_cg2]: { damageMul: 1.3, cooldownMul: 1.25 }, // flamethrower
 	// PD3b additions. AK-47 = punchier rifle (+10% damage, +10%
 	// cooldown — feel reads as "heavy controlled bursts"). MAC-10 =
 	// faster cyclic SMG (-10% damage, -20% cooldown). PM-9 = balanced
 	// pistol-style auto (identity damage, +5% cooldown — slight
 	// trigger discipline).
-	[CHAINGUN_SKIN_URLS[3]]: { damageMul: 1.1, cooldownMul: 1.1 }, // ak47
-	[CHAINGUN_SKIN_URLS[4]]: { damageMul: 0.9, cooldownMul: 0.8 }, // mac10
-	[CHAINGUN_SKIN_URLS[5]]: { damageMul: 1.0, cooldownMul: 1.05 }, // pm9
+	[_cg3]: { damageMul: 1.1, cooldownMul: 1.1 }, // ak47
+	[_cg4]: { damageMul: 0.9, cooldownMul: 0.8 }, // mac10
+	[_cg5]: { damageMul: 1.0, cooldownMul: 1.05 }, // pm9
 };
 
 export function profileForChaingunSkin(url: string): ChaingunProfile {

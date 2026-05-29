@@ -30,6 +30,10 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // CR-H2 — explicit even though `release` defaults to non-debuggable:
+            // the rest of this block is deliberately explicit hardening, so pin
+            // this too to reject a future regression that flips it on.
+            debuggable false
         }
     }
 }

@@ -2,8 +2,8 @@
  * COV13 step-2 — kitchen scatter contract.
  */
 
-import type { BoneBusterSectorMap, Vec2 } from "@engine/engine";
-import { ARCHETYPE_NAMES } from "@world/archetype";
+import type { BoneBusterSectorMap, Vec2 } from "@engine/mapTypes";
+import { archetypeForPhrase } from "@world/archetype";
 import { KITCHEN_PROPS } from "@world/kitchen";
 import { spawnKitchen } from "@world/scatter/kitchenScatter";
 import { describe, expect, it } from "vitest";
@@ -18,7 +18,7 @@ function bigSquare(cx: number, cy: number, size: number): readonly Vec2[] {
 }
 
 // Many sectors so the 20% sector probability has room to fire.
-function libraryMap(seed: number): BoneBusterSectorMap {
+function libraryMap(seedPhrase: string): BoneBusterSectorMap {
 	const sectors = [];
 	// Library archetype = seed % 5 === 4 — use seed = 4, 9, 14, …
 	for (let i = 0; i < 20; i += 1) {
@@ -31,8 +31,8 @@ function libraryMap(seed: number): BoneBusterSectorMap {
 	}
 	return {
 		kind: "sectors",
-		seed,
-		archetype: ARCHETYPE_NAMES[(seed >>> 0) % ARCHETYPE_NAMES.length],
+		seedPhrase,
+		archetype: archetypeForPhrase(seedPhrase),
 		sectors,
 		playerSpawn: { x: -100, y: -100 },
 		playerYaw: 0,
@@ -44,9 +44,9 @@ function libraryMap(seed: number): BoneBusterSectorMap {
 	};
 }
 
-function nonLibrarySeed(): number {
+function nonLibrarySeed(): string {
 	// 0 = corridor. spawnKitchen should return [].
-	return 0;
+	return "test-11"; // corridor — spawnKitchen returns []
 }
 
 describe("COV13 step-2 — spawnKitchen archetype gating", () => {
@@ -55,44 +55,47 @@ describe("COV13 step-2 — spawnKitchen archetype gating", () => {
 	});
 
 	it("returns [] for grid maps", () => {
-		const grid = { ...libraryMap(4), kind: "grid" } as unknown as BoneBusterSectorMap;
+		const grid = { ...libraryMap("test-0"), kind: "grid" } as unknown as BoneBusterSectorMap;
 		expect(spawnKitchen(grid)).toEqual([]);
 	});
 
 	it("places at least one kitchen prop on library-archetype maps (across many sectors)", () => {
-		const out = spawnKitchen(libraryMap(4));
+		const out = spawnKitchen(libraryMap("test-0"));
 		expect(out.length).toBeGreaterThan(0);
 	});
 });
 
 describe("COV13 step-2 — spawnKitchen invariants", () => {
 	it("is deterministic — same seed → byte-identical layout", () => {
-		const a = spawnKitchen(libraryMap(4));
-		const b = spawnKitchen(libraryMap(4));
+		const a = spawnKitchen(libraryMap("test-0"));
+		const b = spawnKitchen(libraryMap("test-0"));
 		expect(a.length).toBe(b.length);
 		for (let i = 0; i < a.length; i += 1) {
-			expect(a[i].id).toBe(b[i].id);
-			expect(a[i].position.x).toBe(b[i].position.x);
-			expect(a[i].position.y).toBe(b[i].position.y);
-			expect(a[i].url).toBe(b[i].url);
-			expect(a[i].yaw).toBe(b[i].yaw);
+			const ai = a[i];
+			const bi = b[i];
+			if (!ai || !bi) throw new Error(`scatter missing element at index ${i}`);
+			expect(ai.id).toBe(bi.id);
+			expect(ai.position.x).toBe(bi.position.x);
+			expect(ai.position.y).toBe(bi.position.y);
+			expect(ai.url).toBe(bi.url);
+			expect(ai.yaw).toBe(bi.yaw);
 		}
 	});
 
 	it("every url is in KITCHEN_PROPS", () => {
-		for (const inst of spawnKitchen(libraryMap(4))) {
+		for (const inst of spawnKitchen(libraryMap("test-0"))) {
 			expect(KITCHEN_PROPS).toContain(inst.url);
 		}
 	});
 
 	it("ids are unique per map", () => {
-		const out = spawnKitchen(libraryMap(4));
+		const out = spawnKitchen(libraryMap("test-0"));
 		const ids = new Set(out.map((i) => i.id));
 		expect(ids.size).toBe(out.length);
 	});
 
 	it("yaw is finite and in [0, 2π)", () => {
-		for (const inst of spawnKitchen(libraryMap(4))) {
+		for (const inst of spawnKitchen(libraryMap("test-0"))) {
 			expect(Number.isFinite(inst.yaw)).toBe(true);
 			expect(inst.yaw).toBeGreaterThanOrEqual(0);
 			expect(inst.yaw).toBeLessThan(Math.PI * 2);
@@ -100,7 +103,7 @@ describe("COV13 step-2 — spawnKitchen invariants", () => {
 	});
 
 	it("per-sector prop count never exceeds 3", () => {
-		const out = spawnKitchen(libraryMap(4));
+		const out = spawnKitchen(libraryMap("test-0"));
 		const perSector = new Map<number, number>();
 		for (const inst of out) {
 			const sid = Math.floor(inst.id / 100);
@@ -113,7 +116,7 @@ describe("COV13 step-2 — spawnKitchen invariants", () => {
 	});
 
 	it("does not tag every sector — 20% probability holds approximately", () => {
-		const out = spawnKitchen(libraryMap(4));
+		const out = spawnKitchen(libraryMap("test-0"));
 		const taggedSectors = new Set(out.map((inst) => Math.floor(inst.id / 100)));
 		// 20 sectors × 20% ≈ 4 expected. Allow a wide band [1, 10] given
 		// the small sample.

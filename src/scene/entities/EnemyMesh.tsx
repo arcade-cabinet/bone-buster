@@ -1,5 +1,5 @@
 import { ENEMY_MODELS, pickEnemySkin } from "@assets/models";
-import { BOSS_VISUAL_SCALE, type Enemy } from "@engine/engine";
+import { BOSS_VISUAL_SCALE, type Enemy } from "@engine/mapTypes";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";

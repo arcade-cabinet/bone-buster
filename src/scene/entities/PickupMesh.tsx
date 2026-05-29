@@ -1,4 +1,4 @@
-import type { Pickup } from "@engine/engine";
+import type { Pickup } from "@engine/mapTypes";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { BONE_BUSTER_PALETTE, ROLE } from "@styles/tokens/index";

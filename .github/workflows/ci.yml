@@ -40,6 +40,12 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+      # CR-poly (full-review L-1) — block on PRODUCTION-dependency advisories
+      # only (currently zero). Dev-dep advisories (e.g. @lhci/cli transitives)
+      # don't ship in the bundle/APK, so they stay non-blocking; this keeps the
+      # shipped surface clean without churning on CI-only tool CVEs.
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
 
   # C-1 (full-review) — the documented merge gate is `pnpm verify`, which
   # includes test:browser + assets:verify-runtime + audio:verify-runtime.
@@ -92,12 +98,23 @@ jobs:
         # Playwright's webServer config auto-launches `pnpm dev` on :5191
         # (reuseExistingServer is false under CI) and waits for it, so no
         # explicit server/build step is needed here.
+        #
+        # CR-C2 — the committed baselines are `-chromium-darwin` (generated on
+        # macOS). Playwright defaults `--update-snapshots` to "missing", so on
+        # the Linux runner the absent `-chromium-linux` baselines are CREATED
+        # on first run (uploaded below for a maintainer to commit) while any
+        # PRESENT baseline still gates pixel drift. Real render crashes/hangs
+        # still fail the job. Once the Linux goldens are committed this becomes
+        # a full drift gate on CI too.
         run: pnpm test:e2e:screenshots && pnpm test:e2e:archetype-screenshots
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: e2e-screenshots
-          path: docs/assets/screenshots/
+          path: |
+            docs/assets/screenshots/
+            tests/e2e/screenshots.spec.ts-snapshots/
+            tests/e2e/archetypeScreenshots.spec.ts-snapshots/
 
   # Lighthouse — Core Web Vitals gate on the prerendered bundle.
   # Runs three Lighthouse passes against the static `dist/client/` build
@@ -205,6 +222,48 @@ jobs:
         with:
           name: app-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
+
+  # CR-H2 (full-review) — exercise the RELEASE APK path (R8/ProGuard +
+  # resource shrinking). CI otherwise only builds assembleDebug, so the
+  # bytes that actually ship to Play are never built — the classic
+  # Capacitor failure mode is a debug APK that works while the release
+  # APK white-screens because ProGuard stripped a reflectively-referenced
+  # bridge class. assembleRelease runs unsigned here (still exercises R8 +
+  # surfaces missing keep-rules); signing is a separate store-upload step.
+  # Gated on tags + the `mobile-perf` label so it doesn't tax every PR.
+  android-release:
+    if: |
+      github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') ||
+      contains(github.event.pull_request.labels.*.name, 'mobile-perf')
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        with: { version: 10.2.0 }
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '21', cache: gradle }
+      - uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+      - run: pnpm install --frozen-lockfile
+      - name: Build web bundle
+        run: pnpm build
+      - name: Capacitor sync + assembleRelease (R8/ProGuard)
+        run: |
+          if [ -d "android" ]; then
+            pnpm cap:sync
+            cd android && ./gradlew assembleRelease
+          else
+            echo "android/ not yet bootstrapped — skipping release APK build"
+          fi
+      - uses: actions/upload-artifact@v7
+        if: success() && hashFiles('android/app/build/outputs/apk/release/*.apk') != ''
+        with:
+          name: app-release-apk-unsigned
+          path: android/app/build/outputs/apk/release/*.apk
 
   # T5 — mobile perf gate. Boots a Pixel 5a-class AVD, installs the
   # debug APK from the `android` job, launches the Capacitor WebView,

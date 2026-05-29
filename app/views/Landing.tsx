@@ -24,6 +24,12 @@ type Props = Readonly<{
 	onQuit: () => void;
 	canResume?: boolean;
 	onResume?: () => void;
+	// SEED3 — the current map seed phrase + setters. The New Game flow shows
+	// it on the seed pane (editable + randomize). Randomize draws from the
+	// event PRNG (Shell owns it); the modal just requests a fresh phrase.
+	seedPhrase: string;
+	onSeedPhraseChange: (phrase: string) => void;
+	onRandomizeSeedPhrase: () => void;
 }>;
 
 // E1 — DOOM-flavored tip carousel for the landing footer.
@@ -39,7 +45,7 @@ const TIPS = [
 	"Lava floors damage you over time. So does water if you wade too long.",
 ] as const;
 
-type Pane = "main" | "difficulty" | "level" | "options" | "help";
+type Pane = "main" | "difficulty" | "level" | "seed" | "options" | "help";
 
 const DIFFICULTY_ORDER: Difficulty[] = [
 	"tooYoung",
@@ -58,6 +64,9 @@ export function BoneBusterLanding({
 	onQuit,
 	canResume = false,
 	onResume,
+	seedPhrase,
+	onSeedPhraseChange,
+	onRandomizeSeedPhrase,
 }: Props) {
 	const [pane, setPane] = useState<Pane>("main");
 	const [tipIdx, setTipIdx] = useState(0);
@@ -147,9 +156,22 @@ export function BoneBusterLanding({
 						current={settings.level}
 						onSelect={(l) => {
 							onSettingsChange({ level: l });
-							onStart();
+							// SEED3 — procedural maps get the seed-phrase step;
+							// curated ref levels (1-5) have a fixed phrase, so
+							// they start immediately.
+							if (l === "procedural") setPane("seed");
+							else onStart();
 						}}
 						onBack={() => setPane("difficulty")}
+					/>
+				)}
+				{pane === "seed" && (
+					<SeedPane
+						seedPhrase={seedPhrase}
+						onChange={onSeedPhraseChange}
+						onRandomize={onRandomizeSeedPhrase}
+						onBegin={onStart}
+						onBack={() => setPane("level")}
 					/>
 				)}
 				{pane === "options" && (
@@ -374,6 +396,76 @@ function LevelPane({
 						{LEVEL_LABEL[l]}
 					</button>
 				))}
+			</div>
+			<MenuItem label="BACK" onClick={onBack} />
+		</motion.section>
+	);
+}
+
+// SEED3 — the New Game seed-phrase step. Shows the current
+// adjective-adjective-noun phrase (the map identity), lets the player edit
+// it (to reproduce/share a map) or roll a fresh one from the event PRNG,
+// then BEGIN starts the run on that phrase. See docs/specs/96-prng-and-landing.md.
+function SeedPane({
+	seedPhrase,
+	onChange,
+	onRandomize,
+	onBegin,
+	onBack,
+}: {
+	seedPhrase: string;
+	onChange: (phrase: string) => void;
+	onRandomize: () => void;
+	onBegin: () => void;
+	onBack: () => void;
+}) {
+	return (
+		<motion.section
+			aria-label="Choose seed phrase"
+			style={paneStyle}
+			initial={{ opacity: 0, y: 8 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.35 }}
+		>
+			<div style={paneHeadingStyle}>SEED</div>
+			<div style={seedHintStyle}>The phrase IS the map. Share it to share the dungeon.</div>
+			<input
+				type="text"
+				value={seedPhrase}
+				aria-label="Seed phrase"
+				spellCheck={false}
+				autoCapitalize="off"
+				autoCorrect="off"
+				onChange={(e) =>
+					// Keep the phrase shape clean: lowercase, spaces→hyphens, strip
+					// anything that isn't a letter, DIGIT, or hyphen. Digits stay so a
+					// legacy numeric seed (e.g. "12345") can be typed to reproduce an
+					// old shared map — the migration accepts numeric seeds as phrases.
+					onChange(
+						e.target.value
+							.toLowerCase()
+							.replace(/\s+/g, "-")
+							.replace(/[^a-z0-9-]/g, ""),
+					)
+				}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" && seedPhrase.length > 0) onBegin();
+				}}
+				style={seedInputStyle}
+			/>
+			<div style={paneGridStyle}>
+				<button type="button" onClick={onRandomize} style={levelChip(false)}>
+					🎲 RANDOMIZE
+				</button>
+				<button
+					type="button"
+					onClick={onBegin}
+					disabled={seedPhrase.length === 0}
+					style={levelChip(true)}
+					aria-disabled={seedPhrase.length === 0}
+				>
+					BEGIN
+				</button>
 			</div>
 			<MenuItem label="BACK" onClick={onBack} />
 		</motion.section>
@@ -633,6 +725,29 @@ const paneListStyle: CSSProperties = {
 	display: "flex",
 	flexDirection: "column",
 	gap: 8,
+};
+
+// SEED3 — seed-pane styling.
+const seedHintStyle: CSSProperties = {
+	fontFamily: FONT_FAMILY.body,
+	fontSize: 12,
+	color: ROLE.textMuted,
+	margin: "0 0 10px 4px",
+};
+
+const seedInputStyle: CSSProperties = {
+	width: "100%",
+	boxSizing: "border-box",
+	fontFamily: FONT_FAMILY.mono,
+	fontSize: 18,
+	letterSpacing: "0.04em",
+	color: ROLE.textPrimary,
+	background: "rgba(0,0,0,0.35)",
+	border: `1px solid ${ROLE.actionKey}`,
+	borderRadius: 6,
+	padding: "12px 14px",
+	marginBottom: 12,
+	outline: "none",
 };
 
 const paneGridStyle: CSSProperties = {

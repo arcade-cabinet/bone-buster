@@ -1,4 +1,5 @@
-import { type BoneBusterSectorMap, computePortalEdges, edgeKey } from "@engine/engine";
+import type { BoneBusterSectorMap } from "@engine/mapTypes";
+import { computePortalEdges, edgeKey } from "@engine/sectors";
 import { useGLTF } from "@react-three/drei";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
@@ -87,6 +88,9 @@ export function SectorMapGeometry({ map }: { map: BoneBusterSectorMap }) {
 					{/* Walls — one per edge. */}
 					{sector.vertices.map((a, idx) => {
 						const b = sector.vertices[(idx + 1) % sector.vertices.length];
+						// b is provably defined: modulo wrap stays within
+						// [0, vertices.length) and the array has that element.
+						if (b === undefined) return null;
 						const len = Math.hypot(b.x - a.x, b.y - a.y);
 						if (len < 1e-3) return null;
 						const mx = (a.x + b.x) / 2;

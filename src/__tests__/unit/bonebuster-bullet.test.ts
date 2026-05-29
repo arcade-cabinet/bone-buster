@@ -1,8 +1,9 @@
-import { ENEMY_BULLET_TTL_MS, generateMap, makeEnemyBullet, stepEnemyBullet } from "@engine/engine";
+import { generateMap } from "@engine/gridGen";
+import { ENEMY_BULLET_TTL_MS, makeEnemyBullet, stepEnemyBullet } from "@engine/projectiles";
 import { describe, expect, it } from "vitest";
 
 describe("bonebuster EnemyBullet (C2)", () => {
-	const map = generateMap(12345);
+	const map = generateMap("gen-12345");
 	const ctx = { doorOpen: false };
 
 	it("travels toward the target", () => {

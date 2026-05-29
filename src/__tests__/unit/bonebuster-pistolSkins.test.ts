@@ -88,7 +88,9 @@ describe("PD1 — PISTOL_PROFILES roster contract", () => {
 	it("the canonical USP (index 0) maps to the identity profile", () => {
 		// Identity invariant: any deviation would shift per-shot damage
 		// on seed=0 and break the canonical screenshot battery.
-		expect(PISTOL_PROFILES[PISTOL_SKIN_URLS[0]]).toEqual(DEFAULT_PISTOL_PROFILE);
+		const url0 = PISTOL_SKIN_URLS[0];
+		if (!url0) throw new RangeError("PISTOL_SKIN_URLS[0] missing");
+		expect(PISTOL_PROFILES[url0]).toEqual(DEFAULT_PISTOL_PROFILE);
 	});
 
 	it("damageMul is finite and positive for every profile", () => {
@@ -110,8 +112,12 @@ describe("PD1 — PISTOL_PROFILES roster contract", () => {
 		// fast-weak) as the two distinct profiles bracketing the identity
 		// baseline. Re-balance that flattens these to identity has to
 		// update this test.
-		const handcannon = PISTOL_PROFILES[PISTOL_SKIN_URLS[1]];
-		const allegiance = PISTOL_PROFILES[PISTOL_SKIN_URLS[3]];
+		const url1 = PISTOL_SKIN_URLS[1];
+		const url3 = PISTOL_SKIN_URLS[3];
+		if (!url1 || !url3) throw new RangeError("PISTOL_SKIN_URLS missing expected indices (1, 3)");
+		const handcannon = PISTOL_PROFILES[url1];
+		const allegiance = PISTOL_PROFILES[url3];
+		if (!handcannon || !allegiance) throw new Error("PISTOL_PROFILES missing entry for url1/url3");
 		// Handcannon = heavy-slow.
 		expect(handcannon.damageMul).toBeGreaterThan(1);
 		expect(handcannon.cooldownMul).toBeGreaterThan(1);

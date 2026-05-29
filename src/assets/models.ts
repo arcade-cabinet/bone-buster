@@ -12,7 +12,7 @@
  */
 
 import { A } from "@assets/assetUrl";
-import type { EnemyKind } from "@engine/engine";
+import type { EnemyKind } from "@engine/mapTypes";
 import type { WeaponId } from "@shared/weapons";
 
 export type EnemyAnimSet = {
@@ -293,14 +293,25 @@ function multiSkinModel(
 		anims: NO_ANIMS,
 		flavorName: s.flavorName,
 	}));
-	return { ...roster[0], roster };
+	const primary = roster[0];
+	if (primary === undefined) throw new RangeError("multiSkinModel: skins array must be non-empty");
+	return { ...primary, roster };
 }
+
+// Hoist roster[0] for the three base-kind rosters — each const array is
+// non-empty by construction; the RangeError documents the invariant.
+const rattlerPrimary = RATTLER_SKINS[0];
+if (rattlerPrimary === undefined) throw new RangeError("RATTLER_SKINS must be non-empty");
+const bouncerPrimary = BOUNCER_SKINS[0];
+if (bouncerPrimary === undefined) throw new RangeError("BOUNCER_SKINS must be non-empty");
+const phaserPrimary = PHASER_SKINS[0];
+if (phaserPrimary === undefined) throw new RangeError("PHASER_SKINS must be non-empty");
 
 export const ENEMY_MODELS: Record<EnemyKind, EnemyModel> = {
 	// Base 3 — keep full skin rosters.
-	rattler: { ...RATTLER_SKINS[0], roster: RATTLER_SKINS },
-	bouncer: { ...BOUNCER_SKINS[0], roster: BOUNCER_SKINS },
-	phaser: { ...PHASER_SKINS[0], roster: PHASER_SKINS },
+	rattler: { ...rattlerPrimary, roster: RATTLER_SKINS },
+	bouncer: { ...bouncerPrimary, roster: BOUNCER_SKINS },
+	phaser: { ...phaserPrimary, roster: PHASER_SKINS },
 	// 9 promotions — point at the existing roster GLBs that previously
 	// rendered as cosmetic skin variants of the base 3.
 	plaguebeak: singleSkinModel("/assets/models/enemies/horror/plague_doctor.glb", 1.8),
@@ -477,7 +488,11 @@ export const BARREL_MODEL_URLS: readonly string[] = [
 ];
 
 export function pickBarrelModelUrl(id: number): string {
-	return BARREL_MODEL_URLS[Math.abs(id) % BARREL_MODEL_URLS.length];
+	const idx = Math.abs(id) % BARREL_MODEL_URLS.length;
+	const url = BARREL_MODEL_URLS[idx];
+	if (url === undefined)
+		throw new RangeError(`pickBarrelModelUrl: index ${idx} of ${BARREL_MODEL_URLS.length}`);
+	return url;
 }
 
 /**
@@ -499,5 +514,11 @@ export const ALL_MODEL_URLS: readonly string[] = [
  */
 export function pickEnemySkin(kind: EnemyKind, id: number): EnemySkin {
 	const model = ENEMY_MODELS[kind];
-	return model.roster[Math.abs(id) % model.roster.length];
+	const idx = Math.abs(id) % model.roster.length;
+	const skin = model.roster[idx];
+	if (skin === undefined)
+		throw new RangeError(
+			`pickEnemySkin: index ${idx} of ${model.roster.length} for kind "${kind}"`,
+		);
+	return skin;
 }

@@ -15,18 +15,18 @@
  *    floorTiles (FLRT) sequences.
  */
 
-import type { BoneBusterMap, Vec2 } from "@engine/engine";
-import { polygonContains } from "@engine/engine";
-import { mulberry32, RNG_TAGS } from "@engine/prng";
+import type { BoneBusterMap, Vec2 } from "@engine/mapTypes";
+import { forkStream } from "@engine/rng";
+import { polygonContains } from "@engine/sectors";
 import { pickArchetype } from "@world/archetype";
 import { DEBRIS_VARIANTS, pickDebrisUrl } from "@world/debris";
 import type { PropArchetype } from "@world/scatter/propPool";
+import { scatterId } from "@world/scatter/sampling";
 
 const SKIP_RADIUS = 4;
 /** Hard upper bound for ID-stride invariant. Per-archetype max stays ≤ this. */
 export const DEBRIS_PER_SECTOR_MAX_CAP = 5;
 const MAX_SAMPLE_ATTEMPTS = 12;
-const ID_STRIDE = 1000;
 
 /**
  * E13 step-7 — per-archetype debris density. Combat-heavy archetypes
@@ -52,7 +52,7 @@ export interface DebrisInstance {
 export function spawnDebris(map: BoneBusterMap): DebrisInstance[] {
 	if (map.kind !== "sectors") return [];
 	const out: DebrisInstance[] = [];
-	const rng = mulberry32((map.seed >>> 0) ^ RNG_TAGS.DEBR);
+	const rng = forkStream(map.seedPhrase, "DEBR");
 	const skipPoints: Vec2[] = [map.playerSpawn, map.exitPosition, map.keyPosition];
 	const archetype = pickArchetype(map);
 	const [minPerSector, maxPerSector] = DENSITY_BY_ARCHETYPE[archetype];
@@ -96,7 +96,7 @@ export function spawnDebris(map: BoneBusterMap): DebrisInstance[] {
 
 			const hash = sector.id * 1000 + placedInSector;
 			out.push({
-				id: sector.id * ID_STRIDE + placedInSector,
+				id: scatterId(sector.id, placedInSector),
 				position: accepted,
 				yaw: rng() * Math.PI * 2,
 				url: pickDebrisUrl(hash),
