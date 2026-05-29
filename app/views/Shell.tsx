@@ -44,6 +44,7 @@ import { ROLE, SCALE } from "@styles/tokens/index";
 import { AssetErrorBoundary, type AssetErrorReason } from "@views/AssetErrorBoundary";
 import { AssetErrorModal } from "@views/AssetErrorModal";
 import { BoneBusterHUD } from "@views/HUD";
+import { HudFrame } from "@views/HudFrame";
 import { BoneBusterLanding } from "@views/Landing";
 import { BoneBusterScene } from "@views/Scene";
 import {
@@ -949,6 +950,10 @@ export function BoneBusterShell() {
 									/>
 								</Canvas>
 							</AssetErrorBoundary>
+							{/* HUD1 — frame the scene (chrome cockpit on large screens,
+							    subtle vignette on phones; responsive). Sits above the
+							    Canvas, below the HUD chips. */}
+							<HudFrame />
 							{assetError && <AssetErrorModal reason={assetError} />}
 							<BoneBusterHUD
 								state={state}
