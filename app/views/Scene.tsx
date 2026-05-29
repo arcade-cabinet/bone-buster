@@ -881,18 +881,23 @@ export function BoneBusterScene({
 
 	return (
 		<>
-			{/* J1 — when the player owns the flashlight the world reads in
-			    full ambient + sun. Without it, both drop to near-dark and
-			    the flashlight spotlight is the only practical fill. */}
+			{/* VIS1 — bright flat FLOOD lighting. PSX assets are washed-out +
+			    chunky by design: they're built to be SEEN under broad even
+			    light, not hidden in a dark-reveal mechanic. The old
+			    flashlight-gated near-dark model (0.12 ambient until pickup)
+			    buried all the texture + model detail and made weapons read as
+			    flat emissive blobs. Now ambient floods the scene regardless of
+			    the flashlight; the directional + hemisphere just add chunky
+			    PSX shape/contrast. Per-archetype mul still tints the mood. */}
 			<ambientLight
 				ref={ambientLightRef}
-				intensity={(hasFlashlight ? 0.55 : 0.12) * lightPalette.ambientMul}
+				intensity={0.95 * lightPalette.ambientMul}
 				color={lightPalette.ambientColor}
 			/>
 			<directionalLight
 				ref={directionalLightRef}
 				position={[10, 16, 8]}
-				intensity={(hasFlashlight ? 0.9 : 0.18) * lightPalette.directionalMul}
+				intensity={1.1 * lightPalette.directionalMul}
 				color={lightPalette.directionalColor}
 				castShadow
 				shadow-mapSize={[1024, 1024]}
@@ -903,6 +908,9 @@ export function BoneBusterScene({
 				shadow-camera-near={0.5}
 				shadow-camera-far={60}
 			/>
+			{/* J1 (retired) — the flashlight no longer gates visibility; the
+			    flood above always lights the scene. The pickup + cone stay as a
+			    cosmetic forward-beam highlight only. */}
 			{hasFlashlight && <Flashlight />}
 			{/* PC3 — UV flashlight cone. Mounted alongside (not instead of)
 			    the white flashlight; the two lights coexist when the
@@ -920,14 +928,14 @@ export function BoneBusterScene({
 			    owner-gate) — empty list collapses to one Array.map. */}
 			<CrucifixField crucifixes={activeCrucifixesRef.current} version={crucifixesVersion} />
 
-			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.35]} />
+			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.7]} />
 			{/* I11 — muzzle-flash point light. Lives at camera position,
 			    driven by useFrame so it can decay between renders. */}
 			<pointLight ref={muzzleLightRef} intensity={0} distance={8} decay={1.5} />
 			{/* E13 step-4 — per-archetype fog tint. Dominant depth-fade
 			    signal in low-lit play; biggest visual lever for archetype-
 			    distinctness. Corridor still resolves to BONE_BUSTER_PALETTE.ink. */}
-			<fog attach="fog" args={[lightPalette.fogColor, 6, TILE * lightPalette.fogFarTiles]} />
+			<fog attach="fog" args={[lightPalette.fogColor, 8, TILE * lightPalette.fogFarTiles]} />
 			<color attach="background" args={[lightPalette.fogColor]} />
 
 			{map.kind === "grid" ? (

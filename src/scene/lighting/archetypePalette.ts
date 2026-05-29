@@ -114,7 +114,11 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 	corridor: {
 		ambientColor: BONE_BUSTER_PALETTE.violet,
 		directionalColor: BONE_BUSTER_PALETTE.parchment,
-		fogColor: BONE_BUSTER_PALETTE.ink,
+		// VIS1 — Silent-Hill haze: a luminous mid-tone fog the distance fades
+		// INTO (mood + a cull horizon to hot-load the next area), not a near-black
+		// void. Was BONE_BUSTER_PALETTE.ink (pitch). indigo[500] reads as a cold
+		// corridor mist.
+		fogColor: SCALE.indigo[500],
 		floorColor: BONE_BUSTER_PALETTE.ink,
 		floorEmissive: BONE_BUSTER_PALETTE.wallEmissive,
 		ceilingColor: BONE_BUSTER_PALETTE.wallBase,
@@ -131,7 +135,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 	arena: {
 		ambientColor: SCALE.blood[300],
 		directionalColor: SCALE.ember[300],
-		fogColor: SCALE.ember[900],
+		fogColor: SCALE.ember[600], // VIS1 — smoldering haze, not pitch
 		floorColor: SCALE.ember[900],
 		floorEmissive: SCALE.blood[700],
 		ceilingColor: SCALE.blood[900],
@@ -148,7 +152,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 	courtyard: {
 		ambientColor: SCALE.indigo[300],
 		directionalColor: SCALE.amber[200],
-		fogColor: SCALE.indigo[900],
+		fogColor: SCALE.indigo[600], // VIS1 — dusk courtyard haze
 		floorColor: SCALE.indigo[900],
 		floorEmissive: SCALE.indigo[700],
 		ceilingColor: SCALE.indigo[700],
@@ -165,7 +169,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 	sewer: {
 		ambientColor: SCALE.parchment[600],
 		directionalColor: SCALE.indigo[200],
-		fogColor: SCALE.parchment[900],
+		fogColor: SCALE.parchment[600], // VIS1 — damp sewer murk, readable
 		floorColor: SCALE.parchment[900],
 		floorEmissive: SCALE.parchment[700],
 		ceilingColor: SCALE.ink[700],
@@ -190,7 +194,7 @@ export const ARCHETYPE_LIGHT_PALETTES: Readonly<Record<PropArchetype, ArchetypeL
 	library: {
 		ambientColor: SCALE.parchment[300],
 		directionalColor: SCALE.amber[100],
-		fogColor: SCALE.amber[900],
+		fogColor: SCALE.amber[600], // VIS1 — dusty library haze
 		floorColor: SCALE.amber[900],
 		floorEmissive: SCALE.amber[700],
 		ceilingColor: SCALE.parchment[700],
