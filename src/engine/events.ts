@@ -295,6 +295,23 @@ export interface CrucifixPlaceEvent {
 	type: "crucifixPlace";
 }
 
+/**
+ * ERR1 / CI-10 — an asset (GLB / wasm / font / texture) failed to load. Emitted
+ * by the AssetErrorBoundary when a scene-tree load throws, so (a) the Shell can
+ * surface the error modal and (b) `verify-pages-deploy.mjs` can assert zero
+ * asset errors — turning the post-deploy smoke test into a real asset-integrity
+ * gate (a 404'd enemy GLB otherwise passes smoke at 60fps with a missing mesh).
+ */
+export interface AssetErrorEvent {
+	type: "assetError";
+	/** Best-effort failing asset URL (from the thrown error / message). */
+	url: string;
+	/** Coarse asset class for triage. */
+	assetType: "glb" | "texture" | "wasm" | "font" | "unknown";
+	/** Where it failed — scene-tree render (Suspense child) for now. */
+	phase: "scene";
+}
+
 export type BoneBusterEvent =
 	| BurstEvent
 	| BodyPartsEvent
@@ -322,7 +339,8 @@ export type BoneBusterEvent =
 	| EnemyKilledEvent
 	| EmfReadingEvent
 	| SpiritBoxResponseEvent
-	| CrucifixPlaceEvent;
+	| CrucifixPlaceEvent
+	| AssetErrorEvent;
 
 export type BoneBusterEventType = BoneBusterEvent["type"];
 

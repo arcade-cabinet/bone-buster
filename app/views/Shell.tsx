@@ -41,6 +41,8 @@ import {
 	type TouchControlMode,
 } from "@store/settings";
 import { ROLE, SCALE } from "@styles/tokens/index";
+import { AssetErrorBoundary, type AssetErrorReason } from "@views/AssetErrorBoundary";
+import { AssetErrorModal } from "@views/AssetErrorModal";
 import { BoneBusterHUD } from "@views/HUD";
 import { BoneBusterLanding } from "@views/Landing";
 import { BoneBusterScene } from "@views/Scene";
@@ -254,6 +256,9 @@ export function BoneBusterShell() {
 	// useState initializer (not useMemo) so it's evaluated exactly once on mount
 	// and never re-reads window during the session.
 	const [preserveDrawingBuffer] = useState(captureModeEnabled);
+	// ERR1 — asset-load error surfaced by the AssetErrorBoundary around the
+	// Canvas. Discriminated by null (ok) vs a reason object (error → modal).
+	const [assetError, setAssetError] = useState<AssetErrorReason | null>(null);
 	const map: BoneBusterMap = useMemo(
 		// I4 — difficulty plumbed through so ManyEnemies (class 9) expands
 		// per the ref formula. Procedural maps don't read it.
@@ -898,40 +903,48 @@ export function BoneBusterShell() {
 							exit={{ opacity: 0 }}
 							transition={{ duration: 0.4 }}
 						>
-							<Canvas
-								camera={{
-									fov: 75,
-									near: 0.1,
-									far: 200,
-									position: [0, 1.7, 0],
-								}}
-								gl={{ antialias: false, powerPreference: "low-power", preserveDrawingBuffer }}
-								style={{ width: "100%", height: "100%", display: "block" }}
-								dpr={[1, 1.5]}
-								// J4 — enable shadow mapping. The flashlight + sun cast;
-								// floors + walls + enemies receive. Budget: PCF soft
-								// shadows at 1024² to keep mobile happy.
-								shadows="soft"
-							>
-								{/* Re-key on map identity so enemies/pickups/bullets/lastWonAt
-								    reset between levels. Without this, Section B level
-								    transitions silently inherit dead state from level 1. */}
-								<BoneBusterScene
-									key={`${settings.level}-${seedPhrase}-${map.seedPhrase}`}
-									map={map}
-									active={state.status === "playing"}
-									hasKey={state.hasKey}
-									gameRef={gameRef}
-									weapon={state.weapon}
-									ammoRef={weaponStateRef}
-									settings={settings}
-									phase={state.phase}
-									hasFlashlight={state.hasFlashlight}
-									hasEmfReader={state.hasEmfReader}
-									hasSpiritBox={state.hasSpiritBox}
-									hasUvFlashlight={state.hasUvFlashlight}
-								/>
-							</Canvas>
+							{/* ERR1 — boundary around the Canvas: a failed GLB/texture/
+							    wasm load throws out of the scene Suspense; without this
+							    React would unmount to a silent blank canvas. The
+							    boundary emits bonebuster:assetError + lifts the reason
+							    so the modal below renders. */}
+							<AssetErrorBoundary onError={setAssetError}>
+								<Canvas
+									camera={{
+										fov: 75,
+										near: 0.1,
+										far: 200,
+										position: [0, 1.7, 0],
+									}}
+									gl={{ antialias: false, powerPreference: "low-power", preserveDrawingBuffer }}
+									style={{ width: "100%", height: "100%", display: "block" }}
+									dpr={[1, 1.5]}
+									// J4 — enable shadow mapping. The flashlight + sun cast;
+									// floors + walls + enemies receive. Budget: PCF soft
+									// shadows at 1024² to keep mobile happy.
+									shadows="soft"
+								>
+									{/* Re-key on map identity so enemies/pickups/bullets/lastWonAt
+									    reset between levels. Without this, Section B level
+									    transitions silently inherit dead state from level 1. */}
+									<BoneBusterScene
+										key={`${settings.level}-${seedPhrase}-${map.seedPhrase}`}
+										map={map}
+										active={state.status === "playing"}
+										hasKey={state.hasKey}
+										gameRef={gameRef}
+										weapon={state.weapon}
+										ammoRef={weaponStateRef}
+										settings={settings}
+										phase={state.phase}
+										hasFlashlight={state.hasFlashlight}
+										hasEmfReader={state.hasEmfReader}
+										hasSpiritBox={state.hasSpiritBox}
+										hasUvFlashlight={state.hasUvFlashlight}
+									/>
+								</Canvas>
+							</AssetErrorBoundary>
+							{assetError && <AssetErrorModal reason={assetError} />}
 							<BoneBusterHUD
 								state={state}
 								touchMode={touchMode}
