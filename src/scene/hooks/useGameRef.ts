@@ -17,8 +17,15 @@
  * component" hazard. Running the reducer once (not inside an updater that React
  * may double-invoke) also keeps `ctx.acquired`'s dedup mutation exactly-once.
  *
- * Invariant: every GameRef callback fires from the Scene's rAF / event loop
- * (never during React render), so the value-form `setState` is always legal.
+ * Call site: GameRef callbacks fire from the Scene's frame loop — which IS
+ * r3f's `useFrame` (its own render/commit phase), NOT outside React entirely.
+ * The value-form `setState` is still legal here because it runs in an r3f
+ * commit, not Shell's render, and the effects drain as plain function calls
+ * after `setState` returns (no updater body fires a sibling component's
+ * setState mid-render). The starvation caveat — react-dom may defer the HUD
+ * commit behind r3f's frame loop under a software GL backend — is a renderer
+ * scheduling issue (see docs / the e2e ANGLE-GL backend), not a correctness
+ * bug in this adapter.
  */
 
 import { playFlashlightClick, playHitSting, playPickup, playPlayerDeath } from "@audio/sfx";
