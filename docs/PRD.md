@@ -60,6 +60,43 @@ Silent-Hill horror maze** built from the existing PSX asset library — readable
 atmospheric, and fully committed to procedural generation. Each item carries a
 user story, surfaces, and an acceptance bar.
 
+#### PREP (from the 2026-05-29 comprehensive-review run — land BEFORE the features)
+
+The full review (`.full-review/05-final-report.md`) found prep-work that must
+land first or the STRUCT/HUD features inherit + amplify existing debt. Tracked
+in the directive's Step 2.5; acceptance bars:
+- **PREP-C1/C2 layering:** `GameState`/`GameRef`/`WeaponState`/`LevelPhase`/
+  `FadeKind` are defined in the UI god-component (`app/views/Shell.tsx`) and
+  imported DOWN into the pure store/scene layers; `gameReducer` has a runtime
+  value-dep on `@views/gameConstants`. *Acceptance:* domain types live in
+  `src/store/gameState.ts`, constants in `src/store/gameConstants.ts`; no
+  `src/` file imports a value from `app/`. Unblocks STRUCT4's pure unit tests.
+- **PREP-DOC:** add DECISIONS D22 (VIS flood-lighting reversal of the J1 dark-
+  reveal), D23 (STRUCT1 grid-vs-sector map-representation choice), extend D16
+  (sceneTick); rewrite DESIGN.md (it currently states "procedural-AND-curated
+  mix" + archetype-as-%5 — both CONTRADICT STRUCT1/2, and DESIGN>PRD in the
+  authority chain); refresh ARCHITECTURE.md (missing the whole `src/scene/`
+  subtree). *Acceptance:* DESIGN/ARCHITECTURE/DECISIONS match the OVERHAUL2
+  direction; no doc an implementer reads contradicts the lane.
+- **PREP-PERF1 (CRITICAL):** enemy LOS is `O(enemies×sectors×edges)` every
+  frame with no cull/throttle — the depth-scaling (STRUCT3, more enemies) ×
+  fog-horizon (VIS2b, more sectors) is a count×count blowup that breaches the
+  30fps mobile floor. *Acceptance:* LOS throttled + distance/horizon-gated +
+  sector-AABB broad-phase; `pnpm test:perf:mobile` holds the floor at the
+  enemy-count A/B; aggro latency <150ms test.
+- **PREP-PERF2/PERF3/BP1:** pickUvHidden O(n²) → single-fork; VIS1 directional
+  shadow off on mobile (4-8ms Pixel 5a — introduced by VIS1); WaterSurface
+  DataTexture disposed.
+- **PREP-CI1..4 (gate hardening):** continuous-deploy on push:main (kills the
+  deploy-staleness class); mobile-perf gate required + enemy-count/shadow A/B
+  probes (catches PERF-1/PERF-3); CodeQL. *Acceptance:* a count-scaling perf
+  regression fails CI; a user-facing main push can't silently fail to deploy.
+- **STRUCT1↔STRUCT5 reconciliation (resolved):** the review flagged that
+  STRUCT1's phrase→archetype hashing conflicts with STRUCT5's pressure-weighted
+  selection. RESOLUTION (user-confirmed): biome is a generator INPUT chosen by
+  `pickNextBiome(pressure, eventRng)`, NOT derived from the phrase. `buildMap`/
+  the biome generator take `biome` + `depth` as params and stop hashing biome.
+
 **VIS — visual presentation**
 
 - **VIS1 (DONE this session) — flat-flood lighting, not dark-reveal.** PSX
@@ -190,9 +227,17 @@ endless, varied, reproducible runs from a small set of well-built generators.
 - **ERR1 — asset-load error modal overlay.** User story: when an asset (GLB /
   wasm / font / texture) fails to load, surface it as an ERROR MODAL OVERLAY like
   the other ~/src/arcade-cabinet games — never a silent failure / blank render.
-  Wire a global error boundary + asset-load error channel → visible modal.
-  *Acceptance:* forcing an asset 404 shows the error modal, not a blank/partial
-  scene.
+  Wire a React `<ErrorBoundary>` above the scene `<Suspense>` (review BP-6: the
+  Suspense exists but no ErrorBoundary → GLB failures are uncaught) + an
+  asset-load error channel → visible modal, using a discriminated-union error
+  state (`{status:"error",reason}|{status:"ok"}`). ALSO (review CI-10): emit a
+  `bonebuster:assetError` event `{url,type,phase}` so `verify-pages-deploy.mjs`
+  can assert zero asset errors — turning the smoke test into a real
+  asset-integrity gate (today a 404'd enemy GLB passes smoke at 60fps with a
+  missing mesh). Error message rendering must be text-only (no
+  dangerouslySetInnerHTML — review CI-8). *Acceptance:* forcing an asset 404
+  shows the error modal (browser-tier test, route.abort), the game loop doesn't
+  freeze, and verify-pages-deploy fails on a `bonebuster:assetError`.
 
 **Sequencing:** VIS1/VIS2 done. The rest runs as an OVERHAUL2 lane in the
 directive; ERR1 first (it surfaces problems the other work will hit), then

@@ -32,10 +32,29 @@ the screenshots myself) before any push.
   squash → release-please will cut the next release). Branch `feat/overhaul2`
   cut off main; VIS WIP restored.
 
-### Step 2 — comprehensive review run (FIRST thing on the branch) — IN PROGRESS
-- [ ] REVIEW-RUN Run `comprehensive-review:full-review` fully automated over
-  src/ + app/; carry EVERY finding into docs/PRD.md + this directive as new
-  tracked items before implementing the rest of OVERHAUL2.
+### Step 2 — comprehensive review run (FIRST thing on the branch) — DONE
+- [x] REVIEW-RUN Ran `comprehensive-review:full-review` fully automated (5 phases,
+  8 agents) over src/+app/. Full report in `.full-review/05-final-report.md`;
+  per-phase artifacts in `.full-review/0[1-4]*.md`. Findings carried into the
+  PREP lane (Step 2.5) below + docs/PRD.md §LANE: OVERHAUL2. No security
+  criticals (0 prod CVEs). Headline: prep-work must land before STRUCT/HUD
+  features or they inherit existing debt.
+
+### Step 2.5 — PREP (from the review; land BEFORE OVERHAUL2 features)
+- [ ] PREP-CI1 Continuous-deploy: remove the release_created gate from build-pages, always build+deploy on push:main (verify-deploy still runs); decouple Pages from APK semver. Kills the deploy-staleness class. [review CI-1]
+- [ ] PREP-CI2 Promote mobile-perf gate to required-on-PR (+ paths-filter exempt docs/CI). [review CI-2]
+- [ ] PREP-CI3 Add enemy-count A/B (4 vs 16, assert fps(16)≥0.6·fps(4)) + shadow A/B (fps_shadow≥0.75·fps_noshadow) to obs3-perf-snapshot-mobile via window.__bonebuster.setEnemyCount/setShadows hooks — catches PERF-1/PERF-3 count-scaling. [review CI-3]
+- [ ] PREP-CI4 Add CodeQL workflow (javascript-typescript, security-extended). [review CI-4]
+- [ ] PREP-C2 Move gameConstants.ts → src/store/gameConstants.ts (kills the runtime layer inversion; cheapest, do first). [review ARCH-C2]
+- [ ] PREP-C1 Extract domain types (GameState/GameStatus/LevelPhase/FadeKind/FadeTrigger/WeaponState/GameRef) out of Shell.tsx → src/store/gameState.ts; all importers move same commit. Unblocks STRUCT4 tests. [review ARCH-C1/M-2/L-5]
+- [ ] PREP-DOC Add DECISIONS D22 (VIS1/VIS2 flood-lighting reversal of J1), D23 (STRUCT1 map-representation grid-vs-sector choice), extend D16 (sceneTick.ts); rewrite DESIGN.md §what-it-is/archetype-identity/lighting to match OVERHAUL2 (it currently CONTRADICTS it, and DESIGN>PRD authority); refresh ARCHITECTURE.md (src/scene/ subtree, data-flow chain, persistence STO1b shipped); fix README URL flags + file-layout tree. [review DOC-C1..C5, H1..H7]
+- [ ] PREP-PERF1 Enemy LOS throttle + distance/horizon gate (cache sees+lastSeenAt, stagger by id, full-rate only when distToPlayer<SHOOT_RANGE) + sector-AABB broad-phase in castRaySectors. CRITICAL count×count fix. Determinism: aggro-latency <150ms test. [review PERF-1, TEST-10]
+- [ ] PREP-PERF2 pickUvHidden: fork ENMX-UV stream ONCE → boolean array (byte-identical, O(n)). [review PERF-2/H-1]
+- [ ] PREP-PERF3 Mobile: directional castShadow=false behind mid-tier check (PSX needs no realtime shadow); desktop optional 512²+tight frustum+autoUpdate=false. [review PERF-3]
+- [ ] PREP-BP1 Dispose WaterSurface DataTexture (useEffect cleanup) — leaks per map load. [review BP-1]
+- [ ] PREP-BP2 assertNever exhaustiveness on gameReducer + drain() switches (STRUCT4 will add variants). [review BP-2]
+- [ ] PREP-TEST1 Add enemy-bullet-integration tests to bonebuster-sceneTick (hitPlayer/hitWall/in-flight/compaction — untested combat path). [review TEST-1]
+- [ ] PREP-MISC Batch the small review fixes: M-1 debrisScatter bboxOf; M-5 onStartGame audio try/catch; M-6/SEC-1 seed URL ≤200 cap; M-7 writeJsonPref dev-log; CI-5 e2e canvas.clientWidth>0 assert; CI-6 require_run glob→app/views/**; CI-7 verify-deploy canvas assert; CI-8 dangerouslySetInnerHTML ban; CI-9 SHA-pin; SEC-2 CSP-meta DECISIONS note; SEC-3 smoke-URL comment; BP-3 stateRef-stale HUD constraint doc; L-2 GOAL_BONUS_AMMO const; BP-4 useFrame priorities; CI-12 rename objexoom:fpsUpdate→bonebuster:.
 
 ### Step 3 — OVERHAUL2 visual/feel/structure (same one branch)
 
