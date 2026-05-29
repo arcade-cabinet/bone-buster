@@ -318,14 +318,15 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 
 	test("05 mission complete — full run cleared", async () => {
 		// CR-rAF FIXED — this pose drives 6 sequential level-clears
-		// (kill→key→win→teleport, 54 waitForFrames each). It previously hung
-		// past 120s on CI because waitForFrames waited on a requestAnimationFrame
-		// that stalls while the <Canvas> WebGL context is torn down + rebuilt
-		// mid-transition on the headless-GL backend. waitForFrames now races rAF
-		// against a setTimeout fallback (see its impl), so the countdown advances
-		// even when rAF is paused. The CI skip is removed; it gates CI again.
-		// The 120s budget stays — it's a legitimately long 6-level playthrough.
-		test.setTimeout(120_000);
+		// (kill→key→win→teleport, 54 waitForFrames each). waitForFrames races
+		// rAF against a setTimeout fallback so the countdown advances even when
+		// rAF is paused mid Canvas-rebuild. CR-e2e — 120s was still tight on CI's
+		// headless-GL backend (each level's Canvas teardown/rebuild + state
+		// machine is ~4× slower than local, where the full run is ~30s); raise to
+		// 300s so the legitimately-long 6-level playthrough completes on CI. The
+		// pose is capture-only (no baseline assertion); its CI value is "the full
+		// 6-level loop runs end-to-end without hanging".
+		test.setTimeout(300_000);
 		const testInfo = test.info();
 		const baseURL =
 			typeof testInfo.project.use.baseURL === "string"
