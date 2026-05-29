@@ -156,6 +156,19 @@ endless, varied, reproducible runs from a small set of well-built generators.
   levels are approachable and depth ramps without becoming impossible.
   *Acceptance:* a documented scaling curve + a unit test pinning
   monotonic-but-logarithmic growth.
+- **STRUCT4 — log-scaled weapon UPGRADE progression (endless-play depth).** User
+  story (user-directed 2026-05-28): as I play deeper I first unlock a base
+  weapon, then FIND + unlock context-appropriate UPGRADES to it (fire rate,
+  multi-shot, spread, damage, reload, etc.) that drop on a logarithmic cadence —
+  so progression keeps feeling fresh for hours, not "got all 5 weapons, done."
+  Upgrades are weapon-type-contextual (a chaingun upgrade ≠ a shotgun upgrade)
+  and drop as seeded world pickups whose tier scales with depth. *Surfaces:*
+  weapon spec → an upgrade-modifier stack; pickup/chest spawn (STRUCT2 biome
+  hazards + HUD3); HUD shows the active upgrade tier per owned weapon.
+  *Acceptance:* a unit-tested upgrade model where applying N upgrades to a weapon
+  composes deterministically (seeded), the drop cadence is logarithmic in depth,
+  and the HUD reflects acquired upgrades. Composes with the seed forks (same
+  phrase → same upgrade drops).
 
 **ERR — failure surfacing (arcade-cabinet parity)**
 
