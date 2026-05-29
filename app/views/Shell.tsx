@@ -14,7 +14,7 @@ import {
 	stopMusic,
 } from "@audio/sfx";
 import { addBoneBusterListener, dispatch } from "@engine/events";
-import type { BoneBusterMap, PickupKind } from "@engine/mapTypes";
+import type { BoneBusterMap } from "@engine/mapTypes";
 import { createEventPrng, createFreshEventSeed, cyrb128 } from "@engine/rng";
 import { CANONICAL_SEED_PHRASE, randomSeedPhrase } from "@engine/seedPhrase";
 import { advanceAndPersistEventSeed, loadEventSeed } from "@platform/persistence/eventSeed";
@@ -23,8 +23,16 @@ import { Canvas } from "@react-three/fiber";
 import { PLAYER_MAX_HP } from "@shared/constants";
 import { computeFadePeak, FADE_COLOR_BY_KIND } from "@shared/fadeTriggers";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
+import type {
+	FadeKind,
+	FadeTrigger,
+	GameState,
+	GameStatus,
+	LevelPhase,
+	WeaponState,
+} from "@store/gameState";
 import { openRunHistory, type RunHistory } from "@store/runHistory";
-import { makeInitialRunStats, type RunStats, runStatsReducer } from "@store/runStats";
+import { makeInitialRunStats, runStatsReducer } from "@store/runStats";
 import {
 	type BoneBusterSettings,
 	DEFAULT_SETTINGS,
@@ -44,111 +52,6 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGameRef } from "../../src/scene/hooks/useGameRef";
 import { useLevelTransition } from "./hooks/useLevelTransition";
-
-export type GameStatus = "landing" | "playing" | "paused" | "dead" | "transitioning" | "won";
-
-// H8 — `phase` tracks where the player is within a single level.
-//   "out"          — heading toward the goal, normal level flow.
-//   "going_back"   — goal collected; all enemies aggro; player must
-//                    fight back to the original spawn to clear the level.
-export type LevelPhase = "out" | "going_back";
-
-// J3 — full-screen fade overlay. Each trigger renders a colored quad
-// with an opacity envelope (peak 200 ms, fade 400 ms). Distinct triggers:
-//   damage   — red, intensity scaled by damage amount (replaces D-flash)
-//   key      — green, on key pickup
-//   flash    — gray, on flashlight pickup
-//   win      — white, on level-clear
-export type FadeKind = "damage" | "key" | "flash" | "win";
-export type FadeTrigger = Readonly<{
-	id: number;
-	kind: FadeKind;
-	color: string;
-	peak: number; // 0..1 opacity peak
-}>;
-
-export type GameState = {
-	status: GameStatus;
-	hp: number;
-	maxHp: number;
-	kills: number;
-	/**
-	 * POL1 — running score across the current level. Earned from
-	 * COV12 treasure-loot pickups (+50 each) and reset on level
-	 * advance / death. Surfaced on the HUD next to KILLS.
-	 */
-	score: number;
-	totalEnemies: number;
-	hasKey: boolean;
-	// J1 — player owns a flashlight after picking up class 7. Without it
-	// the level reads as dark and only the muzzle flash + ambient hue
-	// give the player anything to navigate by.
-	hasFlashlight: boolean;
-	// PB5 step-2 — EMF reader ownership flag. When true, the HUD shows
-	// the EMF chip with a 1-5 stepwise readout of nearest-enemy
-	// proximity. Off by default; flips true on pickup.
-	hasEmfReader: boolean;
-	// PC2 — Spirit box ownership flag. When true, the SpiritBoxBubble
-	// HUD overlay listens for the `spiritBoxResponse` event and renders
-	// the deterministic phoneme for ~1s. Off by default; flips true on
-	// pickup.
-	hasSpiritBox: boolean;
-	// PC3 — UV flashlight ownership flag. When true, BoneBusterScene
-	// mounts the UvFlashlight component (purple SpotLight) and EnemyMesh
-	// runs the per-frame UV-cone reveal for uvHidden enemies. Off by
-	// default; flips true on pickup.
-	hasUvFlashlight: boolean;
-	// PC4 — Crucifix inventory counter. Increments on pickup, decrements
-	// when the player drops one via key `9`. Each placed crucifix
-	// suppresses enemy aggression in a fixed radius for
-	// CRUCIFIX_LIFETIME_MS. Resets to 0 on level transition.
-	crucifixes: number;
-	weapon: WeaponId;
-	ammo: Record<WeaponId, number>;
-	ownedWeapons: Record<WeaponId, boolean>;
-	damageFlashAt: number;
-	run: RunStats;
-	phase: LevelPhase;
-	/**
-	 * POL37 — going-back countdown deadline. Set on `out → going_back`
-	 * transition to `performance.now() + GOING_BACK_BUDGET_MS`; cleared
-	 * (null) on `reachSpawn` and on every fresh level/run.
-	 *
-	 * When the deadline elapses without reaching spawn, the level dies
-	 * via the existing hp→0 path so engine.ts's death handling carries
-	 * the rest (no new state branch). HUD surfaces a monospace red
-	 * countdown under GoingBackOverlay's "RETURN TO SPAWN" card.
-	 */
-	goingBackDeadlineMs: number | null;
-};
-
-// PREP-C2 (OVERHAUL2) — the lifecycle constants live in @store/gameConstants
-// (a src/ leaf) so the pure gameReducer + useLevelTransition import them
-// DOWN/sideways, not up into app/views. Shell doesn't import them itself
-// (referenced only in the GameState JSDoc above).
-
-export type WeaponState = {
-	weapon: WeaponId;
-	ammo: Record<WeaponId, number>;
-};
-
-export type GameRef = {
-	onHit(damage: number): void;
-	onKill(): void;
-	onPickupKey(): void;
-	onWin(): void;
-	onReachSpawn(): void;
-	onSpendAmmo(weapon: WeaponId, amount: number): void;
-	onCollectPickup(kind: PickupKind): void;
-	/**
-	 * PC4 — Consume one crucifix from inventory. Returns `true` if
-	 * the inventory had ≥1 (the Scene proceeds with the placement)
-	 * and `false` if the inventory was empty (the Scene no-ops the
-	 * keypress so a player slapping `9` with zero inventory doesn't
-	 * accidentally place a phantom crucifix at the origin).
-	 */
-	onConsumeCrucifix(): boolean;
-};
 
 // BC5 — touch-mode auto-detection. Previously a single `(pointer:
 // coarse)` query, which mis-classified the Pixel Fold's inner display

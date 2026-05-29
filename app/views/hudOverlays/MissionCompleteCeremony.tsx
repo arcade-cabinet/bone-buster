@@ -1,5 +1,5 @@
+import type { GameState } from "@store/gameState";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "@styles/tokens/index";
-import type { GameState } from "@views/Shell";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 

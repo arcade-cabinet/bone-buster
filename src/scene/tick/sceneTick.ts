@@ -17,8 +17,8 @@ import type { BoneBusterMap, CollisionContext, Enemy, Pickup } from "@engine/map
 import { ENEMY_BULLET_DAMAGE, type EnemyBullet, stepEnemyBullet } from "@engine/projectiles";
 import { polygonContains } from "@engine/sectors";
 import { TILE } from "@shared/constants";
+import type { GameRef, LevelPhase } from "@store/gameState";
 import type { BoneBusterSettings } from "@store/settings";
-import type { GameRef, LevelPhase } from "@views/Shell";
 import type { CrucifixInstance } from "@world/ghostHunting";
 import {
 	disarmSector,

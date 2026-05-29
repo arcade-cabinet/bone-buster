@@ -14,8 +14,8 @@
 import { generateMap } from "@engine/gridGen";
 import type { BoneBusterGridMap, Enemy } from "@engine/mapTypes";
 import { type FireResolutionContext, resolveFire } from "@scene/tick/fireResolution";
+import type { GameRef, WeaponState } from "@store/gameState";
 import { DEFAULT_SETTINGS } from "@store/settings";
-import type { GameRef, WeaponState } from "@views/Shell";
 import type * as THREE from "three";
 import { describe, expect, it, vi } from "vitest";
 

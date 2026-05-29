@@ -1,3 +1,4 @@
+import type { GameState, LevelPhase } from "@store/gameState";
 import type { Difficulty } from "@store/settings";
 import { BossBanner } from "@views/hudOverlays/BossBanner";
 import { DifficultyChip } from "@views/hudOverlays/DifficultyChip";
@@ -10,7 +11,6 @@ import { PauseOverlay } from "@views/hudOverlays/PauseOverlay";
 import { PickupChip } from "@views/hudOverlays/PickupChip";
 import { SecretFoundFlash } from "@views/hudOverlays/SecretFoundFlash";
 import { SpiritBoxBubble } from "@views/hudOverlays/SpiritBoxBubble";
-import type { GameState, LevelPhase } from "@views/Shell";
 
 /**
  * AUDIO3 / SLOT-ARCHITECTURE.md §1 — HUD overlay aggregator.

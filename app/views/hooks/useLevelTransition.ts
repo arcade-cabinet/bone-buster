@@ -15,9 +15,9 @@
  */
 
 import { TRANSITION_HOLD_MS } from "@store/gameConstants";
+import type { GameState } from "@store/gameState";
 import { advanceLevel, nextStatusAfterTransition } from "@store/runStats";
 import type { BoneBusterSettings } from "@store/settings";
-import type { GameState } from "@views/Shell";
 import { useEffect } from "react";
 
 export type UseLevelTransitionArgs = Readonly<{

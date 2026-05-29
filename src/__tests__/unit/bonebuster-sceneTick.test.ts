@@ -13,8 +13,8 @@
 import type { BoneBusterGridMap, Cell, Pickup } from "@engine/mapTypes";
 import { runSceneTick, type SceneTickDeps } from "@scene/tick/sceneTick";
 import { createTimeScaleBus } from "@scene/tick/timeScaleBus";
+import type { GameRef } from "@store/gameState";
 import { DEFAULT_SETTINGS } from "@store/settings";
-import type { GameRef } from "@views/Shell";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 function makeGameRefSpy() {

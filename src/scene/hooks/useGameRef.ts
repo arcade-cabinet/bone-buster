@@ -37,8 +37,8 @@ import {
 	type GameReducerResult,
 	gameReducer,
 } from "@store/gameReducer";
+import type { FadeKind, GameRef, GameState } from "@store/gameState";
 import type { BoneBusterSettings, DifficultyTuning, LevelChoice } from "@store/settings";
-import type { FadeKind, GameRef, GameState } from "@views/Shell";
 import { pickLootKind } from "@world/loot";
 import { useRef } from "react";
 

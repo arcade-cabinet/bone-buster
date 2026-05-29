@@ -1,5 +1,6 @@
 import { addBoneBusterListener, dispatch } from "@engine/events";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
+import type { GameState } from "@store/gameState";
 import type { Difficulty } from "@store/settings";
 import {
 	BONE_BUSTER_PALETTE,
@@ -11,7 +12,6 @@ import {
 	TYPE,
 } from "@styles/tokens/index";
 import { HUDOverlays } from "@views/hudOverlays/HUDOverlays";
-import type { GameState } from "@views/Shell";
 import { motion } from "framer-motion";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
