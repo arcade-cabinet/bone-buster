@@ -122,6 +122,20 @@ export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 		// reads them — this is what makes the synchronous `collectAllPickups`
 		// loop accumulate (two health pickups → +2 HP) without a functional
 		// updater. React converges to the same final state.
+		//
+		// no-visual-impact: BP-3 is a comment-only constraint note on the existing stateRef threading; zero behavior or rendering change
+		// BP-3 — CONSTRAINT: `stateRef.current` is the authoritative
+		// same-batch state; the React `state` the HUD renders LAGS within a
+		// synchronous batch (it reflects the LAST `setState` React has
+		// committed, not intermediate same-tick mutations). So:
+		//   - Game LOGIC that must see same-tick accumulation reads
+		//     `stateRef.current` (here + the reducer ctx), never the rendered
+		//     `state` prop.
+		//   - HUD/render code reads the React `state` and may be one batch
+		//     behind mid-burst — that's fine (it converges next commit) and
+		//     MUST NOT be "fixed" by reading `stateRef.current` into render:
+		//     a ref read during render is not reactive and would desync the
+		//     displayed value from React's committed tree.
 		stateRef.current = result.state;
 		lastPlayerHitAt.current = result.iframeUntil;
 		depsRef.current.setState(result.state);

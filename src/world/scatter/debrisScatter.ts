@@ -21,7 +21,7 @@ import { polygonContains } from "@engine/sectors";
 import { pickArchetype } from "@world/archetype";
 import { DEBRIS_VARIANTS, pickDebrisUrl } from "@world/debris";
 import type { PropArchetype } from "@world/scatter/propPool";
-import { scatterId } from "@world/scatter/sampling";
+import { bboxOf, scatterId } from "@world/scatter/sampling";
 
 const SKIP_RADIUS = 4;
 /** Hard upper bound for ID-stride invariant. Per-archetype max stays ≤ this. */
@@ -59,16 +59,9 @@ export function spawnDebris(map: BoneBusterMap): DebrisInstance[] {
 
 	for (const sector of map.sectors) {
 		if (sector.vertices.length < 3) continue;
-		let minX = Infinity;
-		let maxX = -Infinity;
-		let minY = Infinity;
-		let maxY = -Infinity;
-		for (const v of sector.vertices) {
-			if (v.x < minX) minX = v.x;
-			if (v.x > maxX) maxX = v.x;
-			if (v.y < minY) minY = v.y;
-			if (v.y > maxY) maxY = v.y;
-		}
+		// M-1 — use the shared bboxOf (sampling.ts) instead of an inline copy of
+		// the same min/max loop every scatter module otherwise duplicates.
+		const { minX, maxX, minY, maxY } = bboxOf(sector.vertices);
 
 		const target = minPerSector + Math.floor(rng() * (maxPerSector - minPerSector + 1));
 
