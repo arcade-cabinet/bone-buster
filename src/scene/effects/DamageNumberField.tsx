@@ -30,13 +30,21 @@ const DAMAGE_FONT = A("assets/fonts/black-ops-one-400-latin.woff2");
 // pool never appears. We render the troika Text primitive DIRECTLY here: the
 // mesh is constructed synchronously and committed at first render (pool exists
 // immediately), and glyph population happens async via .sync() WITHOUT
-// suspending — so the scene commits in every context, troika or not. The
-// imperative surface the frame loop mutates (.text/.color/.fontSize/
-// .fillOpacity/.outlineOpacity/.outlineWidth/.fontWeight/.sync()) are all
-// native troika Text instance members, so the ref forwards the mesh as-is.
+// suspending — so the scene commits in every context, troika or not. Glyph
+// props (text/font/fontSize/color/weight) are set DECLARATIVELY via TroikaText
+// props; the per-frame loop only animates the parent group's position+scale and
+// the two opacity uniforms — no per-frame .sync() / glyph re-layout.
 type TroikaTextProps = {
 	font?: string;
 	text: string;
+	/**
+	 * Base glyph size, set DECLARATIVELY (once per label change). The punch /
+	 * float animation scales the parent <group> in the frame loop instead of
+	 * mutating fontSize per-frame — changing fontSize marks troika's text
+	 * geometry dirty and forces a full CPU glyph re-layout every frame
+	 * (gemini-flagged). group.scale is a cheap matrix transform with no rebuild.
+	 */
+	fontSize?: number;
 	color?: string;
 	position?: [number, number, number];
 	anchorX?: "center" | "left" | "right";
@@ -47,7 +55,18 @@ type TroikaTextProps = {
 };
 
 const TroikaText = forwardRef<TroikaTextMesh, TroikaTextProps>(function TroikaText(
-	{ font, text, color, position, anchorX, anchorY, outlineWidth, outlineColor, fontWeight },
+	{
+		font,
+		text,
+		fontSize,
+		color,
+		position,
+		anchorX,
+		anchorY,
+		outlineWidth,
+		outlineColor,
+		fontWeight,
+	},
 	ref,
 ) {
 	const invalidate = useThree((s) => s.invalidate);
@@ -58,6 +77,7 @@ const TroikaText = forwardRef<TroikaTextMesh, TroikaTextProps>(function TroikaTe
 	useLayoutEffect(() => {
 		mesh.font = font ?? null;
 		mesh.text = text;
+		if (fontSize !== undefined) mesh.fontSize = fontSize;
 		if (color !== undefined) mesh.color = color;
 		if (anchorX !== undefined) mesh.anchorX = anchorX;
 		if (anchorY !== undefined) mesh.anchorY = anchorY;
@@ -70,17 +90,15 @@ const TroikaText = forwardRef<TroikaTextMesh, TroikaTextProps>(function TroikaTe
 	return <primitive object={mesh} position={position} />;
 });
 
-// Minimal structural surface of a drei <Text> we mutate imperatively in
-// the frame loop (troika exposes these as live props + a sync()).
+// Minimal structural surface of the troika text mesh the frame loop mutates.
+// Text/font/size/color/weight are all set DECLARATIVELY (TroikaText props, only
+// on a label re-render), so the per-frame path touches ONLY the two opacity
+// uniforms — which are live material props requiring no .sync() / geometry
+// rebuild. Keeping this surface tiny documents that the hot loop does no glyph
+// re-layout.
 type MutableText = {
-	fontSize: number;
 	fillOpacity: number;
 	outlineOpacity: number;
-	text: string;
-	color: string;
-	outlineWidth: number;
-	fontWeight: number;
-	sync: () => void;
 };
 
 /**
@@ -257,19 +275,21 @@ export function DamageNumberField() {
 			const punchT = Math.min(1, (now - n.createdAt) / PUNCH_MS);
 			const punchEase = 1 - (1 - punchT) * (1 - punchT); // ease-out quad
 			const punchScale = 1.25 - 0.25 * punchEase;
-			const fontSize = tierBaseScale(n.amount, n.killed) * punchScale;
 			slot.group.visible = true;
 			slot.group.position.set(n.x, 1.6 + lift, n.y);
+			// Punch animates the GROUP scale (cheap matrix transform), NOT
+			// fontSize — base glyph size is set declaratively per label, so
+			// troika does no per-frame geometry re-layout. fillOpacity /
+			// outlineOpacity are live material uniforms: set directly, no
+			// per-frame .sync() (sync only matters for text/font/layout changes,
+			// which don't happen during the float animation).
+			slot.group.scale.setScalar(punchScale);
 			if (slot.shadow) {
-				slot.shadow.fontSize = fontSize;
 				slot.shadow.fillOpacity = opacity * 0.55;
-				slot.shadow.sync();
 			}
 			if (slot.main) {
-				slot.main.fontSize = fontSize;
 				slot.main.fillOpacity = opacity;
 				slot.main.outlineOpacity = opacity * 0.85;
-				slot.main.sync();
 			}
 		}
 		if (w !== before) force((k) => k + 1); // set shrank → rebind labels
@@ -285,12 +305,18 @@ export function DamageNumberField() {
 				const label = n ? (n.killed ? `✦${n.amount}` : String(n.amount)) : "";
 				const color = n ? tierColor(n.amount, n.killed) : "#ffffff";
 				const killed = n?.killed ?? false;
+				// Base glyph size set DECLARATIVELY here (only re-runs on the
+				// spawn/despawn/merge re-render, not per frame). The punch + float
+				// animation scales the parent <group> in the frame loop — no
+				// per-frame fontSize mutation → no per-frame glyph re-layout.
+				const baseSize = n ? tierBaseScale(n.amount, n.killed) : 1;
 				return (
 					// biome-ignore lint/suspicious/noArrayIndexKey: fixed-size slot pool keyed by index by design
 					<group key={i} visible={false} ref={(g) => bindSlot(slotRefs.current, i, "group", g)}>
 						<TroikaText
 							font={DAMAGE_FONT}
 							position={[0.02, -0.02, -0.012]}
+							fontSize={baseSize}
 							color="#000000"
 							anchorX="center"
 							anchorY="middle"
@@ -300,6 +326,7 @@ export function DamageNumberField() {
 						/>
 						<TroikaText
 							font={DAMAGE_FONT}
+							fontSize={baseSize}
 							color={color}
 							anchorX="center"
 							anchorY="middle"

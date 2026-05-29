@@ -3,7 +3,7 @@
  */
 
 import type { BoneBusterSectorMap, Vec2 } from "@engine/mapTypes";
-import { ARCHETYPE_NAMES, archetypeForPhrase } from "@world/archetype";
+import { archetypeForPhrase } from "@world/archetype";
 import { KITCHEN_PROPS } from "@world/kitchen";
 import { spawnKitchen } from "@world/scatter/kitchenScatter";
 import { describe, expect, it } from "vitest";

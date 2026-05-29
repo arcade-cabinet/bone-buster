@@ -21,7 +21,7 @@ import { polygonContains } from "@engine/sectors";
 import { pickArchetype } from "@world/archetype";
 import { DEBRIS_VARIANTS, pickDebrisUrl } from "@world/debris";
 import type { PropArchetype } from "@world/scatter/propPool";
-import { bboxOf, nearAny, scatterId } from "@world/scatter/sampling";
+import { scatterId } from "@world/scatter/sampling";
 
 const SKIP_RADIUS = 4;
 /** Hard upper bound for ID-stride invariant. Per-archetype max stays ≤ this. */
