@@ -71,6 +71,7 @@ Dependency-ordered. Drain top-down on a single branch.
 
 ## Closeout notes
 
+- **Pages deploy was 11 days stale (2026-05-28):** v0.5.0 (5-17) was the last release/deploy; #82 (`chore:`) + #83 (`ci: …; fix(assets): …`) landed on main but release-please saw no releasable LEADING conventional-commit (the `fix(assets):` in #83 was not the first token), so no tag → no release.yml deploy. Working as designed. Resolved: forced `release.yml` via `workflow_dispatch -f force_deploy=true` (manual escape-hatch) → built + deployed main (sha 5e43f65) to Pages; live-verified the menu renders at <https://arcade-cabinet.github.io/bone-buster/> (HTTP 200, wordmark + 4 buttons). LESSON: a squash title's LEADING token is what release-please parses — set PR #84's title to `feat: …` so its merge cuts v0.6.0 + auto-deploys.
 - Pages-deploy live-verify script drives past landing → skill → level → in-game — PR #77, 2026-05-17.
 - SLA1–SLA5 slasher gameplay (meathook pull, chainsaw aggro, boss music, flavor names, signal tokens) — PR #75 follow-up, 2026-05-17.
 - v0.5.0 released + GitHub Pages deploy verified visually — 2026-05-17.
