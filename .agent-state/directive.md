@@ -26,18 +26,16 @@ into the PRD + directive; (3) then drain OVERHAUL2 + review findings on that one
 branch. NO more per-slice PRs — local review (vitest browser + Playwright, read
 the screenshots myself) before any push.
 
-### Step 1 — land PR #84
-- [ ] [WAIT] PR #84 CI green (verify/browser/e2e/android all pass; CodeRabbit
-  "insufficient credits" is a non-blocking false-flag; 0 unresolved threads).
-  Latest fix: 6-level-playthrough e2e timeout 120s→300s (CI GL ~4× slower;
-  completes 27s local). When green → `gh pr merge 84 --squash` → `git checkout
-  main && git pull`. Then this WAIT clears and Step 2 begins.
+### Step 1 — land PR #84 — DONE
+- [x] PR #84 squash-merged (admin, 2026-05-29; user: don't wait on CI, the
+  review run catches everything). Local main caught up to 597b871 (the `feat:`
+  squash → release-please will cut the next release). Branch `feat/overhaul2`
+  cut off main; VIS WIP restored.
 
-### Step 2 — comprehensive review run (FIRST thing on the new branch)
-- [ ] REVIEW-RUN On a fresh branch off the caught-up main, run
-  `comprehensive-review:full-review` fully automated over src/ + app/; carry
-  EVERY finding into docs/PRD.md + this directive as new tracked items before
-  implementing. This precedes OVERHAUL2 implementation.
+### Step 2 — comprehensive review run (FIRST thing on the branch) — IN PROGRESS
+- [ ] REVIEW-RUN Run `comprehensive-review:full-review` fully automated over
+  src/ + app/; carry EVERY finding into docs/PRD.md + this directive as new
+  tracked items before implementing the rest of OVERHAUL2.
 
 ### Step 3 — OVERHAUL2 visual/feel/structure (same one branch)
 
@@ -48,8 +46,8 @@ fully procedural. Full spec + acceptance in [`docs/PRD.md`](../docs/PRD.md)
 in a git stash ("OVERHAUL2 VIS WIP"); re-justify + commit them on the new branch
 with local screenshot verification. Capture+expand PRD/directive as findings arrive.
 
-- [ ] VIS1 Flat-flood lighting (killed dark-base + flashlight-reveal; ambient 0.95 / dir 1.1 / hemi 0.7). Prototyped (stashed) — verify + commit on the new branch.
-- [ ] VIS2 Silent-Hill fog haze (fog colors [500]/[600] tinted, near 8) — mood + cull horizon. Prototyped (stashed). *Follow-up VIS2b: wire far-plane to area streaming.*
+- [x] VIS1 Flat-flood lighting (killed dark-base + flashlight-reveal; ambient 0.95 / dir 1.1 / hemi 0.7). Committed on feat/overhaul2; tsc/lint/1338 unit/5 screenshots green locally.
+- [x] VIS2 Silent-Hill fog haze (fog colors [500]/[600] tinted, near 8) + weapon emissive 0.18→0.04. Committed. *Follow-up VIS2b: wire far-plane to area streaming.*
 - [ ] ERR1 Asset-load error modal overlay (arcade-cabinet parity) — DO FIRST in OVERHAUL2 (surfaces problems the rest hits). [PRD ERR1]
 - [ ] VIS4 Weapon hold transform — center-bottom, aiming forward (currently bottom-right/angled). [PRD VIS4]
 - [ ] VIS3 Artistic shadow blended with the flood (Silent Hill), readable not flat/pitch. [PRD VIS3]
