@@ -214,15 +214,18 @@ export function BoneBusterHUD({
 					pointerEvents: touchMode ? "auto" : "none",
 				}}
 			>
-				{WEAPON_ORDER.map((id) => {
-					const owned = state.ownedWeapons[id];
+				{/* HUD2 — own-only weapon display (DOOM model). Render ONLY the
+				    weapons the player actually has, in order, instead of an
+				    always-5 bar of mostly-disabled boxy buttons. The arsenal
+				    grows visibly as weapons are picked up (chaingun/shotgun/
+				    flamethrower start unowned). */}
+				{WEAPON_ORDER.filter((id) => state.ownedWeapons[id]).map((id) => {
 					const active = state.weapon === id;
 					const spec = WEAPONS[id];
 					return (
 						<button
 							key={id}
 							type="button"
-							disabled={!owned}
 							onPointerDown={(e) => {
 								if (!touchMode) return;
 								e.preventDefault();
@@ -232,7 +235,7 @@ export function BoneBusterHUD({
 								if (touchMode) return;
 								onSelectWeapon(id);
 							}}
-							style={weaponChipStyle(active, owned, spec.muzzleColor)}
+							style={weaponChipStyle(active, true, spec.muzzleColor)}
 							aria-label={`Select ${spec.label}`}
 							aria-pressed={active}
 						>
