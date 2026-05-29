@@ -12,6 +12,7 @@ import {
 	setAmbientPhase,
 	stopAmbient,
 } from "@audio/sfx";
+import { Capacitor } from "@capacitor/core";
 import { PlayerController } from "@components/PlayerController";
 import { addBoneBusterListener, dispatch } from "@engine/events";
 import { type BoneBusterMap, type Enemy, isSectorMap, type Pickup } from "@engine/mapTypes";
@@ -85,6 +86,13 @@ import {
 } from "../../src/world/ghostHunting";
 import { pickMeleeProfile } from "../../src/world/meleeSkins";
 import { pickPistolProfile } from "../../src/world/pistolSkins";
+
+// PREP-PERF3 — real-time directional shadows only on desktop web. Capacitor
+// native (iOS/Android, the mobile target) skips the per-frame 1024² shadow pass
+// VIS1 introduced (~4-8ms/frame on a Pixel 5a + doubled shadow-caster draws).
+// Resolved once at module load; the platform doesn't change at runtime.
+// no-visual-impact: desktop web keeps real-time shadows so canonical and golden screenshot baselines are byte-identical; only native mobile drops them
+const SHADOWS_ENABLED = Capacitor.getPlatform() === "web";
 
 type SceneProps = Readonly<{
 	map: BoneBusterMap;
@@ -899,7 +907,14 @@ export function BoneBusterScene({
 				position={[10, 16, 8]}
 				intensity={1.1 * lightPalette.directionalMul}
 				color={lightPalette.directionalColor}
-				castShadow
+				// PREP-PERF3 — real-time shadows ONLY on desktop web. The always-on
+				// 1024² shadow pass (added by VIS1) costs ~4-8ms/frame on a Pixel
+				// 5a-class GPU + doubles shadow-caster draw submissions vs the mobile
+				// budget — the single largest mobile frame-time line item. PSX-jank
+				// reads fine flat-lit without real-time shadows on native; desktop
+				// keeps them for the chunky-shape contrast. (Capacitor native =
+				// mobile; web = desktop, here.)
+				castShadow={SHADOWS_ENABLED}
 				shadow-mapSize={[1024, 1024]}
 				shadow-camera-left={-20}
 				shadow-camera-right={20}
