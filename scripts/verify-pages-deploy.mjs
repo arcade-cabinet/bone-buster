@@ -114,11 +114,29 @@ const gl = await page.evaluate(() => {
 	const dbgExt = glctx.getExtension("WEBGL_debug_renderer_info");
 	return {
 		size: { w: c.width, h: c.height },
+		// CI-7 — laid-out CSS size; a canvas with 0 clientWidth/Height renders
+		// nothing on screen even when backing-store width/height are non-zero
+		// (the "deployed but blank" failure a size-only log would miss).
+		client: { w: c.clientWidth, h: c.clientHeight },
 		vendor: dbgExt ? glctx.getParameter(dbgExt.UNMASKED_VENDOR_WEBGL) : null,
 		renderer: dbgExt ? glctx.getParameter(dbgExt.UNMASKED_RENDERER_WEBGL) : null,
 	};
 });
 console.log("WebGL:", JSON.stringify(gl));
+
+// CI-7 — fail the smoke test on a missing/contextless/zero-size canvas. A live
+// deploy that boots the HUD but renders a 0×0 (or display:none) canvas is the
+// "looks up, actually blank" class; assert the canvas is genuinely laid out.
+if (gl.error) {
+	console.error(`Canvas check failed: ${gl.error}`);
+	await browser.close();
+	process.exit(1);
+}
+if (!gl.client || gl.client.w <= 0 || gl.client.h <= 0) {
+	console.error(`Canvas has zero CSS size: ${JSON.stringify(gl.client)}`);
+	await browser.close();
+	process.exit(1);
+}
 
 await captureViaCDP(page, INGAME_PATH);
 console.log("In-game screenshot:", INGAME_PATH);
