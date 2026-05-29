@@ -52,6 +52,11 @@
 			"message": "No-network invariant: this is a fully client-side game with no backend. Runtime network reopens the remote-asset parse + exfil attack surface. Use the A() asset helper for first-party bundle assets."
 		},
 		{
+			"pattern": "dangerouslySetInnerHTML",
+			"globs": ["src/**", "app/**"],
+			"message": "CI-8 — no dangerouslySetInnerHTML: this game injects no HTML and has an untrusted URL-flag input boundary; raw HTML injection is a needless XSS surface. Render text/JSX, not innerHTML."
+		},
+		{
 			"pattern": "@objexiv/",
 			"globs": ["src/**", "app/**"],
 			"message": "No Objexiv imports — this is a standalone game."
