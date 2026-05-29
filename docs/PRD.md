@@ -52,7 +52,97 @@ shipped-milestone summary.
 
 ## Remaining work
 
-(empty)
+### LANE: OVERHAUL2 — visual/feel/structure pass (2026-05-28, user-directed)
+
+Captured live from playtest findings. Authority: direct user direction this
+session. Theme: the game must read as a **dark, gritty, modernized-DOOM ×
+Silent-Hill horror maze** built from the existing PSX asset library — readable,
+atmospheric, and fully committed to procedural generation. Each item carries a
+user story, surfaces, and an acceptance bar.
+
+**VIS — visual presentation**
+
+- **VIS1 (DONE this session) — flat-flood lighting, not dark-reveal.** PSX
+  assets are washed-out + chunky BY DESIGN; they must be lit by a broad flood,
+  not hidden behind a flashlight-reveal mechanic. Killed the 0.12-ambient
+  dark-base; ambient 0.95 + directional 1.1 + hemisphere 0.7 flood regardless of
+  flashlight. *Acceptance:* in-game screenshot on ANGLE-GL reads all wall/floor
+  texture + model detail clearly (no near-black scenes). DONE — verified.
+- **VIS2 (DONE this session) — Silent-Hill fog as mood + cull horizon.** Fog is
+  a luminous mid-tone archetype-tinted haze (not [900] near-black) that distance
+  fades INTO — gives mood AND a draw/cull horizon the engine can use to hot-load
+  the next area as the player runs in. *Acceptance:* distant geometry fogs out
+  to a tinted haze, not a hard black cutoff. DONE (fog colors → [500]/[600];
+  near 8). *Follow-up VIS2b:* wire the fog far-plane to actual area streaming/cull.
+- **VIS3 — artistic shadow, blended.** Shadow used ARTISTICALLY (Silent Hill
+  model) — blended with the flood for depth/contrast, not flat-bright-everywhere
+  and not pitch black. Tune directional shadow + contact/ambient-occlusion so
+  the chunky PSX geometry has readable form. *Acceptance:* in-game shots show
+  shape-defining shadow on walls/props without losing readability.
+- **VIS4 — weapon hold transform.** User story: as a player I see my weapon held
+  first-person, centered-bottom, aiming forward — not jammed in the corner. The
+  viewmodel is currently bottom-RIGHT + angled off-screen. Re-anchor the
+  viewmodel group to center-bottom, barrel forward, DOOM-style. *Acceptance:*
+  in-game screenshot shows the weapon centered at screen bottom, pointing into
+  the scene. *(Material emissive already lowered so metal reads under flood.)*
+- **VIS5 — kill all placeholders + no procedural-where-a-model-exists.** Nothing
+  should be procedural box-geometry where a PSX model exists (274 promoted GLBs +
+  the NAS library). Audit every procedural primitive (ceiling planes, lava
+  planes, any fallback box/color) and replace with PSX models or proper
+  materials. *Acceptance:* no flat untextured primitive visible in-game; the
+  no-stubs rule passes a fresh audit.
+
+**HUD — dark/gritty/chrome framing**
+
+- **HUD1 — frame the scene + show the RIGHT info.** User story: the HUD should
+  FRAME the gritty scene and present tactical info in a dark/gritty/chrome look,
+  not boxy buttons showing the wrong things. Redesign the HUD framing
+  (vignette/border that reads as a helmet/console frame), dark chrome treatment.
+  *Acceptance:* in-game screenshot reads as a cohesive framed HUD, not floating
+  rounded panels.
+- **HUD2 — own-only weapon display (DOOM model).** Show only weapons the player
+  has actually picked up — NOT the always-5 boxy button row. Weapons enter the
+  arsenal via in-world pickups/chests. *Acceptance:* a fresh run shows only
+  blade+pistol; the bar grows as weapons are collected; no greyed always-present
+  slots. *(User decision: own-only, no boxy bar.)*
+- **HUD3 — weapon/loot pickups + chests in-world.** Not all weapons available
+  from the start; they're found as world pickups + chests (DOOM model). Wire the
+  pickup/chest spawn + collect → arsenal flow to feed HUD2. *Acceptance:* a
+  weapon pickup model spawns in the maze, collecting it adds the weapon to the
+  HUD + arsenal.
+
+**STRUCT — fully procedural, archetype-styled, scaling**
+
+- **STRUCT1 — commit fully to procedural; refLevels are archetype MODELS.** The
+  hand-authored sector refLevels are REFERENCE MODELS demonstrating each
+  archetype's spatial style/scale (per docs/DESIGN.md + refLevel.ts) — NOT
+  separate playable levels. Remove the 1-5 fixed-level picker + the
+  `LevelChoice = "procedural"|1..5` union; every run is procedural. Landing flow
+  becomes NEW GAME → seed → BEGIN (no level pane). *Acceptance:* no level picker
+  in the New Game flow; every run generates a procedural maze; refLevels remain
+  only as the per-archetype style/scale models the generator emulates.
+- **STRUCT2 — each level = a procedural maze in an archetype style, boss-capped.**
+  Level N picks an archetype style (modeled on its refLevel) + generates a maze
+  within it, ending in a boss. *Acceptance:* consecutive levels visibly differ
+  in archetype style + each ends with a boss gate.
+- **STRUCT3 — logarithmic difficulty + fun scaling.** Difficulty (enemy count /
+  tier / density) scales logarithmically with level depth so early levels are
+  approachable and depth ramps without becoming impossible. *Acceptance:* a
+  documented scaling curve + a unit test pinning monotonic-but-logarithmic growth.
+
+**ERR — failure surfacing (arcade-cabinet parity)**
+
+- **ERR1 — asset-load error modal overlay.** User story: when an asset (GLB /
+  wasm / font / texture) fails to load, surface it as an ERROR MODAL OVERLAY like
+  the other ~/src/arcade-cabinet games — never a silent failure / blank render.
+  Wire a global error boundary + asset-load error channel → visible modal.
+  *Acceptance:* forcing an asset 404 shows the error modal, not a blank/partial
+  scene.
+
+**Sequencing:** VIS1/VIS2 done. The rest runs as an OVERHAUL2 lane in the
+directive; ERR1 first (it surfaces problems the other work will hit), then
+VIS4/VIS3/VIS5, HUD1-3, STRUCT1-3. Difficulty/HUD/level changes get reducer +
+unit tests; visual changes get ANGLE-GL screenshot verification read by the agent.
 
 ## Parked — out of scope until a new lane up-prioritizes
 

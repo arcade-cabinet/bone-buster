@@ -17,6 +17,27 @@
 5. Flip `[ ]` → `[x]` in the same commit; **delete the item from this file** in the next forward-going commit (per the prune-shipped-from-directive rule).
 6. Keep ALL work on the single long-running branch. Open the PR + gather remote feedback + squash-merge only when the whole queue below is drained — not per commit, not per slice. The work is the directive; wall-clock and size never gate it.
 
+## Queue — PRIORITY: OVERHAUL2 visual/feel/structure (NEW BRANCH after PR #84 merges)
+
+User-directed (2026-05-28, live playtest): the game must read as a dark/gritty
+modernized-DOOM × Silent-Hill horror maze built from the existing PSX assets —
+readable, atmospheric, fully procedural. Full spec + acceptance bars in
+[`docs/PRD.md`](../docs/PRD.md) §LANE: OVERHAUL2. Run as a multi-agent workflow.
+Capture+expand PRD/directive as findings come in (this lane is itself such a capture).
+
+- [x] VIS1 Flat-flood lighting (killed dark-base + flashlight-reveal; ambient 0.95 / dir 1.1 / hemi 0.7). Verified on ANGLE-GL.
+- [x] VIS2 Silent-Hill fog haze (fog colors [500]/[600] tinted, near 8) — mood + cull horizon. *Follow-up VIS2b: wire far-plane to area streaming.*
+- [ ] ERR1 Asset-load error modal overlay (arcade-cabinet parity) — DO FIRST (surfaces problems the rest hits). [PRD ERR1]
+- [ ] VIS4 Weapon hold transform — center-bottom, aiming forward (currently bottom-right/angled). [PRD VIS4]
+- [ ] VIS3 Artistic shadow blended with the flood (Silent Hill), readable not flat/pitch. [PRD VIS3]
+- [ ] VIS5 Kill ALL placeholders + no procedural-where-a-PSX-model-exists (ceiling/lava planes, fallbacks). [PRD VIS5]
+- [ ] HUD1 Frame the scene, dark/gritty/chrome, right tactical info (not boxy floating panels). [PRD HUD1]
+- [ ] HUD2 Own-only weapon display (DOOM model), no always-5 boxy bar. [PRD HUD2]
+- [ ] HUD3 In-world weapon/loot pickups + chests feed the arsenal/HUD. [PRD HUD3]
+- [ ] STRUCT1 Commit fully to procedural; drop the 1-5 picker + LevelChoice union; refLevels become archetype-style MODELS only. [PRD STRUCT1]
+- [ ] STRUCT2 Each level = procedural maze in an archetype style, boss-capped. [PRD STRUCT2]
+- [ ] STRUCT3 Logarithmic difficulty scaling + unit test. [PRD STRUCT3]
+
 ## Queue — PRIORITY: family PRNG + seedphrase (one branch)
 
 User-directed (2026-05-28): adopt the `~/src/arcade-cabinet` family seed
