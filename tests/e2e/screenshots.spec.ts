@@ -233,7 +233,13 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			});
 			// T7 — 45 frames (≈750ms @60fps) settles SpotLight + shadow map composite.
 			await waitForFrames(page, 45);
-			await captureViaCDP(page, `${OUT_DIR}/ingame-flashlight-on.png`, "ingame-flashlight-on.png");
+			// CR-e2e — capture-only (snapshotName=null). The in-game 3D scene does
+			// NOT composite reliably under CI's headless-Linux GL (renders black
+			// where the local darwin run renders lit), so a Linux baseline would
+			// lock in a black frame. The artifact is still written for human review;
+			// the OVERHAUL2 lane re-establishes deliberate in-game baselines. The
+			// stable structural gate stays on the landing pose (UI, no 3D).
+			await captureViaCDP(page, `${OUT_DIR}/ingame-flashlight-on.png`, null);
 		});
 	});
 
@@ -252,11 +258,9 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			await page.locator("[data-testid='bonebuster-hp']").waitFor();
 			// T7 — 30 frames (≈500ms @60fps) for the dark-mode pose.
 			await waitForFrames(page, 30);
-			await captureViaCDP(
-				page,
-				`${OUT_DIR}/ingame-flashlight-off.png`,
-				"ingame-flashlight-off.png",
-			);
+			// CR-e2e — capture-only (see the flashlight-ON pose): headless-Linux CI
+			// renders the 3D scene black, so no baseline assertion here.
+			await captureViaCDP(page, `${OUT_DIR}/ingame-flashlight-off.png`, null);
 		});
 	});
 

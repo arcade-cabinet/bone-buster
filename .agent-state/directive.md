@@ -38,6 +38,7 @@ Capture+expand PRD/directive as findings come in (this lane is itself such a cap
 - [ ] STRUCT2 One generator PER BIOME (sewer/cathedral/underwater/etc) built on the maze core — each owns biome structure/scatter/hazards + custom triggers/traps/code; level N = a biome maze, boss-capped. Composes natively with seed forks (same phrase → same biome maze). [PRD STRUCT2]
 - [ ] STRUCT3 Logarithmic difficulty scaling (enemies/tier/density/maze-size) + unit test. [PRD STRUCT3]
 - [ ] STRUCT4 Log-scaled weapon UPGRADE progression: unlock base weapon → find context-appropriate upgrades (fire rate / multi-shot / spread / damage), seeded drops scaling with depth; HUD shows upgrade tier. Endless-play depth. [PRD STRUCT4]
+- [ ] STRUCT5 Weighted biome-selection pressure system: per-biome pressure in the save (levels-since-last-played), weighted pick on each exit (50/30/15/5 over pressure rank) via the event PRNG — no rote cycling, stale biomes favored, next never predictable. [PRD STRUCT5]
 
 ## Queue — PRIORITY: family PRNG + seedphrase (one branch)
 

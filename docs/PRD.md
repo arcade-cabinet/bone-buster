@@ -169,6 +169,21 @@ endless, varied, reproducible runs from a small set of well-built generators.
   composes deterministically (seeded), the drop cadence is logarithmic in depth,
   and the HUD reflects acquired upgrades. Composes with the seed forks (same
   phrase → same upgrade drops).
+- **STRUCT5 — weighted biome-selection pressure system (no rote cycling).** User
+  story (user-directed 2026-05-28): the next biome should NEVER be a predictable
+  1→2→3→4→5 cycle, but stale biomes should be favored. Track per-biome
+  **pressure** in the save = how many levels since that biome was last played
+  (pressure rises the longer unused, resets to 0 when chosen). On each
+  exit/level-complete, rank biomes by pressure and pick the next with a weighted
+  roll: **50% highest-pressure, 30% 2nd, 15% 3rd, 5% 4th** (the just-used /
+  lowest-pressure biome is effectively never immediately repeated). The roll uses
+  the EVENT PRNG (the buried per-run stream), so it's reproducible per run but
+  unknowable to the player. *Surfaces:* a `biomePressure` map persisted in the
+  save (Capacitor Preferences, alongside the event seed); a `pickNextBiome(pressure, eventRng)`
+  pure fn; the level-transition flow (`useLevelTransition`) calls it + persists the
+  updated pressures. *Acceptance:* a unit-tested `pickNextBiome` with the
+  documented 50/30/15/5 weights over pressure rank; pressure rises for unused
+  biomes + resets on selection; a run never rote-cycles. Composes with STRUCT2/3.
 
 **ERR — failure surfacing (arcade-cabinet parity)**
 
