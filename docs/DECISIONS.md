@@ -560,6 +560,30 @@ select a fixed level; it's an endless, never-predictable descent.
 
 ---
 
+## D24 — Content-Security-Policy posture: defense-in-depth via invariants, not (yet) a meta CSP
+
+**Status:** Active (note; revisit if a runtime-CSP need arises).
+**Date:** 2026-05-29 (review SEC-2)
+
+bone-buster ships no `Content-Security-Policy` meta tag today. The XSS/exfil
+surface is instead held down by hard invariants enforced in `commit-gate.mjs`:
+
+- **No network at runtime** — a ban_pattern blocks `fetch`/`XMLHttpRequest`/
+  `WebSocket`/`EventSource` across `src/**` + `app/**` (the no-backend invariant;
+  all assets are first-party bundle via the `A()` helper). Nothing can exfil.
+- **No HTML injection** — a ban_pattern blocks `dangerouslySetInnerHTML`
+  (CI-8). The only external input is the URL flags, parsed through the pure,
+  unit-pinned `urlFlags.ts` boundary (length-capped per M-6/SEC-1).
+
+**Why:** a meta CSP on a Vike-prerendered + Capacitor `file://` app is awkward
+(inline bootstrap scripts, the WebView origin) and would mostly restate
+invariants the gate already enforces at author time. The gate fails the build;
+a CSP only fails at runtime. **Revisit** if we ever add a runtime network call,
+third-party embed, or user-authored content — at which point a real CSP header
+(set at the Pages/edge layer, not a meta tag) becomes the right control.
+
+---
+
 ## Decisions log conventions
 
 - One section per decision, with a short slug (`## D11 — short title`).

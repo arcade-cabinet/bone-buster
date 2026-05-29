@@ -125,8 +125,14 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Smoke-test the live Pages deploy
         env:
-          # deploy-pages emits the canonical site URL; append the debug
-          # flags the verify script drives through (start → HUD).
+          # deploy-pages emits the canonical site URL; append the debug flags the
+          # verify script drives through (start → HUD). SEC-3: `bonebusterDebug`
+          # is safe here — it ONLY exposes the __bonebuster hook surface +
+          # capture-mode on a page the URL-bearer already controls (no privilege
+          # escalation, no data exfil; the production build still gates the
+          # cheat hooks behind NODE_ENV separately). `bonebusterSeed=12345` is a
+          # legacy-numeric phrase (accepted as a string) — a FIXED seed so the
+          # smoke run boots a deterministic map every deploy.
           PAGES_URL: ${{ needs.deploy-pages.outputs.page_url }}?bonebusterDebug&bonebusterSeed=12345
         run: node scripts/verify-pages-deploy.mjs
       - uses: actions/upload-artifact@v7
