@@ -18,6 +18,7 @@
 
 import type { BoneBusterEvent } from "@engine/events";
 import type { PickupKind } from "@engine/mapTypes";
+import { assertNever } from "@shared/assertNever";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import { GOING_BACK_BUDGET_MS } from "@store/gameConstants";
 import type { GameState } from "@store/gameState";
@@ -157,6 +158,11 @@ export function gameReducer(
 			};
 		case "collectPickup":
 			return reduceCollectPickup(state, action.kind, ctx);
+		default:
+			// PREP-BP2 — exhaustiveness. A new GameAction variant (STRUCT4 weapon
+			// upgrades, etc.) without a case becomes a compile error here instead
+			// of silently returning undefined.
+			return assertNever(action, "GameAction");
 	}
 }
 

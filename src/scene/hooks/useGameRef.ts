@@ -31,6 +31,7 @@
 import { playFlashlightClick, playHitSting, playPickup, playPlayerDeath } from "@audio/sfx";
 import { dispatch } from "@engine/events";
 import { cyrb128 } from "@engine/rng";
+import { assertNever } from "@shared/assertNever";
 import {
 	type GameAction,
 	type GameEffect,
@@ -91,8 +92,15 @@ export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 						case "flashlightClick":
 							playFlashlightClick();
 							break;
+						default:
+							// PREP-BP2 — a new GameEffect audio sound without a case
+							// is a compile error here.
+							assertNever(e.sound, "GameEffect audio sound");
 					}
 					break;
+				default:
+					// PREP-BP2 — a new GameEffect kind without a case is a compile error.
+					assertNever(e, "GameEffect");
 			}
 		}
 	};
