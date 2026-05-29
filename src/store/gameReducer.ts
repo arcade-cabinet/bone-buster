@@ -101,6 +101,13 @@ const AMMO_INCREMENT: Record<
 	crucifix: "crucifix",
 };
 
+/**
+ * D3 / L-2 — extra ammo granted on top of each weapon's `pickupAmmo` when the
+ * goal (key) drop hands the player the full arsenal in `reduceWin`. Named so the
+ * grant is tunable in one place instead of as bare `+ 4` / `+ 10` literals.
+ */
+const GOAL_BONUS_AMMO = { shotgun: 4, flamethrower: 10 } as const;
+
 const noChange = (state: GameState, iframeUntil: number): GameReducerResult => ({
 	state,
 	effects: [],
@@ -229,8 +236,11 @@ function reduceWin(state: GameState, ctx: GameReducerCtx): GameReducerResult {
 			ownedWeapons: { ...state.ownedWeapons, chaingun: true, shotgun: true, flamethrower: true },
 			ammo: {
 				...state.ammo,
-				shotgun: Math.max(state.ammo.shotgun, WEAPONS.shotgun.pickupAmmo + 4),
-				flamethrower: Math.max(state.ammo.flamethrower, WEAPONS.flamethrower.pickupAmmo + 10),
+				shotgun: Math.max(state.ammo.shotgun, WEAPONS.shotgun.pickupAmmo + GOAL_BONUS_AMMO.shotgun),
+				flamethrower: Math.max(
+					state.ammo.flamethrower,
+					WEAPONS.flamethrower.pickupAmmo + GOAL_BONUS_AMMO.flamethrower,
+				),
 			},
 		},
 		effects,

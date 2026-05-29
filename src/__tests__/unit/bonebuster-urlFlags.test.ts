@@ -8,8 +8,10 @@
 import {
 	captureModeEnabled,
 	hasDebugFlagInHref,
+	MAX_SEED_PHRASE_LENGTH,
 	parseArchetypeFromHref,
 	parseSeedFromHref,
+	parseSeedPhraseFromHref,
 } from "@views/urlFlags";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -52,6 +54,38 @@ describe("CR-F6 — parseSeedFromHref", () => {
 
 	it("returns null on an unparseable href instead of throwing", () => {
 		expect(parseSeedFromHref("::::not a url")).toBeNull();
+	});
+});
+
+describe("M-6/SEC-1 — parseSeedPhraseFromHref", () => {
+	it("returns the phrase verbatim (canonical + legacy alias, canonical wins)", () => {
+		expect(parseSeedPhraseFromHref(U("?bonebusterSeed=marrowed-vile-sepulcher"))).toBe(
+			"marrowed-vile-sepulcher",
+		);
+		expect(parseSeedPhraseFromHref(U("?objexoomSeed=grim-hollow-ossuary"))).toBe(
+			"grim-hollow-ossuary",
+		);
+		expect(parseSeedPhraseFromHref(U("?bonebusterSeed=a&objexoomSeed=b"))).toBe("a");
+	});
+
+	it("accepts a legacy numeric value as a phrase string", () => {
+		expect(parseSeedPhraseFromHref(U("?bonebusterSeed=12345"))).toBe("12345");
+	});
+
+	it("returns null when absent or empty", () => {
+		expect(parseSeedPhraseFromHref(U(""))).toBeNull();
+		expect(parseSeedPhraseFromHref(U("?bonebusterSeed="))).toBeNull();
+	});
+
+	it(`rejects a phrase longer than MAX_SEED_PHRASE_LENGTH (${MAX_SEED_PHRASE_LENGTH}) rather than truncating`, () => {
+		const atCap = "x".repeat(MAX_SEED_PHRASE_LENGTH);
+		const overCap = "x".repeat(MAX_SEED_PHRASE_LENGTH + 1);
+		expect(parseSeedPhraseFromHref(U(`?bonebusterSeed=${atCap}`))).toBe(atCap);
+		expect(parseSeedPhraseFromHref(U(`?bonebusterSeed=${overCap}`))).toBeNull();
+	});
+
+	it("returns null on an unparseable href instead of throwing", () => {
+		expect(parseSeedPhraseFromHref("::::not a url")).toBeNull();
 	});
 });
 

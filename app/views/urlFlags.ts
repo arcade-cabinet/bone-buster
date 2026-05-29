@@ -77,15 +77,31 @@ export function readArchetypeFromUrl(): string | null {
  * null so the caller mints a phrase (SEED3: from the event PRNG / New Game
  * modal; for now a deterministic default keeps the harness stable).
  */
-export function readSeedPhraseFromUrl(): string | null {
-	if (typeof window === "undefined") return null;
+/** Longest accepted seed PHRASE from a URL. */
+export const MAX_SEED_PHRASE_LENGTH = 200;
+
+/**
+ * Pure form — parse the seed PHRASE from an href, or null if absent/empty.
+ * M-6/SEC-1: a phrase longer than {@link MAX_SEED_PHRASE_LENGTH} is rejected
+ * (null) rather than truncated — a multi-kilobyte `?bonebusterSeed=` is hostile
+ * input (it would flow into cyrb128 + every `forkStream` tag), and the real seed
+ * vocabulary is three short words. A legitimate phrase is well under the cap.
+ */
+export function parseSeedPhraseFromHref(href: string): string | null {
 	try {
-		const url = new URL(window.location.href);
+		const url = new URL(href);
 		const raw = url.searchParams.get("bonebusterSeed") ?? url.searchParams.get("objexoomSeed");
-		return raw && raw.length > 0 ? raw : null;
+		if (!raw || raw.length === 0) return null;
+		if (raw.length > MAX_SEED_PHRASE_LENGTH) return null;
+		return raw;
 	} catch {
 		return null;
 	}
+}
+
+export function readSeedPhraseFromUrl(): string | null {
+	if (typeof window === "undefined") return null;
+	return parseSeedPhraseFromHref(window.location.href);
 }
 
 /**
