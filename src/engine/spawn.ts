@@ -75,6 +75,10 @@ export function spawnEnemies(map: BoneBusterMap, spawnsOverride?: readonly Enemy
 	}
 	const spawns = spawnsOverride ?? map.enemySpawns;
 	const bossIdx = pickBossSpawnIndex(map);
+	// PREP-PERF2 — compute all UV-hidden flags from ONE forked stream (was
+	// O(n²): a fresh forkStream + advance i+1 per enemy). Byte-identical — the
+	// i-th flag still reads the i-th draw of the same ENMX-UV stream.
+	const uvFlags = pickUvHiddenFlags(map.seedPhrase, spawns.length);
 	return spawns.map((spawn, i) => {
 		const isBoss = i === bossIdx;
 		const baseHp = enemyBaseHp(spawn.kind);
@@ -98,15 +102,32 @@ export function spawnEnemies(map: BoneBusterMap, spawnsOverride?: readonly Enemy
 			// Deterministic per (seedPhrase, spawnIndex) so the same phrase
 			// always hides the same enemies. Bosses never hide — the
 			// goal-boss must remain visible without the UV reveal.
-			uvHidden: isBoss ? false : pickUvHidden(map.seedPhrase, i),
+			uvHidden: isBoss ? false : uvFlags[i] === true,
 		};
 	});
 }
 
-// PC3 — ~12.5% of non-boss enemies hide. SEED2: forks the per-phrase ENMX
-// stream and reads the spawnIndex-th draw, so the same phrase always hides
-// the same enemies (replaces the old numeric mulberry32 + ENMX XOR). The
+// PC3 — ~12.5% of non-boss enemies hide. SEED2 forks the per-phrase ENMX
+// stream; the i-th flag is the i-th draw, so the same phrase always hides the
+// same enemies (replaces the old numeric mulberry32 + ENMX XOR). The
 // CANONICAL_SEED_PHRASE short-circuit keeps the canonical screenshot baseline.
+//
+// PREP-PERF2 — computes ALL flags from ONE forked stream advanced linearly
+// (was O(n²): pickUvHidden re-forked + re-advanced per enemy). Byte-identical:
+// draw 0 → flag 0, draw 1 → flag 1, … exactly as the per-enemy loop produced.
+export function pickUvHiddenFlags(seedPhrase: string, count: number): boolean[] {
+	if (seedPhrase === CANONICAL_SEED_PHRASE) return new Array<boolean>(count).fill(false);
+	const rng = forkStream(seedPhrase, "ENMX-UV");
+	const out: boolean[] = [];
+	for (let i = 0; i < count; i += 1) out.push(rng() < 0.125);
+	return out;
+}
+
+/**
+ * @deprecated PREP-PERF2 — single-enemy UV-hidden pick, O(n²) when called per
+ * enemy. Retained for any external caller; `spawnEnemies` uses
+ * `pickUvHiddenFlags` (single fork). Same byte output as the i-th flag.
+ */
 export function pickUvHidden(seedPhrase: string, spawnIndex: number): boolean {
 	if (seedPhrase === CANONICAL_SEED_PHRASE) return false;
 	const rng = forkStream(seedPhrase, "ENMX-UV");
