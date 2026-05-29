@@ -372,18 +372,32 @@ export function BoneBusterShell() {
 			// the start sequence; music synth allocation deferred to
 			// `ensureMusic()` below so time-to-first-interactive on
 			// mobile drops by ~200-400ms.
-			await ensureSfxCritical();
-			startAmbient();
-			// Kick off music synth allocation in parallel with the state
-			// transition. We don't await — the transition flips to
-			// playing immediately and music starts as soon as its
-			// synths land.
-			void ensureMusic().then(() => {
-				setMusicMood("exploration");
-				// POL33 — bus-gain shift per chosen difficulty.
-				setMusicIntensityForDifficulty(settings.difficulty);
-				startMusic();
-			});
+			// M-5 — audio init must NEVER block the game from starting. A
+			// failed AudioContext unlock (autoplay policy, no device, a
+			// throwing Howler init) would otherwise skip the setState below
+			// and leave the player stuck on landing. Swallow + dev-log; the
+			// run starts silent rather than not at all.
+			// no-visual-impact: wraps audio init in try/catch so a failed unlock cannot block the playing-state transition; rendering is unchanged
+			try {
+				await ensureSfxCritical();
+				startAmbient();
+				// Kick off music synth allocation in parallel with the state
+				// transition. We don't await — the transition flips to
+				// playing immediately and music starts as soon as its
+				// synths land.
+				void ensureMusic()
+					.then(() => {
+						setMusicMood("exploration");
+						// POL33 — bus-gain shift per chosen difficulty.
+						setMusicIntensityForDifficulty(settings.difficulty);
+						startMusic();
+					})
+					.catch((err) => {
+						if (import.meta.env.DEV) console.warn("[bonebuster] music init failed:", err);
+					});
+			} catch (err) {
+				if (import.meta.env.DEV) console.warn("[bonebuster] audio init failed:", err);
+			}
 		}
 		// Reset run state — preserves chosen settings + map seed.
 		setState({

@@ -85,15 +85,19 @@ export async function readJsonPref<T = unknown>(key: string): Promise<T | null> 
 
 /**
  * Write a JSON-serializable value. Stringifies eagerly so any
- * circular-reference or BigInt failure surfaces here (the catch
- * swallows it; in dev the console will show the Capacitor error
- * separately).
+ * circular-reference or BigInt failure surfaces here. M-7: a stringify
+ * failure is NOT a Capacitor error (so nothing else would log it) — dev-log
+ * it before swallowing, otherwise a non-serializable payload silently never
+ * persists and the bug is invisible.
  */
 export async function writeJsonPref<T>(key: string, value: T): Promise<void> {
 	let raw: string;
 	try {
 		raw = JSON.stringify(value);
-	} catch {
+	} catch (err) {
+		if (import.meta.env.DEV) {
+			console.warn(`[bonebuster] writeJsonPref("${key}") — value not JSON-serializable:`, err);
+		}
 		return;
 	}
 	await writePref(key, raw);
