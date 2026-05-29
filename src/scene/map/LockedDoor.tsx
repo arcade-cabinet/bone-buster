@@ -1,15 +1,22 @@
+import { PROP_MODELS } from "@assets/models";
 import { playDoor, playDoorTick } from "@audio/sfx";
+import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { TILE } from "@shared/constants";
-import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import type * as THREE from "three";
+import { SkeletonUtils } from "three-stdlib";
 import { WALL_HEIGHT } from "../constants";
 
 /**
- * Grid-map locked door cell. Slides upward over 600 ms when `open`
- * goes true. Fires the door + tick SFX on the rising edge.
+ * Grid-map locked door cell. VIS5 — renders the PSX `props/door_locked.glb`
+ * (was a procedural amber box) per the OVERHAUL2 "nothing procedural where a PSX
+ * model exists" rule; mirrors RealDoor's useGLTF + SkeletonUtils.clone pattern.
+ * Slides upward over 600 ms when `open` goes true; fires the door + tick SFX on
+ * the rising edge. A load failure is caught by the Shell's AssetErrorBoundary
+ * (ERR1) — the door GLB sits under the scene Suspense.
  */
+const DOOR_LOCKED_URL = PROP_MODELS.doorLocked;
+
 export function LockedDoor({
 	position,
 	open,
@@ -17,11 +24,13 @@ export function LockedDoor({
 	position: { x: number; z: number };
 	open: boolean;
 }) {
-	const meshRef = useRef<THREE.Mesh | null>(null);
+	const groupRef = useRef<THREE.Group | null>(null);
 	const progressRef = useRef(open ? 1 : 0);
 	const didFireRef = useRef(open);
+	const gltf = useGLTF(DOOR_LOCKED_URL);
+	const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene), [gltf.scene]);
 	useFrame((_, dt) => {
-		if (!meshRef.current) return;
+		if (!groupRef.current) return;
 		const target = open ? 1 : 0;
 		const speed = 1 / 0.6; // 600 ms full travel
 		progressRef.current +=
@@ -33,22 +42,18 @@ export function LockedDoor({
 			// K7 — mechanical tick pairs with the heavy door boom.
 			playDoorTick();
 		}
-		const baseY = WALL_HEIGHT / 2;
-		meshRef.current.position.set(position.x, baseY + progressRef.current * WALL_HEIGHT, position.z);
+		// Slide the whole door group upward as it opens (was the box mesh's Y).
+		groupRef.current.position.set(position.x, progressRef.current * WALL_HEIGHT, position.z);
 	});
 	return (
-		<mesh
+		<group
 			ref={(node) => {
-				meshRef.current = node;
+				groupRef.current = node;
 			}}
 		>
-			<boxGeometry args={[TILE * 0.95, WALL_HEIGHT * 0.95, TILE * 0.25]} />
-			<meshStandardMaterial
-				color={BONE_BUSTER_PALETTE.amber}
-				emissive={BONE_BUSTER_PALETTE.amber}
-				emissiveIntensity={open ? 0.08 : 0.55}
-				roughness={0.5}
-			/>
-		</mesh>
+			<primitive object={cloned} />
+		</group>
 	);
 }
+
+useGLTF.preload(DOOR_LOCKED_URL);
