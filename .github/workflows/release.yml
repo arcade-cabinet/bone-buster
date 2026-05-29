@@ -46,10 +46,14 @@ jobs:
 
   build-pages:
     needs: release-please
-    # Run when release-please cut a new release (normal path) OR
-    # when a maintainer manually fired the workflow with
-    # force_deploy=true (escape-hatch path).
+    # PREP-CI1 (OVERHAUL2 review) — CONTINUOUS DEPLOY. Pages reflects every main
+    # push, so a user-facing change can never silently fail to deploy because a
+    # squash title led with chore:/ci: (the 2-week-stale-deploy class). The
+    # release-please tag still gates the versioned Android APK artifact in
+    # release.yml; Pages is decoupled from semver. Also deploys on a release cut
+    # (redundant but harmless) and on the manual force_deploy escape hatch.
     if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       needs.release-please.outputs.release_created == 'true' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
     runs-on: ubuntu-latest

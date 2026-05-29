@@ -41,12 +41,12 @@ the screenshots myself) before any push.
   features or they inherit existing debt.
 
 ### Step 2.5 — PREP (from the review; land BEFORE OVERHAUL2 features)
-- [ ] PREP-CI1 Continuous-deploy: remove the release_created gate from build-pages, always build+deploy on push:main (verify-deploy still runs); decouple Pages from APK semver. Kills the deploy-staleness class. [review CI-1]
+- [x] PREP-CI1 Continuous-deploy: build-pages now runs on every push:main (kept the release-cut + force_deploy paths); Pages decoupled from APK semver. Kills the deploy-staleness class. YAML validated. [review CI-1]
 - [ ] PREP-CI2 Promote mobile-perf gate to required-on-PR (+ paths-filter exempt docs/CI). [review CI-2]
 - [ ] PREP-CI3 Add enemy-count A/B (4 vs 16, assert fps(16)≥0.6·fps(4)) + shadow A/B (fps_shadow≥0.75·fps_noshadow) to obs3-perf-snapshot-mobile via window.__bonebuster.setEnemyCount/setShadows hooks — catches PERF-1/PERF-3 count-scaling. [review CI-3]
-- [ ] PREP-CI4 Add CodeQL workflow (javascript-typescript, security-extended). [review CI-4]
+- [x] PREP-CI4 CodeQL ALREADY active via GitHub repo-level default-setup (state=configured, langs incl. javascript-typescript; the Analyze jobs on PR #84 are it). No workflow file needed (would conflict with default setup). Review CI-4 was a false gap. [review CI-4]
 - [x] PREP-C2 Moved gameConstants.ts → src/store/gameConstants.ts; gameReducer/useLevelTransition/2 tests repoint; old file deleted. Runtime layer inversion (src/store→app/views value import) gone. tsc 0, 1338 unit green. [review ARCH-C2]
-- [ ] PREP-C1 Extract domain types (GameState/GameStatus/LevelPhase/FadeKind/FadeTrigger/WeaponState/GameRef) out of Shell.tsx → src/store/gameState.ts; all importers move same commit. Unblocks STRUCT4 tests. [review ARCH-C1/M-2/L-5]
+- [x] PREP-C1 Extracted domain types → src/store/gameState.ts; all 18 importers repointed (codemod, no shim). ZERO src/→@views imports remain (value or type). Unblocks STRUCT4. tsc 0, 1338 unit + 17 browser green. [review ARCH-C1/M-2/L-5]
 - [ ] PREP-DOC Add DECISIONS D22 (VIS1/VIS2 flood-lighting reversal of J1), D23 (STRUCT1 map-representation grid-vs-sector choice), extend D16 (sceneTick.ts); rewrite DESIGN.md §what-it-is/archetype-identity/lighting to match OVERHAUL2 (it currently CONTRADICTS it, and DESIGN>PRD authority); refresh ARCHITECTURE.md (src/scene/ subtree, data-flow chain, persistence STO1b shipped); fix README URL flags + file-layout tree. [review DOC-C1..C5, H1..H7]
 - [ ] PREP-PERF1 Enemy LOS throttle + distance/horizon gate (cache sees+lastSeenAt, stagger by id, full-rate only when distToPlayer<SHOOT_RANGE) + sector-AABB broad-phase in castRaySectors. CRITICAL count×count fix. Determinism: aggro-latency <150ms test. [review PERF-1, TEST-10]
 - [ ] PREP-PERF2 pickUvHidden: fork ENMX-UV stream ONCE → boolean array (byte-identical, O(n)). [review PERF-2/H-1]
