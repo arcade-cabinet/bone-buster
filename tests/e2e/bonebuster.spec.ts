@@ -166,21 +166,21 @@ test.describe("Bone Buster — headed Chromium", () => {
 		);
 		await page.waitForTimeout(500);
 
-		// Retry kill-all up to 6 s — listener registration is on a useEffect
-		// and may race the first dispatch.
-		await expect
-			.poll(
-				async () => {
-					await page.evaluate(() => {
-						(
-							window as unknown as { __bonebuster?: BoneBusterDebugHooks }
-						).__bonebuster?.killAllEnemies();
-					});
-					return (await page.locator(KILLS_HUD).innerText()).trim();
-				},
-				{ timeout: 6_000, intervals: [250, 500, 1000, 1500, 1500] },
-			)
-			.toContain(`${total} / ${total}`);
+		// REGRESSION (POL11 / troika-suspense): a SINGLE killAllEnemies() must
+		// saturate the kill counter. The Scene's debug-listener useEffect only
+		// runs once its subtree commits; drei <Text> suspends on troika's font
+		// load, so the whole BoneBusterScene subtree stays uncommitted, the
+		// listener never registers, and this dispatch lands on zero handlers.
+		// DamageNumberField now renders the troika Text primitive directly (no
+		// suspend), so the subtree commits immediately. A retry loop here would
+		// mask exactly that bug — the assertion is deliberately single-shot so a
+		// regression back to a suspending Text path fails the test.
+		await page.evaluate(() => {
+			(window as unknown as { __bonebuster?: BoneBusterDebugHooks }).__bonebuster?.killAllEnemies();
+		});
+		await expect(page.locator(KILLS_HUD)).toHaveText(new RegExp(`${total}\\s*/\\s*${total}`), {
+			timeout: 3_000,
+		});
 	});
 
 	test("key pickup flips the HUD to KEY ACQUIRED", async ({ page }) => {

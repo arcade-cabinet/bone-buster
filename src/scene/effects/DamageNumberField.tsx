@@ -1,9 +1,74 @@
+import { A } from "@assets/assetUrl";
 import { addBoneBusterListener, type EventOf } from "@engine/events";
-import { Text } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { SCALE } from "@styles/tokens/index";
-import { useEffect, useRef, useState } from "react";
+import {
+	forwardRef,
+	useEffect,
+	useImperativeHandle,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from "react";
 import type { Group } from "three";
+import { Text as TroikaTextMesh } from "troika-three-text";
+
+// POL11 fix — pin troika's font to a bundled woff. Without an explicit `font`,
+// troika's unicode-font-resolver issues a runtime `fetch()` to a jsdelivr CDN
+// to resolve glyph coverage; if that fetch rejects (offline, headless e2e, or a
+// blocked CDN) the rejection surfaces *synchronously inside the <Text> render*,
+// which aborts React's commit of the entire BoneBusterScene subtree before its
+// effects run — so the e2e debug listeners never register and gameplay setup
+// silently dies. A bundled font removes the network dependency entirely.
+const DAMAGE_FONT = A("assets/fonts/black-ops-one-400-latin.woff2");
+
+// POL11 ROOT-CAUSE fix — non-suspending troika text. drei's <Text> calls
+// `suspend(() => preloadFont(...))` on EVERY render (even with an explicit
+// `font`), so it suspends the slot subtree until troika's font worker resolves.
+// In the isolated browser-test Canvas (and any headless/offline context) that
+// pipeline never resolves, so the slot <group>s never commit and the structural
+// pool never appears. We render the troika Text primitive DIRECTLY here: the
+// mesh is constructed synchronously and committed at first render (pool exists
+// immediately), and glyph population happens async via .sync() WITHOUT
+// suspending — so the scene commits in every context, troika or not. The
+// imperative surface the frame loop mutates (.text/.color/.fontSize/
+// .fillOpacity/.outlineOpacity/.outlineWidth/.fontWeight/.sync()) are all
+// native troika Text instance members, so the ref forwards the mesh as-is.
+type TroikaTextProps = {
+	font?: string;
+	text: string;
+	color?: string;
+	position?: [number, number, number];
+	anchorX?: "center" | "left" | "right";
+	anchorY?: "middle" | "top" | "bottom";
+	outlineWidth?: number;
+	outlineColor?: string;
+	fontWeight?: number | "normal" | "bold";
+};
+
+const TroikaText = forwardRef<TroikaTextMesh, TroikaTextProps>(function TroikaText(
+	{ font, text, color, position, anchorX, anchorY, outlineWidth, outlineColor, fontWeight },
+	ref,
+) {
+	const invalidate = useThree((s) => s.invalidate);
+	const [mesh] = useState(() => new TroikaTextMesh());
+	useImperativeHandle(ref, () => mesh, [mesh]);
+	// Push declarative props onto the mesh, then sync glyphs async. No suspend:
+	// commit is never blocked on troika's font/worker pipeline resolving.
+	useLayoutEffect(() => {
+		mesh.font = font ?? null;
+		mesh.text = text;
+		if (color !== undefined) mesh.color = color;
+		if (anchorX !== undefined) mesh.anchorX = anchorX;
+		if (anchorY !== undefined) mesh.anchorY = anchorY;
+		if (outlineWidth !== undefined) mesh.outlineWidth = outlineWidth;
+		if (outlineColor !== undefined) mesh.outlineColor = outlineColor;
+		if (fontWeight !== undefined) mesh.fontWeight = fontWeight;
+		mesh.sync(() => invalidate());
+	});
+	useEffect(() => () => mesh.dispose(), [mesh]);
+	return <primitive object={mesh} position={position} />;
+});
 
 // Minimal structural surface of a drei <Text> we mutate imperatively in
 // the frame loop (troika exposes these as live props + a sync()).
@@ -223,27 +288,27 @@ export function DamageNumberField() {
 				return (
 					// biome-ignore lint/suspicious/noArrayIndexKey: fixed-size slot pool keyed by index by design
 					<group key={i} visible={false} ref={(g) => bindSlot(slotRefs.current, i, "group", g)}>
-						<Text
+						<TroikaText
+							font={DAMAGE_FONT}
 							position={[0.02, -0.02, -0.012]}
 							color="#000000"
 							anchorX="center"
 							anchorY="middle"
 							outlineWidth={0}
+							text={label}
 							ref={(t) => bindSlot(slotRefs.current, i, "shadow", t)}
-						>
-							{label}
-						</Text>
-						<Text
+						/>
+						<TroikaText
+							font={DAMAGE_FONT}
 							color={color}
 							anchorX="center"
 							anchorY="middle"
 							outlineWidth={killed ? 0.035 : 0.022}
 							outlineColor="#1a0606"
 							fontWeight={killed ? 900 : 700}
+							text={label}
 							ref={(t) => bindSlot(slotRefs.current, i, "main", t)}
-						>
-							{label}
-						</Text>
+						/>
 					</group>
 				);
 			})}

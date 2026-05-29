@@ -196,6 +196,7 @@ export default defineConfig(() => ({
 			"three",
 			"@react-three/fiber",
 			"@react-three/drei",
+			"troika-three-text",
 			"@react-three/postprocessing",
 			"postprocessing",
 			"framer-motion",
