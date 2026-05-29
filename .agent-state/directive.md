@@ -17,17 +17,40 @@
 5. Flip `[ ]` → `[x]` in the same commit; **delete the item from this file** in the next forward-going commit (per the prune-shipped-from-directive rule).
 6. Keep ALL work on the single long-running branch. Open the PR + gather remote feedback + squash-merge only when the whole queue below is drained — not per commit, not per slice. The work is the directive; wall-clock and size never gate it.
 
-## Queue — PRIORITY: OVERHAUL2 visual/feel/structure (NEW BRANCH after PR #84 merges)
+## Queue — SEQUENCING (user-directed 2026-05-28)
 
-User-directed (2026-05-28, live playtest): the game must read as a dark/gritty
-modernized-DOOM × Silent-Hill horror maze built from the existing PSX assets —
-readable, atmospheric, fully procedural. Full spec + acceptance bars in
-[`docs/PRD.md`](../docs/PRD.md) §LANE: OVERHAUL2. Run as a multi-agent workflow.
-Capture+expand PRD/directive as findings come in (this lane is itself such a capture).
+The order is locked: (1) finish + MERGE PR #84, get local main fully caught up;
+(2) then ONE local branch holding ALL remaining work, STARTING with a fully
+automated `comprehensive-review:full-review` run, carrying every finding forward
+into the PRD + directive; (3) then drain OVERHAUL2 + review findings on that one
+branch. NO more per-slice PRs — local review (vitest browser + Playwright, read
+the screenshots myself) before any push.
 
-- [x] VIS1 Flat-flood lighting (killed dark-base + flashlight-reveal; ambient 0.95 / dir 1.1 / hemi 0.7). Verified on ANGLE-GL.
-- [x] VIS2 Silent-Hill fog haze (fog colors [500]/[600] tinted, near 8) — mood + cull horizon. *Follow-up VIS2b: wire far-plane to area streaming.*
-- [ ] ERR1 Asset-load error modal overlay (arcade-cabinet parity) — DO FIRST (surfaces problems the rest hits). [PRD ERR1]
+### Step 1 — land PR #84
+- [ ] [WAIT] PR #84 CI green (verify/browser/e2e/android all pass; CodeRabbit
+  "insufficient credits" is a non-blocking false-flag; 0 unresolved threads).
+  Latest fix: 6-level-playthrough e2e timeout 120s→300s (CI GL ~4× slower;
+  completes 27s local). When green → `gh pr merge 84 --squash` → `git checkout
+  main && git pull`. Then this WAIT clears and Step 2 begins.
+
+### Step 2 — comprehensive review run (FIRST thing on the new branch)
+- [ ] REVIEW-RUN On a fresh branch off the caught-up main, run
+  `comprehensive-review:full-review` fully automated over src/ + app/; carry
+  EVERY finding into docs/PRD.md + this directive as new tracked items before
+  implementing. This precedes OVERHAUL2 implementation.
+
+### Step 3 — OVERHAUL2 visual/feel/structure (same one branch)
+
+User-directed (2026-05-28, live playtest): dark/gritty modernized-DOOM ×
+Silent-Hill horror maze from the existing PSX assets — readable, atmospheric,
+fully procedural. Full spec + acceptance in [`docs/PRD.md`](../docs/PRD.md)
+§LANE: OVERHAUL2. VIS1/VIS2 (flood lighting + fog haze) are PROTOTYPED + parked
+in a git stash ("OVERHAUL2 VIS WIP"); re-justify + commit them on the new branch
+with local screenshot verification. Capture+expand PRD/directive as findings arrive.
+
+- [ ] VIS1 Flat-flood lighting (killed dark-base + flashlight-reveal; ambient 0.95 / dir 1.1 / hemi 0.7). Prototyped (stashed) — verify + commit on the new branch.
+- [ ] VIS2 Silent-Hill fog haze (fog colors [500]/[600] tinted, near 8) — mood + cull horizon. Prototyped (stashed). *Follow-up VIS2b: wire far-plane to area streaming.*
+- [ ] ERR1 Asset-load error modal overlay (arcade-cabinet parity) — DO FIRST in OVERHAUL2 (surfaces problems the rest hits). [PRD ERR1]
 - [ ] VIS4 Weapon hold transform — center-bottom, aiming forward (currently bottom-right/angled). [PRD VIS4]
 - [ ] VIS3 Artistic shadow blended with the flood (Silent Hill), readable not flat/pitch. [PRD VIS3]
 - [ ] VIS5 Kill ALL placeholders + no procedural-where-a-PSX-model-exists (ceiling/lava planes, fallbacks). [PRD VIS5]
