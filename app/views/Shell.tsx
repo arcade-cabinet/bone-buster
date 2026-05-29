@@ -372,6 +372,9 @@ export function BoneBusterShell() {
 	}, []);
 
 	const onStartGame = useCallback(async () => {
+		// ERR1 — clear any stale asset error from a prior run so a fresh start
+		// doesn't ghost-modal over a level that hasn't tried to load yet.
+		setAssetError(null);
 		if (settings.soundEnabled) {
 			// A5 — SFX-critical (weapons, ambient, hit/death stings) blocks
 			// the start sequence; music synth allocation deferred to
@@ -432,6 +435,8 @@ export function BoneBusterShell() {
 		stopAmbient();
 		stopMusic();
 		document.exitPointerLock?.();
+		// ERR1 — drop any asset error so the modal doesn't linger on the menu.
+		setAssetError(null);
 		setState((prev) => {
 			// E3 — if the run is mid-flight (paused/playing), preserve the seed
 			// so we can resume the same map. Only re-roll when the run ended

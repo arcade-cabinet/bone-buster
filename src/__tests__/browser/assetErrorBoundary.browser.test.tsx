@@ -68,4 +68,16 @@ describe("ERR1 — AssetErrorBoundary", () => {
 		);
 		expect(onError.mock.calls[0]?.[0]?.assetType).toBe("wasm");
 	});
+
+	it("preserves a port in the URL (dev :5191) and still classifies + strips a trailing status", () => {
+		const onError = vi.fn<(r: AssetErrorReason) => void>();
+		render(
+			<AssetErrorBoundary onError={onError}>
+				<Boom message="Could not load https://localhost:5191/assets/models/weapons/pistol.glb: 404" />
+			</AssetErrorBoundary>,
+		);
+		const reason = onError.mock.calls[0]?.[0];
+		expect(reason?.assetType).toBe("glb");
+		expect(reason?.url).toBe("https://localhost:5191/assets/models/weapons/pistol.glb");
+	});
 });

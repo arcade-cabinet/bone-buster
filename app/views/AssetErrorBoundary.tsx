@@ -18,10 +18,16 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 function classify(error: unknown): { url: string; assetType: AssetErrorClass } {
 	const message = error instanceof Error ? error.message : String(error);
 	// drei/three load errors embed the URL; grab the first http(s) or /-rooted
-	// token. Stop at whitespace, quotes, AND `:` so a trailing `: 404` status
-	// suffix isn't captured into the URL (which would break the extension match).
-	const urlMatch = message.match(/(https?:\/\/[^\s)'":]+|\/[\w\-./]+\.\w+)/);
-	const url = urlMatch?.[0] ?? "unknown";
+	// token. Keep `:` in the char class so a port (localhost:5191) survives, then
+	// strip a trailing ` : 404` / `:404` status suffix that loaders append — if we
+	// banned `:` wholesale the port would truncate the URL and break the
+	// extension match (review finding: port edge case).
+	const urlMatch = message.match(/(https?:\/\/[^\s)'"]+|\/[\w\-./]+\.\w+)/);
+	// Strip a trailing status annotation: ` : 404`, `:404`, or a bare trailing
+	// `:` left when the status digits sat after a space (excluded from capture).
+	// A real port (`:5191`) is mid-URL (followed by `/…`), so it's never at the
+	// END of the token and survives.
+	const url = (urlMatch?.[0] ?? "unknown").replace(/\s*:\s*\d*$/, "");
 	const lower = url.toLowerCase();
 	// Match the extension allowing a trailing query/fragment (`?v=…`, `#…`).
 	const extOf = (re: RegExp) => re.test(lower);

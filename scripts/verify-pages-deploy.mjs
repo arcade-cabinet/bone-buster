@@ -65,7 +65,9 @@ await page.addInitScript(() => {
 	const w = window;
 	w.__assetErrors = [];
 	w.addEventListener("bonebuster:assetError", (e) => {
-		w.__assetErrors.push(e.detail);
+		// dispatch() puts the payload in e.detail (type is the event NAME);
+		// reconstruct the full shape so entries carry {type, url, assetType, phase}.
+		w.__assetErrors.push({ type: "assetError", ...e.detail });
 	});
 });
 
