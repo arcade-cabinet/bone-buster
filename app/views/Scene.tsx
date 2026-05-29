@@ -26,6 +26,7 @@ import { PLAYER_HEIGHT, TILE } from "@shared/constants";
 import type { WeaponId } from "@shared/weapons";
 import type { GameRef, LevelPhase, WeaponState } from "@store/gameState";
 import { type BoneBusterSettings, DIFFICULTY_TUNING } from "@store/settings";
+import { noShadowsRequested } from "@views/urlFlags";
 import { pickArchetype } from "@world/archetype";
 import { type Barrel, resolveExplosion, spawnBarrels } from "@world/barrels";
 import { type LampInstance, spawnLamps } from "@world/lampScatter";
@@ -91,8 +92,10 @@ import { pickPistolProfile } from "../../src/world/pistolSkins";
 // native (iOS/Android, the mobile target) skips the per-frame 1024² shadow pass
 // VIS1 introduced (~4-8ms/frame on a Pixel 5a + doubled shadow-caster draws).
 // Resolved once at module load; the platform doesn't change at runtime.
-// no-visual-impact: desktop web keeps real-time shadows so canonical and golden screenshot baselines are byte-identical; only native mobile drops them
-const SHADOWS_ENABLED = Capacitor.getPlatform() === "web";
+// CI-3 — `?bonebusterNoShadows` force-disables shadows so the mobile-perf A/B
+// can measure the shadow cost (shadows-on reload vs shadows-off reload).
+// no-visual-impact: desktop web keeps real-time shadows so canonical and golden screenshot baselines are byte-identical; only native mobile or the explicit ?bonebusterNoShadows A/B flag drops them
+const SHADOWS_ENABLED = Capacitor.getPlatform() === "web" && !noShadowsRequested();
 
 type SceneProps = Readonly<{
 	map: BoneBusterMap;

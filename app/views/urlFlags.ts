@@ -56,6 +56,27 @@ export function hasDebugFlagInHref(href: string): boolean {
 	}
 }
 
+/**
+ * CI-3 — whether `?bonebusterNoShadows` is set. The mobile-perf A/B reloads the
+ * canonical scene twice (shadows on vs off) and compares fps to validate the
+ * PERF3 shadow cost; a URL flag is a clean mount-time toggle (shadows are a
+ * mount-time renderer concern, not a per-frame one) that needs no stateful
+ * debug hook. Pure form.
+ */
+export function noShadowsRequestedInHref(href: string): boolean {
+	try {
+		return new URL(href).searchParams.has("bonebusterNoShadows");
+	} catch {
+		return false;
+	}
+}
+
+/** Window-coupled wrapper for {@link noShadowsRequestedInHref}. */
+export function noShadowsRequested(): boolean {
+	if (typeof window === "undefined") return false;
+	return noShadowsRequestedInHref(window.location.href);
+}
+
 // --- window-coupled wrappers (the only bits that read global location) ---
 
 /** Base seed from the live URL, falling back to a wall-clock seed. */

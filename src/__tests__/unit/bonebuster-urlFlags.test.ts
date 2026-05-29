@@ -9,6 +9,7 @@ import {
 	captureModeEnabled,
 	hasDebugFlagInHref,
 	MAX_SEED_PHRASE_LENGTH,
+	noShadowsRequestedInHref,
 	parseArchetypeFromHref,
 	parseSeedFromHref,
 	parseSeedPhraseFromHref,
@@ -107,6 +108,19 @@ describe("CR-F6 — hasDebugFlagInHref", () => {
 		expect(hasDebugFlagInHref(U("?objexoomDebug"))).toBe(true);
 		expect(hasDebugFlagInHref(U("?other=1"))).toBe(false);
 		expect(hasDebugFlagInHref(U(""))).toBe(false);
+	});
+});
+
+describe("CI-3 — noShadowsRequestedInHref", () => {
+	it("detects the ?bonebusterNoShadows A/B flag", () => {
+		expect(noShadowsRequestedInHref(U("?bonebusterNoShadows"))).toBe(true);
+		expect(noShadowsRequestedInHref(U("?bonebusterNoShadows=1"))).toBe(true);
+		expect(noShadowsRequestedInHref(U("?bonebusterDebug"))).toBe(false);
+		expect(noShadowsRequestedInHref(U(""))).toBe(false);
+	});
+
+	it("returns false on an unparseable href instead of throwing", () => {
+		expect(noShadowsRequestedInHref("::::not a url")).toBe(false);
 	});
 });
 
