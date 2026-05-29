@@ -1,6 +1,6 @@
 ---
 title: Architecture
-updated: 2026-05-13
+updated: 2026-05-29
 status: current
 domain: technical
 ---
@@ -74,7 +74,11 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 | Module | Owns |
 | --- | --- |
-| `app/views/Scene.tsx` | r3f Canvas root, scene composition, MapGeometry, SectorMapGeometry, EnemyMesh, WeaponViewmodel, KeyMarker, ExitPortal, RealDoor, TreasureChest — **flagged for decomposition (comprehensive-review CR-H1scene backlog; no binding DECISIONS record yet)** |
+| `app/views/Scene.tsx` | r3f Canvas root (the `<Canvas>` mounts here; VIS-AUTO drives `gl.preserveDrawingBuffer` off `captureModeEnabled()`), scene composition + the entity/field/scatter mounts. Per-frame logic is NOT here — it's extracted to `src/scene/tick/*` (D16). |
+| `src/scene/tick/sceneTick.ts` | The per-frame MAIN tick (`runSceneTick`): pickups, lava cadence, win/reach-spawn, the VIS1 flood light intensity set + going-back strobe, the enemy AI loop call, and enemy-bullet integration. Pure-fn, context-injected (D16). |
+| `src/scene/tick/{enemyTickLoop,fireResolution,returnBearing,timeScaleBus}.ts` | Enemy AI loop / single-shot fire resolution / going-back HUD bearing / time-scale reservation bus (D16). |
+| `src/scene/hooks/useGameRef.ts` | The thin React adapter: runs `gameReducer` + drains its `GameEffect`s (audio/dispatch/fade) AFTER setState (CONV2; no flushSync). |
+| `src/scene/map/*` | `MapGeometry`, `SectorMapGeometry`, `WaterSurface` (owns + disposes its DataTexture, PREP-BP1), etc. |
 | `app/components/PlayerController.tsx` | Camera + movement input (pointer-lock + touch sticks), pointer-lock state |
 | `src/assets/models.ts` | Enemy + weapon + prop GLB registry + per-kind skin rosters, BASE_URL-aware URL helper `A()` |
 | `app/components/RefLevelMap.tsx` | Renderer for reference-clone level layouts |
@@ -108,19 +112,19 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 | `app/tokens.css` | CSS-custom-property mirror (`--obx-*`) |
 | `app/fonts.css` | 12 `@font-face` declarations |
 
-### Persistence layer (STO1a, partial; STO1b pending)
+### Persistence layer (STO1a + STO1b shipped)
 
 | Module | Owns |
 | --- | --- |
 | `src/platform/persistence/preferences.ts` | Thin facade over `@capacitor/preferences` — `readPref`/`writePref`/`removePref` + JSON variants. App code MUST go through this module; **direct `localStorage` access in `src/**` is forbidden**. Best-effort writes (swallows quota/lock failures). |
 | `src/platform/persistence/settingsStore.ts` | KV settings persistence — `validateSettings(unknown)` runtime narrows foreign blobs to the live `BoneBusterSettings` shape; `loadSettings()` / `saveSettings()` are the public surface for `BoneBusterShell` to async-hydrate + auto-save settings across sessions. |
-| `src/store/runHistory.ts` | E9 run history — currently sql.js + manual base64 blob (STO1b will replace with `@capacitor-community/sqlite` + jeep-sqlite WASM). Exports `openRunHistory()`, `RunRecord`, `RunInsert`, `formatRunDuration` (POL32 — shared formatter for landing chip + future HUD surfaces). |
+| `src/store/runHistory.ts` | E9 run history — `@capacitor-community/sqlite` (native) + jeep-sqlite WASM (web) since STO1b (D17 removed sql.js; D18 locked the stack). Exports `openRunHistory()`, `RunRecord`, `RunInsert`, `formatRunDuration` (POL32 — shared formatter for landing chip + future HUD surfaces). |
 
 **Settings persistence flow:**
-1. Mount: `BoneBusterShell` initializes with `DEFAULT_SETTINGS` (or `{...DEFAULT_SETTINGS, level: "procedural"}` when URL has `?archetype`).
+1. Mount: `BoneBusterShell` initializes with `DEFAULT_SETTINGS` (or `{...DEFAULT_SETTINGS, level: "procedural"}` when URL has `?bonebusterArchetype`).
 2. Async-hydrate effect: `loadSettings()` reads from Preferences; if a valid blob exists, `setSettings(persisted)`. Flag `settingsHydratedRef.current = true`.
 3. Save-on-change effect: gated on `settingsHydratedRef.current`, writes the current settings to Preferences on every change. The guard prevents the boot DEFAULT_SETTINGS from clobbering a persisted blob during the brief async window.
-4. URL override (`?archetype`) wins as a per-load short-circuit — the debug harness path that swaps to procedural maps without first clearing storage.
+4. URL override (`?bonebusterArchetype`) wins as a per-load short-circuit — the debug harness path that swaps to procedural maps without first clearing storage.
 
 **Why this lives in `src/platform/persistence/` instead of `src/store/settings.ts`:** the settings module is pure type + constants (no async, no I/O); the persistence module is the boundary where Capacitor lives. Keeping them separate means `src/store/settings.ts` stays trivially unit-testable without mocking the native plugin.
 
@@ -129,7 +133,8 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 1. Vite serves `app/main.tsx` → mounts `<BoneBusterShell />`.
 2. Shell holds `state: GameState` (status, hp, ammo, weapon, kills,
    key, run stats) and `map: BoneBusterMap` (built from
-   `buildMap(seed, level)`).
+   `buildMap(seedPhrase, level, difficulty)` — the seed is the
+   adjective-adjective-noun PHRASE, D21).
 3. `<BoneBusterScene>` mounts `<Canvas>` with the current map + a
    `gameRef` for sim callbacks. Inside the canvas:
    - `useFrame` ticks every enemy via `tickEnemyFsm`

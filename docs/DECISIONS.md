@@ -1,6 +1,6 @@
 ---
 title: Decisions
-updated: 2026-05-15
+updated: 2026-05-29
 status: current
 domain: technical
 ---
@@ -337,6 +337,7 @@ Per-frame logic that doesn't belong in the r3f scene-render path lives in pure-f
 - `fireResolution.ts` — single-shot fire resolution (ray cast + barrel/enemy hit dispatch).
 - `returnBearing.ts` — module-scope ref + `computeBearingRad` pure helper for the going-back HUD arrow.
 - `timeScaleBus.ts` — combined-min time-scale reservation bus (POL35 hitstop + POL22 key-acquire stacking).
+- `sceneTick.ts` — the per-frame MAIN tick (`runSceneTick`): pickup collection, lava-damage cadence, the phase-aware win / reach-spawn conditions, the going-back light strobe, the per-frame light intensity set (VIS1 flood: ambient 0.95×/dir 1.1×, strobe-boosted in `going_back`), the enemy AI loop call, and enemy-bullet integration (advance → hitPlayer/hitWall/expired retire, in-flight keep, in-place compaction). Same explicit-context shape; pinned by `bonebuster-sceneTick.test.ts` (incl. the PREP-TEST1 bullet cases).
 
 These take an explicit "context" object (refs + game state) and return nothing — pure-fn signatures, testable without mounting React. The Scene's useFrame body becomes "build the context, call the tick fn."
 
@@ -503,6 +504,59 @@ a snowflake.
 - *Numeric bridge (phrase → cyrb128 → numeric seed → existing mulberry32).*
   Lower churn, but keeps bone-buster's bespoke canonical engine — diverges
   from the family. The user chose the full rewrite.
+
+---
+
+## D22 — Flat-flood lighting replaces dark-base + flashlight-reveal (VIS1/VIS2)
+
+**Status:** Locked. **Reverses the J1 flashlight-reveal direction.**
+**Date:** 2026-05-28 (user-directed, live playtest)
+
+The scene lights with a flat **flood** — high ambient (0.95×palette) +
+directional (1.1×) + hemisphere (0.7×) — plus Silent-Hill fog haze (tinted per
+biome, near plane pulled in for mood + horizon cull). NOT a dark base revealed
+by a player flashlight (the retired J1 model).
+
+**Why:** the PSX source assets are washed-out + chunky by design; a big flat
+flood is what makes them read clearly. "Horror doesn't work if you have no idea
+what you're seeing" — the mood comes from fog + artistic shadow blended INTO the
+flood (VIS3), not from darkness. Modernized-DOOM × Silent-Hill, not
+flashlight-survival-horror.
+
+**Consequences:** the `hasFlashlight` ownership + dark-mode pose are retired; the
+e2e in-game pose is a single flood baseline (VIS-AUTO). Real-time directional
+shadows stay on desktop web but are gated off on native mobile (PREP-PERF3) —
+PSX-jank needs no realtime shadow on a Pixel-5a-class budget.
+
+**Rejected:** *dark-base + flashlight reveal (J1).* Looked like "can't see the
+art." *Flat-bright no-shadow.* Reads flat/gamey, kills the horror.
+
+---
+
+## D23 — Fully procedural: drop the level picker; biomes via a per-biome generator on a shared maze core (STRUCT1/2)
+
+**Status:** Locked (planned; lands across STRUCT1–STRUCT5).
+**Date:** 2026-05-28 (user-directed)
+
+The 1–5 level picker + `LevelChoice` union are removed. Map generation bottoms
+out at a shared base `MazeGenerator`; each of the (initially five) **biomes**
+owns a generator built on it that adds biome structure / scatter / hazards +
+custom triggers/traps/code. A level is a biome maze, boss-capped. The biome for
+each level is chosen by a weighted **pressure** system (STRUCT5: per-biome
+levels-since-played pressure, 50/30/15/5 weighted pick over pressure rank, via
+the event PRNG) — never a rote 1→5 cycle, never a player pick. Difficulty scales
+logarithmically with depth (STRUCT3); weapons gain seeded log-scaled UPGRADE
+tiers (STRUCT4). refLevels become biome STYLE models (review references), not
+replayable levels.
+
+**Why:** "make MAZE GENERATION the lowest level and make each of the five their
+own generator." Composes natively with the D21 seed forks (same phrase → same
+biome maze). Extensibility headline: add a biome = add a generator + wire assets
+→ the catalog grows and a player can play for hours regardless. Endless-play
+depth comes from log difficulty + weapon upgrades + unpredictable biome order.
+
+**Rejected:** *keep the picker / always-play-the-same-sewer.* The point isn't to
+select a fixed level; it's an endless, never-predictable descent.
 
 ---
 

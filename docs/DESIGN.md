@@ -1,9 +1,23 @@
 ---
 title: Design
-updated: 2026-05-13
+updated: 2026-05-29
 status: current
 domain: product
 ---
+
+> **OVERHAUL2 in progress (2026-05).** The user-locked direction supersedes
+> parts of this doc as the OVERHAUL2 lane lands (see `docs/PRD.md §LANE:
+> OVERHAUL2` + `.agent-state/directive.md`). Net changes, by authority
+> (DESIGN > PRD): the game commits FULLY to procedural — the 1–5 level picker +
+> `LevelChoice` union are being removed (STRUCT1); the five archetypes become
+> **BIOMES**, each with its own generator built on a shared base `MazeGenerator`
+> (STRUCT2); lighting is a flat **flood** (modernized-DOOM × Silent-Hill), NOT
+> the retired dark-base + flashlight-reveal (VIS1/VIS2); difficulty scales
+> logarithmically with depth (STRUCT3); weapons gain seeded log-scaled UPGRADE
+> tiers (STRUCT4); biome selection is a weighted pressure system, never a rote
+> 1→5 cycle (STRUCT5). Sections below still describing a picker / flashlight /
+> "archetype" framing are pre-OVERHAUL2 and are being rewritten as each item
+> lands.
 
 # BONE BUSTER — design truth
 
@@ -22,11 +36,15 @@ extracted to its own repo once it deserved its own cadence.
   backend, no auth, no network.
 - A Capacitor app shell — same source compiles to Android + iOS native
   packages.
-- A continuous arcade run — pick a difficulty + level, fight through
-  procedurally-generated sector maps, collect keys, hit exits, advance.
-- A procedural-AND-curated mix. Walls / floors / sectors / lighting
-  are code; enemies / weapons / pickups / props are real GLB assets
-  from the local 3DPSX library.
+- A continuous arcade run — pick a difficulty, then descend through an
+  endless sequence of procedurally-generated biome mazes (no level picker;
+  the biome for each level is chosen by a weighted pressure system),
+  collecting keys, hitting exits, fighting a boss-capped maze each level,
+  with difficulty scaling logarithmically by depth.
+- A procedural-AND-curated mix. Maze structure / sectors / scatter / lighting
+  are code (a shared `MazeGenerator` core + one generator per biome); enemies
+  / weapons / pickups / props are real GLB assets from the local 3DPSX library.
+  Nothing is procedurally faked where a PSX model exists.
 
 ## What it is NOT
 
@@ -92,16 +110,24 @@ It should NOT feel:
 - Cute / colorful
 - Brand-deck slick
 
-## Archetype identity
+## Biome identity
 
-Every run picks one of five archetypes deterministically from
-`(seed >>> 0) % 5`. CONV3 (2026-05-15) denormalized `archetype`
-onto `BoneBusterMap` itself — every consumer reads `map.archetype`
-rather than recomputing the modulus. Each archetype is keyed across
-~17 independent axes; the canonical registry of axes is at
-`src/world/archetypeRegistry.ts` (A6, Phase 21). When adding a 6th
-archetype, walk that registry top-to-bottom: TypeScript will catch
-the misses (every axis is `Record<PropArchetype, T>`).
+> **OVERHAUL2:** the five "archetypes" are being reframed as **BIOMES**, each
+> owning its own generator (STRUCT2) on top of a shared base `MazeGenerator`
+> (STRUCT1). "Archetype" persists as the code identifier (`map.archetype`, the
+> `archetypeRegistry`) until STRUCT1/2 land; the registry below is the seed of
+> the per-biome generator axis table. Adding a biome = add a generator + wire
+> assets, and the catalog grows from five to six with hours of new play (the
+> extensibility headline). Biome SELECTION is no longer a player pick — it's the
+> weighted pressure system (STRUCT5), seeded off the event PRNG.
+
+Each map carries a biome identity (currently `map.archetype`, chosen via
+`cyrb128(seedPhrase)[0] % 5` — see `docs/specs/96-prng-and-landing.md`). CONV3
+(2026-05-15) denormalized it onto `BoneBusterMap` so every consumer reads
+`map.archetype` rather than recomputing the hash. Each biome is keyed across
+~17 independent axes; the canonical registry is `src/world/archetypeRegistry.ts`
+(A6, Phase 21). When adding a sixth biome, walk that registry top-to-bottom:
+TypeScript catches the misses (every axis is `Record<PropArchetype, T>`).
 
 | Archetype | Mood | Color stack | Density | Mechanics |
 |-----------|------|-------------|---------|-----------|
