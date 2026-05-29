@@ -65,5 +65,12 @@ export function applyArchetypeOverride(seedPhrase: string, archetype: string | n
 		const candidate = `${seedPhrase}-${n}`;
 		if (cyrb128(candidate)[0] % ARCHETYPE_NAMES.length === idx) return candidate;
 	}
-	return seedPhrase; // unreachable in practice (each suffix ~1/5 chance)
+	// Statistically impossible to reach: each suffix has ~1/5 odds of matching,
+	// so 999 consecutive misses is ~(4/5)^999 ≈ 10^-97. We THROW rather than
+	// return a phrase that hashes to the WRONG archetype — a silent drop would
+	// make a forced-archetype QA/test run lie about which map it's showing.
+	// (Kept pure: callers that can't tolerate a throw pass a null archetype.)
+	throw new Error(
+		`applyArchetypeOverride: no suffix in 1..999 hashed "${seedPhrase}" to "${archetype}"`,
+	);
 }

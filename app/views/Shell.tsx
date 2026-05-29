@@ -248,10 +248,15 @@ export function BoneBusterShell() {
 	// value) and draws a fresh suggested phrase, so each roll/new-game uses a
 	// deterministic-but-fresh event stream rather than an inline crypto mint.
 	const eventSeedRef = useRef<string | null>(null);
+	// SEED4 — true once a roll (or any advance) has taken ownership of the
+	// event stream. Guards against the bootstrap loadEventSeed().then() landing
+	// LATE and rewinding eventSeedRef back to the persisted value after the user
+	// already randomized — which would replay a stale stream head on the next roll.
+	const eventSeedOwnedRef = useRef(false);
 	useEffect(() => {
 		let cancelled = false;
 		void loadEventSeed().then((s) => {
-			if (!cancelled) eventSeedRef.current = s;
+			if (!cancelled && !eventSeedOwnedRef.current) eventSeedRef.current = s;
 		});
 		return () => {
 			cancelled = true;
@@ -262,8 +267,18 @@ export function BoneBusterShell() {
 		// + persist the buried seed for the next roll. Falls back to a fresh
 		// mint if Preferences hasn't resolved yet (first frames after mount).
 		const seed = eventSeedRef.current ?? createFreshEventSeed();
-		const phrase = randomSeedPhrase(createEventPrng(seed));
+		// INF3 — preserve a forced `?bonebusterArchetype` across rerolls: rewrite
+		// the freshly drawn phrase so it still hashes to the chosen archetype,
+		// exactly as the initial URL-seed path (readSeedFromUrl) does. Without
+		// this, RANDOMIZE on a forced-archetype run would escape to whatever the
+		// raw phrase hashes to.
+		const phrase = applyArchetypeOverride(
+			randomSeedPhrase(createEventPrng(seed)),
+			readArchetypeFromUrl(),
+		);
 		setSeedPhrase(phrase);
+		// Take ownership so a late bootstrap load can't rewind the stream head.
+		eventSeedOwnedRef.current = true;
 		void advanceAndPersistEventSeed(seed).then((next) => {
 			eventSeedRef.current = next;
 		});

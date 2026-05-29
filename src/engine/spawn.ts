@@ -65,6 +65,14 @@ export function pickBossSpawnIndex(map: BoneBusterMap): number {
  * order must match `map.enemySpawns` so bossIdx still aligns.
  */
 export function spawnEnemies(map: BoneBusterMap, spawnsOverride?: readonly EnemySpawn[]): Enemy[] {
+	// Enforce the documented contract: a reordered/short override would attach
+	// the boss tier + uvHidden flags (both index-derived) to the WRONG spawns.
+	// pickBossSpawnIndex reads map.enemySpawns, so the override must align 1:1.
+	if (spawnsOverride && spawnsOverride.length !== map.enemySpawns.length) {
+		throw new RangeError(
+			`spawnEnemies: spawnsOverride length ${spawnsOverride.length} ≠ map.enemySpawns ${map.enemySpawns.length}`,
+		);
+	}
 	const spawns = spawnsOverride ?? map.enemySpawns;
 	const bossIdx = pickBossSpawnIndex(map);
 	return spawns.map((spawn, i) => {

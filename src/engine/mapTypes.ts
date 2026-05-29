@@ -222,14 +222,16 @@ export const isSectorMap = (m: BoneBusterMap): m is BoneBusterSectorMap => m.kin
 export type Vec2 = Readonly<{ x: number; y: number }>;
 
 /**
- * E13 step-5 — optional shape override for `generateMap`. When absent,
- * uses the pre-step-5 defaults (MIN_ROOM=3, MAX_ROOM=6, ROOM_TRIES=90)
- * so callers that don't know about archetypes get the same behavior.
+ * E13 step-5 — optional shape override for `generateMap`. Each field is
+ * optional and defaults inside generateMap (`shape?.minRoom ?? MIN_ROOM`, etc.):
+ * MIN_ROOM=3, MAX_ROOM=6, ROOM_TRIES=90, so callers that don't know about
+ * archetypes (or want to override just one field) get the same behavior without
+ * boilerplate.
  */
 export type GenerateMapShape = Readonly<{
-	minRoom: number;
-	maxRoom: number;
-	roomTries: number;
+	minRoom?: number;
+	maxRoom?: number;
+	roomTries?: number;
 }>;
 
 export type EnemyFsmState = 0 | 1 | 3;

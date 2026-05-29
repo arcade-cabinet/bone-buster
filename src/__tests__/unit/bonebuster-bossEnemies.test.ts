@@ -107,4 +107,17 @@ describe("E2 — boss HP scaling", () => {
 		const bossB = b.findIndex((e) => e.tier === "boss");
 		expect(bossA).toBe(bossB);
 	});
+
+	it("accepts a same-length spawnsOverride", () => {
+		const map = loadRefLevel(0);
+		const override = map.enemySpawns.map((s) => ({ ...s }));
+		expect(() => spawnEnemies(map, override)).not.toThrow();
+		expect(spawnEnemies(map, override)).toHaveLength(map.enemySpawns.length);
+	});
+
+	it("throws on a spawnsOverride whose length ≠ map.enemySpawns (boss/uvHidden indices would misalign)", () => {
+		const map = loadRefLevel(0);
+		const tooShort = map.enemySpawns.slice(0, Math.max(0, map.enemySpawns.length - 1));
+		expect(() => spawnEnemies(map, tooShort)).toThrow(/spawnsOverride length/);
+	});
 });

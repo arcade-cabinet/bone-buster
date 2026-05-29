@@ -437,13 +437,15 @@ function SeedPane({
 				autoCapitalize="off"
 				autoCorrect="off"
 				onChange={(e) =>
-					// Keep the phrase shape clean: lowercase, spaces→hyphens,
-					// strip anything that isn't a letter or hyphen.
+					// Keep the phrase shape clean: lowercase, spaces→hyphens, strip
+					// anything that isn't a letter, DIGIT, or hyphen. Digits stay so a
+					// legacy numeric seed (e.g. "12345") can be typed to reproduce an
+					// old shared map — the migration accepts numeric seeds as phrases.
 					onChange(
 						e.target.value
 							.toLowerCase()
 							.replace(/\s+/g, "-")
-							.replace(/[^a-z-]/g, ""),
+							.replace(/[^a-z0-9-]/g, ""),
 					)
 				}
 				onKeyDown={(e) => {
