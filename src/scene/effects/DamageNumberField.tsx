@@ -11,7 +11,19 @@ import {
 	useState,
 } from "react";
 import type { Group } from "three";
-import { Text as TroikaTextMesh } from "troika-three-text";
+import { configureTextBuilder, Text as TroikaTextMesh } from "troika-three-text";
+
+// ERR2 — run troika's glyph typesetting on the MAIN THREAD (useWorker: false).
+// troika defaults to a Web Worker (troika-worker-utils) for SDF generation, but
+// Vite's dep pre-bundler mangles that worker module's init, throwing `Worker
+// module function was called but init did not return a callable function` 40+
+// times per in-game mount (the font worker never produces glyphs). Main-thread
+// typesetting sidesteps the broken worker entirely. MUST run before the first
+// getTextRenderInfo/font request (troika ignores a late call + warns), so it
+// lives at module scope next to the troika import — this module is imported by
+// the Scene before any Text mounts. Per-frame cost is negligible (damage numbers
+// are short strings) and SDF results are cached.
+configureTextBuilder({ useWorker: false });
 
 // POL11 fix — pin troika's font to a bundled woff. Without an explicit `font`,
 // troika's unicode-font-resolver issues a runtime `fetch()` to a jsdelivr CDN

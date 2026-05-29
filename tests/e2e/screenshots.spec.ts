@@ -314,6 +314,10 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			// REAL baseline-asserted gate again (was capture-only after the prior
 			// black-frame misdiagnosis). The canonical phrase pins corridor.
 			await waitForSceneReady(page);
+			// Let the POL31 DifficultyChip ("HURT ME PLENTY") transient (2s on
+			// runId bump) fully fade, so the golden is chip-free + stable rather
+			// than diffing a fading overlay at an unstable capture moment.
+			await page.waitForTimeout(2400);
 			await captureViaCDP(page, `${OUT_DIR}/ingame-flashlight-on.png`, "ingame-flood.png", 0.04);
 		});
 	});
