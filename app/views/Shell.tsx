@@ -220,10 +220,14 @@ export function BoneBusterShell() {
 	// STRUCT5 — hydrate the persisted biome pressure once on mount (device
 	// state, not game state). The current biome stays phrase-seeded until the
 	// next New Game / transition pick consumes the pressure.
+	// STRUCT5 — true once a New-Game reset has taken ownership of the pressure
+	// map, so a late-resolving hydrate can't clobber a fresh run (mirrors
+	// eventSeedOwnedRef — review STRUCT1b#2).
+	const pressureOwnedRef = useRef(false);
 	useEffect(() => {
 		let cancelled = false;
 		void loadBiomePressure().then((p) => {
-			if (!cancelled) pressureRef.current = p;
+			if (!cancelled && !pressureOwnedRef.current) pressureRef.current = p;
 		});
 		return () => {
 			cancelled = true;
@@ -235,10 +239,25 @@ export function BoneBusterShell() {
 	// clear (the transition hook). The pick uses the device event seed — biome
 	// order is per-run variance, NOT map identity, so it never touches the phrase.
 	const advanceBiome = useCallback(() => {
+		// Review STRUCT1b#1 — ADVANCE the buried event seed each pick so every
+		// transition draws a FRESH stream position. Rebuilding createEventPrng
+		// from an unchanged seed returned the identical roll every level, making
+		// the biome order a deterministic function of pressure alone (the "never
+		// predictable" promise was broken). Advancing + persisting the seed (like
+		// rollSeedPhrase) keeps the variance AND survives reloads.
 		const seed = eventSeedRef.current ?? createFreshEventSeed();
 		const rng = createEventPrng(seed);
 		const { biome: next, pressure } = pickBiome(pressureRef.current, rng);
+		// ADVANCE + persist the buried event seed (same pattern as rollSeedPhrase)
+		// so the NEXT pick draws a fresh stream position — without this, every
+		// transition rebuilt createEventPrng from the unchanged seed and got the
+		// identical roll, making biome order deterministic-by-pressure.
+		eventSeedOwnedRef.current = true;
+		void advanceAndPersistEventSeed(seed).then((advanced) => {
+			eventSeedRef.current = advanced;
+		});
 		pressureRef.current = pressure;
+		pressureOwnedRef.current = true;
 		setBiome(next);
 		void saveBiomePressure(pressure);
 		return next;
@@ -413,6 +432,7 @@ export function BoneBusterShell() {
 		// biome equally stale). This is the only place the descent resets.
 		setDepth(0);
 		pressureRef.current = initialBiomePressure();
+		pressureOwnedRef.current = true; // a late hydrate must not clobber the fresh run
 		advanceBiome();
 		if (settings.soundEnabled) {
 			// A5 — SFX-critical (weapons, ambient, hit/death stings) blocks
@@ -751,6 +771,7 @@ export function BoneBusterShell() {
 				return {
 					...s,
 					mapKind: m.kind,
+					archetype: m.archetype,
 					playerSpawn: m.playerSpawn,
 					keyPosition: m.keyPosition,
 					exitPosition: m.exitPosition,

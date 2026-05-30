@@ -15,6 +15,7 @@ import type {
 	PickupSpawn,
 	Vec2,
 } from "@engine/mapTypes";
+import { difficultyForDepth } from "@engine/maze/difficulty";
 import { generateGridMaze } from "@engine/maze/MazeGenerator";
 import { createMapPrng, cyrb128, forkStream } from "@engine/rng";
 import { TILE } from "@shared/constants";
@@ -112,9 +113,16 @@ export function generateMap(
 	const archetypeIdx = biome ? ARCHETYPE_NAMES_INLINE.indexOf(biome) : cyrb128(seedPhrase)[0] % 5;
 	const archetype = at(ARCHETYPE_NAMES_INLINE, archetypeIdx);
 	const baseEnemyCount = Math.max(6, Math.floor(rooms.length * 1.2));
+	// STRUCT3 — log-scaled depth difficulty. `difficultyForDepth(0) === 1` so the
+	// depth-0 count (and the canonical byte-snapshot) is unchanged; deeper levels
+	// scale the count + the cap up to ~3× before flattening.
+	const depthMul = difficultyForDepth(depth);
 	const totalEnemies = Math.min(
-		16,
-		Math.max(4, Math.round(baseEnemyCount * at(ARCHETYPE_ENEMY_MULTIPLIER, archetypeIdx))),
+		Math.round(16 * depthMul),
+		Math.max(
+			4,
+			Math.round(baseEnemyCount * at(ARCHETYPE_ENEMY_MULTIPLIER, archetypeIdx) * depthMul),
+		),
 	);
 	// Base trio stand-in. Production paths remap through
 	// `remapEnemyMix` (see app/views/Scene.tsx:141) before consuming
