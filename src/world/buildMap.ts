@@ -1,7 +1,6 @@
-import { generateMap } from "@engine/gridGen";
 import type { BoneBusterGridMap } from "@engine/mapTypes";
 import type { Difficulty } from "@store/settings";
-import { getArchetypeMapShape } from "@world/archetypeMapShape";
+import { generateBiomeMap } from "@world/biomes/registry";
 import type { PropArchetype } from "@world/scatter/propPool";
 
 /**
@@ -26,9 +25,8 @@ export function buildMap(
 	biome: PropArchetype,
 	_difficulty: Difficulty = "hurtMePlenty",
 ): BoneBusterGridMap {
-	return generateMap(seedPhrase, {
-		shape: getArchetypeMapShape(biome),
-		depth,
-		biome,
-	});
+	// STRUCT2 — route through the biome registry so each biome's generator is the
+	// single composition point (shape + scatter + enemy mix + skin + future
+	// bespoke representation/triggers). buildMap stays the thin caller boundary.
+	return generateBiomeMap(biome, seedPhrase, depth);
 }
