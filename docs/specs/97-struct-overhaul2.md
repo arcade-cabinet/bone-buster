@@ -124,6 +124,25 @@ buildMap(seedPhrase, depth) → pick biome via STRUCT5 → biomeGen(seedPhrase, 
 5. STRUCT4 (weapon upgrades) — most independent; can land any time after the
    reducer variant + HUD tier display.
 
+## Seed identity model (user, 2026-05-29) — DEPTH+PHRASE per level
+
+Reconciles D21 ("same phrase → same map") with STRUCT5 (pressure-picked biome):
+
+- **Phrase owns GEOMETRY.** Each level's maze geometry = `forkStream(phrase,
+  "MAZE-<depth>")` → same phrase → same geometry SEQUENCE down the descent
+  (depth 0, 1, 2, … each a deterministic maze). This is the D21 "shareable map
+  identity," now per-depth.
+- **Pressure owns the BIOME SKIN.** Which biome "wears" the depth-d geometry is a
+  weighted pressure pick off the EVENT PRNG (device-persistent, per-run), NOT the
+  phrase. So the same phrase yields the same geometry sequence but a different
+  biome skin per playthrough — replayable geometry, unpredictable biome order.
+- `buildMap(seedPhrase, depth, biome)`: geometry from the phrase+depth fork; the
+  biome param (pressure-picked separately) drives the biome generator's repr +
+  scatter/enemy/hazard character over that geometry.
+- Run state carries `depth` + a per-biome `pressure` map; persisted in the event
+  domain (alongside `eventPrngSeed`). `pickBiome(pressure, eventRng)` is pure +
+  unit-tested; it replaces `advanceLevel`.
+
 ## Resolved decisions (user, 2026-05-29)
 
 - **Map core = flexible, NOT grid-only.** "Grid plus sector is the minimum" —
