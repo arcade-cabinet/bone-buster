@@ -6,6 +6,7 @@
  */
 
 import { WEAPON_ORDER, WEAPONS } from "@shared/weapons";
+import { MAX_WEAPON_TIER } from "@shared/weaponUpgrade";
 import { GOING_BACK_BUDGET_MS } from "@store/gameConstants";
 import { type GameAction, type GameReducerCtx, gameReducer } from "@store/gameReducer";
 import type { GameState } from "@store/gameState";
@@ -37,6 +38,7 @@ function baseState(over: Partial<GameState> = {}): GameState {
 			flamethrower: false,
 			melee: true,
 		},
+		weaponTiers: { pistol: 0, chaingun: 0, shotgun: 0, flamethrower: 0, melee: 0 },
 		damageFlashAt: 0,
 		run: makeInitialRunStats(0),
 		phase: "out",
@@ -316,6 +318,34 @@ describe("gameReducer — collectPickup (CR-F8 table)", () => {
 		const after = WEAPON_ORDER.filter((id) => r.state.ownedWeapons[id]);
 		expect(after).toContain("chaingun");
 		expect(after.length).toBe(before.length + 1);
+	});
+
+	it("STRUCT4 — upgradeWeapon bumps an owned weapon's tier + fires weaponUpgraded", () => {
+		const owned = baseState({
+			ownedWeapons: { ...baseState().ownedWeapons, chaingun: true },
+		});
+		const r = run(owned, { type: "upgradeWeapon", weapon: "chaingun" });
+		expect(r.state.weaponTiers.chaingun).toBe(1);
+		expect(r.effects).toContainEqual({
+			kind: "dispatch",
+			event: { type: "weaponUpgraded", weapon: "chaingun", tier: 1 },
+		});
+	});
+
+	it("STRUCT4 — upgradeWeapon is a no-op on an UNOWNED weapon", () => {
+		const r = run(baseState(), { type: "upgradeWeapon", weapon: "chaingun" });
+		expect(r.state.weaponTiers.chaingun).toBe(0);
+		expect(r.effects).toHaveLength(0);
+	});
+
+	it("STRUCT4 — upgradeWeapon caps at MAX_WEAPON_TIER", () => {
+		const maxed = baseState({
+			ownedWeapons: { ...baseState().ownedWeapons, chaingun: true },
+			weaponTiers: { ...baseState().weaponTiers, chaingun: MAX_WEAPON_TIER },
+		});
+		const r = run(maxed, { type: "upgradeWeapon", weapon: "chaingun" });
+		expect(r.state.weaponTiers.chaingun).toBe(MAX_WEAPON_TIER);
+		expect(r.effects).toHaveLength(0);
 	});
 
 	it("weapon-ammo: does NOT auto-swap away from a non-pistol weapon", () => {

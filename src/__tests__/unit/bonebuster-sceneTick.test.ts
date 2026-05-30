@@ -28,6 +28,7 @@ function makeGameRefSpy() {
 		onSpendAmmo: vi.fn(),
 		onCollectPickup: vi.fn(),
 		onConsumeCrucifix: vi.fn(() => false),
+		onUpgradeWeapon: vi.fn(),
 	} satisfies GameRef;
 }
 

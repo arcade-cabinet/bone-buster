@@ -37,6 +37,7 @@ import { forkStream } from "@engine/rng";
 import { applyVulnerabilityMultiplier } from "@engine/vulnerability";
 import { PLAYER_RADIUS, TILE } from "@shared/constants";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
+import { effectiveWeaponSpec } from "@shared/weaponUpgrade";
 import type { GameRef, WeaponState } from "@store/gameState";
 import type { BoneBusterSettings } from "@store/settings";
 import { type Barrel, pickRayBarrel } from "@world/barrels";
@@ -60,6 +61,8 @@ const _forwardPellet = /*@__PURE__*/ new THREE.Vector3();
 export interface FireResolutionContext {
 	active: boolean;
 	weapon: WeaponId;
+	/** STRUCT4 — upgrade tier of the firing weapon (0 = base). Optional; absent → 0. */
+	weaponTier?: number;
 	now: number;
 	camera: THREE.Camera;
 	map: BoneBusterMap;
@@ -154,7 +157,9 @@ export function resolveFire(ctx: FireResolutionContext): void {
 	} = ctx;
 
 	if (!active) return;
-	const spec = WEAPONS[weapon];
+	// STRUCT4 — apply the weapon's upgrade tier (fire rate / damage / multi-shot /
+	// spread) before the skin profile composes on top. Tier 0 → base spec.
+	const spec = effectiveWeaponSpec(WEAPONS[weapon], ctx.weaponTier ?? 0);
 	// PB4 / PD1 / PD3 — apply per-skin profile on melee + pistol +
 	// chaingun; other weapons read base damage/cooldown unchanged.
 	// Multipliers compose locally so the WEAPONS table stays the

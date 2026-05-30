@@ -223,6 +223,13 @@ export interface WeaponAcquiredEvent {
 	weapon: "melee" | "pistol" | "chaingun" | "shotgun" | "flamethrower";
 }
 
+/** STRUCT4 — a weapon's upgrade tier increased (HUD flashes the new tier). */
+export interface WeaponUpgradedEvent {
+	type: "weaponUpgraded";
+	weapon: "melee" | "pistol" | "chaingun" | "shotgun" | "flamethrower";
+	tier: number;
+}
+
 /**
  * POL36 — fires the first time the player camera has line-of-sight
  * to any tier="boss" enemy on the current map. The BossBanner HUD
@@ -334,6 +341,7 @@ export type BoneBusterEvent =
 	| FlashlightAcquiredEvent
 	| PickupCollectedEvent
 	| WeaponAcquiredEvent
+	| WeaponUpgradedEvent
 	| BossSpottedEvent
 	| BossDefeatedEvent
 	| EnemyKilledEvent

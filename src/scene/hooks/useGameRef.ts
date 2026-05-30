@@ -167,6 +167,9 @@ export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 		onCollectPickup: (kind) => {
 			runAction({ type: "collectPickup", kind });
 		},
+		onUpgradeWeapon: (weapon) => {
+			runAction({ type: "upgradeWeapon", weapon });
+		},
 	});
 
 	return gameRef;

@@ -73,6 +73,13 @@ export type GameState = {
 	weapon: WeaponId;
 	ammo: Record<WeaponId, number>;
 	ownedWeapons: Record<WeaponId, boolean>;
+	/**
+	 * STRUCT4 — per-weapon upgrade tier (0 = base). Each upgrade pickup
+	 * increments the tier of the owned weapon it targets; `effectiveWeaponSpec`
+	 * applies the log-scaled fire-rate / damage / multi-shot / spread bonuses.
+	 * Reset to all-0 on a fresh run.
+	 */
+	weaponTiers: Record<WeaponId, number>;
 	damageFlashAt: number;
 	run: RunStats;
 	phase: LevelPhase;
@@ -102,6 +109,8 @@ export type GameRef = {
 	onReachSpawn(): void;
 	onSpendAmmo(weapon: WeaponId, amount: number): void;
 	onCollectPickup(kind: PickupKind): void;
+	/** STRUCT4 — bump the upgrade tier of an owned weapon (upgrade pickup). */
+	onUpgradeWeapon(weapon: WeaponId): void;
 	/**
 	 * PC4 — Consume one crucifix from inventory. Returns `true` if
 	 * the inventory had ≥1 (the Scene proceeds with the placement)

@@ -122,6 +122,16 @@ const baseOwnedWeapons = (): Record<WeaponId, boolean> => ({
 	flamethrower: false,
 });
 
+// STRUCT4 — every weapon starts at upgrade tier 0 (base spec). Upgrade pickups
+// found in the descent bump the targeted weapon's tier.
+const baseWeaponTiers = (): Record<WeaponId, number> => ({
+	melee: 0,
+	pistol: 0,
+	chaingun: 0,
+	shotgun: 0,
+	flamethrower: 0,
+});
+
 // URL-flag parsing lives in @views/urlFlags (CR-F6 — extracted so the
 // app's only external-input boundary is unit-testable). This composes the
 // base seed with the archetype override.
@@ -144,6 +154,7 @@ declare global {
 			killAllEnemies: () => void;
 			killBoss: () => void;
 			selectWeapon: (weapon: WeaponId) => void;
+			upgradeWeapon: (weapon: WeaponId) => void;
 			collectKey: () => void;
 			collectAllPickups: () => void;
 			triggerWin: () => void;
@@ -349,6 +360,7 @@ export function BoneBusterShell() {
 		weapon: "pistol",
 		ammo: baseAmmo(),
 		ownedWeapons: baseOwnedWeapons(),
+		weaponTiers: baseWeaponTiers(),
 		damageFlashAt: 0,
 		run: makeInitialRunStats(0),
 		phase: "out",
@@ -483,6 +495,7 @@ export function BoneBusterShell() {
 			weapon: "pistol",
 			ammo: baseAmmo(),
 			ownedWeapons: baseOwnedWeapons(),
+			weaponTiers: baseWeaponTiers(),
 			damageFlashAt: 0,
 			run: makeInitialRunStats(Date.now()),
 			phase: "out",
@@ -732,6 +745,9 @@ export function BoneBusterShell() {
 			weapon: "pistol",
 			ammo: baseAmmo(),
 			ownedWeapons: baseOwnedWeapons(),
+			// STRUCT4 — tiers reset with ownership (weapons are re-acquired each
+			// level in this design, so a tier can't outlive the weapon).
+			weaponTiers: baseWeaponTiers(),
 			damageFlashAt: 0,
 		}),
 		[maxHp],
@@ -810,6 +826,9 @@ export function BoneBusterShell() {
 						[weapon]: Math.max(prev.ammo[weapon], WEAPONS[weapon].pickupAmmo),
 					},
 				}));
+			},
+			upgradeWeapon: (weapon: WeaponId) => {
+				gameRef.current.onUpgradeWeapon(weapon);
 			},
 			collectKey: () => {
 				gameRef.current.onPickupKey();
@@ -1001,6 +1020,7 @@ export function BoneBusterShell() {
 										hasKey={state.hasKey}
 										gameRef={gameRef}
 										weapon={state.weapon}
+										weaponTier={state.weaponTiers[state.weapon]}
 										ammoRef={weaponStateRef}
 										settings={settings}
 										phase={state.phase}

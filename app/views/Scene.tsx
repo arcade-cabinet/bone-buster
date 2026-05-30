@@ -103,6 +103,8 @@ type SceneProps = Readonly<{
 	hasKey: boolean;
 	gameRef: RefObject<GameRef>;
 	weapon: WeaponId;
+	/** STRUCT4 — upgrade tier of the active weapon (drives effectiveWeaponSpec at fire). */
+	weaponTier: number;
 	ammoRef: RefObject<WeaponState>;
 	settings: BoneBusterSettings;
 	// H8 — drives going_back behavior (re-aggro, strobe, return-to-spawn).
@@ -130,6 +132,7 @@ export function BoneBusterScene({
 	hasKey,
 	gameRef,
 	weapon,
+	weaponTier,
 	ammoRef,
 	settings,
 	phase,
@@ -743,6 +746,7 @@ export function BoneBusterScene({
 			resolveFire({
 				active,
 				weapon,
+				weaponTier,
 				now: performance.now(),
 				camera,
 				map,

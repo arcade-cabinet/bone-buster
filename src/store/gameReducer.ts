@@ -20,6 +20,7 @@ import type { BoneBusterEvent } from "@engine/events";
 import type { PickupKind } from "@engine/mapTypes";
 import { assertNever } from "@shared/assertNever";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
+import { MAX_WEAPON_TIER } from "@shared/weaponUpgrade";
 import { GOING_BACK_BUDGET_MS } from "@store/gameConstants";
 import type { GameState } from "@store/gameState";
 import { runStatsReducer } from "@store/runStats";
@@ -48,7 +49,8 @@ export type GameAction =
 	| { type: "reachSpawn" }
 	| { type: "spendAmmo"; weapon: WeaponId; amount: number }
 	| { type: "consumeCrucifix" }
-	| { type: "collectPickup"; kind: PickupKind };
+	| { type: "collectPickup"; kind: PickupKind }
+	| { type: "upgradeWeapon"; weapon: WeaponId };
 
 /**
  * Per-tick context the reducer can't derive from `state` alone — the wall
@@ -165,6 +167,8 @@ export function gameReducer(
 			};
 		case "collectPickup":
 			return reduceCollectPickup(state, action.kind, ctx);
+		case "upgradeWeapon":
+			return reduceUpgradeWeapon(state, action.weapon, ctx);
 		default:
 			// PREP-BP2 — exhaustiveness. A new GameAction variant (STRUCT4 weapon
 			// upgrades, etc.) without a case becomes a compile error here instead
@@ -361,4 +365,27 @@ function reduceCollectPickup(
 	function ok(next: GameState): GameReducerResult {
 		return { state: next, effects, iframeUntil: ctx.iframeUntil, consumed: false };
 	}
+}
+
+/**
+ * STRUCT4 — bump the upgrade tier of an OWNED weapon (no-op if unowned or
+ * already at MAX_WEAPON_TIER). Fires a `weaponUpgraded` event so the HUD can
+ * flash the new tier. The tier feeds `effectiveWeaponSpec` at fire time.
+ */
+function reduceUpgradeWeapon(
+	state: GameState,
+	weapon: WeaponId,
+	ctx: GameReducerCtx,
+): GameReducerResult {
+	const current = state.weaponTiers[weapon];
+	if (!state.ownedWeapons[weapon] || current >= MAX_WEAPON_TIER) {
+		return noChange(state, ctx.iframeUntil);
+	}
+	const nextTier = current + 1;
+	return {
+		state: { ...state, weaponTiers: { ...state.weaponTiers, [weapon]: nextTier } },
+		effects: [{ kind: "dispatch", event: { type: "weaponUpgraded", weapon, tier: nextTier } }],
+		iframeUntil: ctx.iframeUntil,
+		consumed: false,
+	};
 }
