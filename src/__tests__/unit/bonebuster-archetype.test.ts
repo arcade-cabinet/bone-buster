@@ -9,7 +9,7 @@
  *  - `pickArchetype(map)` returns `map.archetype`
  */
 
-import { generateMap } from "@engine/gridGen";
+import { ARCHETYPE_BY_SLOT, generateMap } from "@engine/gridGen";
 import { CANONICAL_SEED_PHRASE } from "@engine/seedPhrase";
 import { ARCHETYPE_NAMES, archetypeForPhrase, pickArchetype } from "@world/archetype";
 import { loadRefLevel } from "@world/refLevel";
@@ -18,6 +18,13 @@ import { describe, expect, it } from "vitest";
 describe("E13 — archetype pick", () => {
 	it("ships exactly 5 archetypes in canonical order", () => {
 		expect(ARCHETYPE_NAMES).toEqual(["corridor", "arena", "courtyard", "sewer", "library"]);
+	});
+
+	it("engine ARCHETYPE_BY_SLOT mirrors @world ARCHETYPE_NAMES (no drift across the layer)", () => {
+		// The engine keeps its own slot order (no runtime @world dep); this pins the
+		// two in lockstep so the phrase-fallback archetype can never diverge from
+		// the world-side biome ordering (review arch-M2).
+		expect([...ARCHETYPE_BY_SLOT]).toEqual([...ARCHETYPE_NAMES]);
 	});
 
 	it("loadRefLevel sets map.archetype = ARCHETYPE_NAMES[index % 5]", () => {

@@ -12,7 +12,7 @@
 
 import { at } from "@engine/arrayAt";
 import type { Rng } from "@engine/rng";
-import { ARCHETYPE_NAMES } from "@world/archetype";
+import { ARCHETYPE_NAMES, archetypeRecord } from "@world/archetype";
 import type { PropArchetype } from "@world/scatter/propPool";
 
 export type BiomePressure = Record<PropArchetype, number>;
@@ -22,9 +22,7 @@ const RANK_WEIGHTS: readonly number[] = [0.5, 0.3, 0.15, 0.05];
 
 /** Fresh pressure map — all biomes equally stale (0) at run start. */
 export function initialBiomePressure(): BiomePressure {
-	const out = {} as BiomePressure;
-	for (const b of ARCHETYPE_NAMES) out[b] = 0;
-	return out;
+	return archetypeRecord(() => 0);
 }
 
 /**
@@ -52,7 +50,9 @@ export function pickBiome(
 	// the biome count grows (review CodeRabbit — was: each tail rank got the full
 	// last weight, harmless at 5 biomes but skews beyond).
 	const tailStart = RANK_WEIGHTS.length;
-	const lastWeight = RANK_WEIGHTS[tailStart - 1] ?? 0;
+	// `at()` throws (not silently 0) if the tail-weight index is ever wrong — a
+	// future RANK_WEIGHTS edit that breaks the invariant fails loud.
+	const lastWeight = at(RANK_WEIGHTS, tailStart - 1);
 	const tailCount = Math.max(0, ranked.length - tailStart);
 	const sharedTailWeight = tailCount > 0 ? lastWeight / tailCount : 0;
 	const weights = ranked.map((_, i) => (i < tailStart ? (RANK_WEIGHTS[i] ?? 0) : sharedTailWeight));
@@ -71,8 +71,7 @@ export function pickBiome(
 	const biome = at(ranked, pickedIdx);
 
 	// Advance pressure: picked → 0, everyone else +1 (staler).
-	const next = {} as BiomePressure;
-	for (const b of ARCHETYPE_NAMES) next[b] = b === biome ? 0 : pressure[b] + 1;
+	const next = archetypeRecord((b) => (b === biome ? 0 : pressure[b] + 1));
 
 	return { biome, pressure: next };
 }

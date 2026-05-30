@@ -26,13 +26,37 @@ const cellCenter = (gx: number, gy: number): Vec2 => ({
 	y: (gy + 0.5) * TILE,
 });
 
-const ARCHETYPE_NAMES_INLINE = [
+/**
+ * Canonical archetype slot order, engine-local. Kept here (NOT imported from
+ * `@world`) so the engine layer never runtime-depends on world content; the
+ * `satisfies` clause makes it a COMPILE error if it ever drifts from the
+ * `PropArchetype` union (adding a 6th archetype breaks the build here until the
+ * slot is added). This is the single in-engine source for the phrase-fallback
+ * archetype — `@world/archetype.ARCHETYPE_NAMES` mirrors the same order and is
+ * pinned identical by `tests/unit/bonebuster-archetype.test.ts`.
+ */
+export const ARCHETYPE_BY_SLOT = [
 	"corridor",
 	"arena",
 	"courtyard",
 	"sewer",
 	"library",
 ] as const satisfies readonly PropArchetype[];
+
+/**
+ * Per-archetype enemy-count multiplier, keyed by archetype NAME (not index) so
+ * there is no index-alignment contract to keep in sync. The biome (STRUCT2)
+ * owns this content and threads its value via `GenerateMapOptions.enemyMultiplier`;
+ * this table is the engine fallback for the phrase-only (snapshot) path. Values
+ * are byte-identical to the pre-refactor index table [1.0,1.4,0.9,1.1,0.8].
+ */
+const ARCHETYPE_ENEMY_MULTIPLIER: Record<PropArchetype, number> = {
+	corridor: 1.0,
+	arena: 1.4,
+	courtyard: 0.9,
+	sewer: 1.1,
+	library: 0.8,
+};
 
 /**
  * STRUCT1 (DEPTH+PHRASE identity, docs/specs/97) — options for `generateMap`.
@@ -47,11 +71,15 @@ const ARCHETYPE_NAMES_INLINE = [
  *   When omitted, the archetype falls back to `cyrb128(phrase)[0] % 5` (the
  *   legacy phrase-derived archetype) so byte-identity holds for callers that
  *   don't thread a biome (the snapshot guard).
+ * - `enemyMultiplier` — the biome's enemy-count scalar (CONTENT owned by the
+ *   biome, STRUCT2). When omitted, the engine falls back to its per-archetype
+ *   table keyed by the resolved archetype, preserving phrase-only byte-identity.
  */
 export type GenerateMapOptions = Readonly<{
 	shape?: GenerateMapShape;
 	depth?: number;
 	biome?: PropArchetype;
+	enemyMultiplier?: number;
 }>;
 
 /**
@@ -68,7 +96,7 @@ export function generateMap(
 	seedPhrase: string,
 	options: GenerateMapOptions = {},
 ): BoneBusterGridMap {
-	const { shape, depth = 0, biome } = options;
+	const { shape, depth = 0, biome, enemyMultiplier } = options;
 	const rand = mapPrngForDepth(seedPhrase, depth);
 	// STRUCT1 — topology comes from the representation-agnostic MazeGenerator
 	// core. `rand` is threaded in so the draw order is continuous with the
@@ -98,20 +126,16 @@ export function generateMap(
 		enemyCandidates[i] = cj;
 		enemyCandidates[j] = ci;
 	}
-	// E13 step-10 — per-archetype enemy-count multiplier. SEED2: the
-	// archetype index now derives from the seed phrase via
-	// `cyrb128(phrase)[0] % 5` (replaces the old `seed % 5`). CONV3
-	// denormalized `archetype` onto the map type; that field is set in the
-	// return value below using this same idx, keeping the one-source-of-truth
-	// invariant: CANONICAL_SEED_PHRASE → idx 0 → "corridor".
-	const ARCHETYPE_ENEMY_MULTIPLIER = [1.0, 1.4, 0.9, 1.1, 0.8] as const;
 	// STRUCT1 — the biome (pressure-picked, threaded from buildMap) owns the
-	// archetype skin over this geometry. When no biome is supplied (the
-	// snapshot guard + any phrase-only caller), fall back to the legacy
-	// phrase-derived archetype so depth-0 byte-identity holds: CANONICAL phrase
-	// → cyrb128[0] % 5 → idx 0 → "corridor".
-	const archetypeIdx = biome ? ARCHETYPE_NAMES_INLINE.indexOf(biome) : cyrb128(seedPhrase)[0] % 5;
-	const archetype = at(ARCHETYPE_NAMES_INLINE, archetypeIdx);
+	// archetype skin over this geometry. When no biome is supplied (the snapshot
+	// guard + any phrase-only caller), fall back to the legacy phrase-derived
+	// archetype so depth-0 byte-identity holds: CANONICAL phrase → cyrb128[0] % 5
+	// → slot 0 → "corridor". CONV3 denormalized `archetype` onto the map type;
+	// the return value below sets it from this same `archetype`.
+	const archetype: PropArchetype = biome ?? at(ARCHETYPE_BY_SLOT, cyrb128(seedPhrase)[0] % 5);
+	// Enemy-count multiplier: the biome's CONTENT scalar when threaded, else the
+	// engine fallback keyed by the resolved archetype NAME (no index alignment).
+	const archMultiplier = enemyMultiplier ?? ARCHETYPE_ENEMY_MULTIPLIER[archetype];
 	const baseEnemyCount = Math.max(6, Math.floor(rooms.length * 1.2));
 	// STRUCT3 — log-scaled depth difficulty. `difficultyForDepth(0) === 1` so the
 	// depth-0 count (and the canonical byte-snapshot) is unchanged; deeper levels
@@ -119,10 +143,7 @@ export function generateMap(
 	const depthMul = difficultyForDepth(depth);
 	const totalEnemies = Math.min(
 		Math.round(16 * depthMul),
-		Math.max(
-			4,
-			Math.round(baseEnemyCount * at(ARCHETYPE_ENEMY_MULTIPLIER, archetypeIdx) * depthMul),
-		),
+		Math.max(4, Math.round(baseEnemyCount * archMultiplier * depthMul)),
 	);
 	// Base trio stand-in. Production paths remap through
 	// `remapEnemyMix` (see app/views/Scene.tsx:141) before consuming
@@ -151,15 +172,22 @@ export function generateMap(
 	//        library  → flamethrowerAmmo every 4th
 	//   3. Remaining slots fill with health.
 	//
-	// E13 step-11 — per-archetype pickup-count multiplier preserved.
-	// Combat-heavy archetypes (arena, sewer) get more pickups,
-	// cleaner ones (library) less.
-	const ARCHETYPE_PICKUP_MULTIPLIER = [1.0, 1.3, 1.0, 1.2, 0.7] as const;
+	// E13 step-11 — per-archetype pickup-count multiplier, keyed by archetype
+	// NAME (no index alignment). Combat-heavy archetypes (arena, sewer) get more
+	// pickups, cleaner ones (library) less. Values byte-identical to the prior
+	// index table [1.0,1.3,1.0,1.2,0.7].
+	const ARCHETYPE_PICKUP_MULTIPLIER: Record<PropArchetype, number> = {
+		corridor: 1.0,
+		arena: 1.3,
+		courtyard: 1.0,
+		sewer: 1.2,
+		library: 0.7,
+	};
 	const pickupCandidates = enemyCandidates.slice(totalEnemies);
 	const basePickupCount = Math.min(8, pickupCandidates.length);
 	const pickupTotal = Math.min(
 		pickupCandidates.length,
-		Math.max(4, Math.round(basePickupCount * at(ARCHETYPE_PICKUP_MULTIPLIER, archetypeIdx))),
+		Math.max(4, Math.round(basePickupCount * ARCHETYPE_PICKUP_MULTIPLIER[archetype])),
 	);
 	// SEED2 — tool-spawn cadence derives from a phrase-stable numeric
 	// (cyrb128 word [1], independent of the archetype's word [0]) replacing
@@ -204,17 +232,17 @@ export function generateMap(
 		.map((position, idx) => {
 			if (idx < reserved.length) return { kind: at(reserved, idx), position };
 			const tailIdx = idx - reserved.length;
-			// Per-archetype bias on the tail. The cadence values (every 3rd
-			// for arena/courtyard, every 4th for library) were picked so
-			// the average over 10 seeds exceeds 2.0 (arena/courtyard) and
+			// Per-archetype bias on the tail, keyed by archetype NAME. The cadence
+			// values (every 3rd for arena/courtyard, every 4th for library) were
+			// picked so the average over 10 seeds exceeds 2.0 (arena/courtyard) and
 			// 1.0 (library) — pinned by the D2 archetype-bias tests.
-			if (archetypeIdx === 1 && tailIdx % 3 === 0) {
+			if (archetype === "arena" && tailIdx % 3 === 0) {
 				return { kind: "chaingunAmmo", position };
 			}
-			if (archetypeIdx === 2 && tailIdx % 3 === 0) {
+			if (archetype === "courtyard" && tailIdx % 3 === 0) {
 				return { kind: "shotgunAmmo", position };
 			}
-			if (archetypeIdx === 4 && tailIdx % 4 === 0) {
+			if (archetype === "library" && tailIdx % 4 === 0) {
 				return { kind: "flamethrowerAmmo", position };
 			}
 			return { kind: "health", position };

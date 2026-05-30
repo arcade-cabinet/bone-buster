@@ -15,7 +15,7 @@
  * grid vs sector, so biomes can mix representations.
  */
 
-import { at } from "@engine/arrayAt";
+import { at, setAt } from "@engine/arrayAt";
 import { inBounds } from "@engine/gridCollision";
 import type { Cell, Room } from "@engine/mapTypes";
 
@@ -56,7 +56,7 @@ function carveRoom(cells: Cell[][], room: Room) {
 	for (let gy = room.gy; gy < room.gy + room.height; gy += 1) {
 		const row = at(cells, gy);
 		for (let gx = room.gx; gx < room.gx + room.width; gx += 1) {
-			row[gx] = "empty";
+			setAt(row, gx, "empty");
 		}
 	}
 }
@@ -71,24 +71,24 @@ function carveCorridor(cells: Cell[][], a: Room, b: Room, rand: () => number) {
 	let cy = ay;
 	if (horizontalFirst) {
 		while (cx !== bx) {
-			at(cells, cy)[cx] = "empty";
+			setAt(at(cells, cy), cx, "empty");
 			cx += cx < bx ? 1 : -1;
 		}
 		while (cy !== by) {
-			at(cells, cy)[cx] = "empty";
+			setAt(at(cells, cy), cx, "empty");
 			cy += cy < by ? 1 : -1;
 		}
 	} else {
 		while (cy !== by) {
-			at(cells, cy)[cx] = "empty";
+			setAt(at(cells, cy), cx, "empty");
 			cy += cy < by ? 1 : -1;
 		}
 		while (cx !== bx) {
-			at(cells, cy)[cx] = "empty";
+			setAt(at(cells, cy), cx, "empty");
 			cx += cx < bx ? 1 : -1;
 		}
 	}
-	at(cells, cy)[cx] = "empty";
+	setAt(at(cells, cy), cx, "empty");
 }
 
 export function bfsReachable(

@@ -22,7 +22,7 @@
 
 import { generateMap } from "@engine/gridGen";
 import type { BoneBusterGridMap } from "@engine/mapTypes";
-import { ARCHETYPE_NAMES } from "@world/archetype";
+import { archetypeRecord } from "@world/archetype";
 import { getArchetypeMapShape } from "@world/archetypeMapShape";
 import type { PropArchetype } from "@world/scatter/propPool";
 
@@ -44,14 +44,13 @@ function gridBiome(biome: PropArchetype): BiomeGenerator {
 }
 
 /**
- * The biome registry — one generator per biome. Derived from ARCHETYPE_NAMES so
- * adding a biome to that list (after wiring its per-archetype tables) auto-adds
- * a default grid generator here; override the entry to give a biome a bespoke
- * representation or triggers.
+ * The biome registry — one generator per biome. Built via `archetypeRecord`,
+ * whose mapped-type construction FORCES an entry for every `PropArchetype`
+ * (no `as` cast launders a missing key). Adding a biome to the type — after
+ * wiring its per-archetype tables — fails to compile until it appears here as
+ * a default grid generator; override the entry for a bespoke representation.
  */
-export const BIOMES: Readonly<Record<PropArchetype, BiomeGenerator>> = Object.fromEntries(
-	ARCHETYPE_NAMES.map((b) => [b, gridBiome(b)]),
-) as Record<PropArchetype, BiomeGenerator>;
+export const BIOMES: Readonly<Record<PropArchetype, BiomeGenerator>> = archetypeRecord(gridBiome);
 
 /** Generate the map for a (biome, seedPhrase, depth) — the STRUCT2 entry point. */
 export function generateBiomeMap(
@@ -59,10 +58,10 @@ export function generateBiomeMap(
 	seedPhrase: string,
 	depth: number,
 ): BoneBusterGridMap {
-	// The `BIOMES` record is built from ARCHETYPE_NAMES via a cast; if a future
-	// PropArchetype name is added to the type before its ARCHETYPE_NAMES entry,
-	// the lookup is undefined. Guard so that's a clear error, not a cryptic
-	// `Cannot read properties of undefined` at .generate (review STRUCT2#1).
+	// `BIOMES` is now fully populated by construction (archetypeRecord covers
+	// every PropArchetype key — no cast). The lookup can only be undefined if a
+	// caller passes a non-PropArchetype string at runtime; keep the guard so
+	// that's a clear error, not a cryptic `Cannot read properties of undefined`.
 	const gen = BIOMES[biome];
 	if (!gen) throw new RangeError(`generateBiomeMap: no generator registered for biome "${biome}"`);
 	return gen.generate(seedPhrase, depth);
