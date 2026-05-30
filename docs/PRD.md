@@ -249,9 +249,11 @@ unit tests; visual changes get ANGLE-GL screenshot verification read by the agen
 These are good ideas with no acceptance gate yet.
 
 - Ghost Hunting Tools — `pickSpiritBoxPhoneme` + UV flashlight +
-  EMF reader + placeable crucifix all shipped (PC1–PC4). Open
-  follow-ups: tape-recorder cue capture, walkie-talkie squelch
-  audio, ghost-trail particle layer.
+  EMF reader + placeable crucifix (PC1–PC4), the GH-TAPE EVP
+  tape-recorder cue capture, and the GH-TRAIL spectral-wake
+  particle layer all shipped (feat/overhaul2). Only open
+  follow-up: GH-WALKIE walkie-talkie squelch audio — **blocked**
+  on a squelch SFX asset (no sampled squelch in the library yet).
 - Bespoke commissioned logo — current SVG re-letter with
   Bungee/Inline/Shade is good enough for ship.
 - Mobile-perf CI gate — currently label-gated; promote to

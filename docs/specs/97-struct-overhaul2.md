@@ -1,18 +1,19 @@
 ---
-title: STRUCT — OVERHAUL2 procedural/biome/upgrade architecture plan
-updated: 2026-05-29
-status: draft
+title: STRUCT — OVERHAUL2 procedural/biome/upgrade architecture
+updated: 2026-05-30
+status: current
 domain: technical
 ---
 
-# STRUCT — the OVERHAUL2 structural rework (PLAN, pre-build)
+# STRUCT — the OVERHAUL2 structural rework (SHIPPED, feat/overhaul2)
 
-Binding direction: [`docs/DECISIONS.md`](../DECISIONS.md) D23 + the user-directed
-OVERHAUL2 vision. This is the architecture plan for STRUCT1–STRUCT5 — written
-BEFORE code per the "plan first" directive. Nothing here is committed to code
-yet; it is for review.
+Binding direction: [`docs/DECISIONS.md`](../DECISIONS.md) D23 + D25 + the
+user-directed OVERHAUL2 vision. STRUCT1–STRUCT5 are SHIPPED on feat/overhaul2 —
+this is the as-built architecture. It began as the "plan first" spec; the
+"Pre-STRUCT architecture" block immediately below is the OLD state, kept for
+contrast, followed by the shipped design.
 
-## Current architecture (as built)
+## Pre-STRUCT architecture (historical — replaced by STRUCT1-5)
 
 ```
 Shell.tsx (useMemo)
@@ -83,13 +84,23 @@ buildMap(seedPhrase, depth) → pick biome via STRUCT5 → biomeGen(seedPhrase, 
      step — do it as its own commit with the full test sweep.
 
 ### STRUCT2 — one generator per biome on the core
-- `src/world/biomes/<biome>.ts` each export `generate(seedPhrase, depth):
-  BoneBusterMap`, calling `generateMaze` for topology then layering the biome's
-  existing `getArchetypeMapShape` params + scatter (`debrisScatter`, `kitchen`,
-  `nature`, …) + enemy mix + hazards. The per-archetype tables (already in
-  `archetypeRegistry.ts`) become each biome generator's config.
-- A `BIOMES` registry maps biome name → generator. Adding a biome = add a file +
-  register it (the "add a generator → hours of play" headline).
+
+> **As-built note:** the plan below sketched a per-biome FILE
+> (`src/world/biomes/<biome>.ts`). The shipped design instead uses a single
+> `src/world/biomes/registry.ts` that builds every biome's default `gridBiome`
+> generator from `archetypeRecord(gridBiome)` — exhaustiveness is compiler-forced
+> (no missing-key cast) and adding a biome to `PropArchetype` fails to compile
+> until its tables + registry entry exist. A biome that needs a BESPOKE
+> representation/triggers overrides its single registry entry (the contract is the
+> same). The per-file split was unnecessary while all five share the grid core.
+
+- Each biome's `generate(seedPhrase, depth): BoneBusterGridMap` calls
+  `generateGridMaze` for topology then layers the biome's `getArchetypeMapShape`
+  params + scatter (`debrisScatter`, `kitchen`, `nature`, …) + enemy mix +
+  hazards. The per-archetype tables become each biome generator's config.
+- The `BIOMES` registry maps biome name → generator. Adding a biome = wire its
+  per-archetype tables + add a registry entry (the "add a generator → hours of
+  play" headline).
 - Custom triggers/traps/code per biome live in its generator (e.g. sewer water
   hazard, library NPC set-dressing — already archetype-gated, now biome-owned).
 

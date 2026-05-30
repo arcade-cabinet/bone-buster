@@ -472,7 +472,9 @@ also dropped a heavy dependency from the bundle.
 
 ## D21 — Family two-PRNG seedphrase model (SEED1-5)
 
-**Status:** Locked. **Amends D19 (world-shape clause).**
+**Status:** Locked. **Amends D19 (world-shape clause). Refined by D25** (the
+"same phrase → same map" clause is now "same phrase → same GEOMETRY"; the biome
+SKIN is event-PRNG-pressure-picked, not phrase-derived).
 **Date:** 2026-05-28 (user-directed)
 
 bone-buster adopts the `~/src/arcade-cabinet` family seed architecture
@@ -535,8 +537,9 @@ art." *Flat-bright no-shadow.* Reads flat/gamey, kills the horror.
 
 ## D23 — Fully procedural: drop the level picker; biomes via a per-biome generator on a shared maze core (STRUCT1/2)
 
-**Status:** Locked (planned; lands across STRUCT1–STRUCT5).
-**Date:** 2026-05-28 (user-directed)
+**Status:** Locked. **Shipped** (STRUCT1–STRUCT5, feat/overhaul2). Seed-identity
+clarified by D25.
+**Date:** 2026-05-28 (user-directed); shipped 2026-05-30.
 
 The 1–5 level picker + `LevelChoice` union are removed. Map generation bottoms
 out at a shared base `MazeGenerator`; each of the (initially five) **biomes**
@@ -581,6 +584,40 @@ invariants the gate already enforces at author time. The gate fails the build;
 a CSP only fails at runtime. **Revisit** if we ever add a runtime network call,
 third-party embed, or user-authored content — at which point a real CSP header
 (set at the Pages/edge layer, not a meta tag) becomes the right control.
+
+---
+
+## D25 — Seed identity is DEPTH+PHRASE for geometry, pressure for the biome skin (STRUCT1/STRUCT5)
+
+**Status:** Locked. Shipped (feat/overhaul2). **Refines D21 + D23.**
+**Date:** 2026-05-28 (user-directed); shipped 2026-05-30.
+
+The two procedural axes are owned by DIFFERENT seeds and answer different
+questions:
+
+- **Geometry = (PHRASE, DEPTH).** The maze topology forks off both: depth 0 is
+  the legacy `createMapPrng(phrase)` stream verbatim (byte-identity / canonical
+  anchor); depth ≥1 forks `forkStream(phrase, "MAZE-<depth>")`. So the same
+  phrase yields a deterministic maze SEQUENCE down the endless descent, not a
+  single repeated map. (`mapPrngForDepth` in `src/engine/gridGen.ts`.)
+- **Biome skin = pressure pick (event PRNG).** Which biome "wears" a given
+  geometry is chosen per level by the STRUCT5 weighted-pressure pick off the
+  device-buried EVENT seed (advanced + persisted each pick), NOT derived from the
+  phrase. The same phrase can therefore wear different biomes across runs — that
+  is intentional run variance. (`pickBiome` + `Shell.advanceBiome`.)
+
+This refines D21's "same phrase → same map": it is now precisely "same phrase +
+depth → same GEOMETRY." The phrase no longer pins the biome; pressure does.
+
+**Why:** geometry is the shareable, reproducible identity (a phrase is a map
+seed you can hand to a friend); the biome skin + combat variance are per-run
+texture that should NOT be locked to the phrase, else every run of a shared seed
+is identical and the "never-predictable descent" (D23) collapses. Splitting the
+two seeds makes "same map, different run" and "same run-feel, new map" orthogonal.
+
+**Rejected:** *phrase owns biome too (single-seed identity).* Simpler, but makes
+a shared phrase fully deterministic including biome order — kills run variance
+and the pressure system's reason to exist.
 
 ---
 
