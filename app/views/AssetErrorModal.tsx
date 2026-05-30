@@ -25,6 +25,9 @@ export function AssetErrorModal({ reason }: { reason: AssetErrorReason }) {
 				padding: "24px",
 			}}
 		>
+			{/* scale-step: a bespoke crimson failure-modal theme (dark blood-red
+			    surround + gradient + glow) — a one-off alarm surface with no
+			    semantic ROLE token; deliberately distinct from the in-game HUD. */}
 			<div
 				style={{
 					maxWidth: 520,

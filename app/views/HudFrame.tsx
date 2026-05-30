@@ -28,6 +28,8 @@ function vignetteStyle(strength: number): CSSProperties {
 		...SHARED,
 		// Radial darkening toward the edges; the centre stays clear so the
 		// readable flood (VIS3) isn't dimmed where the player is aiming.
+		// scale-step: a near-black edge-vignette gradient at a runtime-variable
+		// alpha — no semantic ROLE token captures "frame vignette darkness".
 		background: `radial-gradient(120% 120% at 50% 48%, rgba(0,0,0,0) 55%, rgba(8,5,10,${strength}) 100%)`,
 	};
 }
@@ -39,7 +41,9 @@ function CockpitChrome() {
 			<div style={vignetteStyle(0.72)} />
 			{/* Chrome border surround — a gritty dark metal frame inset from the
 			    viewport edge. Layered box-shadows give it bevel + grime depth
-			    without an image asset. */}
+			    without an image asset.
+			    scale-step: bespoke dark-metal bevel + grime shadow stack — a
+			    physical-frame material with no semantic ROLE token. */}
 			<div
 				style={{
 					...SHARED,
