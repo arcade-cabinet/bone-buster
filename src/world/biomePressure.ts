@@ -47,8 +47,15 @@ export function pickBiome(
 
 	// Build weights aligned to the ranking: ranks 0..3 take 50/30/15/5; any
 	// rank ≥4 shares the last weight evenly so every biome stays reachable.
-	const lastWeight = RANK_WEIGHTS[RANK_WEIGHTS.length - 1] ?? 0;
-	const weights = ranked.map((_, i) => RANK_WEIGHTS[i] ?? lastWeight);
+	// Ranks 0..3 take 50/30/15/5; ranks ≥4 (only when >RANK_WEIGHTS biomes exist)
+	// SHARE the last weight evenly so the documented 50/30/15/5 policy holds as
+	// the biome count grows (review CodeRabbit — was: each tail rank got the full
+	// last weight, harmless at 5 biomes but skews beyond).
+	const tailStart = RANK_WEIGHTS.length;
+	const lastWeight = RANK_WEIGHTS[tailStart - 1] ?? 0;
+	const tailCount = Math.max(0, ranked.length - tailStart);
+	const sharedTailWeight = tailCount > 0 ? lastWeight / tailCount : 0;
+	const weights = ranked.map((_, i) => (i < tailStart ? (RANK_WEIGHTS[i] ?? 0) : sharedTailWeight));
 	const total = weights.reduce((s, w) => s + w, 0);
 
 	// Weighted roll over the ranked list.

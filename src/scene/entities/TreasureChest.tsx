@@ -1,6 +1,7 @@
 import { useGLTF } from "@react-three/drei";
+import { ROLE } from "@styles/tokens/index";
 import { LOOT_URLS } from "@world/loot";
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 
@@ -24,22 +25,37 @@ function TreasureChestModel() {
 	// (X/Z) and sit it on the floor (min-Y → 0), then the parent group scales it
 	// to a single hero chest. Also warm-emissive-lift it so it reads as the
 	// "reward" beacon at the exit under the flood without washing out texture.
-	const { offset } = useMemo(() => {
+	const { offset, clonedMaterials } = useMemo(() => {
 		const box = new THREE.Box3().setFromObject(cloned);
 		const center = box.getCenter(new THREE.Vector3());
+		const mats: THREE.Material[] = [];
 		cloned.traverse((o) => {
 			const mesh = o as THREE.Mesh;
 			if (mesh.isMesh) {
-				const mat = mesh.material as THREE.MeshStandardMaterial | undefined;
-				if (mat && "emissive" in mat) {
-					mat.emissive = new THREE.Color("#3a2410");
+				// SkeletonUtils.clone shares MATERIALS by reference (three r184) —
+				// Treasure.glb is also the loot-pickup body, so mutating the shared
+				// material here would tint the loot pickup too (CodeRabbit). Clone the
+				// material per-mesh before the emissive lift so only this chest changes.
+				const src = mesh.material as THREE.MeshStandardMaterial | undefined;
+				if (src && "emissive" in src) {
+					const mat = src.clone();
+					mat.emissive = new THREE.Color(ROLE.actionPickup);
 					mat.emissiveIntensity = 0.25;
+					mesh.material = mat;
+					mats.push(mat);
 				}
 			}
 		});
 		// Shift so the model is centered in X/Z and its base rests at y=0.
-		return { offset: new THREE.Vector3(-center.x, -box.min.y, -center.z) };
+		return { offset: new THREE.Vector3(-center.x, -box.min.y, -center.z), clonedMaterials: mats };
 	}, [cloned]);
+	// The per-mesh material clones are GPU resources we own — dispose them on
+	// unmount (each level remount makes a fresh chest) to avoid a per-level leak.
+	useEffect(() => {
+		return () => {
+			for (const m of clonedMaterials) m.dispose();
+		};
+	}, [clonedMaterials]);
 	return <primitive object={cloned} position={offset} />;
 }
 
