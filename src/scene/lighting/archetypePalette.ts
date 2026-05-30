@@ -26,10 +26,11 @@ export interface ArchetypeLightPalette {
 	/** Directional ("sun") light tint — a warmer/cooler key cast. */
 	readonly directionalColor: string;
 	/**
-	 * E13 step-4 — fog tint. The dominant depth-fade signal in low-lit
-	 * play; biggest visual lever for archetype-distinctness. The
-	 * corridor entry preserves the pre-step-4 literal `BONE_BUSTER_PALETTE.ink`
-	 * for canonical byte-stability.
+	 * E13 step-4 — fog tint. The dominant depth-fade signal; biggest visual
+	 * lever for archetype-distinctness. VIS2 (OVERHAUL2) retuned the fog colors
+	 * to the Silent-Hill indigo/ember family — corridor now uses
+	 * `SCALE.indigo[500]` (was `BONE_BUSTER_PALETTE.ink` pre-VIS2); the canonical
+	 * screenshot was re-blessed against the new value.
 	 */
 	readonly fogColor: string;
 	/**
