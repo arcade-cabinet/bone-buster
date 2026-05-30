@@ -62,11 +62,15 @@ export class AssetErrorBoundary extends Component<Props, State> {
 		return { hasError: true };
 	}
 
-	componentDidCatch(error: Error, _info: ErrorInfo): void {
+	componentDidCatch(error: unknown, _info: ErrorInfo): void {
 		const { url, assetType } = classify(error);
+		// React allows throwing ANY value — derive the message safely (an Error
+		// gives `.message`; a raw string/number/null is stringified) so this
+		// boundary never throws while handling another throw (CodeRabbit).
+		const message = error instanceof Error ? error.message : String(error);
 		// CI-10 — observable asset-failure signal for the deploy smoke test.
 		dispatch({ type: "assetError", url, assetType, phase: "scene" });
-		this.props.onError({ url, assetType, message: error.message });
+		this.props.onError({ url, assetType, message });
 	}
 
 	render(): ReactNode {

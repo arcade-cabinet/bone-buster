@@ -34,7 +34,11 @@ function tierFactor(tier: number): number {
  * - spreadRad: tightens toward a floor for spread weapons (better accuracy).
  */
 export function effectiveWeaponSpec(base: WeaponSpec, tier: number): WeaponSpec {
-	const clamped = Math.max(0, Math.min(MAX_WEAPON_TIER, Math.floor(tier)));
+	// Sanitize first: a NaN / non-finite tier (e.g. a corrupt persisted value)
+	// would otherwise propagate NaN through Math.floor → clamp → every stat
+	// (CodeRabbit). Treat anything non-finite as tier 0 (base).
+	const safeTier = Number.isFinite(tier) ? tier : 0;
+	const clamped = Math.max(0, Math.min(MAX_WEAPON_TIER, Math.floor(safeTier)));
 	if (clamped === 0) return base;
 	const f = tierFactor(clamped);
 

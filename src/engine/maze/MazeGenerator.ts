@@ -175,7 +175,14 @@ export function generateGridMaze(rand: () => number, shape?: GridMazeShape): Gri
 		if (cellRow[cgx] === "empty") cellRow[cgx] = "lava";
 	}
 
-	// Player spawn = first room center.
+	// Player spawn = first room center. A maze with zero rooms is unplayable
+	// (no spawn / exit / reachable space) — fail with a descriptive error rather
+	// than the cryptic `at()` out-of-bounds (CodeRabbit). In practice roomTries
+	// is always ≥1 and the first room always places, so this is a guard, not a
+	// reachable path.
+	if (rooms.length === 0) {
+		throw new RangeError("generateGridMaze: no rooms placed — maze is unplayable");
+	}
 	const spawnRoom = at(rooms, 0);
 	const startGx = spawnRoom.gx + Math.floor(spawnRoom.width / 2);
 	const startGy = spawnRoom.gy + Math.floor(spawnRoom.height / 2);

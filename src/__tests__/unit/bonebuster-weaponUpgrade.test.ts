@@ -53,4 +53,15 @@ describe("STRUCT4 — effectiveWeaponSpec", () => {
 		const atMax = effectiveWeaponSpec(WEAPONS.pistol, MAX_WEAPON_TIER);
 		expect(overMax).toEqual(atMax);
 	});
+
+	it("treats a non-finite tier as base (no NaN propagation)", () => {
+		// A corrupt persisted tier must not NaN-out the weapon stats — any
+		// non-finite value (NaN / ±Infinity) collapses to tier 0 (base).
+		expect(effectiveWeaponSpec(WEAPONS.pistol, Number.NaN)).toBe(WEAPONS.pistol);
+		expect(effectiveWeaponSpec(WEAPONS.pistol, Number.POSITIVE_INFINITY)).toBe(WEAPONS.pistol);
+		// A finite over-max tier still clamps to MAX (that path is unaffected).
+		expect(effectiveWeaponSpec(WEAPONS.pistol, 1e9)).toEqual(
+			effectiveWeaponSpec(WEAPONS.pistol, MAX_WEAPON_TIER),
+		);
+	});
 });
