@@ -1,7 +1,7 @@
 {
 	"name": "bonebuster",
 	"private": true,
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"type": "module",
 	"packageManager": "pnpm@10.2.0",
 	"description": "Bone Buster — a procedural arcade FPS in the PSX-jank tradition. They had it coming.",

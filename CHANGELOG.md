@@ -9,6 +9,13 @@ domain: history
 
 All notable changes to this project will be documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Conventional Commits](https://www.conventionalcommits.org).
 
+## [0.6.0](https://github.com/arcade-cabinet/bone-buster/compare/v0.5.0...v0.6.0) (2026-05-30)
+
+
+### Features
+
+* OVERHAUL2 — fully-procedural modernized-DOOM horror maze ([#85](https://github.com/arcade-cabinet/bone-buster/issues/85)) ([89e48a4](https://github.com/arcade-cabinet/bone-buster/commit/89e48a47dffdd4c581fd5b6abe79f38ec1b4a2ec))
+
 ## [0.5.0](https://github.com/arcade-cabinet/bone-buster/compare/v0.4.1...v0.5.0) (2026-05-17)
 
 
