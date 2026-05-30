@@ -1,6 +1,7 @@
 # Bone Buster — live work queue
 
 **Status:** ACTIVE
+**Open PR:** #85 (feat/overhaul2 → main) — the entire OVERHAUL2 + PREP lane. CI running; address local-review + remote feedback as forward commits, resolve threads, self-merge once green.
 **Branch:** ONE long-running branch holds all in-flight work. Remote feedback + a single squash-merge happen at the END, not per-slice. Versioning is entirely release-please's — nothing here is version-gated, and the agent never assigns a release version.
 **Authority chain:** DESIGN > ARCHITECTURE > DECISIONS > **PRD** > this file > ROADMAP.
 **Spec:** [`docs/PRD.md`](../docs/PRD.md) carries the user stories, surfaces, and acceptance bars. Each item below points at its PRD section for the why and the verifiable acceptance.
