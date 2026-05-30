@@ -46,10 +46,14 @@ export function LockedDoor({
 		groupRef.current.position.set(position.x, progressRef.current * WALL_HEIGHT, position.z);
 	});
 	return (
+		// Explicit initial position so the door doesn't flash one frame at the
+		// world origin before useFrame first runs (the GLB is preloaded → visible
+		// on frame 0). Matches progressRef's init (open ? 1 : 0).
 		<group
 			ref={(node) => {
 				groupRef.current = node;
 			}}
+			position={[position.x, (open ? 1 : 0) * WALL_HEIGHT, position.z]}
 		>
 			<primitive object={cloned} />
 		</group>

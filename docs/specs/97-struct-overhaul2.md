@@ -43,19 +43,26 @@ Key facts the rework must respect:
 
 ```
 MazeGenerator (base, lowest layer — src/engine/maze/MazeGenerator.ts)
-   pure: (seedPhrase, depth, params) → a maze skeleton (rooms/cells/graph + reachability)
-   knows NOTHING about biomes, assets, enemies. Just topology + difficulty-scaled size.
+   REPRESENTATION-AGNOSTIC topology contract: (seedPhrase, depth, params, repr)
+     → { regions/rooms, connectivity graph, reachability, playerSpawn, exit }
+   knows NOTHING about biomes/assets/enemies. `repr` selects grid | sector | …
+   (both grid `generateMap` + sector paths are first-class; collisionAny already
+    routes either). New representations layer in here without touching biomes.
         ▲
-        │ each biome generator composes the core, then adds its own layer
+        │ each biome generator composes the core with ITS representation + params
+        │ so each biome FEELS unique → infinite variety
         │
 BiomeGenerator (one per biome — src/world/biomes/{corridor,arena,courtyard,sewer,library}.ts)
    (seedPhrase, depth) → BoneBusterMap
-   owns: structure params fed to the core, scatter, hazards, enemy mix,
+   owns: representation choice + structure params, scatter, hazards, enemy mix,
          biome-specific triggers/traps/code, fog/light palette hook.
+   MODELED ON its refLevel prototype (the decoded ref geometry/character is the
+   design seed; refLevels are no longer a runtime level path).
         ▲
         │
 buildMap(seedPhrase, depth) → pick biome via STRUCT5 → biomeGen(seedPhrase, depth)
-   NO LevelChoice. depth = levels cleared so far (drives STRUCT3 log scaling).
+   NO LevelChoice. depth = biomes cleared so far (drives STRUCT3 log scaling +
+   the prestige milestone). Endless; death ends the run.
 ```
 
 ### STRUCT1 — base MazeGenerator + drop the picker
@@ -117,13 +124,28 @@ buildMap(seedPhrase, depth) → pick biome via STRUCT5 → biomeGen(seedPhrase, 
 5. STRUCT4 (weapon upgrades) — most independent; can land any time after the
    reducer variant + HUD tier display.
 
-## Open questions for review
-- **Grid vs sector maps:** the core today is grid (`generateMap`); refLevels
-  were sector. Should every biome maze be grid-based (simpler, one collision
-  path), or do some biomes want sector polygons? (Recommend: grid core for all
-  biomes initially — collapses two collision/render paths into one; revisit if a
-  biome needs non-rectilinear space.)
-- **RUN_LENGTH:** endless (no cap) per "play for hours," or a soft cap with a
-  "deeper = harder" prestige? (D23 says endless; confirm no campaign-end.)
-- **refLevels:** confirm they retire entirely from runtime (become docs-only
-  style refs), vs keeping one as a tutorial "welcome wing".
+## Resolved decisions (user, 2026-05-29)
+
+- **Map core = flexible, NOT grid-only.** "Grid plus sector is the minimum" —
+  the MazeGenerator core must abstract TOPOLOGY behind a flexible engine/physics
+  layer so each biome can pick grid OR sector OR a future representation. The
+  point is biome UNIQUENESS so the procgen builds INFINITE VARIETY — a single
+  rigid grid core would make every biome feel the same. So:
+  - `MazeGenerator` core defines a representation-agnostic topology contract
+    (rooms/regions + a connectivity graph + reachability + spawn/exit), and the
+    existing grid (`generateMap`) and sector (`SectorMapGeometry`) paths are BOTH
+    first-class implementations a biome generator can request. Collision routes
+    through the existing `collisionAny` dispatcher (already grid/sector-agnostic).
+  - A biome generator chooses its representation (+ params) to match its FEEL:
+    e.g. corridor = tight grid, sewer/cathedral = sector polygons for organic
+    space. New representations layer in later without touching biomes.
+- **Run length = ENDLESS + PRESTIGE.** No campaign end; log-scaled difficulty
+  climbs forever. A milestone (every N biomes cleared) marks a PRESTIGE tier with
+  a visible marker + reward/difficulty bump. `RUN_LENGTH`/`advanceLevel` retire;
+  death ends the run; a prestige counter persists in the run/save.
+- **refLevels = the biome PROTOTYPES, layered on the core.** Not a runtime level
+  path and not discarded — each refLevel is the STYLE PROTOTYPE a biome generator
+  is modeled on (the design source layered on top of the MazeGenerator core).
+  `loadRefLevel` stops being a player-selectable level; the decoded ref geometry
+  + its scatter/enemy character become the seed of the matching biome generator's
+  config. (This is the earlier-established "refLevels are MODELS for archetypes.")
