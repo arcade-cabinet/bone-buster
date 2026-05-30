@@ -25,4 +25,13 @@ declare module "troika-three-text" {
 		options: { font?: string; characters?: string | string[] },
 		callback: () => void,
 	): void;
+	// ERR2 — config surface; we only set `useWorker` (run typesetting on the
+	// main thread to avoid Vite's broken worker bundle). Must be called before
+	// the first font request.
+	export function configureTextBuilder(config: {
+		useWorker?: boolean;
+		sdfGlyphSize?: number;
+		sdfExponent?: number;
+		textureWidth?: number;
+	}): void;
 }

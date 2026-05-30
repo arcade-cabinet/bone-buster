@@ -11,10 +11,11 @@
  */
 
 import type { BoneBusterGridMap, Cell, Pickup } from "@engine/mapTypes";
+import { ENEMY_BULLET_TTL_MS, type EnemyBullet } from "@engine/projectiles";
 import { runSceneTick, type SceneTickDeps } from "@scene/tick/sceneTick";
 import { createTimeScaleBus } from "@scene/tick/timeScaleBus";
+import type { GameRef } from "@store/gameState";
 import { DEFAULT_SETTINGS } from "@store/settings";
-import type { GameRef } from "@views/Shell";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 function makeGameRefSpy() {
@@ -27,6 +28,7 @@ function makeGameRefSpy() {
 		onSpendAmmo: vi.fn(),
 		onCollectPickup: vi.fn(),
 		onConsumeCrucifix: vi.fn(() => false),
+		onUpgradeWeapon: vi.fn(),
 	} satisfies GameRef;
 }
 
@@ -232,5 +234,97 @@ describe("runSceneTick (CR-H1scene step-c)", () => {
 		const tickYuka = vi.fn();
 		runSceneTick(baseDeps({ camera: makeCamera(0, 0), tickYuka }));
 		expect(tickYuka).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("runSceneTick — enemy-bullet integration (PREP-TEST1)", () => {
+	beforeEach(() => {
+		vi.spyOn(performance, "now").mockReturnValue(10_000);
+	});
+
+	/** A live bullet at `pos`, created `ageMs` ago, not flagged dead. */
+	function bullet(id: number, pos: { x: number; y: number }, ageMs = 0): EnemyBullet {
+		return {
+			id,
+			ownerEnemyId: 0,
+			position: { ...pos },
+			velocity: { x: 0, y: 0 },
+			createdAt: 10_000 - ageMs,
+			dead: false,
+		};
+	}
+
+	it("damages the player and retires a bullet that reaches them", () => {
+		const game = makeGameRefSpy();
+		const playHurt = vi.fn();
+		// Player + bullet at world (2,2) → grid (0,0), an EMPTY cell (the only
+		// lava is grid (1,1) = world [4,8)²). Co-located → within the
+		// ENEMY_BULLET_RADIUS+0.45 hit radius → hitPlayer, with no lava noise.
+		const mesh = { visible: true } as unknown as import("three").Group;
+		const bullets = [bullet(7, { x: 2, y: 2 })];
+		const deps = baseDeps({
+			camera: makeCamera(2, 2),
+			gameRef: { current: game },
+			playHurt,
+			bulletsRef: { current: bullets },
+			bulletMeshesRef: { current: new Map([[7, mesh]]) },
+		});
+		runSceneTick(deps);
+		expect(game.onHit).toHaveBeenCalledExactlyOnceWith(1); // ENEMY_BULLET_DAMAGE
+		expect(playHurt).toHaveBeenCalledTimes(1);
+		expect(mesh.visible).toBe(false); // mesh hidden on hit
+		expect(bullets).toHaveLength(0); // retired
+	});
+
+	it("retires an expired bullet without damaging the player", () => {
+		const game = makeGameRefSpy();
+		const playHurt = vi.fn();
+		const mesh = { visible: true } as unknown as import("three").Group;
+		// Far from player AND older than the TTL → expired (no hitPlayer).
+		const bullets = [bullet(3, { x: 0.5, y: 0.5 }, ENEMY_BULLET_TTL_MS + 1)];
+		const deps = baseDeps({
+			camera: makeCamera(2, 7),
+			gameRef: { current: game },
+			playHurt,
+			bulletsRef: { current: bullets },
+			bulletMeshesRef: { current: new Map([[3, mesh]]) },
+		});
+		runSceneTick(deps);
+		expect(game.onHit).not.toHaveBeenCalled();
+		expect(playHurt).not.toHaveBeenCalled();
+		expect(mesh.visible).toBe(false);
+		expect(bullets).toHaveLength(0);
+	});
+
+	it("keeps an in-flight bullet alive across the tick", () => {
+		const game = makeGameRefSpy();
+		// Recent, far from the player, stationary velocity → stays "alive".
+		const bullets = [bullet(1, { x: 0.5, y: 0.5 })];
+		const deps = baseDeps({
+			camera: makeCamera(2, 7),
+			gameRef: { current: game },
+			bulletsRef: { current: bullets },
+		});
+		runSceneTick(deps);
+		expect(game.onHit).not.toHaveBeenCalled();
+		expect(bullets).toHaveLength(1);
+		expect(bullets[0]?.id).toBe(1);
+	});
+
+	it("compacts a mixed list — drops the retired bullet, keeps the live one in order", () => {
+		const game = makeGameRefSpy();
+		// Index 0: expired (dropped). Index 1: live + far (kept). After compaction
+		// the survivor must be the only element, preserving its identity.
+		const expired = bullet(10, { x: 0.5, y: 0.5 }, ENEMY_BULLET_TTL_MS + 1);
+		const live = bullet(11, { x: 0.5, y: 0.5 });
+		const bullets = [expired, live];
+		const deps = baseDeps({
+			camera: makeCamera(2, 7),
+			gameRef: { current: game },
+			bulletsRef: { current: bullets },
+		});
+		runSceneTick(deps);
+		expect(bullets).toHaveLength(1);
+		expect(bullets[0]?.id).toBe(11);
 	});
 });

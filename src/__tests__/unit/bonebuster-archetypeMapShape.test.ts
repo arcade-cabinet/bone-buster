@@ -47,7 +47,7 @@ describe("E13 step-5 — generateMap respects shape override", () => {
 		// CANONICAL_SEED_PHRASE hashes to corridor, so the implicit shape
 		// (no arg) equals the explicit corridor shape.
 		const a = generateMap(CANONICAL_SEED_PHRASE);
-		const b = generateMap(CANONICAL_SEED_PHRASE, getArchetypeMapShape("corridor"));
+		const b = generateMap(CANONICAL_SEED_PHRASE, { shape: getArchetypeMapShape("corridor") });
 		expect(a.seedPhrase).toBe(b.seedPhrase);
 		expect(a.cells.length).toBe(b.cells.length);
 		for (let y = 0; y < a.cells.length; y += 1) {
@@ -62,8 +62,8 @@ describe("E13 step-5 — generateMap respects shape override", () => {
 	});
 
 	it("arena shape produces fewer/larger rooms than corridor at the same seed", () => {
-		const corridor = generateMap("shape-42", getArchetypeMapShape("corridor"));
-		const arena = generateMap("shape-42", getArchetypeMapShape("arena"));
+		const corridor = generateMap("shape-42", { shape: getArchetypeMapShape("corridor") });
+		const arena = generateMap("shape-42", { shape: getArchetypeMapShape("arena") });
 		// Arena's roomTries (50) is lower than corridor's (90) but maxRoom
 		// is bigger (8 vs 6) — total floor area can be similar but room
 		// COUNT should differ.
@@ -82,7 +82,7 @@ describe("E13 step-5 — generateMap respects shape override", () => {
 	});
 
 	it("library shape produces small uniform rooms", () => {
-		const library = generateMap("shape-7", getArchetypeMapShape("library"));
+		const library = generateMap("shape-7", { shape: getArchetypeMapShape("library") });
 		for (const room of library.rooms) {
 			expect(room.width).toBeLessThanOrEqual(5);
 			expect(room.height).toBeLessThanOrEqual(5);
@@ -90,7 +90,7 @@ describe("E13 step-5 — generateMap respects shape override", () => {
 	});
 
 	it("sewer shape allows narrower rooms (minRoom=2)", () => {
-		const sewer = generateMap("shape-13", getArchetypeMapShape("sewer"));
+		const sewer = generateMap("shape-13", { shape: getArchetypeMapShape("sewer") });
 		for (const room of sewer.rooms) {
 			expect(room.width).toBeGreaterThanOrEqual(2);
 			expect(room.height).toBeGreaterThanOrEqual(2);
@@ -100,8 +100,8 @@ describe("E13 step-5 — generateMap respects shape override", () => {
 	});
 
 	it("is deterministic — same seed + same shape → same map", () => {
-		const a = generateMap("shape-99", getArchetypeMapShape("courtyard"));
-		const b = generateMap("shape-99", getArchetypeMapShape("courtyard"));
+		const a = generateMap("shape-99", { shape: getArchetypeMapShape("courtyard") });
+		const b = generateMap("shape-99", { shape: getArchetypeMapShape("courtyard") });
 		expect(a.rooms.length).toBe(b.rooms.length);
 		for (let i = 0; i < a.rooms.length; i += 1) {
 			expect(a.rooms[i]).toEqual(b.rooms[i]);

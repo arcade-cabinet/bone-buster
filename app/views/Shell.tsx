@@ -14,17 +14,30 @@ import {
 	stopMusic,
 } from "@audio/sfx";
 import { addBoneBusterListener, dispatch } from "@engine/events";
-import type { BoneBusterMap, PickupKind } from "@engine/mapTypes";
+import type { BoneBusterMap } from "@engine/mapTypes";
 import { createEventPrng, createFreshEventSeed, cyrb128 } from "@engine/rng";
 import { CANONICAL_SEED_PHRASE, randomSeedPhrase } from "@engine/seedPhrase";
-import { advanceAndPersistEventSeed, loadEventSeed } from "@platform/persistence/eventSeed";
+import {
+	advanceAndPersistEventSeed,
+	loadBiomePressure,
+	loadEventSeed,
+	saveBiomePressure,
+} from "@platform/persistence/eventSeed";
 import { loadSettings, saveSettings } from "@platform/persistence/settingsStore";
 import { Canvas } from "@react-three/fiber";
 import { PLAYER_MAX_HP } from "@shared/constants";
 import { computeFadePeak, FADE_COLOR_BY_KIND } from "@shared/fadeTriggers";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
+import type {
+	FadeKind,
+	FadeTrigger,
+	GameState,
+	GameStatus,
+	LevelPhase,
+	WeaponState,
+} from "@store/gameState";
 import { openRunHistory, type RunHistory } from "@store/runHistory";
-import { makeInitialRunStats, type RunStats, runStatsReducer } from "@store/runStats";
+import { makeInitialRunStats, runStatsReducer } from "@store/runStats";
 import {
 	type BoneBusterSettings,
 	DEFAULT_SETTINGS,
@@ -33,122 +46,27 @@ import {
 	type TouchControlMode,
 } from "@store/settings";
 import { ROLE, SCALE } from "@styles/tokens/index";
+import { AssetErrorBoundary, type AssetErrorReason } from "@views/AssetErrorBoundary";
+import { AssetErrorModal } from "@views/AssetErrorModal";
 import { BoneBusterHUD } from "@views/HUD";
+import { HudFrame } from "@views/HudFrame";
 import { BoneBusterLanding } from "@views/Landing";
 import { BoneBusterScene } from "@views/Scene";
-import { debugHooksEnabled, readArchetypeFromUrl, readSeedPhraseFromUrl } from "@views/urlFlags";
-import { applyArchetypeOverride } from "@world/archetype";
+import {
+	captureModeEnabled,
+	debugHooksEnabled,
+	readArchetypeFromUrl,
+	readSeedPhraseFromUrl,
+} from "@views/urlFlags";
+import { applyArchetypeOverride, archetypeForPhrase } from "@world/archetype";
+import { type BiomePressure, initialBiomePressure, pickBiome } from "@world/biomePressure";
 import { buildMap } from "@world/buildMap";
-import { pickLevelName, WELCOME_WING_NAME } from "@world/levelNames";
+import { pickLevelName } from "@world/levelNames";
+import type { PropArchetype } from "@world/scatter/propPool";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGameRef } from "../../src/scene/hooks/useGameRef";
 import { useLevelTransition } from "./hooks/useLevelTransition";
-
-export type GameStatus = "landing" | "playing" | "paused" | "dead" | "transitioning" | "won";
-
-// H8 — `phase` tracks where the player is within a single level.
-//   "out"          — heading toward the goal, normal level flow.
-//   "going_back"   — goal collected; all enemies aggro; player must
-//                    fight back to the original spawn to clear the level.
-export type LevelPhase = "out" | "going_back";
-
-// J3 — full-screen fade overlay. Each trigger renders a colored quad
-// with an opacity envelope (peak 200 ms, fade 400 ms). Distinct triggers:
-//   damage   — red, intensity scaled by damage amount (replaces D-flash)
-//   key      — green, on key pickup
-//   flash    — gray, on flashlight pickup
-//   win      — white, on level-clear
-export type FadeKind = "damage" | "key" | "flash" | "win";
-export type FadeTrigger = Readonly<{
-	id: number;
-	kind: FadeKind;
-	color: string;
-	peak: number; // 0..1 opacity peak
-}>;
-
-export type GameState = {
-	status: GameStatus;
-	hp: number;
-	maxHp: number;
-	kills: number;
-	/**
-	 * POL1 — running score across the current level. Earned from
-	 * COV12 treasure-loot pickups (+50 each) and reset on level
-	 * advance / death. Surfaced on the HUD next to KILLS.
-	 */
-	score: number;
-	totalEnemies: number;
-	hasKey: boolean;
-	// J1 — player owns a flashlight after picking up class 7. Without it
-	// the level reads as dark and only the muzzle flash + ambient hue
-	// give the player anything to navigate by.
-	hasFlashlight: boolean;
-	// PB5 step-2 — EMF reader ownership flag. When true, the HUD shows
-	// the EMF chip with a 1-5 stepwise readout of nearest-enemy
-	// proximity. Off by default; flips true on pickup.
-	hasEmfReader: boolean;
-	// PC2 — Spirit box ownership flag. When true, the SpiritBoxBubble
-	// HUD overlay listens for the `spiritBoxResponse` event and renders
-	// the deterministic phoneme for ~1s. Off by default; flips true on
-	// pickup.
-	hasSpiritBox: boolean;
-	// PC3 — UV flashlight ownership flag. When true, BoneBusterScene
-	// mounts the UvFlashlight component (purple SpotLight) and EnemyMesh
-	// runs the per-frame UV-cone reveal for uvHidden enemies. Off by
-	// default; flips true on pickup.
-	hasUvFlashlight: boolean;
-	// PC4 — Crucifix inventory counter. Increments on pickup, decrements
-	// when the player drops one via key `9`. Each placed crucifix
-	// suppresses enemy aggression in a fixed radius for
-	// CRUCIFIX_LIFETIME_MS. Resets to 0 on level transition.
-	crucifixes: number;
-	weapon: WeaponId;
-	ammo: Record<WeaponId, number>;
-	ownedWeapons: Record<WeaponId, boolean>;
-	damageFlashAt: number;
-	run: RunStats;
-	phase: LevelPhase;
-	/**
-	 * POL37 — going-back countdown deadline. Set on `out → going_back`
-	 * transition to `performance.now() + GOING_BACK_BUDGET_MS`; cleared
-	 * (null) on `reachSpawn` and on every fresh level/run.
-	 *
-	 * When the deadline elapses without reaching spawn, the level dies
-	 * via the existing hp→0 path so engine.ts's death handling carries
-	 * the rest (no new state branch). HUD surfaces a monospace red
-	 * countdown under GoingBackOverlay's "RETURN TO SPAWN" card.
-	 */
-	goingBackDeadlineMs: number | null;
-};
-
-// CR-H1scene step-d — the lifecycle constants live in @views/gameConstants
-// (a leaf module) to break the value-import cycle with gameReducer +
-// useLevelTransition; Shell imports them like every other consumer (see the
-// import block above).
-
-export type WeaponState = {
-	weapon: WeaponId;
-	ammo: Record<WeaponId, number>;
-};
-
-export type GameRef = {
-	onHit(damage: number): void;
-	onKill(): void;
-	onPickupKey(): void;
-	onWin(): void;
-	onReachSpawn(): void;
-	onSpendAmmo(weapon: WeaponId, amount: number): void;
-	onCollectPickup(kind: PickupKind): void;
-	/**
-	 * PC4 — Consume one crucifix from inventory. Returns `true` if
-	 * the inventory had ≥1 (the Scene proceeds with the placement)
-	 * and `false` if the inventory was empty (the Scene no-ops the
-	 * keypress so a player slapping `9` with zero inventory doesn't
-	 * accidentally place a phantom crucifix at the origin).
-	 */
-	onConsumeCrucifix(): boolean;
-};
 
 // BC5 — touch-mode auto-detection. Previously a single `(pointer:
 // coarse)` query, which mis-classified the Pixel Fold's inner display
@@ -204,6 +122,16 @@ const baseOwnedWeapons = (): Record<WeaponId, boolean> => ({
 	flamethrower: false,
 });
 
+// STRUCT4 — every weapon starts at upgrade tier 0 (base spec). Upgrade pickups
+// found in the descent bump the targeted weapon's tier.
+const baseWeaponTiers = (): Record<WeaponId, number> => ({
+	melee: 0,
+	pistol: 0,
+	chaingun: 0,
+	shotgun: 0,
+	flamethrower: 0,
+});
+
 // URL-flag parsing lives in @views/urlFlags (CR-F6 — extracted so the
 // app's only external-input boundary is unit-testable). This composes the
 // base seed with the archetype override.
@@ -226,6 +154,7 @@ declare global {
 			killAllEnemies: () => void;
 			killBoss: () => void;
 			selectWeapon: (weapon: WeaponId) => void;
+			upgradeWeapon: (weapon: WeaponId) => void;
 			collectKey: () => void;
 			collectAllPickups: () => void;
 			triggerWin: () => void;
@@ -283,14 +212,67 @@ export function BoneBusterShell() {
 			eventSeedRef.current = next;
 		});
 	}, []);
-	// INF3 — when `?bonebusterArchetype` is present, switch the level to
-	// procedural so the seed rewrite (and thus the archetype pick)
-	// actually drives map generation. Without this override the default
-	// `level: 1` would load the baked refLevel 0 (corridor) and the
-	// archetype flag would silently no-op.
-	const [settings, setSettings] = useState<BoneBusterSettings>(() =>
-		readArchetypeFromUrl() ? { ...DEFAULT_SETTINGS, level: "procedural" } : DEFAULT_SETTINGS,
-	);
+	const [settings, setSettings] = useState<BoneBusterSettings>(DEFAULT_SETTINGS);
+	// STRUCT1/STRUCT5 — the CURRENT biome skin (pressure-picked) + the
+	// device-persistent biome-pressure map. The biome is the archetype that
+	// "wears" the depth-keyed geometry; it's chosen by `pickBiome` off the
+	// event PRNG at New Game and again on each level clear (the transition
+	// hook). Seeded initially from the phrase's archetype so the canonical
+	// phrase still reads as corridor at depth 0 (pins the canonical baseline
+	// before any roll). `pressure` advances with each pick + persists.
+	const [biome, setBiome] = useState<PropArchetype>(() => archetypeForPhrase(seedPhrase));
+	// STRUCT1 — the current descent DEPTH (= biomes cleared so far). Drives the
+	// per-depth geometry fork. Kept in lockstep with `run.runLevelsCleared`:
+	// New Game resets it to 0, the transition hook bumps it on each clear. It's
+	// a separate state (not read off `state.run`) so the map useMemo can sit
+	// above the GameState declaration without an ordering cycle.
+	const [depth, setDepth] = useState(0);
+	const pressureRef = useRef<BiomePressure>(initialBiomePressure());
+	// STRUCT5 — hydrate the persisted biome pressure once on mount (device
+	// state, not game state). The current biome stays phrase-seeded until the
+	// next New Game / transition pick consumes the pressure.
+	// STRUCT5 — true once a New-Game reset has taken ownership of the pressure
+	// map, so a late-resolving hydrate can't clobber a fresh run (mirrors
+	// eventSeedOwnedRef — review STRUCT1b#2).
+	const pressureOwnedRef = useRef(false);
+	useEffect(() => {
+		let cancelled = false;
+		void loadBiomePressure().then((p) => {
+			if (!cancelled && !pressureOwnedRef.current) pressureRef.current = p;
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+	// STRUCT5 — pressure-pick the next biome off the event PRNG, advance +
+	// persist the pressure map, and set it as the current biome. Used both at
+	// New Game (kicks the descent off a fresh pressure map) and on each level
+	// clear (the transition hook). The pick uses the device event seed — biome
+	// order is per-run variance, NOT map identity, so it never touches the phrase.
+	const advanceBiome = useCallback(() => {
+		// Review STRUCT1b#1 — ADVANCE the buried event seed each pick so every
+		// transition draws a FRESH stream position. Rebuilding createEventPrng
+		// from an unchanged seed returned the identical roll every level, making
+		// the biome order a deterministic function of pressure alone (the "never
+		// predictable" promise was broken). Advancing + persisting the seed (like
+		// rollSeedPhrase) keeps the variance AND survives reloads.
+		const seed = eventSeedRef.current ?? createFreshEventSeed();
+		const rng = createEventPrng(seed);
+		const { biome: next, pressure } = pickBiome(pressureRef.current, rng);
+		// ADVANCE + persist the buried event seed (same pattern as rollSeedPhrase)
+		// so the NEXT pick draws a fresh stream position — without this, every
+		// transition rebuilt createEventPrng from the unchanged seed and got the
+		// identical roll, making biome order deterministic-by-pressure.
+		eventSeedOwnedRef.current = true;
+		void advanceAndPersistEventSeed(seed).then((advanced) => {
+			eventSeedRef.current = advanced;
+		});
+		pressureRef.current = pressure;
+		pressureOwnedRef.current = true;
+		setBiome(next);
+		void saveBiomePressure(pressure);
+		return next;
+	}, []);
 	// STO1a — track whether the async load-from-Preferences pass has
 	// resolved. Used to gate the save-on-change effect so the bootstrap
 	// load doesn't trigger a redundant write of DEFAULT_SETTINGS back
@@ -306,12 +288,9 @@ export function BoneBusterShell() {
 		preloadTier1Critical();
 	}, []);
 
-	// STO1a — async-hydrate persisted settings on mount. The override
-	// for `?bonebusterArchetype` still wins (URL flag → procedural) so
-	// the test/debug harness can short-circuit the persisted value
-	// without first clearing storage. If no blob exists, the loaded
-	// value equals DEFAULT_SETTINGS and the setSettings call is a
-	// no-op against initial state — no extra render.
+	// STO1a — async-hydrate persisted settings on mount. If no blob
+	// exists, the loaded value equals DEFAULT_SETTINGS and the
+	// setSettings call is a no-op against initial state — no extra render.
 	useEffect(() => {
 		let cancelled = false;
 		void (async () => {
@@ -324,8 +303,7 @@ export function BoneBusterShell() {
 			// during the async window (e.g. `__bonebuster.setDifficulty`
 			// called from a playtest script BEFORE this load resolved).
 			if (persisted !== null) {
-				const archetypeOverride = readArchetypeFromUrl();
-				setSettings(archetypeOverride ? { ...persisted, level: "procedural" } : persisted);
+				setSettings(persisted);
 			}
 			settingsHydratedRef.current = true;
 		})();
@@ -342,22 +320,25 @@ export function BoneBusterShell() {
 		if (!settingsHydratedRef.current) return;
 		void saveSettings(settings);
 	}, [settings]);
+	// VIS-AUTO — resolved once; the e2e harness needs a readable drawing buffer.
+	// useState initializer (not useMemo) so it's evaluated exactly once on mount
+	// and never re-reads window during the session.
+	const [preserveDrawingBuffer] = useState(captureModeEnabled);
+	// ERR1 — asset-load error surfaced by the AssetErrorBoundary around the
+	// Canvas. Discriminated by null (ok) vs a reason object (error → modal).
+	const [assetError, setAssetError] = useState<AssetErrorReason | null>(null);
 	const map: BoneBusterMap = useMemo(
-		// I4 — difficulty plumbed through so ManyEnemies (class 9) expands
-		// per the ref formula. Procedural maps don't read it.
-		() => buildMap(seedPhrase, settings.level, settings.difficulty),
-		[seedPhrase, settings.level, settings.difficulty],
+		// STRUCT1 — geometry forks off (phrase, depth); the pressure-picked
+		// biome drives the archetype skin + per-biome shape over it.
+		() => buildMap(seedPhrase, depth, biome),
+		[seedPhrase, depth, biome],
 	);
-	// D8 — alliterative level name. refLevel(0) tutorial (LEVEL_CHOICE 1)
-	// is fixed at "Welcome Wing"; every other map rolls from its
-	// archetype's pool via the NAME-tagged PRNG so the name is stable
-	// across reloads of the same seed.
+	// D8 — alliterative level name. Rolls from the current biome's pool via
+	// the NAME-tagged PRNG (seed-stable). The depth mixes into the seed so
+	// successive levels of the same descent get distinct names.
 	const levelName = useMemo(
-		() =>
-			settings.level === 1
-				? WELCOME_WING_NAME
-				: pickLevelName(map.archetype, cyrb128(seedPhrase)[3]),
-		[settings.level, map.archetype, seedPhrase],
+		() => pickLevelName(map.archetype, cyrb128(seedPhrase)[3] ^ depth),
+		[map.archetype, seedPhrase, depth],
 	);
 
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
@@ -379,6 +360,7 @@ export function BoneBusterShell() {
 		weapon: "pistol",
 		ammo: baseAmmo(),
 		ownedWeapons: baseOwnedWeapons(),
+		weaponTiers: baseWeaponTiers(),
 		damageFlashAt: 0,
 		run: makeInitialRunStats(0),
 		phase: "out",
@@ -447,7 +429,6 @@ export function BoneBusterShell() {
 		settings,
 		tuning,
 		seedPhrase,
-		level: settings.level,
 	});
 
 	const updateSettings = useCallback((patch: Partial<BoneBusterSettings>) => {
@@ -455,23 +436,47 @@ export function BoneBusterShell() {
 	}, []);
 
 	const onStartGame = useCallback(async () => {
+		// ERR1 — clear any stale asset error from a prior run so a fresh start
+		// doesn't ghost-modal over a level that hasn't tried to load yet.
+		setAssetError(null);
+		// STRUCT1/STRUCT5 — a New Game restarts the descent at depth 0 and
+		// pressure-picks the opening biome off a FRESH pressure map (every
+		// biome equally stale). This is the only place the descent resets.
+		setDepth(0);
+		pressureRef.current = initialBiomePressure();
+		pressureOwnedRef.current = true; // a late hydrate must not clobber the fresh run
+		advanceBiome();
 		if (settings.soundEnabled) {
 			// A5 — SFX-critical (weapons, ambient, hit/death stings) blocks
 			// the start sequence; music synth allocation deferred to
 			// `ensureMusic()` below so time-to-first-interactive on
 			// mobile drops by ~200-400ms.
-			await ensureSfxCritical();
-			startAmbient();
-			// Kick off music synth allocation in parallel with the state
-			// transition. We don't await — the transition flips to
-			// playing immediately and music starts as soon as its
-			// synths land.
-			void ensureMusic().then(() => {
-				setMusicMood("exploration");
-				// POL33 — bus-gain shift per chosen difficulty.
-				setMusicIntensityForDifficulty(settings.difficulty);
-				startMusic();
-			});
+			// M-5 — audio init must NEVER block the game from starting. A
+			// failed AudioContext unlock (autoplay policy, no device, a
+			// throwing Howler init) would otherwise skip the setState below
+			// and leave the player stuck on landing. Swallow + dev-log; the
+			// run starts silent rather than not at all.
+			// no-visual-impact: wraps audio init in try/catch so a failed unlock cannot block the playing-state transition; rendering is unchanged
+			try {
+				await ensureSfxCritical();
+				startAmbient();
+				// Kick off music synth allocation in parallel with the state
+				// transition. We don't await — the transition flips to
+				// playing immediately and music starts as soon as its
+				// synths land.
+				void ensureMusic()
+					.then(() => {
+						setMusicMood("exploration");
+						// POL33 — bus-gain shift per chosen difficulty.
+						setMusicIntensityForDifficulty(settings.difficulty);
+						startMusic();
+					})
+					.catch((err) => {
+						if (import.meta.env.DEV) console.warn("[bonebuster] music init failed:", err);
+					});
+			} catch (err) {
+				if (import.meta.env.DEV) console.warn("[bonebuster] audio init failed:", err);
+			}
 		}
 		// Reset run state — preserves chosen settings + map seed.
 		setState({
@@ -490,17 +495,20 @@ export function BoneBusterShell() {
 			weapon: "pistol",
 			ammo: baseAmmo(),
 			ownedWeapons: baseOwnedWeapons(),
+			weaponTiers: baseWeaponTiers(),
 			damageFlashAt: 0,
 			run: makeInitialRunStats(Date.now()),
 			phase: "out",
 			goingBackDeadlineMs: null,
 		});
-	}, [settings.soundEnabled, settings.difficulty, maxHp, map.enemySpawns.length]);
+	}, [settings.soundEnabled, settings.difficulty, maxHp, map.enemySpawns.length, advanceBiome]);
 
 	const onReturnToLanding = useCallback(() => {
 		stopAmbient();
 		stopMusic();
 		document.exitPointerLock?.();
+		// ERR1 — drop any asset error so the modal doesn't linger on the menu.
+		setAssetError(null);
 		setState((prev) => {
 			// E3 — if the run is mid-flight (paused/playing), preserve the seed
 			// so we can resume the same map. Only re-roll when the run ended
@@ -540,11 +548,9 @@ export function BoneBusterShell() {
 			setRunId((id) => id + 1);
 		}
 	}, [state.status]);
-	const hasPausedRun =
-		state.status === "landing" &&
-		state.run.runStartAt > 0 &&
-		state.hp > 0 &&
-		state.run.runLevelsCleared < 5;
+	// STRUCT1 (endless) — a run is resumable whenever it's mid-flight and the
+	// player is alive. There's no campaign length cap to bound it against.
+	const hasPausedRun = state.status === "landing" && state.run.runStartAt > 0 && state.hp > 0;
 
 	const onQuit = useCallback(() => {
 		stopAmbient();
@@ -704,7 +710,8 @@ export function BoneBusterShell() {
 						totalKills: state.run.runTotalKills,
 						totalDamageTaken: state.run.runTotalDamageTaken,
 						totalSecrets: state.run.runTotalSecrets,
-						level: settings.level,
+						// STRUCT1 — the descent identity is the seed phrase now.
+						levelSet: seedPhrase,
 						outcome: state.status === "won" ? "won" : "died",
 					},
 					Date.now(),
@@ -713,10 +720,15 @@ export function BoneBusterShell() {
 				// run-history is a nice-to-have; never block gameplay on it
 			}
 		})();
-	}, [state.status, state.run, settings.level]);
+	}, [state.status, state.run, seedPhrase]);
 
-	// B1/B4 — level-transition lifecycle (hold-for-fade → advance/re-roll →
-	// reset the per-level slice → "playing"/"won") lives in useLevelTransition.
+	// STRUCT1 — bump the descent depth (the geometry forks per depth). Kept in
+	// lockstep with run.runLevelsCleared, which the reducer already incremented
+	// on the clear that triggered this transition.
+	const advanceDepth = useCallback(() => setDepth((d) => d + 1), []);
+
+	// STRUCT1 — level-transition lifecycle (hold-for-fade → advance depth +
+	// biome → reset the per-level slice → "playing") lives in useLevelTransition.
 	// `freshLevelSlice` is the HP/ammo/key/tools reset merged over prev; run
 	// stats are preserved by NOT including them here.
 	const freshLevelSlice = useCallback(
@@ -733,17 +745,18 @@ export function BoneBusterShell() {
 			weapon: "pistol",
 			ammo: baseAmmo(),
 			ownedWeapons: baseOwnedWeapons(),
+			// STRUCT4 — tiers reset with ownership (weapons are re-acquired each
+			// level in this design, so a tier can't outlive the weapon).
+			weaponTiers: baseWeaponTiers(),
 			damageFlashAt: 0,
 		}),
 		[maxHp],
 	);
 	useLevelTransition({
 		status: state.status,
-		runLevelsCleared: state.run.runLevelsCleared,
-		level: settings.level,
 		setState,
-		setSettings,
-		rollSeedPhrase,
+		advanceDepth,
+		advanceBiome,
 		freshLevelSlice,
 	});
 
@@ -774,6 +787,7 @@ export function BoneBusterShell() {
 				return {
 					...s,
 					mapKind: m.kind,
+					archetype: m.archetype,
 					playerSpawn: m.playerSpawn,
 					keyPosition: m.keyPosition,
 					exitPosition: m.exitPosition,
@@ -813,6 +827,9 @@ export function BoneBusterShell() {
 					},
 				}));
 			},
+			upgradeWeapon: (weapon: WeaponId) => {
+				gameRef.current.onUpgradeWeapon(weapon);
+			},
 			collectKey: () => {
 				gameRef.current.onPickupKey();
 			},
@@ -823,8 +840,8 @@ export function BoneBusterShell() {
 				gameRef.current.onWin();
 			},
 			// PT1B — short-circuit to the win state so playtest/e2e can verify
-			// the MissionCompleteCeremony renders without grinding through
-			// all RUN_LENGTH levels (which has its own engine timing quirks).
+			// the MissionCompleteCeremony renders without grinding through a long
+			// descent (the endless run never naturally reaches "won").
 			forceMissionComplete: () => {
 				setState((prev) => ({ ...prev, status: "won" }));
 			},
@@ -972,40 +989,53 @@ export function BoneBusterShell() {
 							exit={{ opacity: 0 }}
 							transition={{ duration: 0.4 }}
 						>
-							<Canvas
-								camera={{
-									fov: 75,
-									near: 0.1,
-									far: 200,
-									position: [0, 1.7, 0],
-								}}
-								gl={{ antialias: false, powerPreference: "low-power" }}
-								style={{ width: "100%", height: "100%", display: "block" }}
-								dpr={[1, 1.5]}
-								// J4 — enable shadow mapping. The flashlight + sun cast;
-								// floors + walls + enemies receive. Budget: PCF soft
-								// shadows at 1024² to keep mobile happy.
-								shadows="soft"
-							>
-								{/* Re-key on map identity so enemies/pickups/bullets/lastWonAt
-								    reset between levels. Without this, Section B level
-								    transitions silently inherit dead state from level 1. */}
-								<BoneBusterScene
-									key={`${settings.level}-${seedPhrase}-${map.seedPhrase}`}
-									map={map}
-									active={state.status === "playing"}
-									hasKey={state.hasKey}
-									gameRef={gameRef}
-									weapon={state.weapon}
-									ammoRef={weaponStateRef}
-									settings={settings}
-									phase={state.phase}
-									hasFlashlight={state.hasFlashlight}
-									hasEmfReader={state.hasEmfReader}
-									hasSpiritBox={state.hasSpiritBox}
-									hasUvFlashlight={state.hasUvFlashlight}
-								/>
-							</Canvas>
+							{/* ERR1 — boundary around the Canvas: a failed GLB/texture/
+							    wasm load throws out of the scene Suspense; without this
+							    React would unmount to a silent blank canvas. The
+							    boundary emits bonebuster:assetError + lifts the reason
+							    so the modal below renders. */}
+							<AssetErrorBoundary onError={setAssetError}>
+								<Canvas
+									camera={{
+										fov: 75,
+										near: 0.1,
+										far: 200,
+										position: [0, 1.7, 0],
+									}}
+									gl={{ antialias: false, powerPreference: "low-power", preserveDrawingBuffer }}
+									style={{ width: "100%", height: "100%", display: "block" }}
+									dpr={[1, 1.5]}
+									// J4 — enable shadow mapping. The flashlight + sun cast;
+									// floors + walls + enemies receive. Budget: PCF soft
+									// shadows at 1024² to keep mobile happy.
+									shadows="soft"
+								>
+									{/* Re-key on map identity so enemies/pickups/bullets/lastWonAt
+									    reset between levels. Without this, Section B level
+									    transitions silently inherit dead state from level 1. */}
+									<BoneBusterScene
+										key={`${depth}-${biome}-${seedPhrase}-${map.seedPhrase}`}
+										map={map}
+										active={state.status === "playing"}
+										hasKey={state.hasKey}
+										gameRef={gameRef}
+										weapon={state.weapon}
+										weaponTier={state.weaponTiers[state.weapon]}
+										ammoRef={weaponStateRef}
+										settings={settings}
+										phase={state.phase}
+										hasFlashlight={state.hasFlashlight}
+										hasEmfReader={state.hasEmfReader}
+										hasSpiritBox={state.hasSpiritBox}
+										hasUvFlashlight={state.hasUvFlashlight}
+									/>
+								</Canvas>
+							</AssetErrorBoundary>
+							{/* HUD1 — frame the scene (chrome cockpit on large screens,
+							    subtle vignette on phones; responsive). Sits above the
+							    Canvas, below the HUD chips. */}
+							<HudFrame />
+							{assetError && <AssetErrorModal reason={assetError} />}
 							<BoneBusterHUD
 								state={state}
 								touchMode={touchMode}

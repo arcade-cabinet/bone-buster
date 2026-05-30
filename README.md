@@ -1,6 +1,6 @@
 ---
 title: Bone Buster
-updated: 2026-05-15
+updated: 2026-05-29
 status: current
 domain: onboarding
 ---
@@ -10,7 +10,7 @@ domain: onboarding
 > **They had it coming.** A procedural arcade FPS in the PSX-jank
 > tradition. Pistol-and-pumper combat against rattling skeletons,
 > phasing wraiths, and a roster of 24 distinct enemy kinds across
-> 5 procedurally-mixed archetypes (corridor / arena / courtyard /
+> 5 procedurally-generated biomes (corridor / arena / courtyard /
 > sewer / library). Built on Vite + react-three-fiber +
 > Capacitor; ships to web, Android, and iOS from one codebase.
 
@@ -24,23 +24,27 @@ pnpm install
 pnpm dev      # serves at http://localhost:5191
 ```
 
-Add `?debug` to the URL to expose `window.__bonebuster` with
-`start()`, `teleport(x, y, yaw?)`, `fire()`, `killAllEnemies()`,
-`collectKey()`, `collectAllPickups()`, `triggerWin()`,
-`getState()`. The e2e tests drive the game through this
-contract — pointer-lock + canvas-keyed input is hostile to
-scripted automation otherwise.
+Add `?bonebusterDebug` to the URL to expose `window.__bonebuster` with
+`getState()`, `start()`, `teleport(x, y, yaw?)`, `fire()`,
+`killAllEnemies()`, `killBoss()`, `selectWeapon(id)`, `collectKey()`,
+`collectAllPickups()`, `triggerWin()`, `forceMissionComplete()`,
+`setDifficulty(d)`, and `getSettings()`. The e2e tests drive the game
+through this contract — pointer-lock + canvas-keyed input is hostile to
+scripted automation otherwise. The same flag enables WebGL
+`preserveDrawingBuffer` (capture mode) so the visual harness can read the
+painted canvas back.
 
-Other URL flags: `?seed=N` pins the run seed for deterministic
-dev/repro sessions; `?archetype=<name>` forces the seed to
-land on a chosen archetype (`corridor` / `arena` / `courtyard`
-/ `sewer` / `library`).
+Other URL flags:
 
-> Note: the URL-flag names above (`?bonebusterDebug`,
-> `?bonebusterSeed`, `?bonebusterArchetype`, `window.__bonebuster`)
-> are the post-rebrand contract. The R8 source sweep flipped the
-> underlying implementation to match; legacy `?objexoom*` aliases are
-> retained as an R8b compatibility shim.
+- `?bonebusterSeed=<phrase>` pins the map seed PHRASE — the
+  adjective-adjective-noun map identity (e.g. `marrowed-vile-sepulcher`).
+  A legacy numeric value is accepted and treated as a phrase string.
+- `?bonebusterArchetype=<name>` forces the phrase to hash to a chosen
+  biome (`corridor` / `arena` / `courtyard` / `sewer` / `library`).
+
+> Legacy `?objexoom*` aliases (`?objexoomDebug` / `?objexoomSeed` /
+> `?objexoomArchetype`) are retained as an R8b compatibility shim; the
+> `bonebuster*` names are canonical and win when both are present.
 
 ## Scripts
 
@@ -140,7 +144,7 @@ When docs disagree, the order is:
 | Flair font | Tilt Prism (animated phase transitions only) |
 | Palette | Bone (warm-cream bone tones + buster-orange action + dried-blood accent on charcoal-violet) |
 | Enemies | 24 first-class kinds (rattler, phaser, bouncer, plaguebeak, jester, reverend, stagged, grub, signal, heap, heap2, gorehead, bighoss, stomper, butcher, bloodphaser, devil, dolly, gawker, oneye, goliath, swiney, mrZ, lupin) |
-| Archetypes | corridor, arena, courtyard, sewer, library |
+| Biomes | corridor, arena, courtyard, sewer, library (OVERHAUL2: each gets its own generator on a shared maze core) |
 | Asset pipeline | references/ (local FBX/zip source) → references/_extracted/ (converted GLBs) → public/assets/models/ (shipped) |
 
 ## License + credits

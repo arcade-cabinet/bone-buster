@@ -25,8 +25,6 @@ import {
 	DEFAULT_SETTINGS,
 	DIFFICULTY_LABEL,
 	type Difficulty,
-	LEVEL_LABEL,
-	type LevelChoice,
 	TOUCH_CONTROL_LABEL,
 	type TouchControlMode,
 } from "@store/settings";
@@ -40,7 +38,6 @@ const SETTINGS_KEY = "bonebuster.settings";
 const LEGACY_SETTINGS_KEY = "objexoom.settings";
 
 const DIFFICULTY_KEYS = Object.keys(DIFFICULTY_LABEL) as readonly Difficulty[];
-const LEVEL_KEYS = Object.keys(LEVEL_LABEL) as readonly string[];
 const TOUCH_CONTROL_KEYS = Object.keys(TOUCH_CONTROL_LABEL) as readonly TouchControlMode[];
 
 function isDifficulty(v: unknown): v is Difficulty {
@@ -49,25 +46,6 @@ function isDifficulty(v: unknown): v is Difficulty {
 
 function isTouchControlMode(v: unknown): v is TouchControlMode {
 	return typeof v === "string" && (TOUCH_CONTROL_KEYS as readonly string[]).includes(v);
-}
-
-function isLevelChoice(v: unknown): v is LevelChoice {
-	if (v === "procedural") return true;
-	if (typeof v === "number" && [1, 2, 3, 4, 5].includes(v)) return true;
-	// LEVEL_KEYS holds the stringified discriminator set in case a blob
-	// round-tripped through JSON where numeric keys can come back as
-	// strings — coerce defensively.
-	return typeof v === "string" && LEVEL_KEYS.includes(v);
-}
-
-function coerceLevel(v: unknown): LevelChoice {
-	if (v === "procedural") return "procedural";
-	if (typeof v === "number" && [1, 2, 3, 4, 5].includes(v)) return v as LevelChoice;
-	if (typeof v === "string") {
-		const n = Number(v);
-		if ([1, 2, 3, 4, 5].includes(n)) return n as LevelChoice;
-	}
-	return DEFAULT_SETTINGS.level;
 }
 
 function isFiniteNumber(v: unknown): v is number {
@@ -86,7 +64,6 @@ export function validateSettings(raw: unknown): BoneBusterSettings {
 	if (raw === null || typeof raw !== "object") return DEFAULT_SETTINGS;
 	const r = raw as Record<string, unknown>;
 	const difficulty = isDifficulty(r.difficulty) ? r.difficulty : DEFAULT_SETTINGS.difficulty;
-	const level = isLevelChoice(r.level) ? coerceLevel(r.level) : DEFAULT_SETTINGS.level;
 	const soundEnabled =
 		typeof r.soundEnabled === "boolean" ? r.soundEnabled : DEFAULT_SETTINGS.soundEnabled;
 	const mouseSensitivity = isFiniteNumber(r.mouseSensitivity)
@@ -100,7 +77,6 @@ export function validateSettings(raw: unknown): BoneBusterSettings {
 		: DEFAULT_SETTINGS.touchControls;
 	return {
 		difficulty,
-		level,
 		soundEnabled,
 		mouseSensitivity,
 		touchLookSensitivity,

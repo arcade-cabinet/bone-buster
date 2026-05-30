@@ -11,7 +11,7 @@
 // passes (assertions still hold) or fails (assertions need re-baselining).
 
 import { computeFadePeak, FADE_COLOR_BY_KIND, FADE_PEAK_BY_KIND } from "@shared/fadeTriggers";
-import type { FadeKind } from "@views/Shell";
+import type { FadeKind } from "@store/gameState";
 import { describe, expect, it } from "vitest";
 
 describe("bonebuster J9 — fade trigger derivations", () => {

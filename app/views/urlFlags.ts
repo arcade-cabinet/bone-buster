@@ -56,6 +56,27 @@ export function hasDebugFlagInHref(href: string): boolean {
 	}
 }
 
+/**
+ * CI-3 — whether `?bonebusterNoShadows` is set. The mobile-perf A/B reloads the
+ * canonical scene twice (shadows on vs off) and compares fps to validate the
+ * PERF3 shadow cost; a URL flag is a clean mount-time toggle (shadows are a
+ * mount-time renderer concern, not a per-frame one) that needs no stateful
+ * debug hook. Pure form.
+ */
+export function noShadowsRequestedInHref(href: string): boolean {
+	try {
+		return new URL(href).searchParams.has("bonebusterNoShadows");
+	} catch {
+		return false;
+	}
+}
+
+/** Window-coupled wrapper for {@link noShadowsRequestedInHref}. */
+export function noShadowsRequested(): boolean {
+	if (typeof window === "undefined") return false;
+	return noShadowsRequestedInHref(window.location.href);
+}
+
 // --- window-coupled wrappers (the only bits that read global location) ---
 
 /** Base seed from the live URL, falling back to a wall-clock seed. */
@@ -77,15 +98,31 @@ export function readArchetypeFromUrl(): string | null {
  * null so the caller mints a phrase (SEED3: from the event PRNG / New Game
  * modal; for now a deterministic default keeps the harness stable).
  */
-export function readSeedPhraseFromUrl(): string | null {
-	if (typeof window === "undefined") return null;
+/** Longest accepted seed PHRASE from a URL. */
+export const MAX_SEED_PHRASE_LENGTH = 200;
+
+/**
+ * Pure form — parse the seed PHRASE from an href, or null if absent/empty.
+ * M-6/SEC-1: a phrase longer than {@link MAX_SEED_PHRASE_LENGTH} is rejected
+ * (null) rather than truncated — a multi-kilobyte `?bonebusterSeed=` is hostile
+ * input (it would flow into cyrb128 + every `forkStream` tag), and the real seed
+ * vocabulary is three short words. A legitimate phrase is well under the cap.
+ */
+export function parseSeedPhraseFromHref(href: string): string | null {
 	try {
-		const url = new URL(window.location.href);
+		const url = new URL(href);
 		const raw = url.searchParams.get("bonebusterSeed") ?? url.searchParams.get("objexoomSeed");
-		return raw && raw.length > 0 ? raw : null;
+		if (!raw || raw.length === 0) return null;
+		if (raw.length > MAX_SEED_PHRASE_LENGTH) return null;
+		return raw;
 	} catch {
 		return null;
 	}
+}
+
+export function readSeedPhraseFromUrl(): string | null {
+	if (typeof window === "undefined") return null;
+	return parseSeedPhraseFromHref(window.location.href);
 }
 
 /**
@@ -96,5 +133,20 @@ export function readSeedPhraseFromUrl(): string | null {
 export function debugHooksEnabled(): boolean {
 	if (typeof window === "undefined") return false;
 	if (process.env.NODE_ENV === "production") return false;
+	return hasDebugFlagInHref(window.location.href);
+}
+
+/**
+ * VIS-AUTO — capture mode. When the debug flag is present we enable the WebGL
+ * `preserveDrawingBuffer` so the e2e harness can read the painted canvas back
+ * (via `drawImage(canvas)` for the scene-ready luminance poll, and so CDP
+ * captures are frame-stable). Unlike `debugHooksEnabled`, this is NOT gated on
+ * NODE_ENV — the post-deploy Pages smoke test runs the PRODUCTION build with
+ * `?bonebusterDebug` and still needs a readable buffer. `preserveDrawingBuffer`
+ * is not a cheat surface, so exposing it on the flagged URL is safe; it carries
+ * a small per-frame cost, hence it stays OFF for normal play (no flag).
+ */
+export function captureModeEnabled(): boolean {
+	if (typeof window === "undefined") return false;
 	return hasDebugFlagInHref(window.location.href);
 }

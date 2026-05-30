@@ -9,8 +9,8 @@
  * assertions read against the token-resolved string at import time.
  */
 
+import type { FadeKind } from "@store/gameState";
 import { ROLE, SCALE } from "@styles/tokens/index";
-import type { FadeKind } from "@views/Shell";
 
 export const FADE_COLOR_BY_KIND: Readonly<Record<FadeKind, string>> = {
 	damage: ROLE.actionDamage,

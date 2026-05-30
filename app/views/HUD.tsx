@@ -1,5 +1,7 @@
 import { addBoneBusterListener, dispatch } from "@engine/events";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
+import type { GameState } from "@store/gameState";
+import { prestigeTier } from "@store/runStats";
 import type { Difficulty } from "@store/settings";
 import {
 	BONE_BUSTER_PALETTE,
@@ -11,7 +13,7 @@ import {
 	TYPE,
 } from "@styles/tokens/index";
 import { HUDOverlays } from "@views/hudOverlays/HUDOverlays";
-import type { GameState } from "@views/Shell";
+import { RunReadout } from "@views/hudOverlays/RunReadout";
 import { motion } from "framer-motion";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -147,44 +149,11 @@ export function BoneBusterHUD({
 				>
 					{state.kills} / {state.totalEnemies}
 				</motion.div>
-				{state.score > 0 && (
-					<motion.div
-						data-testid="bonebuster-score"
-						style={{
-							marginTop: 4,
-							fontFamily: FONT_FAMILY.display,
-							fontSize: "var(--obx-hud-fs-readout, 14px)",
-							fontWeight: FONT_WEIGHT.regular,
-							letterSpacing: LETTER_SPACING.display,
-							color: ROLE.actionKey,
-						}}
-						key={state.score}
-						initial={{ scale: 1.4 }}
-						animate={{ scale: 1 }}
-						transition={{ type: "spring", stiffness: 320, damping: 18 }}
-					>
-						SCORE {state.score}
-					</motion.div>
-				)}
-				{state.run.runTotalSecrets > 0 && (
-					<motion.div
-						data-testid="bonebuster-secrets"
-						style={{
-							marginTop: 4,
-							fontFamily: FONT_FAMILY.display,
-							fontSize: "var(--obx-hud-fs-readout, 14px)",
-							fontWeight: FONT_WEIGHT.regular,
-							letterSpacing: LETTER_SPACING.display,
-							color: ROLE.actionKey,
-						}}
-						key={state.run.runTotalSecrets}
-						initial={{ scale: 1.4 }}
-						animate={{ scale: 1 }}
-						transition={{ type: "spring", stiffness: 320, damping: 18 }}
-					>
-						SECRETS {state.run.runTotalSecrets}
-					</motion.div>
-				)}
+				<RunReadout
+					score={state.score}
+					secrets={state.run.runTotalSecrets}
+					levelsCleared={state.run.runLevelsCleared}
+				/>
 				<div
 					data-testid="bonebuster-key"
 					style={{
@@ -214,15 +183,21 @@ export function BoneBusterHUD({
 					pointerEvents: touchMode ? "auto" : "none",
 				}}
 			>
-				{WEAPON_ORDER.map((id) => {
-					const owned = state.ownedWeapons[id];
+				{/* HUD2 — own-only weapon display (DOOM model). Render ONLY the
+				    weapons the player actually has, in order, instead of an
+				    always-5 bar of mostly-disabled boxy buttons. The arsenal
+				    grows visibly as weapons are picked up (chaingun/shotgun/
+				    flamethrower start unowned). */}
+				{WEAPON_ORDER.filter((id) => state.ownedWeapons[id]).map((id) => {
 					const active = state.weapon === id;
 					const spec = WEAPONS[id];
+					// STRUCT4 — upgrade tier badge. 0 = no badge; ≥1 shows "★N" in the
+					// action-pickup tone so the player sees how upgraded each weapon is.
+					const tier = state.weaponTiers[id] ?? 0;
 					return (
 						<button
 							key={id}
 							type="button"
-							disabled={!owned}
 							onPointerDown={(e) => {
 								if (!touchMode) return;
 								e.preventDefault();
@@ -232,14 +207,26 @@ export function BoneBusterHUD({
 								if (touchMode) return;
 								onSelectWeapon(id);
 							}}
-							style={weaponChipStyle(active, owned, spec.muzzleColor)}
-							aria-label={`Select ${spec.label}`}
+							style={weaponChipStyle(active, spec.muzzleColor)}
+							aria-label={`Select ${spec.label}${tier > 0 ? ` (tier ${tier})` : ""}`}
 							aria-pressed={active}
 						>
 							<span style={{ fontSize: "var(--obx-hud-fs-label, 10px)", opacity: 0.7 }}>
 								{spec.hudHotkey}
 							</span>{" "}
 							{spec.label}
+							{tier > 0 && (
+								<span
+									style={{
+										marginLeft: 6,
+										fontSize: "var(--obx-hud-fs-label, 10px)",
+										color: ROLE.actionPickup,
+										fontWeight: FONT_WEIGHT.bold,
+									}}
+								>
+									★{tier}
+								</span>
+							)}
 						</button>
 					);
 				})}
@@ -432,7 +419,9 @@ function formatRunStats(state: GameState): string {
 	const scoreSegment = score > 0 ? `  •  ${score} SCORE` : "";
 	const secrets = state.run.runTotalSecrets;
 	const secretsSegment = secrets > 0 ? `  •  ${secrets} SECRET${secrets === 1 ? "" : "S"}` : "";
-	return `${cleared} LEVEL${cleared === 1 ? "" : "S"} CLEARED  •  TIME ${time}  •  ${kills} KILLS  •  ${dmg} DMG TAKEN${scoreSegment}${secretsSegment}`;
+	const prestige = prestigeTier(cleared);
+	const prestigeSegment = prestige > 0 ? `  •  PRESTIGE ${prestige}` : "";
+	return `${cleared} LEVEL${cleared === 1 ? "" : "S"} CLEARED  •  TIME ${time}  •  ${kills} KILLS  •  ${dmg} DMG TAKEN${scoreSegment}${secretsSegment}${prestigeSegment}`;
 }
 
 const STICK_RADIUS = 56;
@@ -787,7 +776,13 @@ function ctaButton(bg: string, primary: boolean): CSSProperties {
 	};
 }
 
-export function weaponChipStyle(active: boolean, owned: boolean, accent: string): CSSProperties {
+/**
+ * Style for a weapon chip in the HUD bottom strip. The strip is OWNED-ONLY
+ * (HUD2 — `WEAPON_ORDER.filter(ownedWeapons)`), so every chip is owned; the
+ * only state axis is active vs owned-inactive. (The earlier locked/unowned
+ * variant was dropped with the own-only filter — review QUAL-L3.)
+ */
+export function weaponChipStyle(active: boolean, accent: string): CSSProperties {
 	return {
 		padding: "6px 10px",
 		borderRadius: 10,
@@ -798,29 +793,16 @@ export function weaponChipStyle(active: boolean, owned: boolean, accent: string)
 		fontSize: "var(--obx-hud-fs-label, 11px)",
 		fontWeight: FONT_WEIGHT.semibold,
 		letterSpacing: LETTER_SPACING.hudChip,
-		// D1 — locked chips render with no border at all (was
-		// `1px solid transparent`, which reserved layout space and
-		// signaled border-ness to a screen reader). Active chips keep
-		// the accent ring; owned-inactive chips keep a transparent
-		// ring so all owned slots align to the same metrics.
-		border: !owned ? "none" : active ? `1px solid ${accent}` : "1px solid transparent",
-		background: active
-			? `${accent}22`
-			: owned
-				? // scale-step: weapon-row backgrounds use highest-contrast
-					// parchment (50) at tiny alpha (0d/05) for a subtle off-state
-					// fill — no semantic ROLE captures "weapon-slot row tint".
-					`${SCALE.parchment[50]}0d`
-				: `${SCALE.parchment[50]}05`,
-		color: owned ? ROLE.textPrimary : ROLE.textMuted,
-		opacity: owned ? 1 : 0.5,
-		// D1 — locked chips read as status indicators, not as disabled
-		// controls. `not-allowed` was DOM-correct (the button IS
-		// disabled) but the visual treatment now says "you don't own
-		// this yet" rather than "you tried to click a dead control."
-		// DOOM's HUD weapon row uses this exact pattern — digits 2-7
-		// always visible, dim when un-owned.
-		cursor: owned ? "pointer" : "default",
+		// Active chips keep the accent ring; owned-inactive chips keep a
+		// transparent ring so all owned slots align to the same metrics.
+		border: active ? `1px solid ${accent}` : "1px solid transparent",
+		// scale-step: weapon-row backgrounds use highest-contrast parchment
+		// (50) at tiny alpha for a subtle off-state fill — no semantic ROLE
+		// captures "weapon-slot row tint".
+		background: active ? `${accent}22` : `${SCALE.parchment[50]}0d`,
+		color: ROLE.textPrimary,
+		opacity: 1,
+		cursor: "pointer",
 		pointerEvents: "auto",
 	};
 }

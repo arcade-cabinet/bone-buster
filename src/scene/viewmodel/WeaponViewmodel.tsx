@@ -156,10 +156,16 @@ export function WeaponViewmodel({
 			if (isUntexturedStd || isUntexturedBasic) {
 				const mat = new THREE.MeshStandardMaterial({
 					color: weapon === "pistol" ? ROLE.sceneWeaponMetalLight : ROLE.sceneWeaponMetalDark,
+					// VIS1 — the metal COLOR must read under the scene flood. A
+					// strong emissive (was 0.18 in the blue muzzleColor) overpowered
+					// the lit metal and made the weapon a flat-blue blob under warm
+					// archetype light. Drop it to a faint sheen; the muzzle FLASH is
+					// the separate pulsed point light, so the viewmodel doesn't need
+					// to self-glow at rest. Lower roughness for a crisper metal spec.
 					emissive: WEAPONS[weapon].muzzleColor,
-					emissiveIntensity: 0.18,
-					metalness: 0.7,
-					roughness: 0.35,
+					emissiveIntensity: 0.04,
+					metalness: 0.6,
+					roughness: 0.45,
 				});
 				node.material = mat;
 				replaced.push(mat);

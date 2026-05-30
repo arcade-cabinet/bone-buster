@@ -1,0 +1,77 @@
+/**
+ * STRUCT5 — weighted biome-pressure selection. Each biome carries a `pressure`
+ * = levels-since-it-was-last-played (higher = staler). On each level exit we
+ * rank biomes by pressure (desc) and weighted-pick over the rank with
+ * 50/30/15/5 (the 5th+ ranks share the tail), so the stalest biome is favored
+ * but the next one is never predictable — no rote 1→5 cycle (docs/specs/97 D23).
+ *
+ * Pure: takes the current pressure map + an event RNG draw; returns the picked
+ * biome + the NEXT pressure map (picked biome → 0, all others +1). The caller
+ * persists the new pressure map in the event domain.
+ */
+
+import { at } from "@engine/arrayAt";
+import type { Rng } from "@engine/rng";
+import { ARCHETYPE_NAMES, archetypeRecord } from "@world/archetype";
+import type { PropArchetype } from "@world/scatter/propPool";
+
+export type BiomePressure = Record<PropArchetype, number>;
+
+/** Weights applied over the pressure-rank (rank 0 = stalest). Rank ≥4 → tail. */
+const RANK_WEIGHTS: readonly number[] = [0.5, 0.3, 0.15, 0.05];
+
+/** Fresh pressure map — all biomes equally stale (0) at run start. */
+export function initialBiomePressure(): BiomePressure {
+	return archetypeRecord(() => 0);
+}
+
+/**
+ * Pick the next biome by weighted pressure rank, and return the advanced
+ * pressure map. Deterministic given `(pressure, rng draw)`.
+ *
+ * Ranking ties (equal pressure) break by ARCHETYPE_NAMES order so the result is
+ * stable for a given pressure map; the weighted roll then adds the variance.
+ */
+export function pickBiome(
+	pressure: BiomePressure,
+	rng: Rng,
+): { biome: PropArchetype; pressure: BiomePressure } {
+	// Rank by pressure desc, stable tiebreak by canonical order.
+	const ranked = [...ARCHETYPE_NAMES].sort((a, b) => {
+		const d = pressure[b] - pressure[a];
+		if (d !== 0) return d;
+		return ARCHETYPE_NAMES.indexOf(a) - ARCHETYPE_NAMES.indexOf(b);
+	});
+
+	// Build weights aligned to the ranking: ranks 0..3 take 50/30/15/5; any
+	// rank ≥4 shares the last weight evenly so every biome stays reachable.
+	// Ranks 0..3 take 50/30/15/5; ranks ≥4 (only when >RANK_WEIGHTS biomes exist)
+	// SHARE the last weight evenly so the documented 50/30/15/5 policy holds as
+	// the biome count grows (review CodeRabbit — was: each tail rank got the full
+	// last weight, harmless at 5 biomes but skews beyond).
+	const tailStart = RANK_WEIGHTS.length;
+	// `at()` throws (not silently 0) if the tail-weight index is ever wrong — a
+	// future RANK_WEIGHTS edit that breaks the invariant fails loud.
+	const lastWeight = at(RANK_WEIGHTS, tailStart - 1);
+	const tailCount = Math.max(0, ranked.length - tailStart);
+	const sharedTailWeight = tailCount > 0 ? lastWeight / tailCount : 0;
+	const weights = ranked.map((_, i) => (i < tailStart ? (RANK_WEIGHTS[i] ?? 0) : sharedTailWeight));
+	const total = weights.reduce((s, w) => s + w, 0);
+
+	// Weighted roll over the ranked list.
+	let roll = rng() * total;
+	let pickedIdx = ranked.length - 1;
+	for (let i = 0; i < ranked.length; i += 1) {
+		roll -= weights[i] ?? 0;
+		if (roll <= 0) {
+			pickedIdx = i;
+			break;
+		}
+	}
+	const biome = at(ranked, pickedIdx);
+
+	// Advance pressure: picked → 0, everyone else +1 (staler).
+	const next = archetypeRecord((b) => (b === biome ? 0 : pressure[b] + 1));
+
+	return { biome, pressure: next };
+}

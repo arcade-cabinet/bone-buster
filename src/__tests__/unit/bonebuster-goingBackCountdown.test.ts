@@ -1,4 +1,4 @@
-import { GOING_BACK_BUDGET_MS } from "@views/gameConstants";
+import { GOING_BACK_BUDGET_MS } from "@store/gameConstants";
 import { formatCountdown } from "@views/hudOverlays/GoingBackOverlay";
 import { describe, expect, it } from "vitest";
 

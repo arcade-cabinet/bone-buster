@@ -20,12 +20,14 @@
  */
 
 import { dispatch } from "@engine/events";
+import type { Enemy } from "@engine/mapTypes";
 import { Canvas, useThree } from "@react-three/fiber";
 import { cleanup, render } from "@testing-library/react";
-import { useEffect } from "react";
+import { createRef, useEffect } from "react";
 import type * as THREE from "three";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BodyPartField } from "../../scene/effects/BodyPartField";
+import { GhostTrailField } from "../../scene/effects/GhostTrailField";
 import { ParticleBurstField } from "../../scene/effects/ParticleBurstField";
 import { ShellEjectField } from "../../scene/effects/ShellEjectField";
 
@@ -159,6 +161,37 @@ describe("effect-field GPU-resource disposal (H2 / F1)", () => {
 		unmount();
 		expect(disposeWatches.every((w) => w())).toBe(true); // both InstancedMeshes freed
 		expect(geoWatches.some((w) => w())).toBe(false); // shared geometries untouched
+	});
+
+	it("GhostTrailField renders one InstancedMesh (pooled wake), disposed on unmount", async () => {
+		// GH-TRAIL — pooled spectral wake. The pool is built in useEffect (not the
+		// render body) and the Wake records are a pre-allocated ring (no per-emit
+		// alloc). Contract: one InstancedMesh for all motes, disposed on unmount,
+		// shared geometry untouched (review BP-1..BP-4 / T-3).
+		const enemy = {
+			id: 1,
+			position: { x: 0, y: 0 },
+			dead: false,
+		} as Enemy;
+		const enemiesRef = createRef<Enemy[]>() as { current: Enemy[] };
+		enemiesRef.current = [enemy];
+
+		const { driver, unmount } = await mountFieldUnmountable(
+			<GhostTrailField enemiesRef={enemiesRef} hasUvFlashlight={false} />,
+		);
+
+		driver.step(16); // first tick → pool created in effect already; emit a mote
+
+		const meshes = driver.liveMeshes();
+		expect(meshes.length).toBe(1);
+		const inst = meshes[0] as THREE.InstancedMesh;
+		expect(inst.isInstancedMesh).toBe(true);
+		const meshDisposed = watchObjDispose(inst);
+		const geoWatch = watchGeometryDispose(inst.geometry);
+
+		unmount();
+		expect(meshDisposed()).toBe(true);
+		expect(geoWatch()).toBe(false);
 	});
 
 	it("ShellEjectField renders one InstancedMesh, disposed on unmount", async () => {

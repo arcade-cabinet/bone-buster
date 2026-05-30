@@ -45,7 +45,7 @@ await page.locator("[data-testid='bonebuster-hp']").waitFor();
 // pickup's chip survives. Instead, dispatch a single pickup
 // event directly to test the chip in isolation.
 await page.evaluate(() => {
-	const ev = new CustomEvent("objexoom:pickupCollected", { detail: { kind: "flashlight" } });
+	const ev = new CustomEvent("bonebuster:pickupCollected", { detail: { kind: "flashlight" } });
 	window.dispatchEvent(ev);
 });
 await page.waitForTimeout(180);
@@ -53,7 +53,7 @@ await captureCDP(`${OUT}/01-flashlight.png`);
 
 await page.waitForTimeout(800); // let it fade out
 await page.evaluate(() => {
-	const ev = new CustomEvent("objexoom:pickupCollected", { detail: { kind: "chaingunAmmo" } });
+	const ev = new CustomEvent("bonebuster:pickupCollected", { detail: { kind: "chaingunAmmo" } });
 	window.dispatchEvent(ev);
 });
 await page.waitForTimeout(180);
@@ -61,7 +61,7 @@ await captureCDP(`${OUT}/02-chaingun.png`);
 
 await page.waitForTimeout(800);
 await page.evaluate(() => {
-	const ev = new CustomEvent("objexoom:pickupCollected", { detail: { kind: "health" } });
+	const ev = new CustomEvent("bonebuster:pickupCollected", { detail: { kind: "health" } });
 	window.dispatchEvent(ev);
 });
 await page.waitForTimeout(180);

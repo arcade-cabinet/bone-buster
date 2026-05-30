@@ -46,20 +46,26 @@ jobs:
 
   build-pages:
     needs: release-please
-    # Run when release-please cut a new release (normal path) OR
-    # when a maintainer manually fired the workflow with
-    # force_deploy=true (escape-hatch path).
+    # PREP-CI1 (OVERHAUL2 review) — CONTINUOUS DEPLOY. Pages reflects every main
+    # push, so a user-facing change can never silently fail to deploy because a
+    # squash title led with chore:/ci: (the 2-week-stale-deploy class). The
+    # release-please tag still gates the versioned Android APK artifact in
+    # release.yml; Pages is decoupled from semver. Also deploys on a release cut
+    # (redundant but harmless) and on the manual force_deploy escape hatch.
     if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       needs.release-please.outputs.release_created == 'true' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.force_deploy == 'true')
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with: { version: 10.2.0 }
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 22
           cache: pnpm
@@ -74,8 +80,8 @@ jobs:
         run: pnpm build:pages
       - name: Verify runtime asset bundle
         run: pnpm assets:verify-runtime
-      - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           # Post-Vike: build emits to dist/client/ (browser bundle +
           # prerendered index.html) and dist/server/ (SSR entry).
@@ -95,7 +101,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
 
   # CR-H1 (full-review) — post-deploy smoke test. Drives the LIVE Pages
   # deploy past landing → in-game via the debug hooks and fails if the
@@ -109,10 +115,12 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with: { version: 10.2.0 }
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 22
           cache: pnpm
@@ -121,11 +129,17 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Smoke-test the live Pages deploy
         env:
-          # deploy-pages emits the canonical site URL; append the debug
-          # flags the verify script drives through (start → HUD).
+          # deploy-pages emits the canonical site URL; append the debug flags the
+          # verify script drives through (start → HUD). SEC-3: `bonebusterDebug`
+          # is safe here — it ONLY exposes the __bonebuster hook surface +
+          # capture-mode on a page the URL-bearer already controls (no privilege
+          # escalation, no data exfil; the production build still gates the
+          # cheat hooks behind NODE_ENV separately). `bonebusterSeed=12345` is a
+          # legacy-numeric phrase (accepted as a string) — a FIXED seed so the
+          # smoke run boots a deterministic map every deploy.
           PAGES_URL: ${{ needs.deploy-pages.outputs.page_url }}?bonebusterDebug&bonebusterSeed=12345
         run: node scripts/verify-pages-deploy.mjs
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: pages-deploy-smoke

@@ -1,7 +1,9 @@
+import type { GameState, LevelPhase } from "@store/gameState";
 import type { Difficulty } from "@store/settings";
 import { BossBanner } from "@views/hudOverlays/BossBanner";
 import { DifficultyChip } from "@views/hudOverlays/DifficultyChip";
 import { EmfChip } from "@views/hudOverlays/EmfChip";
+import { EvpChip } from "@views/hudOverlays/EvpChip";
 import { GoingBackOverlay } from "@views/hudOverlays/GoingBackOverlay";
 import { KeyPickupCeremony } from "@views/hudOverlays/KeyPickupCeremony";
 import { KillBanner } from "@views/hudOverlays/KillBanner";
@@ -10,7 +12,6 @@ import { PauseOverlay } from "@views/hudOverlays/PauseOverlay";
 import { PickupChip } from "@views/hudOverlays/PickupChip";
 import { SecretFoundFlash } from "@views/hudOverlays/SecretFoundFlash";
 import { SpiritBoxBubble } from "@views/hudOverlays/SpiritBoxBubble";
-import type { GameState, LevelPhase } from "@views/Shell";
 
 /**
  * AUDIO3 / SLOT-ARCHITECTURE.md §1 — HUD overlay aggregator.
@@ -67,6 +68,8 @@ export function HUDOverlays({
 			<KillBanner />
 			{state.hasEmfReader && <EmfChip />}
 			{state.hasSpiritBox && <SpiritBoxBubble />}
+			{/* GH-TAPE — the EVP recorder is always passively recording (no owner gate). */}
+			<EvpChip />
 		</>
 	);
 }

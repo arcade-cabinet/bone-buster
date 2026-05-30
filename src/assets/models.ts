@@ -403,8 +403,14 @@ export type WeaponModel = {
  *   shotgun           : 2.04 × 4.57 × 27.35 — long axis Z (barrel +Z)
  *
  * Camera-forward in three.js is -Z. We rotate Y by π so +Z (barrel)
- * becomes -Z (camera-forward). The X +0.18 nose-down gives the slight
- * "hip-hold" DOOM tilt.
+ * becomes -Z (camera-forward).
+ *
+ * VIS4 (OVERHAUL2) — weapons hold CENTER-BOTTOM, aiming forward (classic DOOM),
+ * not the prior bottom-RIGHT hip-hold. X offset dropped from ~0.18-0.22 (well
+ * right of center) to a slight 0.05 right-bias (reads natural without the dead-
+ * centre symmetry that looks rigid); Y stays low (-0.16) so the weapon frames
+ * the bottom of the view; Z keeps it forward. The barrel already points down
+ * camera-forward via rotation_Y=π — this only re-seats the hold position.
  */
 export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
 	melee: {
@@ -413,7 +419,7 @@ export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
 		// without an unnatural offset.
 		url: A("/assets/models/weapons/slasher/melee_machete.glb"),
 		rotation: [0.15, Math.PI, 0],
-		offset: [0.22, -0.16, -0.3],
+		offset: [0.06, -0.16, -0.3],
 		// Machete: bbox long axis varies by skinned-mesh pose; runtime
 		// Box3 resolves the true span. Tip is at the far +Z of the
 		// blade in the native rig.
@@ -422,7 +428,7 @@ export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
 	pistol: {
 		url: A("/assets/models/weapons/pistol.glb"),
 		rotation: [0.15, Math.PI, 0],
-		offset: [0.18, -0.16, -0.38],
+		offset: [0.05, -0.16, -0.38],
 		// Pistol: bbox size 0.33 × 0.65 × 1.47, barrel forward = +Z;
 		// muzzle is slightly above the bbox Y center (the barrel sits
 		// above the grip) and just shy of the +Z max.
@@ -431,7 +437,7 @@ export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
 	chaingun: {
 		url: A("/assets/models/weapons/chaingun.glb"),
 		rotation: [0.15, Math.PI, 0],
-		offset: [0.18, -0.16, -0.38],
+		offset: [0.05, -0.16, -0.38],
 		// Chaingun (Uzi/Flamethrower body): bbox size 1.19 × 0.37 × 0.13.
 		// Long axis is +X in the native (un-rotated) GLB frame, so the
 		// barrel tip in native coords is at fx=0.97. muzzleBboxFrac is
@@ -451,7 +457,7 @@ export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
 	shotgun: {
 		url: A("/assets/models/weapons/shotgun.glb"),
 		rotation: [0.15, Math.PI, 0],
-		offset: [0.18, -0.16, -0.38],
+		offset: [0.05, -0.16, -0.38],
 		// Shotgun: bbox size 0.1 × 0.23 × 1.39, barrel forward = +Z.
 		// Muzzle at the +Z tip, mid-X, mid-Y.
 		muzzleBboxFrac: [0.5, 0.55, 0.97],
@@ -462,7 +468,7 @@ export const WEAPON_MODELS: Record<WeaponId, WeaponModel> = {
 		// frac aimed at the nozzle tip (mid-X, mid-Y, +Z extreme).
 		url: A("/assets/models/weapons/flamethrower.glb"),
 		rotation: [0.15, Math.PI, 0],
-		offset: [0.2, -0.16, -0.36],
+		offset: [0.06, -0.16, -0.36],
 		muzzleBboxFrac: [0.5, 0.55, 0.97],
 	},
 };

@@ -1,6 +1,6 @@
 ---
 title: Architecture
-updated: 2026-05-13
+updated: 2026-05-29
 status: current
 domain: technical
 ---
@@ -55,7 +55,13 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 | Module | Owns |
 | --- | --- |
 | `src/engine/mapTypes.ts` | Core map + entity TYPES (`BoneBusterGridMap`, `BoneBusterSectorMap`, `Enemy`, `Pickup`, `CollisionContext`, `Vec2`) + the `isGridMap`/`isSectorMap` guards + tunable consts (`BOSS_HP_MULTIPLIER`, `WATER_SPEED_MULTIPLIER`, `EPS`) |
-| `src/engine/gridGen.ts` | Procedural grid-map generation (`generateMap`) — rooms, corridors, BFS reachability, per-archetype enemy/pickup tables |
+| `src/engine/gridGen.ts` | Procedural grid-map CONTENT layer (`generateMap`) — composes the MazeGenerator topology with enemy/pickup spawns + per-archetype (name-keyed) multiplier tables. Geometry forks off `(phrase, depth)` via `mapPrngForDepth` (D25); depth 0 = byte-identical legacy stream |
+| `src/engine/maze/MazeGenerator.ts` | STRUCT1 representation-agnostic maze TOPOLOGY core (`generateGridMaze` — rooms/corridors/BFS reachability/lava/spawn/exit/key/door). Knows nothing about biomes/assets/enemies; a sector representation is a planned peer |
+| `src/engine/maze/difficulty.ts` | STRUCT3 log-scaled depth difficulty (`difficultyForDepth(depth)`) — `=== 1` at depth 0 (canonical baseline), ramps to ~3× then flattens |
+| `src/world/biomes/registry.ts` | STRUCT2 biome registry (`BIOMES` — one `BiomeGenerator` per archetype via `archetypeRecord`, no missing-key cast; `generateBiomeMap`). The extension point: add a biome = add a generator |
+| `src/world/biomePressure.ts` | STRUCT5 weighted biome-pressure selection (`pickBiome`, `initialBiomePressure`) — 50/30/15/5 weighted pick over levels-since-played rank, event-PRNG-driven (D25) |
+| `src/shared/weaponUpgrade.ts` | STRUCT4 weapon-tier scaling (`effectiveWeaponSpec(base, tier)`, `MAX_WEAPON_TIER`) — seeded log-scaled upgrade tiers feeding fire resolution |
+| `src/world/ghostHunting.ts` | Ghost-hunting tool constants + cosmetic pickers (spirit box, EMF, UV, crucifix, GH-TAPE EVP cues via `pickEvpCue`) |
 | `src/engine/gridCollision.ts` | Grid-map collision + raycast primitives (`resolveCollision`, `castRay`, `hasLineOfSight`, `cellAt`, `isBlocking`, `inBounds`) |
 | `src/engine/sectors.ts` | Polygonal-sector primitives (`polygonContains`, `getSectorAtPoint`, `castRaySectors`, `computePortalEdges`, floor/ceiling lookups, `resolveCollisionSectors`) |
 | `src/engine/spawn.ts` | Entity spawning from a map (`spawnEnemies`, `spawnPickups`, `pickBossSpawnIndex`, `pickUvHidden`) |
@@ -65,7 +71,7 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 | `src/ai/turtle.ts` | Logo-style turtle DSL used by `buildMap` for shape generation |
 | `src/ai/enemyAi.ts` | Per-enemy FSM tick (patrol → approach → shoot). Pure function `tickEnemyFsm(enemy, ctx) → next` |
 | `src/ai/yukaIntegration.ts` | Stateful yuka EntityManager bridge — mirror sim positions in, run steering, write target velocity back |
-| `src/store/runStats.ts` | Per-run kill/damage/time accounting, reducer-shaped |
+| `src/store/runStats.ts` | Per-run kill/damage/time/score/secrets accounting, reducer-shaped; `prestigeTier(levelsCleared)` (the endless run's progression marker, surfaced on the HUD via `RunReadout`) |
 | `src/store/settings.ts` | Difficulty + level enums, tuning tables (`DIFFICULTY_TUNING`) |
 | `src/shared/weapons.ts` | Weapon registry (id → spec) |
 | `src/world/refLevel.ts` | Reference-clone level imports, ManyEnemies spawner |
@@ -74,7 +80,12 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 
 | Module | Owns |
 | --- | --- |
-| `app/views/Scene.tsx` | r3f Canvas root, scene composition, MapGeometry, SectorMapGeometry, EnemyMesh, WeaponViewmodel, KeyMarker, ExitPortal, RealDoor, TreasureChest — **flagged for decomposition (comprehensive-review CR-H1scene backlog; no binding DECISIONS record yet)** |
+| `app/views/Scene.tsx` | r3f Canvas root (the `<Canvas>` mounts here; VIS-AUTO drives `gl.preserveDrawingBuffer` off `captureModeEnabled()`), scene composition + the entity/field/scatter mounts. Per-frame logic is NOT here — it's extracted to `src/scene/tick/*` (D16). |
+| `src/scene/tick/sceneTick.ts` | The per-frame MAIN tick (`runSceneTick`): pickups, lava cadence, win/reach-spawn, the VIS1 flood light intensity set + going-back strobe, the enemy AI loop call, and enemy-bullet integration. Pure-fn, context-injected (D16). |
+| `src/scene/tick/{enemyTickLoop,fireResolution,returnBearing,timeScaleBus}.ts` | Enemy AI loop / single-shot fire resolution / going-back HUD bearing / time-scale reservation bus (D16). |
+| `src/scene/hooks/useGameRef.ts` | The thin React adapter: runs `gameReducer` + drains its `GameEffect`s (audio/dispatch/fade) AFTER setState (CONV2; no flushSync). |
+| `src/scene/map/*` | `MapGeometry`, `SectorMapGeometry`, `WaterSurface` (owns + disposes its DataTexture, PREP-BP1), etc. |
+| `src/scene/effects/*` | Instanced-pool particle fields (`ParticleBurstField`, `ShellEjectField`, `BodyPartField`, `GhostTrailField` GH-TRAIL spectral wake) — each owns one `InstancedParticlePool`, disposed on unmount; pre-allocated, no per-emit alloc |
 | `app/components/PlayerController.tsx` | Camera + movement input (pointer-lock + touch sticks), pointer-lock state |
 | `src/assets/models.ts` | Enemy + weapon + prop GLB registry + per-kind skin rosters, BASE_URL-aware URL helper `A()` |
 | `app/components/RefLevelMap.tsx` | Renderer for reference-clone level layouts |
@@ -108,19 +119,19 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 | `app/tokens.css` | CSS-custom-property mirror (`--obx-*`) |
 | `app/fonts.css` | 12 `@font-face` declarations |
 
-### Persistence layer (STO1a, partial; STO1b pending)
+### Persistence layer (STO1a + STO1b shipped)
 
 | Module | Owns |
 | --- | --- |
 | `src/platform/persistence/preferences.ts` | Thin facade over `@capacitor/preferences` — `readPref`/`writePref`/`removePref` + JSON variants. App code MUST go through this module; **direct `localStorage` access in `src/**` is forbidden**. Best-effort writes (swallows quota/lock failures). |
 | `src/platform/persistence/settingsStore.ts` | KV settings persistence — `validateSettings(unknown)` runtime narrows foreign blobs to the live `BoneBusterSettings` shape; `loadSettings()` / `saveSettings()` are the public surface for `BoneBusterShell` to async-hydrate + auto-save settings across sessions. |
-| `src/store/runHistory.ts` | E9 run history — currently sql.js + manual base64 blob (STO1b will replace with `@capacitor-community/sqlite` + jeep-sqlite WASM). Exports `openRunHistory()`, `RunRecord`, `RunInsert`, `formatRunDuration` (POL32 — shared formatter for landing chip + future HUD surfaces). |
+| `src/store/runHistory.ts` | E9 run history — `@capacitor-community/sqlite` (native) + jeep-sqlite WASM (web) since STO1b (D17 removed sql.js; D18 locked the stack). Exports `openRunHistory()`, `RunRecord`, `RunInsert`, `formatRunDuration` (POL32 — shared formatter for landing chip + future HUD surfaces). |
 
 **Settings persistence flow:**
-1. Mount: `BoneBusterShell` initializes with `DEFAULT_SETTINGS` (or `{...DEFAULT_SETTINGS, level: "procedural"}` when URL has `?archetype`).
+1. Mount: `BoneBusterShell` initializes with `DEFAULT_SETTINGS` (or `{...DEFAULT_SETTINGS, level: "procedural"}` when URL has `?bonebusterArchetype`).
 2. Async-hydrate effect: `loadSettings()` reads from Preferences; if a valid blob exists, `setSettings(persisted)`. Flag `settingsHydratedRef.current = true`.
 3. Save-on-change effect: gated on `settingsHydratedRef.current`, writes the current settings to Preferences on every change. The guard prevents the boot DEFAULT_SETTINGS from clobbering a persisted blob during the brief async window.
-4. URL override (`?archetype`) wins as a per-load short-circuit — the debug harness path that swaps to procedural maps without first clearing storage.
+4. URL override (`?bonebusterArchetype`) wins as a per-load short-circuit — the debug harness path that swaps to procedural maps without first clearing storage.
 
 **Why this lives in `src/platform/persistence/` instead of `src/store/settings.ts`:** the settings module is pure type + constants (no async, no I/O); the persistence module is the boundary where Capacitor lives. Keeping them separate means `src/store/settings.ts` stays trivially unit-testable without mocking the native plugin.
 
@@ -129,7 +140,8 @@ tests. No `Math.random()`, no `performance.now()` — everything seeded.
 1. Vite serves `app/main.tsx` → mounts `<BoneBusterShell />`.
 2. Shell holds `state: GameState` (status, hp, ammo, weapon, kills,
    key, run stats) and `map: BoneBusterMap` (built from
-   `buildMap(seed, level)`).
+   `buildMap(seedPhrase, level, difficulty)` — the seed is the
+   adjective-adjective-noun PHRASE, D21).
 3. `<BoneBusterScene>` mounts `<Canvas>` with the current map + a
    `gameRef` for sim callbacks. Inside the canvas:
    - `useFrame` ticks every enemy via `tickEnemyFsm`
@@ -159,9 +171,15 @@ type DebugHooks = {
   teleport(x: number, y: number, yawRad?: number): void;
   fire(): void;
   killAllEnemies(): void;
+  killBoss(): void;
+  selectWeapon(weapon: WeaponId): void;
+  upgradeWeapon(weapon: WeaponId): void;   // STRUCT4 — bump a weapon's tier
   collectKey(): void;
   collectAllPickups(): void;
   triggerWin(): void;
+  forceMissionComplete(): void;
+  setDifficulty(difficulty: Difficulty): void;  // POL31 playtest hook
+  getSettings(): BoneBusterSettings;
 };
 ```
 

@@ -6,7 +6,7 @@ import {
 	ARCHETYPE_LIGHT_PALETTES,
 	getArchetypeLightPalette,
 } from "@scene/lighting/archetypePalette";
-import { BONE_BUSTER_PALETTE } from "@styles/tokens/index";
+import { BONE_BUSTER_PALETTE, SCALE } from "@styles/tokens/index";
 import { ARCHETYPE_NAMES } from "@world/archetype";
 import { describe, expect, it } from "vitest";
 
@@ -21,9 +21,11 @@ describe("E13 — archetype lighting palette", () => {
 		const corridor = getArchetypeLightPalette("corridor");
 		expect(corridor.ambientColor).toBe(BONE_BUSTER_PALETTE.violet);
 		expect(corridor.directionalColor).toBe(BONE_BUSTER_PALETTE.parchment);
-		// E13 step-4 — fog also preserves the pre-step-4 literal for
-		// refLevel 0 canonical byte-stability.
-		expect(corridor.fogColor).toBe(BONE_BUSTER_PALETTE.ink);
+		// VIS2 (OVERHAUL2) — corridor fog is now the Silent-Hill haze
+		// (SCALE.indigo[500]), NOT the pre-step-4 near-black ink. The
+		// dark-reveal canonical was retired: PSX assets are lit by the flood
+		// (VIS1) and distance fades into a luminous tinted mist, not a void.
+		expect(corridor.fogColor).toBe(SCALE.indigo[500]);
 		// COV3 step-6 — floor color preserves the pre-step-6 grid-map
 		// literal (`BONE_BUSTER_PALETTE.ink`) so MapGeometry's corridor
 		// procedural floor remains visually identical to the prior

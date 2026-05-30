@@ -40,8 +40,8 @@ import {
 	RATTLER_ATTACK_RANGE,
 	RATTLER_DAMAGE,
 } from "@shared/constants";
+import type { GameRef } from "@store/gameState";
 import type { BoneBusterSettings } from "@store/settings";
-import type { GameRef } from "@views/Shell";
 import { type CrucifixInstance, isEnemyCrucified } from "@world/ghostHunting";
 import type * as THREE from "three";
 import type * as Yuka from "yuka";

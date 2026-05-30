@@ -24,13 +24,20 @@ describe("STO1a — validateSettings", () => {
 	it("round-trips a fully valid blob", () => {
 		const valid = {
 			difficulty: "nightmare",
-			level: 3,
 			soundEnabled: false,
 			mouseSensitivity: 1.7,
 			touchLookSensitivity: 2.2,
 			touchControls: "on" as const,
 		};
 		expect(validateSettings(valid)).toEqual(valid);
+	});
+
+	it("STRUCT1 — ignores a stale `level` field from a pre-migration blob", () => {
+		// Old blobs carried a LevelChoice `level`; the schema dropped it. The
+		// validator just doesn't surface it — the rest hydrates cleanly.
+		const out = validateSettings({ ...DEFAULT_SETTINGS, level: 3 });
+		expect(out).toEqual(DEFAULT_SETTINGS);
+		expect("level" in out).toBe(false);
 	});
 
 	it("BC5 — accepts 'auto' / 'on' / 'off' for touchControls", () => {
@@ -50,17 +57,6 @@ describe("STO1a — validateSettings", () => {
 		expect(validateSettings({ ...DEFAULT_SETTINGS, touchControls: 42 }).touchControls).toBe(
 			DEFAULT_SETTINGS.touchControls,
 		);
-	});
-
-	it("coerces stringified level numerals from JSON round-trip", () => {
-		// JSON.stringify(3) === "3"; if the level somehow comes back as
-		// a string (e.g. from a corrupted manual edit), coerce it back
-		// to the numeric LevelChoice rather than rejecting.
-		expect(validateSettings({ ...DEFAULT_SETTINGS, level: "3" }).level).toBe(3);
-	});
-
-	it("accepts 'procedural' level", () => {
-		expect(validateSettings({ ...DEFAULT_SETTINGS, level: "procedural" }).level).toBe("procedural");
 	});
 
 	it("clamps mouseSensitivity into [0.5, 2.5]", () => {
@@ -85,7 +81,6 @@ describe("STO1a — validateSettings", () => {
 		const partial = { difficulty: "ultraViolence" };
 		const out = validateSettings(partial);
 		expect(out.difficulty).toBe("ultraViolence");
-		expect(out.level).toBe(DEFAULT_SETTINGS.level);
 		expect(out.soundEnabled).toBe(DEFAULT_SETTINGS.soundEnabled);
 	});
 
@@ -93,11 +88,6 @@ describe("STO1a — validateSettings", () => {
 		expect(validateSettings({ difficulty: "godmode" }).difficulty).toBe(
 			DEFAULT_SETTINGS.difficulty,
 		);
-	});
-
-	it("rejects out-of-range level values", () => {
-		expect(validateSettings({ level: 99 }).level).toBe(DEFAULT_SETTINGS.level);
-		expect(validateSettings({ level: 0 }).level).toBe(DEFAULT_SETTINGS.level);
 	});
 
 	it("rejects non-boolean soundEnabled", () => {

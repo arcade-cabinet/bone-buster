@@ -21,17 +21,43 @@ export function archetypeForPhrase(seedPhrase: string): PropArchetype {
 }
 
 /**
- * Canonical archetype order. The index of an archetype here IS its
- * `(seed % 5)` slot — reordering this array changes which seeds map
- * to which archetype. Order matches `docs/PRD.md §E13` for stability.
+ * Canonical archetype order, as a `Record<PropArchetype, slotIndex>` literal.
+ * The numeric value IS the archetype's `(hash % 5)` slot — reordering changes
+ * which seeds map to which archetype. Order matches `docs/PRD.md §E13`.
+ *
+ * Declaring this as `Record<PropArchetype, number>` (not a bare array) makes
+ * the TYPE the safety net the registry doc advertises: adding a 6th name to
+ * `PropArchetype` fails to compile HERE until its slot is added, and every
+ * derived structure (ARCHETYPE_NAMES, BIOMES, biome pressure) inherits the
+ * exhaustiveness for free. The `as const satisfies` pins the slot values too.
  */
-export const ARCHETYPE_NAMES: readonly PropArchetype[] = [
-	"corridor",
-	"arena",
-	"courtyard",
-	"sewer",
-	"library",
-];
+const ARCHETYPE_SLOTS = {
+	corridor: 0,
+	arena: 1,
+	courtyard: 2,
+	sewer: 3,
+	library: 4,
+} as const satisfies Record<PropArchetype, number>;
+
+/**
+ * Canonical archetype order — derived from `ARCHETYPE_SLOTS` keys, sorted by
+ * slot index so the array order matches the documented `(hash % 5)` mapping.
+ */
+export const ARCHETYPE_NAMES: readonly PropArchetype[] = (
+	Object.keys(ARCHETYPE_SLOTS) as PropArchetype[]
+).sort((a, b) => ARCHETYPE_SLOTS[a] - ARCHETYPE_SLOTS[b]);
+
+/**
+ * Build a `Record<PropArchetype, V>` from a per-archetype factory. The mapped
+ * type forces `value(name)` to run for EVERY archetype, so the result is a
+ * fully-populated record with NO missing-key cast — callers (BIOMES, biome
+ * pressure) get compiler-enforced completeness instead of an `as` launder.
+ */
+export function archetypeRecord<V>(value: (name: PropArchetype) => V): Record<PropArchetype, V> {
+	const out = {} as Record<PropArchetype, V>;
+	for (const name of Object.keys(ARCHETYPE_SLOTS) as PropArchetype[]) out[name] = value(name);
+	return out;
+}
 
 /**
  * Per-map archetype accessor. CONV3 (2026-05-15) denormalized

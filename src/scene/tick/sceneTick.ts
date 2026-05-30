@@ -17,8 +17,8 @@ import type { BoneBusterMap, CollisionContext, Enemy, Pickup } from "@engine/map
 import { ENEMY_BULLET_DAMAGE, type EnemyBullet, stepEnemyBullet } from "@engine/projectiles";
 import { polygonContains } from "@engine/sectors";
 import { TILE } from "@shared/constants";
+import type { GameRef, LevelPhase } from "@store/gameState";
 import type { BoneBusterSettings } from "@store/settings";
-import type { GameRef, LevelPhase } from "@views/Shell";
 import type { CrucifixInstance } from "@world/ghostHunting";
 import {
 	disarmSector,
@@ -189,17 +189,22 @@ export function runSceneTick(deps: SceneTickDeps): void {
 	}
 
 	// H8 — light strobe during going_back. 200-frame cycle, 10 frames bright.
-	// POL27 — strobe levels respect per-archetype darkness multipliers
-	// so a dark-sewer going_back still flickers proportionally to the
-	// archetype's lighting baseline rather than blasting bright.
+	// POL27 / VIS1 — going-back strobe pulses ABOVE the bright flat flood
+	// (VIS1 base: 0.95 ambient / 1.1 directional). The trough holds the normal
+	// flood so the PSX assets stay readable; the peak flashes brighter as the
+	// "alarm" beat. Per-archetype mul still tints. (Pre-VIS1 the trough dropped
+	// to 0.2/0.35 — that only read as a strobe because the base was near-dark;
+	// now the base IS lit, so the strobe brightens rather than darkens.)
 	if (currentPhase === "going_back") {
 		strobeFrameRef.current = (strobeFrameRef.current + 1) % 200;
 		const bright = strobeFrameRef.current < 10;
 		if (ambientLightRef.current) {
-			ambientLightRef.current.intensity = (bright ? 1.4 : 0.2) * lightPalette.ambientMul;
+			// VIS3 — trough tracks the raised flood floor (1.25, matching the JSX
+			// base); peak lifts above it for the going-back "alarm" pulse.
+			ambientLightRef.current.intensity = (bright ? 1.9 : 1.25) * lightPalette.ambientMul;
 		}
 		if (directionalLightRef.current) {
-			directionalLightRef.current.intensity = (bright ? 2.0 : 0.35) * lightPalette.directionalMul;
+			directionalLightRef.current.intensity = (bright ? 2.2 : 1.1) * lightPalette.directionalMul;
 		}
 	}
 

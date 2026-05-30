@@ -18,11 +18,13 @@
 
 import type { BoneBusterEvent } from "@engine/events";
 import type { PickupKind } from "@engine/mapTypes";
+import { assertNever } from "@shared/assertNever";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
-import { advanceLevel, runStatsReducer } from "@store/runStats";
-import type { DifficultyTuning, LevelChoice } from "@store/settings";
-import { GOING_BACK_BUDGET_MS } from "@views/gameConstants";
-import type { GameState } from "@views/Shell";
+import { MAX_WEAPON_TIER } from "@shared/weaponUpgrade";
+import { GOING_BACK_BUDGET_MS } from "@store/gameConstants";
+import type { GameState } from "@store/gameState";
+import { runStatsReducer } from "@store/runStats";
+import type { DifficultyTuning } from "@store/settings";
 import { LOOT_BONUSES } from "@world/loot";
 
 /** Fade overlay kinds (mirror of Shell's FadeKind without importing the React side). */
@@ -47,7 +49,8 @@ export type GameAction =
 	| { type: "reachSpawn" }
 	| { type: "spendAmmo"; weapon: WeaponId; amount: number }
 	| { type: "consumeCrucifix" }
-	| { type: "collectPickup"; kind: PickupKind };
+	| { type: "collectPickup"; kind: PickupKind }
+	| { type: "upgradeWeapon"; weapon: WeaponId };
 
 /**
  * Per-tick context the reducer can't derive from `state` alone — the wall
@@ -62,7 +65,7 @@ export type GameAction =
 export type GameReducerCtx = Readonly<{
 	now: number;
 	tuning: DifficultyTuning;
-	settings: { soundEnabled: boolean; level: LevelChoice };
+	settings: { soundEnabled: boolean };
 	seedLootKind: "bottles" | "books" | "treasure";
 	iframeUntil: number;
 	acquired: Set<string>;
@@ -87,6 +90,7 @@ const AMMO_INCREMENT: Record<
 	| "spiritBox"
 	| "uvFlashlight"
 	| "crucifix"
+	| "weaponUpgrade"
 > = {
 	health: "health",
 	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
@@ -98,7 +102,15 @@ const AMMO_INCREMENT: Record<
 	spiritBox: "spiritBox",
 	uvFlashlight: "uvFlashlight",
 	crucifix: "crucifix",
+	weaponUpgrade: "weaponUpgrade",
 };
+
+/**
+ * D3 / L-2 — extra ammo granted on top of each weapon's `pickupAmmo` when the
+ * goal (key) drop hands the player the full arsenal in `reduceWin`. Named so the
+ * grant is tunable in one place instead of as bare `+ 4` / `+ 10` literals.
+ */
+const GOAL_BONUS_AMMO = { shotgun: 4, flamethrower: 10 } as const;
 
 const noChange = (state: GameState, iframeUntil: number): GameReducerResult => ({
 	state,
@@ -157,6 +169,13 @@ export function gameReducer(
 			};
 		case "collectPickup":
 			return reduceCollectPickup(state, action.kind, ctx);
+		case "upgradeWeapon":
+			return reduceUpgradeWeapon(state, action.weapon, ctx);
+		default:
+			// PREP-BP2 — exhaustiveness. A new GameAction variant (STRUCT4 weapon
+			// upgrades, etc.) without a case becomes a compile error here instead
+			// of silently returning undefined.
+			return assertNever(action, "GameAction");
 	}
 }
 
@@ -223,8 +242,11 @@ function reduceWin(state: GameState, ctx: GameReducerCtx): GameReducerResult {
 			ownedWeapons: { ...state.ownedWeapons, chaingun: true, shotgun: true, flamethrower: true },
 			ammo: {
 				...state.ammo,
-				shotgun: Math.max(state.ammo.shotgun, WEAPONS.shotgun.pickupAmmo + 4),
-				flamethrower: Math.max(state.ammo.flamethrower, WEAPONS.flamethrower.pickupAmmo + 10),
+				shotgun: Math.max(state.ammo.shotgun, WEAPONS.shotgun.pickupAmmo + GOAL_BONUS_AMMO.shotgun),
+				flamethrower: Math.max(
+					state.ammo.flamethrower,
+					WEAPONS.flamethrower.pickupAmmo + GOAL_BONUS_AMMO.flamethrower,
+				),
 			},
 		},
 		effects,
@@ -240,7 +262,6 @@ function reduceReachSpawn(state: GameState, ctx: GameReducerCtx): GameReducerRes
 		// status guard), so preserve that ordering.
 		return { state, effects: [fade], iframeUntil: ctx.iframeUntil, consumed: false };
 	}
-	const advanced = advanceLevel(ctx.settings.level, state.run.runLevelsCleared);
 	const clearedRun = runStatsReducer(state.run, {
 		type: "clearLevel",
 		killsThisLevel: 0,
@@ -251,7 +272,10 @@ function reduceReachSpawn(state: GameState, ctx: GameReducerCtx): GameReducerRes
 		state: {
 			...state,
 			run: clearedRun,
-			status: advanced === null ? "won" : "transitioning",
+			// STRUCT1 (D23, endless) — clearing a level ALWAYS transitions to the
+			// next biome. There is no campaign "won" terminus; death is the only
+			// end. The transition hook advances depth + pressure-picks the biome.
+			status: "transitioning",
 			// POL37 — clear the deadline; countdown hides.
 			goingBackDeadlineMs: null,
 		},
@@ -306,6 +330,15 @@ function reduceCollectPickup(
 		effects.push({ kind: "dispatch", event: { type: "flashlightAcquired" } });
 		return ok({ ...state, hasFlashlight: true });
 	}
+	if (action === "weaponUpgrade") {
+		// STRUCT4 — upgrade the ACTIVE weapon (the one the player is wielding when
+		// they grab the drop). `bumpWeaponTier` owns the cap/ownership guard so this
+		// pickup arm and the explicit `upgradeWeapon` action can never desync.
+		const bump = bumpWeaponTier(state, state.weapon);
+		if (!bump) return ok(state);
+		effects.push({ kind: "dispatch", event: bump.event });
+		return ok(bump.next);
+	}
 	if (action === "emfReader") return ok({ ...state, hasEmfReader: true });
 	if (action === "spiritBox") return ok({ ...state, hasSpiritBox: true });
 	if (action === "uvFlashlight") return ok({ ...state, hasUvFlashlight: true });
@@ -343,4 +376,44 @@ function reduceCollectPickup(
 	function ok(next: GameState): GameReducerResult {
 		return { state: next, effects, iframeUntil: ctx.iframeUntil, consumed: false };
 	}
+}
+
+/**
+ * STRUCT4 — the single cap/ownership-guarded weapon-tier bump. Returns the next
+ * GameState + the `weaponUpgraded` event, or `null` when the weapon is unowned
+ * or already at MAX_WEAPON_TIER. Both upgrade paths (the `weaponUpgrade` pickup
+ * arm and the explicit `upgradeWeapon` action) route through this so the guard
+ * and the +1 can never drift apart.
+ */
+function bumpWeaponTier(
+	state: GameState,
+	weapon: WeaponId,
+): { next: GameState; event: { type: "weaponUpgraded"; weapon: WeaponId; tier: number } } | null {
+	const current = state.weaponTiers[weapon];
+	if (!state.ownedWeapons[weapon] || current >= MAX_WEAPON_TIER) return null;
+	const tier = current + 1;
+	return {
+		next: { ...state, weaponTiers: { ...state.weaponTiers, [weapon]: tier } },
+		event: { type: "weaponUpgraded", weapon, tier },
+	};
+}
+
+/**
+ * STRUCT4 — explicit `upgradeWeapon` action handler. Thin wrapper over
+ * `bumpWeaponTier` that adapts the result to a GameReducerResult; the tier feeds
+ * `effectiveWeaponSpec` at fire time.
+ */
+function reduceUpgradeWeapon(
+	state: GameState,
+	weapon: WeaponId,
+	ctx: GameReducerCtx,
+): GameReducerResult {
+	const bump = bumpWeaponTier(state, weapon);
+	if (!bump) return noChange(state, ctx.iframeUntil);
+	return {
+		state: bump.next,
+		effects: [{ kind: "dispatch", event: bump.event }],
+		iframeUntil: ctx.iframeUntil,
+		consumed: false,
+	};
 }

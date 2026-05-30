@@ -31,14 +31,15 @@
 import { playFlashlightClick, playHitSting, playPickup, playPlayerDeath } from "@audio/sfx";
 import { dispatch } from "@engine/events";
 import { cyrb128 } from "@engine/rng";
+import { assertNever } from "@shared/assertNever";
 import {
 	type GameAction,
 	type GameEffect,
 	type GameReducerResult,
 	gameReducer,
 } from "@store/gameReducer";
-import type { BoneBusterSettings, DifficultyTuning, LevelChoice } from "@store/settings";
-import type { FadeKind, GameRef, GameState } from "@views/Shell";
+import type { FadeKind, GameRef, GameState } from "@store/gameState";
+import type { BoneBusterSettings, DifficultyTuning } from "@store/settings";
 import { pickLootKind } from "@world/loot";
 import { useRef } from "react";
 
@@ -50,7 +51,6 @@ export type UseGameRefDeps = Readonly<{
 	settings: BoneBusterSettings;
 	tuning: DifficultyTuning;
 	seedPhrase: string;
-	level: LevelChoice;
 }>;
 
 export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
@@ -91,8 +91,15 @@ export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 						case "flashlightClick":
 							playFlashlightClick();
 							break;
+						default:
+							// PREP-BP2 — a new GameEffect audio sound without a case
+							// is a compile error here.
+							assertNever(e.sound, "GameEffect audio sound");
 					}
 					break;
+				default:
+					// PREP-BP2 — a new GameEffect kind without a case is a compile error.
+					assertNever(e, "GameEffect");
 			}
 		}
 	};
@@ -103,7 +110,7 @@ export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 		const result = gameReducer(stateRef.current, action, {
 			now: performance.now(),
 			tuning,
-			settings: { soundEnabled: settings.soundEnabled, level: settings.level },
+			settings: { soundEnabled: settings.soundEnabled },
 			// COV12 — loot kind is seed-derived; computed here (not in the pure
 			// reducer) and passed via ctx so the reducer stays free of the RNG.
 			seedLootKind: pickLootKind(cyrb128(seedPhrase)[2] >>> 0),
@@ -114,6 +121,20 @@ export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 		// reads them — this is what makes the synchronous `collectAllPickups`
 		// loop accumulate (two health pickups → +2 HP) without a functional
 		// updater. React converges to the same final state.
+		//
+		// no-visual-impact: BP-3 is a comment-only constraint note on the existing stateRef threading; zero behavior or rendering change
+		// BP-3 — CONSTRAINT: `stateRef.current` is the authoritative
+		// same-batch state; the React `state` the HUD renders LAGS within a
+		// synchronous batch (it reflects the LAST `setState` React has
+		// committed, not intermediate same-tick mutations). So:
+		//   - Game LOGIC that must see same-tick accumulation reads
+		//     `stateRef.current` (here + the reducer ctx), never the rendered
+		//     `state` prop.
+		//   - HUD/render code reads the React `state` and may be one batch
+		//     behind mid-burst — that's fine (it converges next commit) and
+		//     MUST NOT be "fixed" by reading `stateRef.current` into render:
+		//     a ref read during render is not reactive and would desync the
+		//     displayed value from React's committed tree.
 		stateRef.current = result.state;
 		lastPlayerHitAt.current = result.iframeUntil;
 		depsRef.current.setState(result.state);
@@ -145,6 +166,9 @@ export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 		onConsumeCrucifix: () => runAction({ type: "consumeCrucifix" }).consumed,
 		onCollectPickup: (kind) => {
 			runAction({ type: "collectPickup", kind });
+		},
+		onUpgradeWeapon: (weapon) => {
+			runAction({ type: "upgradeWeapon", weapon });
 		},
 	});
 

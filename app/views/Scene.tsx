@@ -12,6 +12,7 @@ import {
 	setAmbientPhase,
 	stopAmbient,
 } from "@audio/sfx";
+import { Capacitor } from "@capacitor/core";
 import { PlayerController } from "@components/PlayerController";
 import { addBoneBusterListener, dispatch } from "@engine/events";
 import { type BoneBusterMap, type Enemy, isSectorMap, type Pickup } from "@engine/mapTypes";
@@ -23,8 +24,9 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { getArchetypeLightPalette } from "@scene/lighting/archetypePalette";
 import { PLAYER_HEIGHT, TILE } from "@shared/constants";
 import type { WeaponId } from "@shared/weapons";
+import type { GameRef, LevelPhase, WeaponState } from "@store/gameState";
 import { type BoneBusterSettings, DIFFICULTY_TUNING } from "@store/settings";
-import type { GameRef, LevelPhase, WeaponState } from "@views/Shell";
+import { noShadowsRequested } from "@views/urlFlags";
 import { pickArchetype } from "@world/archetype";
 import { type Barrel, resolveExplosion, spawnBarrels } from "@world/barrels";
 import { type LampInstance, spawnLamps } from "@world/lampScatter";
@@ -69,6 +71,7 @@ import {
 	WeaponSwapDip,
 	WeaponViewmodel,
 } from "../../src/scene";
+import { GhostTrailField } from "../../src/scene/effects/GhostTrailField";
 import { EntityMeshes } from "../../src/scene/fields/EntityMeshes";
 import { ScatterFields } from "../../src/scene/fields/ScatterFields";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
@@ -78,7 +81,10 @@ import { pickChaingunProfile } from "../../src/world/chaingunSkins";
 import {
 	CRUCIFIX_LIFETIME_MS,
 	type CrucifixInstance,
+	EVP_CAPTURE_RADIUS,
+	EVP_COOLDOWN_MS,
 	pickEmfReading,
+	pickEvpCue,
 	pickSpiritBoxPhoneme,
 	SPIRIT_BOX_COOLDOWN_MS,
 	SPIRIT_BOX_TRIGGER_RADIUS,
@@ -86,12 +92,23 @@ import {
 import { pickMeleeProfile } from "../../src/world/meleeSkins";
 import { pickPistolProfile } from "../../src/world/pistolSkins";
 
+// PREP-PERF3 — real-time directional shadows only on desktop web. Capacitor
+// native (iOS/Android, the mobile target) skips the per-frame 1024² shadow pass
+// VIS1 introduced (~4-8ms/frame on a Pixel 5a + doubled shadow-caster draws).
+// Resolved once at module load; the platform doesn't change at runtime.
+// CI-3 — `?bonebusterNoShadows` force-disables shadows so the mobile-perf A/B
+// can measure the shadow cost (shadows-on reload vs shadows-off reload).
+// no-visual-impact: desktop web keeps real-time shadows so canonical and golden screenshot baselines are byte-identical; only native mobile or the explicit ?bonebusterNoShadows A/B flag drops them
+const SHADOWS_ENABLED = Capacitor.getPlatform() === "web" && !noShadowsRequested();
+
 type SceneProps = Readonly<{
 	map: BoneBusterMap;
 	active: boolean;
 	hasKey: boolean;
 	gameRef: RefObject<GameRef>;
 	weapon: WeaponId;
+	/** STRUCT4 — upgrade tier of the active weapon (drives effectiveWeaponSpec at fire). */
+	weaponTier: number;
 	ammoRef: RefObject<WeaponState>;
 	settings: BoneBusterSettings;
 	// H8 — drives going_back behavior (re-aggro, strobe, return-to-spawn).
@@ -119,6 +136,7 @@ export function BoneBusterScene({
 	hasKey,
 	gameRef,
 	weapon,
+	weaponTier,
 	ammoRef,
 	settings,
 	phase,
@@ -732,6 +750,7 @@ export function BoneBusterScene({
 			resolveFire({
 				active,
 				weapon,
+				weaponTier,
 				now: performance.now(),
 				camera,
 				map,
@@ -781,6 +800,26 @@ export function BoneBusterScene({
 		}
 	});
 
+	// Shared nearest-live-enemy distance² (camera→enemy, world units = tiles).
+	// The EMF reader, spirit box, and EVP recorder all need it; computing it ONCE
+	// per frame here (priority -1 → runs before the consumers below) replaces what
+	// were three identical O(enemies) scans. Consumers read the ref + apply their
+	// own radius/cooldown gates (review BP-1 / perf#2).
+	const nearestEnemyDistSqRef = useRef(Number.POSITIVE_INFINITY);
+	useFrame(() => {
+		let best = Number.POSITIVE_INFINITY;
+		if (active) {
+			for (const enemy of enemiesRef.current) {
+				if (enemy.dead) continue;
+				const ex = enemy.position.x - camera.position.x;
+				const ez = enemy.position.y - camera.position.z;
+				const d = ex * ex + ez * ez;
+				if (d < best) best = d;
+			}
+		}
+		nearestEnemyDistSqRef.current = best;
+	}, -1);
+
 	// PB5 step-2 — EMF reader per-frame nearest-enemy distance dispatch.
 	// Throttled to 100 ms (≈10 Hz) so HUD re-renders stay cheap; the chip
 	// animation interpolates smoothly between the discrete level steps.
@@ -793,17 +832,9 @@ export function BoneBusterScene({
 		const now = performance.now();
 		if (now - lastEmfDispatchRef.current < 100) return;
 		lastEmfDispatchRef.current = now;
-		// Nearest-enemy distance in tiles. Camera position is world units;
-		// 1 tile = 1 world unit in Bone Buster's coordinate space (TILE
-		// constant), so the raw Euclidean distance IS the tile count.
-		let bestDistSq = Number.POSITIVE_INFINITY;
-		for (const enemy of enemiesRef.current) {
-			if (enemy.dead) continue;
-			const ex = enemy.position.x - camera.position.x;
-			const ez = enemy.position.y - camera.position.z;
-			const d = ex * ex + ez * ez;
-			if (d < bestDistSq) bestDistSq = d;
-		}
+		// Nearest-enemy distance in tiles (1 tile = 1 world unit), from the shared
+		// per-frame scan above.
+		const bestDistSq = nearestEnemyDistSqRef.current;
 		const dist = Number.isFinite(bestDistSq) ? Math.sqrt(bestDistSq) : Number.POSITIVE_INFINITY;
 		const level = pickEmfReading(dist);
 		// Skip the dispatch when the level hasn't changed since the last
@@ -815,13 +846,11 @@ export function BoneBusterScene({
 		dispatch({ type: "emfReading", level });
 	});
 
-	// PC2 — Spirit-box per-frame proximity check + cooldown-gated
-	// response dispatch. Walks the same enemiesRef pool as the EMF
-	// dispatch above; when the nearest live enemy is within
-	// SPIRIT_BOX_TRIGGER_RADIUS tiles and the cooldown has expired,
-	// picks a deterministic phoneme keyed off (mapSeedNum, triggerIndex)
-	// and emits the typed event. The HUD bubble subscribes; the audio
-	// sting (future commit) can subscribe to the same event.
+	// PC2 — Spirit-box per-frame proximity check + cooldown-gated response
+	// dispatch. Reads the shared nearest-enemy distance²; when the nearest live
+	// enemy is within SPIRIT_BOX_TRIGGER_RADIUS tiles and the cooldown has
+	// expired, picks a deterministic phoneme keyed off (mapSeedNum, triggerIndex)
+	// and emits the typed event. The HUD bubble subscribes.
 	const lastSpiritBoxTriggerAtRef = useRef(0);
 	const spiritBoxTriggerCountRef = useRef(0);
 	useFrame(() => {
@@ -829,19 +858,30 @@ export function BoneBusterScene({
 		const now = performance.now();
 		if (now - lastSpiritBoxTriggerAtRef.current < SPIRIT_BOX_COOLDOWN_MS) return;
 		const radiusSq = SPIRIT_BOX_TRIGGER_RADIUS * SPIRIT_BOX_TRIGGER_RADIUS;
-		let nearestSq = Number.POSITIVE_INFINITY;
-		for (const enemy of enemiesRef.current) {
-			if (enemy.dead) continue;
-			const ex = enemy.position.x - camera.position.x;
-			const ez = enemy.position.y - camera.position.z;
-			const d = ex * ex + ez * ez;
-			if (d < nearestSq) nearestSq = d;
-		}
-		if (nearestSq > radiusSq) return;
+		if (nearestEnemyDistSqRef.current > radiusSq) return;
 		lastSpiritBoxTriggerAtRef.current = now;
 		const phoneme = pickSpiritBoxPhoneme(mapSeedNum, spiritBoxTriggerCountRef.current);
 		spiritBoxTriggerCountRef.current += 1;
 		dispatch({ type: "spiritBoxResponse", phoneme });
+	});
+
+	// GH-TAPE — EVP tape recorder. Always passively recording (no ownership gate,
+	// unlike the EMF/spirit-box pickups); when a live enemy comes within
+	// EVP_CAPTURE_RADIUS and the cooldown has elapsed, it captures a deterministic
+	// residue cue (keyed off mapSeedNum + capture index) and emits the typed
+	// event for the HUD playback chip. Reads the shared nearest-enemy distance².
+	const lastEvpCaptureAtRef = useRef(0);
+	const evpCaptureCountRef = useRef(0);
+	useFrame(() => {
+		if (!active) return;
+		const now = performance.now();
+		if (now - lastEvpCaptureAtRef.current < EVP_COOLDOWN_MS) return;
+		const radiusSq = EVP_CAPTURE_RADIUS * EVP_CAPTURE_RADIUS;
+		if (nearestEnemyDistSqRef.current > radiusSq) return;
+		lastEvpCaptureAtRef.current = now;
+		const cue = pickEvpCue(mapSeedNum, evpCaptureCountRef.current);
+		evpCaptureCountRef.current += 1;
+		dispatch({ type: "evpCaptured", cue });
 	});
 
 	// POL44 — muzzle-light decay at positive priority. The fire event
@@ -881,20 +921,37 @@ export function BoneBusterScene({
 
 	return (
 		<>
-			{/* J1 — when the player owns the flashlight the world reads in
-			    full ambient + sun. Without it, both drop to near-dark and
-			    the flashlight spotlight is the only practical fill. */}
+			{/* VIS1 — bright flat FLOOD lighting. PSX assets are washed-out +
+			    chunky by design: they're built to be SEEN under broad even
+			    light, not hidden in a dark-reveal mechanic. The old
+			    flashlight-gated near-dark model (0.12 ambient until pickup)
+			    buried all the texture + model detail and made weapons read as
+			    flat emissive blobs. Now ambient floods the scene regardless of
+			    the flashlight; the directional + hemisphere just add chunky
+			    PSX shape/contrast. Per-archetype mul still tints the mood. */}
 			<ambientLight
 				ref={ambientLightRef}
-				intensity={(hasFlashlight ? 0.55 : 0.12) * lightPalette.ambientMul}
+				// VIS3 — raised the flood floor (0.95 → 1.25) so the washed-out PSX
+				// brick/floor textures read clearly across the whole corridor
+				// (user: "brighter, more readable" — modernized DOOM, visibility
+				// first). Mood now comes from fog + directional shape, not from a
+				// dim base.
+				intensity={1.25 * lightPalette.ambientMul}
 				color={lightPalette.ambientColor}
 			/>
 			<directionalLight
 				ref={directionalLightRef}
 				position={[10, 16, 8]}
-				intensity={(hasFlashlight ? 0.9 : 0.18) * lightPalette.directionalMul}
+				intensity={1.1 * lightPalette.directionalMul}
 				color={lightPalette.directionalColor}
-				castShadow
+				// PREP-PERF3 — real-time shadows ONLY on desktop web. The always-on
+				// 1024² shadow pass (added by VIS1) costs ~4-8ms/frame on a Pixel
+				// 5a-class GPU + doubles shadow-caster draw submissions vs the mobile
+				// budget — the single largest mobile frame-time line item. PSX-jank
+				// reads fine flat-lit without real-time shadows on native; desktop
+				// keeps them for the chunky-shape contrast. (Capacitor native =
+				// mobile; web = desktop, here.)
+				castShadow={SHADOWS_ENABLED}
 				shadow-mapSize={[1024, 1024]}
 				shadow-camera-left={-20}
 				shadow-camera-right={20}
@@ -903,6 +960,9 @@ export function BoneBusterScene({
 				shadow-camera-near={0.5}
 				shadow-camera-far={60}
 			/>
+			{/* J1 (retired) — the flashlight no longer gates visibility; the
+			    flood above always lights the scene. The pickup + cone stay as a
+			    cosmetic forward-beam highlight only. */}
 			{hasFlashlight && <Flashlight />}
 			{/* PC3 — UV flashlight cone. Mounted alongside (not instead of)
 			    the white flashlight; the two lights coexist when the
@@ -920,14 +980,21 @@ export function BoneBusterScene({
 			    owner-gate) — empty list collapses to one Array.map. */}
 			<CrucifixField crucifixes={activeCrucifixesRef.current} version={crucifixesVersion} />
 
-			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.35]} />
+			{/* VIS3 — hemisphere up (0.7 → 0.95) adds sky/ground fill so floors +
+			    ceilings aren't lost to shadow; complements the raised ambient. */}
+			<hemisphereLight args={[lightPalette.hemisphereSky, lightPalette.hemisphereGround, 0.95]} />
 			{/* I11 — muzzle-flash point light. Lives at camera position,
 			    driven by useFrame so it can decay between renders. */}
 			<pointLight ref={muzzleLightRef} intensity={0} distance={8} decay={1.5} />
 			{/* E13 step-4 — per-archetype fog tint. Dominant depth-fade
 			    signal in low-lit play; biggest visual lever for archetype-
 			    distinctness. Corridor still resolves to BONE_BUSTER_PALETTE.ink. */}
-			<fog attach="fog" args={[lightPalette.fogColor, 6, TILE * lightPalette.fogFarTiles]} />
+			{/* VIS3 — fog near pushed 8 → 18 so the haze starts well down the
+			    corridor instead of forming a near "blue wall" right in front of
+			    the player; the far plane (TILE × fogFarTiles) still culls the
+			    horizon + supplies depth. Reads as atmospheric depth, not a
+			    flat-colour gradient on the nearest wall. */}
+			<fog attach="fog" args={[lightPalette.fogColor, 18, TILE * lightPalette.fogFarTiles]} />
 			<color attach="background" args={[lightPalette.fogColor]} />
 
 			{map.kind === "grid" ? (
@@ -1004,6 +1071,8 @@ export function BoneBusterScene({
 
 			<BulletField bulletsRef={bulletsRef} register={bulletMeshes} />
 			<ParticleBurstField />
+			{/* GH-TRAIL — faint spectral wake per live enemy (UV-aware). */}
+			<GhostTrailField enemiesRef={enemiesRef} hasUvFlashlight={hasUvFlashlight} />
 			<BodyPartField archetype={archetype} />
 			<ReturnToSpawnBearingWriter spawnX={map.playerSpawn.x} spawnY={map.playerSpawn.y} />
 			<ShellEjectField />

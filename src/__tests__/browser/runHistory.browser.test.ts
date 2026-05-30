@@ -24,7 +24,7 @@ const SAMPLE: RunInsert = {
 	totalKills: 42,
 	totalDamageTaken: 17,
 	totalSecrets: 2,
-	level: 1,
+	levelSet: "marrowed-vile-sepulcher",
 	outcome: "died",
 };
 

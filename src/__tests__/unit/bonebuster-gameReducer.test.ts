@@ -5,12 +5,13 @@
  * pure, these are plain input→output assertions with no React.
  */
 
-import { WEAPONS } from "@shared/weapons";
+import { WEAPON_ORDER, WEAPONS } from "@shared/weapons";
+import { MAX_WEAPON_TIER } from "@shared/weaponUpgrade";
+import { GOING_BACK_BUDGET_MS } from "@store/gameConstants";
 import { type GameAction, type GameReducerCtx, gameReducer } from "@store/gameReducer";
+import type { GameState } from "@store/gameState";
 import { makeInitialRunStats } from "@store/runStats";
 import { DIFFICULTY_TUNING } from "@store/settings";
-import { GOING_BACK_BUDGET_MS } from "@views/gameConstants";
-import type { GameState } from "@views/Shell";
 import { LOOT_BONUSES } from "@world/loot";
 import { describe, expect, it } from "vitest";
 
@@ -37,6 +38,7 @@ function baseState(over: Partial<GameState> = {}): GameState {
 			flamethrower: false,
 			melee: true,
 		},
+		weaponTiers: { pistol: 0, chaingun: 0, shotgun: 0, flamethrower: 0, melee: 0 },
 		damageFlashAt: 0,
 		run: makeInitialRunStats(0),
 		phase: "out",
@@ -49,7 +51,7 @@ function ctx(over: Partial<GameReducerCtx> = {}): GameReducerCtx {
 	return {
 		now: 100_000,
 		tuning: DIFFICULTY_TUNING.hurtMePlenty,
-		settings: { soundEnabled: true, level: 1 },
+		settings: { soundEnabled: true },
 		seedLootKind: "treasure",
 		iframeUntil: 0,
 		acquired: new Set<string>(),
@@ -177,11 +179,11 @@ describe("gameReducer — win", () => {
 });
 
 describe("gameReducer — reachSpawn", () => {
-	it("advances to transitioning when more levels remain", () => {
+	it("advances to transitioning on every clear (endless descent)", () => {
 		const r = run(
 			baseState({ phase: "going_back", goingBackDeadlineMs: 5 }),
 			{ type: "reachSpawn" },
-			ctx({ settings: { soundEnabled: true, level: 1 } }),
+			ctx({ settings: { soundEnabled: true } }),
 		);
 		expect(r.state.status).toBe("transitioning");
 		expect(r.state.goingBackDeadlineMs).toBeNull();
@@ -303,6 +305,70 @@ describe("gameReducer — collectPickup (CR-F8 table)", () => {
 			kind: "dispatch",
 			event: { type: "weaponAcquired", weapon: "chaingun" },
 		});
+	});
+
+	it("HUD3 — an in-world weapon pickup grows the own-only HUD bar (WEAPON_ORDER filter)", () => {
+		// The HUD2 weapon bar renders WEAPON_ORDER.filter(id => ownedWeapons[id]).
+		// Start = blade + pistol (2 chips); after a chaingun-ammo pickup the bar
+		// must include chaingun (3 chips) — the in-world-pickup → arsenal → HUD
+		// loop (PRD HUD3).
+		const before = WEAPON_ORDER.filter((id) => baseState().ownedWeapons[id]);
+		expect(before).toEqual(["melee", "pistol"]);
+		const r = run(baseState({ weapon: "pistol" }), { type: "collectPickup", kind: "chaingunAmmo" });
+		const after = WEAPON_ORDER.filter((id) => r.state.ownedWeapons[id]);
+		expect(after).toContain("chaingun");
+		expect(after.length).toBe(before.length + 1);
+	});
+
+	it("STRUCT4 — upgradeWeapon bumps an owned weapon's tier + fires weaponUpgraded", () => {
+		const owned = baseState({
+			ownedWeapons: { ...baseState().ownedWeapons, chaingun: true },
+		});
+		const r = run(owned, { type: "upgradeWeapon", weapon: "chaingun" });
+		expect(r.state.weaponTiers.chaingun).toBe(1);
+		expect(r.effects).toContainEqual({
+			kind: "dispatch",
+			event: { type: "weaponUpgraded", weapon: "chaingun", tier: 1 },
+		});
+	});
+
+	it("STRUCT4 — upgradeWeapon is a no-op on an UNOWNED weapon", () => {
+		const r = run(baseState(), { type: "upgradeWeapon", weapon: "chaingun" });
+		expect(r.state.weaponTiers.chaingun).toBe(0);
+		expect(r.effects).toHaveLength(0);
+	});
+
+	it("STRUCT4 — weaponUpgrade pickup bumps the ACTIVE weapon's tier", () => {
+		const r = run(baseState({ weapon: "pistol" }), {
+			type: "collectPickup",
+			kind: "weaponUpgrade",
+		});
+		expect(r.state.weaponTiers.pistol).toBe(1);
+		expect(r.effects).toContainEqual({
+			kind: "dispatch",
+			event: { type: "weaponUpgraded", weapon: "pistol", tier: 1 },
+		});
+	});
+
+	it("STRUCT4 — weaponUpgrade pickup is a no-op if the active weapon is unowned (guard parity)", () => {
+		// Contrived: active weapon not in ownedWeapons (can't happen in normal
+		// play, but the guard must match reduceUpgradeWeapon's).
+		const s = baseState({
+			weapon: "chaingun",
+			ownedWeapons: { ...baseState().ownedWeapons, chaingun: false },
+		});
+		const r = run(s, { type: "collectPickup", kind: "weaponUpgrade" });
+		expect(r.state.weaponTiers.chaingun).toBe(0);
+	});
+
+	it("STRUCT4 — upgradeWeapon caps at MAX_WEAPON_TIER", () => {
+		const maxed = baseState({
+			ownedWeapons: { ...baseState().ownedWeapons, chaingun: true },
+			weaponTiers: { ...baseState().weaponTiers, chaingun: MAX_WEAPON_TIER },
+		});
+		const r = run(maxed, { type: "upgradeWeapon", weapon: "chaingun" });
+		expect(r.state.weaponTiers.chaingun).toBe(MAX_WEAPON_TIER);
+		expect(r.effects).toHaveLength(0);
 	});
 
 	it("weapon-ammo: does NOT auto-swap away from a non-pistol weapon", () => {

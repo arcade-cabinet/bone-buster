@@ -17,7 +17,6 @@
 
 import { createDatabase } from "@platform/persistence/createDatabase";
 import type { DatabaseAdapter } from "@platform/persistence/database";
-import type { LevelChoice } from "@store/settings";
 
 const LEGACY_STORAGE_KEY = "objexoom.runHistory";
 
@@ -34,7 +33,11 @@ export type RunRecord = Readonly<{
 	totalDamageTaken: number;
 	/** POL5 — secrets triggered across the run. Older rows default to 0. */
 	totalSecrets: number;
-	// "procedural" or 1-5 — stored as string for forward compat.
+	/**
+	 * STRUCT1 — the run's map identity. Pre-STRUCT1 this held the "procedural"
+	 * / 1-5 LevelChoice; now (fully procedural + endless) it holds the descent's
+	 * seed PHRASE. Stored as TEXT for forward compat; legacy rows still parse.
+	 */
 	levelSet: string;
 	outcome: RunOutcome;
 }>;
@@ -47,7 +50,8 @@ export type RunInsert = Readonly<{
 	totalDamageTaken: number;
 	/** POL5 — secrets triggered across the run. */
 	totalSecrets: number;
-	level: LevelChoice;
+	/** STRUCT1 — the run's descent identity (the seed phrase). */
+	levelSet: string;
 	outcome: RunOutcome;
 }>;
 
@@ -134,7 +138,7 @@ export async function openRunHistory(): Promise<RunHistory> {
 				record.totalKills,
 				record.totalDamageTaken,
 				record.totalSecrets,
-				String(record.level),
+				record.levelSet,
 				record.outcome,
 			],
 		);

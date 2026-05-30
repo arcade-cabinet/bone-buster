@@ -223,6 +223,13 @@ export interface WeaponAcquiredEvent {
 	weapon: "melee" | "pistol" | "chaingun" | "shotgun" | "flamethrower";
 }
 
+/** STRUCT4 — a weapon's upgrade tier increased (HUD flashes the new tier). */
+export interface WeaponUpgradedEvent {
+	type: "weaponUpgraded";
+	weapon: "melee" | "pistol" | "chaingun" | "shotgun" | "flamethrower";
+	tier: number;
+}
+
 /**
  * POL36 — fires the first time the player camera has line-of-sight
  * to any tier="boss" enemy on the current map. The BossBanner HUD
@@ -286,6 +293,16 @@ export interface SpiritBoxResponseEvent {
 }
 
 /**
+ * GH-TAPE — the EVP tape recorder captured a residue cue near a live enemy. The
+ * HUD playback chip renders the captured fragment for a beat. Same Scene→HUD
+ * decoupling as spiritBoxResponse; the cue is deterministic per (seed, capture).
+ */
+export interface EvpCapturedEvent {
+	type: "evpCaptured";
+	cue: string;
+}
+
+/**
  * PC4 — Player pressed `9` to place a crucifix. Scene listens for
  * this, decrements `state.crucifixes`, and pushes a new
  * CrucifixInstance into the active list. Key-input layer dispatches;
@@ -293,6 +310,23 @@ export interface SpiritBoxResponseEvent {
  */
 export interface CrucifixPlaceEvent {
 	type: "crucifixPlace";
+}
+
+/**
+ * ERR1 / CI-10 — an asset (GLB / wasm / font / texture) failed to load. Emitted
+ * by the AssetErrorBoundary when a scene-tree load throws, so (a) the Shell can
+ * surface the error modal and (b) `verify-pages-deploy.mjs` can assert zero
+ * asset errors — turning the post-deploy smoke test into a real asset-integrity
+ * gate (a 404'd enemy GLB otherwise passes smoke at 60fps with a missing mesh).
+ */
+export interface AssetErrorEvent {
+	type: "assetError";
+	/** Best-effort failing asset URL (from the thrown error / message). */
+	url: string;
+	/** Coarse asset class for triage. */
+	assetType: "glb" | "texture" | "wasm" | "font" | "unknown";
+	/** Where it failed — scene-tree render (Suspense child) for now. */
+	phase: "scene";
 }
 
 export type BoneBusterEvent =
@@ -317,12 +351,15 @@ export type BoneBusterEvent =
 	| FlashlightAcquiredEvent
 	| PickupCollectedEvent
 	| WeaponAcquiredEvent
+	| WeaponUpgradedEvent
 	| BossSpottedEvent
 	| BossDefeatedEvent
 	| EnemyKilledEvent
 	| EmfReadingEvent
 	| SpiritBoxResponseEvent
-	| CrucifixPlaceEvent;
+	| EvpCapturedEvent
+	| CrucifixPlaceEvent
+	| AssetErrorEvent;
 
 export type BoneBusterEventType = BoneBusterEvent["type"];
 

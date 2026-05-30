@@ -57,6 +57,20 @@ const consoleMessages = [];
 page.on("console", (msg) => consoleMessages.push(`[${msg.type()}] ${msg.text()}`));
 page.on("pageerror", (err) => consoleMessages.push(`[pageerror] ${err.message}`));
 
+// ERR1 / CI-10 — record every bonebuster:assetError the AssetErrorBoundary
+// emits. Registered before navigation so no early failure is missed. A 404'd
+// GLB/texture/wasm used to pass smoke at 60fps with a missing mesh; now it
+// surfaces here and fails the deploy gate (asserted after the playthrough).
+await page.addInitScript(() => {
+	const w = window;
+	w.__assetErrors = [];
+	w.addEventListener("bonebuster:assetError", (e) => {
+		// dispatch() puts the payload in e.detail (type is the event NAME);
+		// reconstruct the full shape so entries carry {type, url, assetType, phase}.
+		w.__assetErrors.push({ type: "assetError", ...e.detail });
+	});
+});
+
 await page.route(
 	(url) => url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com",
 	(route) => route.abort(),
@@ -114,11 +128,29 @@ const gl = await page.evaluate(() => {
 	const dbgExt = glctx.getExtension("WEBGL_debug_renderer_info");
 	return {
 		size: { w: c.width, h: c.height },
+		// CI-7 — laid-out CSS size; a canvas with 0 clientWidth/Height renders
+		// nothing on screen even when backing-store width/height are non-zero
+		// (the "deployed but blank" failure a size-only log would miss).
+		client: { w: c.clientWidth, h: c.clientHeight },
 		vendor: dbgExt ? glctx.getParameter(dbgExt.UNMASKED_VENDOR_WEBGL) : null,
 		renderer: dbgExt ? glctx.getParameter(dbgExt.UNMASKED_RENDERER_WEBGL) : null,
 	};
 });
 console.log("WebGL:", JSON.stringify(gl));
+
+// CI-7 — fail the smoke test on a missing/contextless/zero-size canvas. A live
+// deploy that boots the HUD but renders a 0×0 (or display:none) canvas is the
+// "looks up, actually blank" class; assert the canvas is genuinely laid out.
+if (gl.error) {
+	console.error(`Canvas check failed: ${gl.error}`);
+	await browser.close();
+	process.exit(1);
+}
+if (!gl.client || gl.client.w <= 0 || gl.client.h <= 0) {
+	console.error(`Canvas has zero CSS size: ${JSON.stringify(gl.client)}`);
+	await browser.close();
+	process.exit(1);
+}
 
 await captureViaCDP(page, INGAME_PATH);
 console.log("In-game screenshot:", INGAME_PATH);
@@ -130,5 +162,17 @@ const errorMessages = consoleMessages.filter(
 );
 console.log("Console errors:", errorMessages.length);
 for (const m of errorMessages) console.log("  ", m);
+
+// ERR1 / CI-10 — fail the deploy smoke test on ANY asset-load error. This turns
+// the smoke test into a real asset-integrity gate: a 404'd GLB/texture/wasm now
+// fails here instead of silently shipping a missing mesh at 60fps.
+const assetErrors = await page.evaluate(() => window.__assetErrors ?? []);
+console.log("Asset errors:", assetErrors.length);
+for (const e of assetErrors) console.log("  ", JSON.stringify(e));
+if (assetErrors.length > 0) {
+	console.error(`Deploy has ${assetErrors.length} asset-load error(s) — failing.`);
+	await browser.close();
+	process.exit(1);
+}
 
 await browser.close();

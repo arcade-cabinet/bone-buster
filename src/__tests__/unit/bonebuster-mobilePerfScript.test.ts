@@ -44,6 +44,14 @@ describe("T5 — obs3-perf-snapshot-mobile.mjs source pin", () => {
 		expect(source).not.toMatch(/chromium\.launch/);
 	});
 
+	it("listens for the canonical bonebuster:fpsUpdate event (not the dead objexoom: name)", () => {
+		// CI-12 — `dispatch()` emits `bonebuster:${type}` (D-events). A listener on
+		// the legacy `objexoom:fpsUpdate` name never fires → the fps probe silently
+		// records zero frames. Pin the live name so the rename can't regress.
+		expect(source).toMatch(/bonebuster:fpsUpdate/);
+		expect(source).not.toMatch(/objexoom:fpsUpdate/);
+	});
+
 	it("samples for 5 seconds (longer than desktop's 3s to account for emulator warmup)", () => {
 		expect(source).toMatch(/5000\s*\)/);
 	});

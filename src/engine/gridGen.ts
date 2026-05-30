@@ -7,223 +7,103 @@
  */
 
 import { at } from "@engine/arrayAt";
-import { inBounds } from "@engine/gridCollision";
 import type {
 	BoneBusterGridMap,
-	Cell,
 	EnemySpawn,
 	GenerateMapShape,
 	PickupKind,
 	PickupSpawn,
-	Room,
 	Vec2,
 } from "@engine/mapTypes";
-import { createMapPrng, cyrb128 } from "@engine/rng";
+import { difficultyForDepth } from "@engine/maze/difficulty";
+import { generateGridMaze } from "@engine/maze/MazeGenerator";
+import { createMapPrng, cyrb128, forkStream } from "@engine/rng";
 import { TILE } from "@shared/constants";
 import type { PropArchetype } from "@world/scatter/propPool";
-
-const MAP_WIDTH = 24;
-const MAP_HEIGHT = 24;
-const MIN_ROOM = 3;
-const MAX_ROOM = 6;
-const ROOM_TRIES = 90;
 
 const cellCenter = (gx: number, gy: number): Vec2 => ({
 	x: (gx + 0.5) * TILE,
 	y: (gy + 0.5) * TILE,
 });
 
-function carveRoom(cells: Cell[][], room: Room) {
-	for (let gy = room.gy; gy < room.gy + room.height; gy += 1) {
-		const row = at(cells, gy);
-		for (let gx = room.gx; gx < room.gx + room.width; gx += 1) {
-			row[gx] = "empty";
-		}
-	}
+/**
+ * Canonical archetype slot order, engine-local. Kept here (NOT imported from
+ * `@world`) so the engine layer never runtime-depends on world content; the
+ * `satisfies` clause makes it a COMPILE error if it ever drifts from the
+ * `PropArchetype` union (adding a 6th archetype breaks the build here until the
+ * slot is added). This is the single in-engine source for the phrase-fallback
+ * archetype — `@world/archetype.ARCHETYPE_NAMES` mirrors the same order and is
+ * pinned identical by `tests/unit/bonebuster-archetype.test.ts`.
+ */
+export const ARCHETYPE_BY_SLOT = [
+	"corridor",
+	"arena",
+	"courtyard",
+	"sewer",
+	"library",
+] as const satisfies readonly PropArchetype[];
+
+/**
+ * Per-archetype enemy-count multiplier, keyed by archetype NAME (not index) so
+ * there is no index-alignment contract to keep in sync. The biome (STRUCT2)
+ * owns this content and threads its value via `GenerateMapOptions.enemyMultiplier`;
+ * this table is the engine fallback for the phrase-only (snapshot) path. Values
+ * are byte-identical to the pre-refactor index table [1.0,1.4,0.9,1.1,0.8].
+ */
+const ARCHETYPE_ENEMY_MULTIPLIER: Record<PropArchetype, number> = {
+	corridor: 1.0,
+	arena: 1.4,
+	courtyard: 0.9,
+	sewer: 1.1,
+	library: 0.8,
+};
+
+/**
+ * STRUCT1 (DEPTH+PHRASE identity, docs/specs/97) — options for `generateMap`.
+ *
+ * - `shape` — per-biome room-size/density override (was the bare 2nd arg).
+ * - `depth` — biomes cleared so far. Geometry forks per depth so the same
+ *   phrase yields a deterministic maze SEQUENCE down the descent. **Depth 0
+ *   (the default) maps to the legacy `createMapPrng(phrase)` seed verbatim**,
+ *   so the canonical screenshots + the generateMap byte-snapshot stay green;
+ *   depths ≥1 fork via `forkStream(phrase, "MAZE-<depth>")`.
+ * - `biome` — the pressure-picked biome whose character "wears" this geometry.
+ *   When omitted, the archetype falls back to `cyrb128(phrase)[0] % 5` (the
+ *   legacy phrase-derived archetype) so byte-identity holds for callers that
+ *   don't thread a biome (the snapshot guard).
+ * - `enemyMultiplier` — the biome's enemy-count scalar (CONTENT owned by the
+ *   biome, STRUCT2). When omitted, the engine falls back to its per-archetype
+ *   table keyed by the resolved archetype, preserving phrase-only byte-identity.
+ */
+export type GenerateMapOptions = Readonly<{
+	shape?: GenerateMapShape;
+	depth?: number;
+	biome?: PropArchetype;
+	enemyMultiplier?: number;
+}>;
+
+/**
+ * The map PRNG for a given (phrase, depth). Depth 0 reuses the historical
+ * `createMapPrng(phrase)` seed EXACTLY so depth-0 maps are byte-identical to
+ * the pre-STRUCT1 generation (canonical baseline). Depth ≥1 forks a fresh,
+ * deterministic per-depth stream off the same phrase.
+ */
+function mapPrngForDepth(seedPhrase: string, depth: number): () => number {
+	return depth === 0 ? createMapPrng(seedPhrase) : forkStream(seedPhrase, `MAZE-${depth}`);
 }
 
-function carveCorridor(cells: Cell[][], a: Room, b: Room, rand: () => number) {
-	const ax = a.gx + Math.floor(a.width / 2);
-	const ay = a.gy + Math.floor(a.height / 2);
-	const bx = b.gx + Math.floor(b.width / 2);
-	const by = b.gy + Math.floor(b.height / 2);
-	const horizontalFirst = rand() < 0.5;
-	let cx = ax;
-	let cy = ay;
-	if (horizontalFirst) {
-		while (cx !== bx) {
-			at(cells, cy)[cx] = "empty";
-			cx += cx < bx ? 1 : -1;
-		}
-		while (cy !== by) {
-			at(cells, cy)[cx] = "empty";
-			cy += cy < by ? 1 : -1;
-		}
-	} else {
-		while (cy !== by) {
-			at(cells, cy)[cx] = "empty";
-			cy += cy < by ? 1 : -1;
-		}
-		while (cx !== bx) {
-			at(cells, cy)[cx] = "empty";
-			cx += cx < bx ? 1 : -1;
-		}
-	}
-	at(cells, cy)[cx] = "empty";
-}
-
-function bfsReachable(
-	cells: Cell[][],
-	start: { gx: number; gy: number },
-	passable: (c: Cell) => boolean,
-): boolean[][] {
-	const height = cells.length;
-	const width = at(cells, 0).length;
-	const visited: boolean[][] = Array.from({ length: height }, () =>
-		new Array<boolean>(width).fill(false),
-	);
-	if (!inBounds(start.gx, start.gy, width, height)) return visited;
-	const queue: Array<{ gx: number; gy: number }> = [start];
-	at(visited, start.gy)[start.gx] = true;
-	while (queue.length > 0) {
-		const next = queue.shift();
-		if (!next) break;
-		const { gx, gy } = next;
-		for (const [dx, dy] of [
-			[1, 0],
-			[-1, 0],
-			[0, 1],
-			[0, -1],
-		] as const) {
-			const nx = gx + dx;
-			const ny = gy + dy;
-			if (!inBounds(nx, ny, width, height)) continue;
-			const visitedRow = at(visited, ny);
-			if (at(visitedRow, nx)) continue;
-			if (!passable(at(at(cells, ny), nx))) continue;
-			visitedRow[nx] = true;
-			queue.push({ gx: nx, gy: ny });
-		}
-	}
-	return visited;
-}
-
-function roomsIntersect(a: Room, b: Room, padding: number) {
-	return (
-		a.gx - padding < b.gx + b.width &&
-		a.gx + a.width + padding > b.gx &&
-		a.gy - padding < b.gy + b.height &&
-		a.gy + a.height + padding > b.gy
-	);
-}
-
-export function generateMap(seedPhrase: string, shape?: GenerateMapShape): BoneBusterGridMap {
-	const rand = createMapPrng(seedPhrase);
-	const width = MAP_WIDTH;
-	const height = MAP_HEIGHT;
-	const minRoom = shape?.minRoom ?? MIN_ROOM;
-	const maxRoom = shape?.maxRoom ?? MAX_ROOM;
-	const roomTries = shape?.roomTries ?? ROOM_TRIES;
-	const cells: Cell[][] = Array.from({ length: height }, () => new Array<Cell>(width).fill("wall"));
-
-	const rooms: Room[] = [];
-	for (let i = 0; i < roomTries; i += 1) {
-		const w = minRoom + Math.floor(rand() * (maxRoom - minRoom + 1));
-		const h = minRoom + Math.floor(rand() * (maxRoom - minRoom + 1));
-		const gx = 1 + Math.floor(rand() * (width - w - 2));
-		const gy = 1 + Math.floor(rand() * (height - h - 2));
-		const room: Room = { gx, gy, width: w, height: h };
-		if (rooms.some((r) => roomsIntersect(r, room, 1))) continue;
-		rooms.push(room);
-		carveRoom(cells, room);
-		if (rooms.length > 1) {
-			carveCorridor(cells, at(rooms, rooms.length - 2), room, rand);
-		}
-	}
-
-	// Sprinkle lava in a few inner rooms.
-	const lavaRoomCount = Math.min(2, Math.floor(rooms.length / 6));
-	for (let i = 0; i < lavaRoomCount; i += 1) {
-		const room = at(rooms, Math.floor(rand() * (rooms.length - 2)) + 1);
-		const cgx = room.gx + Math.floor(room.width / 2);
-		const cgy = room.gy + Math.floor(room.height / 2);
-		const cellRow = at(cells, cgy);
-		if (cellRow[cgx] === "empty") cellRow[cgx] = "lava";
-	}
-
-	// Player spawn = first room center.
-	const spawnRoom = at(rooms, 0);
-	const startGx = spawnRoom.gx + Math.floor(spawnRoom.width / 2);
-	const startGy = spawnRoom.gy + Math.floor(spawnRoom.height / 2);
-
-	// Exit = furthest empty cell reachable from spawn.
-	const reach = bfsReachable(
-		cells,
-		{ gx: startGx, gy: startGy },
-		(c) => c === "empty" || c === "lava",
-	);
-	let exit = { gx: startGx, gy: startGy };
-	let exitDist = -1;
-	for (let gy = 0; gy < height; gy += 1) {
-		const reachRow = at(reach, gy);
-		const cellRow = at(cells, gy);
-		for (let gx = 0; gx < width; gx += 1) {
-			if (!reachRow[gx]) continue;
-			if (cellRow[gx] !== "empty") continue;
-			const d = Math.abs(gx - startGx) + Math.abs(gy - startGy);
-			if (d > exitDist) {
-				exitDist = d;
-				exit = { gx, gy };
-			}
-		}
-	}
-
-	// Place door between exit and the corridor.
-	let doorCell = { gx: exit.gx, gy: exit.gy };
-	const exitNeighbors = (
-		[
-			[1, 0],
-			[-1, 0],
-			[0, 1],
-			[0, -1],
-		] as const
-	)
-		.map(([dx, dy]) => ({ gx: exit.gx + dx, gy: exit.gy + dy }))
-		.filter((n) => inBounds(n.gx, n.gy, width, height) && at(cells, n.gy)[n.gx] === "empty");
-	if (exitNeighbors.length > 0) {
-		doorCell = at(exitNeighbors, 0);
-		for (let i = 1; i < exitNeighbors.length; i += 1) {
-			const n = at(exitNeighbors, i);
-			at(cells, n.gy)[n.gx] = "wall";
-		}
-		at(cells, doorCell.gy)[doorCell.gx] = "door";
-	}
-	at(cells, exit.gy)[exit.gx] = "exit";
-
-	const openReach = bfsReachable(
-		cells,
-		{ gx: startGx, gy: startGy },
-		(c) => c === "empty" || c === "spawn" || c === "lava",
-	);
-
-	// Key — far from door, accessible without the door.
-	let key = { gx: startGx, gy: startGy };
-	let keyDist = -1;
-	for (let gy = 0; gy < height; gy += 1) {
-		const openReachRow = at(openReach, gy);
-		const cellRow = at(cells, gy);
-		for (let gx = 0; gx < width; gx += 1) {
-			if (!openReachRow[gx]) continue;
-			if (cellRow[gx] !== "empty") continue;
-			if (gx === startGx && gy === startGy) continue;
-			const d = Math.abs(gx - doorCell.gx) + Math.abs(gy - doorCell.gy);
-			if (d > keyDist) {
-				keyDist = d;
-				key = { gx, gy };
-			}
-		}
-	}
-	at(cells, key.gy)[key.gx] = "key";
+export function generateMap(
+	seedPhrase: string,
+	options: GenerateMapOptions = {},
+): BoneBusterGridMap {
+	const { shape, depth = 0, biome, enemyMultiplier } = options;
+	const rand = mapPrngForDepth(seedPhrase, depth);
+	// STRUCT1 — topology comes from the representation-agnostic MazeGenerator
+	// core. `rand` is threaded in so the draw order is continuous with the
+	// content draws below (byte-identical to the pre-extraction inline code;
+	// pinned by the generateMap byte-snapshot guard).
+	const topo = generateGridMaze(rand, shape);
+	const { cells, rooms, width, height, startGx, startGy, exit, doorCell, key, openReach } = topo;
 
 	// Enemy spawns: room centers + room corners, distance-biased.
 	const enemyCandidates: Vec2[] = [];
@@ -246,26 +126,24 @@ export function generateMap(seedPhrase: string, shape?: GenerateMapShape): BoneB
 		enemyCandidates[i] = cj;
 		enemyCandidates[j] = ci;
 	}
-	// E13 step-10 — per-archetype enemy-count multiplier. SEED2: the
-	// archetype index now derives from the seed phrase via
-	// `cyrb128(phrase)[0] % 5` (replaces the old `seed % 5`). CONV3
-	// denormalized `archetype` onto the map type; that field is set in the
-	// return value below using this same idx, keeping the one-source-of-truth
-	// invariant: CANONICAL_SEED_PHRASE → idx 0 → "corridor".
-	const ARCHETYPE_ENEMY_MULTIPLIER = [1.0, 1.4, 0.9, 1.1, 0.8] as const;
-	const ARCHETYPE_NAMES_INLINE = [
-		"corridor",
-		"arena",
-		"courtyard",
-		"sewer",
-		"library",
-	] as const satisfies readonly PropArchetype[];
-	const archetypeIdx = cyrb128(seedPhrase)[0] % 5;
-	const archetype = at(ARCHETYPE_NAMES_INLINE, archetypeIdx);
+	// STRUCT1 — the biome (pressure-picked, threaded from buildMap) owns the
+	// archetype skin over this geometry. When no biome is supplied (the snapshot
+	// guard + any phrase-only caller), fall back to the legacy phrase-derived
+	// archetype so depth-0 byte-identity holds: CANONICAL phrase → cyrb128[0] % 5
+	// → slot 0 → "corridor". CONV3 denormalized `archetype` onto the map type;
+	// the return value below sets it from this same `archetype`.
+	const archetype: PropArchetype = biome ?? at(ARCHETYPE_BY_SLOT, cyrb128(seedPhrase)[0] % 5);
+	// Enemy-count multiplier: the biome's CONTENT scalar when threaded, else the
+	// engine fallback keyed by the resolved archetype NAME (no index alignment).
+	const archMultiplier = enemyMultiplier ?? ARCHETYPE_ENEMY_MULTIPLIER[archetype];
 	const baseEnemyCount = Math.max(6, Math.floor(rooms.length * 1.2));
+	// STRUCT3 — log-scaled depth difficulty. `difficultyForDepth(0) === 1` so the
+	// depth-0 count (and the canonical byte-snapshot) is unchanged; deeper levels
+	// scale the count + the cap up to ~3× before flattening.
+	const depthMul = difficultyForDepth(depth);
 	const totalEnemies = Math.min(
-		16,
-		Math.max(4, Math.round(baseEnemyCount * at(ARCHETYPE_ENEMY_MULTIPLIER, archetypeIdx))),
+		Math.round(16 * depthMul),
+		Math.max(4, Math.round(baseEnemyCount * archMultiplier * depthMul)),
 	);
 	// Base trio stand-in. Production paths remap through
 	// `remapEnemyMix` (see app/views/Scene.tsx:141) before consuming
@@ -294,15 +172,22 @@ export function generateMap(seedPhrase: string, shape?: GenerateMapShape): BoneB
 	//        library  → flamethrowerAmmo every 4th
 	//   3. Remaining slots fill with health.
 	//
-	// E13 step-11 — per-archetype pickup-count multiplier preserved.
-	// Combat-heavy archetypes (arena, sewer) get more pickups,
-	// cleaner ones (library) less.
-	const ARCHETYPE_PICKUP_MULTIPLIER = [1.0, 1.3, 1.0, 1.2, 0.7] as const;
+	// E13 step-11 — per-archetype pickup-count multiplier, keyed by archetype
+	// NAME (no index alignment). Combat-heavy archetypes (arena, sewer) get more
+	// pickups, cleaner ones (library) less. Values byte-identical to the prior
+	// index table [1.0,1.3,1.0,1.2,0.7].
+	const ARCHETYPE_PICKUP_MULTIPLIER: Record<PropArchetype, number> = {
+		corridor: 1.0,
+		arena: 1.3,
+		courtyard: 1.0,
+		sewer: 1.2,
+		library: 0.7,
+	};
 	const pickupCandidates = enemyCandidates.slice(totalEnemies);
 	const basePickupCount = Math.min(8, pickupCandidates.length);
 	const pickupTotal = Math.min(
 		pickupCandidates.length,
-		Math.max(4, Math.round(basePickupCount * at(ARCHETYPE_PICKUP_MULTIPLIER, archetypeIdx))),
+		Math.max(4, Math.round(basePickupCount * ARCHETYPE_PICKUP_MULTIPLIER[archetype])),
 	);
 	// SEED2 — tool-spawn cadence derives from a phrase-stable numeric
 	// (cyrb128 word [1], independent of the archetype's word [0]) replacing
@@ -328,28 +213,36 @@ export function generateMap(seedPhrase: string, shape?: GenerateMapShape): BoneB
 	// resets per level alongside the other tool flags; the player
 	// re-builds a small crucifix stockpile on each eligible map.
 	const wantsCrucifix = seedNum % 7 === 0;
+	// STRUCT4 — weapon-upgrade drop, frequency SCALING WITH DEPTH. depth 0 → none
+	// (keeps the canonical/byte-snapshot pool unchanged); from depth 1 a drop
+	// appears every `max(1, 4 - floor(depth/2))`-th seed, so deeper runs surface
+	// upgrades more often (the endless-play progression). Guards the canonical
+	// baseline because `depth === 0` short-circuits before touching `reserved`.
+	const upgradeCadence = Math.max(1, 4 - Math.floor(depth / 2));
+	const wantsUpgrade = depth > 0 && seedNum % upgradeCadence === 0;
 	const reserved: PickupKind[] = ["chaingunAmmo", "shotgunAmmo"];
 	if (wantsFlame) reserved.push("flamethrowerAmmo");
 	if (wantsEmf) reserved.push("emfReader");
 	if (wantsSpiritBox) reserved.push("spiritBox");
 	if (wantsUv) reserved.push("uvFlashlight");
 	if (wantsCrucifix) reserved.push("crucifix");
+	if (wantsUpgrade) reserved.push("weaponUpgrade");
 	const pickupSpawns: PickupSpawn[] = pickupCandidates
 		.slice(0, pickupTotal)
 		.map((position, idx) => {
 			if (idx < reserved.length) return { kind: at(reserved, idx), position };
 			const tailIdx = idx - reserved.length;
-			// Per-archetype bias on the tail. The cadence values (every 3rd
-			// for arena/courtyard, every 4th for library) were picked so
-			// the average over 10 seeds exceeds 2.0 (arena/courtyard) and
+			// Per-archetype bias on the tail, keyed by archetype NAME. The cadence
+			// values (every 3rd for arena/courtyard, every 4th for library) were
+			// picked so the average over 10 seeds exceeds 2.0 (arena/courtyard) and
 			// 1.0 (library) — pinned by the D2 archetype-bias tests.
-			if (archetypeIdx === 1 && tailIdx % 3 === 0) {
+			if (archetype === "arena" && tailIdx % 3 === 0) {
 				return { kind: "chaingunAmmo", position };
 			}
-			if (archetypeIdx === 2 && tailIdx % 3 === 0) {
+			if (archetype === "courtyard" && tailIdx % 3 === 0) {
 				return { kind: "shotgunAmmo", position };
 			}
-			if (archetypeIdx === 4 && tailIdx % 4 === 0) {
+			if (archetype === "library" && tailIdx % 4 === 0) {
 				return { kind: "flamethrowerAmmo", position };
 			}
 			return { kind: "health", position };

@@ -14,3 +14,15 @@ export function at<T>(a: readonly T[], i: number): T {
 	if (v === undefined) throw new RangeError(`index ${i} of ${a.length}`);
 	return v;
 }
+
+/**
+ * Bounds-checked array WRITE — the write twin of `at`. Assigns `a[i] = v` only
+ * when `i` is in range, else throws (a raw `a[i] = v` on an out-of-range index
+ * silently grows the array / punches a sparse hole). Use for grid-cell writes
+ * where the column index is proven in-bounds by construction but the compiler
+ * can't see it (`noUncheckedIndexedAccess` types the slot `T | undefined`).
+ */
+export function setAt<T>(a: T[], i: number, v: T): void {
+	if (i < 0 || i >= a.length) throw new RangeError(`write index ${i} of ${a.length}`);
+	a[i] = v;
+}

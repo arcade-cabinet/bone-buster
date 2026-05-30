@@ -11,7 +11,7 @@
  */
 
 import { BOSS_HP_MULTIPLIER, BOSS_VISUAL_SCALE } from "@engine/mapTypes";
-import { pickBossSpawnIndex, spawnEnemies } from "@engine/spawn";
+import { pickBossSpawnIndex, pickUvHidden, pickUvHiddenFlags, spawnEnemies } from "@engine/spawn";
 import { loadRefLevel } from "@world/refLevel";
 import { describe, expect, it } from "vitest";
 
@@ -119,5 +119,16 @@ describe("E2 — boss HP scaling", () => {
 		const map = loadRefLevel(0);
 		const tooShort = map.enemySpawns.slice(0, Math.max(0, map.enemySpawns.length - 1));
 		expect(() => spawnEnemies(map, tooShort)).toThrow(/spawnsOverride length/);
+	});
+
+	it("PREP-PERF2 — pickUvHiddenFlags is byte-identical to the per-index pickUvHidden", () => {
+		// The single-fork flag array must equal the old O(n²) per-enemy pick for
+		// every index, across both the canonical short-circuit and normal phrases.
+		for (const phrase of ["marrowed-vile-sepulcher", "grim-hollow-ossuary", "test-uv-7"]) {
+			const flags = pickUvHiddenFlags(phrase, 16);
+			for (let i = 0; i < 16; i += 1) {
+				expect(flags[i]).toBe(pickUvHidden(phrase, i));
+			}
+		}
 	});
 });

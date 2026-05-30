@@ -8,8 +8,6 @@ import {
 	DIFFICULTY_BLURB,
 	DIFFICULTY_LABEL,
 	type Difficulty,
-	LEVEL_LABEL,
-	type LevelChoice,
 } from "@store/settings";
 import { FONT_FAMILY, FONT_WEIGHT, LETTER_SPACING, ROLE, SCALE } from "@styles/tokens/index";
 import { TYPE } from "@styles/tokens/typography";
@@ -45,7 +43,7 @@ const TIPS = [
 	"Lava floors damage you over time. So does water if you wade too long.",
 ] as const;
 
-type Pane = "main" | "difficulty" | "level" | "seed" | "options" | "help";
+type Pane = "main" | "difficulty" | "seed" | "options" | "help";
 
 const DIFFICULTY_ORDER: Difficulty[] = [
 	"tooYoung",
@@ -54,8 +52,6 @@ const DIFFICULTY_ORDER: Difficulty[] = [
 	"ultraViolence",
 	"nightmare",
 ];
-
-const LEVEL_ORDER: LevelChoice[] = ["procedural", 1, 2, 3, 4, 5];
 
 export function BoneBusterLanding({
 	settings,
@@ -146,23 +142,11 @@ export function BoneBusterLanding({
 						current={settings.difficulty}
 						onSelect={(d) => {
 							onSettingsChange({ difficulty: d });
-							setPane("level");
+							// STRUCT1 — fully procedural: difficulty → seed → start.
+							// No level pick; every run is a depth+phrase descent.
+							setPane("seed");
 						}}
 						onBack={() => setPane("main")}
-					/>
-				)}
-				{pane === "level" && (
-					<LevelPane
-						current={settings.level}
-						onSelect={(l) => {
-							onSettingsChange({ level: l });
-							// SEED3 — procedural maps get the seed-phrase step;
-							// curated ref levels (1-5) have a fixed phrase, so
-							// they start immediately.
-							if (l === "procedural") setPane("seed");
-							else onStart();
-						}}
-						onBack={() => setPane("difficulty")}
 					/>
 				)}
 				{pane === "seed" && (
@@ -171,7 +155,7 @@ export function BoneBusterLanding({
 						onChange={onSeedPhraseChange}
 						onRandomize={onRandomizeSeedPhrase}
 						onBegin={onStart}
-						onBack={() => setPane("level")}
+						onBack={() => setPane("difficulty")}
 					/>
 				)}
 				{pane === "options" && (
@@ -276,7 +260,9 @@ function BestRunChip() {
 	if (!ready || count === 0 || !best) return null;
 	const durationMs = Math.max(0, best.endedAt - best.startedAt);
 	const durationLabel = formatRunDuration(durationMs);
-	const levelLabel = best.levelSet === "procedural" ? "RANDOM" : `M${best.levelSet}`;
+	// STRUCT1 — the run's identity is its seed phrase now (endless descent);
+	// surface the depth reached as the headline progress metric.
+	const levelLabel = `DEPTH ${best.levelsCleared}`;
 	const outcomeLabel = best.outcome === "won" ? "WON" : "DIED";
 	const secretSuffix =
 		best.totalSecrets > 0
@@ -358,42 +344,6 @@ function DifficultyPane({
 					>
 						<div style={{ fontWeight: 700 }}>{DIFFICULTY_LABEL[d]}</div>
 						<div style={{ fontSize: 12, opacity: 0.7, marginTop: 2 }}>{DIFFICULTY_BLURB[d]}</div>
-					</button>
-				))}
-			</div>
-			<MenuItem label="BACK" onClick={onBack} />
-		</motion.section>
-	);
-}
-
-function LevelPane({
-	current,
-	onSelect,
-	onBack,
-}: {
-	current: LevelChoice;
-	onSelect: (l: LevelChoice) => void;
-	onBack: () => void;
-}) {
-	return (
-		<motion.section
-			aria-label="Choose level"
-			style={paneStyle}
-			initial={{ opacity: 0, y: 8 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.35 }}
-		>
-			<div style={paneHeadingStyle}>LEVEL</div>
-			<div style={paneGridStyle}>
-				{LEVEL_ORDER.map((l) => (
-					<button
-						type="button"
-						key={String(l)}
-						onClick={() => onSelect(l)}
-						style={levelChip(l === current)}
-						aria-pressed={l === current}
-					>
-						{LEVEL_LABEL[l]}
 					</button>
 				))}
 			</div>

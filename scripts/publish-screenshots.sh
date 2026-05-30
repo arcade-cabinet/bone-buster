@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
-# N1 — publish OBJEXOOM screenshots from test-results into docs.
+# N1 — publish the canonical screenshots from test-results into docs.
 #
 # Usage:
-#   pnpm test:e2e:objexoom:screenshots && ./scripts/objexoom-publish-screenshots.sh
+#   pnpm test:e2e:screenshots && ./scripts/publish-screenshots.sh
 #
 # Copies the 5 canonical screenshots produced by
-# `tests/e2e/objexoom-screenshots.spec.ts` into `docs/assets/objexoom/`
-# so the EASTER_EGGS.md references stay current.
+# `tests/e2e/screenshots.spec.ts` into `docs/assets/objexoom/` so the doc
+# references stay current. (The test-results + docs dirs keep the historical
+# `objexoom` name; renaming them is a separate asset-path migration.)
 set -euo pipefail
 
 SRC="test-results/objexoom-screenshots"
 DST="docs/assets/objexoom"
 
 if [ ! -d "$SRC" ]; then
-	echo "missing $SRC — run pnpm test:e2e:objexoom:screenshots first" >&2
+	echo "missing $SRC — run pnpm test:e2e:screenshots first" >&2
 	exit 1
 fi
 

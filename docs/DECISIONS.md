@@ -1,6 +1,6 @@
 ---
 title: Decisions
-updated: 2026-05-15
+updated: 2026-05-29
 status: current
 domain: technical
 ---
@@ -337,6 +337,7 @@ Per-frame logic that doesn't belong in the r3f scene-render path lives in pure-f
 - `fireResolution.ts` — single-shot fire resolution (ray cast + barrel/enemy hit dispatch).
 - `returnBearing.ts` — module-scope ref + `computeBearingRad` pure helper for the going-back HUD arrow.
 - `timeScaleBus.ts` — combined-min time-scale reservation bus (POL35 hitstop + POL22 key-acquire stacking).
+- `sceneTick.ts` — the per-frame MAIN tick (`runSceneTick`): pickup collection, lava-damage cadence, the phase-aware win / reach-spawn conditions, the going-back light strobe, the per-frame light intensity set (VIS1 flood: ambient 0.95×/dir 1.1×, strobe-boosted in `going_back`), the enemy AI loop call, and enemy-bullet integration (advance → hitPlayer/hitWall/expired retire, in-flight keep, in-place compaction). Same explicit-context shape; pinned by `bonebuster-sceneTick.test.ts` (incl. the PREP-TEST1 bullet cases).
 
 These take an explicit "context" object (refs + game state) and return nothing — pure-fn signatures, testable without mounting React. The Scene's useFrame body becomes "build the context, call the tick fn."
 
@@ -471,7 +472,9 @@ also dropped a heavy dependency from the bundle.
 
 ## D21 — Family two-PRNG seedphrase model (SEED1-5)
 
-**Status:** Locked. **Amends D19 (world-shape clause).**
+**Status:** Locked. **Amends D19 (world-shape clause). Refined by D25** (the
+"same phrase → same map" clause is now "same phrase → same GEOMETRY"; the biome
+SKIN is event-PRNG-pressure-picked, not phrase-derived).
 **Date:** 2026-05-28 (user-directed)
 
 bone-buster adopts the `~/src/arcade-cabinet` family seed architecture
@@ -503,6 +506,118 @@ a snowflake.
 - *Numeric bridge (phrase → cyrb128 → numeric seed → existing mulberry32).*
   Lower churn, but keeps bone-buster's bespoke canonical engine — diverges
   from the family. The user chose the full rewrite.
+
+---
+
+## D22 — Flat-flood lighting replaces dark-base + flashlight-reveal (VIS1/VIS2)
+
+**Status:** Locked. **Reverses the J1 flashlight-reveal direction.**
+**Date:** 2026-05-28 (user-directed, live playtest)
+
+The scene lights with a flat **flood** — high ambient (0.95×palette) +
+directional (1.1×) + hemisphere (0.7×) — plus Silent-Hill fog haze (tinted per
+biome, near plane pulled in for mood + horizon cull). NOT a dark base revealed
+by a player flashlight (the retired J1 model).
+
+**Why:** the PSX source assets are washed-out + chunky by design; a big flat
+flood is what makes them read clearly. "Horror doesn't work if you have no idea
+what you're seeing" — the mood comes from fog + artistic shadow blended INTO the
+flood (VIS3), not from darkness. Modernized-DOOM × Silent-Hill, not
+flashlight-survival-horror.
+
+**Consequences:** the `hasFlashlight` ownership + dark-mode pose are retired; the
+e2e in-game pose is a single flood baseline (VIS-AUTO). Real-time directional
+shadows stay on desktop web but are gated off on native mobile (PREP-PERF3) —
+PSX-jank needs no realtime shadow on a Pixel-5a-class budget.
+
+**Rejected:** *dark-base + flashlight reveal (J1).* Looked like "can't see the
+art." *Flat-bright no-shadow.* Reads flat/gamey, kills the horror.
+
+---
+
+## D23 — Fully procedural: drop the level picker; biomes via a per-biome generator on a shared maze core (STRUCT1/2)
+
+**Status:** Locked. **Shipped** (STRUCT1–STRUCT5, feat/overhaul2). Seed-identity
+clarified by D25.
+**Date:** 2026-05-28 (user-directed); shipped 2026-05-30.
+
+The 1–5 level picker + `LevelChoice` union are removed. Map generation bottoms
+out at a shared base `MazeGenerator`; each of the (initially five) **biomes**
+owns a generator built on it that adds biome structure / scatter / hazards +
+custom triggers/traps/code. A level is a biome maze, boss-capped. The biome for
+each level is chosen by a weighted **pressure** system (STRUCT5: per-biome
+levels-since-played pressure, 50/30/15/5 weighted pick over pressure rank, via
+the event PRNG) — never a rote 1→5 cycle, never a player pick. Difficulty scales
+logarithmically with depth (STRUCT3); weapons gain seeded log-scaled UPGRADE
+tiers (STRUCT4). refLevels become biome STYLE models (review references), not
+replayable levels.
+
+**Why:** "make MAZE GENERATION the lowest level and make each of the five their
+own generator." Composes natively with the D21 seed forks (same phrase → same
+biome maze). Extensibility headline: add a biome = add a generator + wire assets
+→ the catalog grows and a player can play for hours regardless. Endless-play
+depth comes from log difficulty + weapon upgrades + unpredictable biome order.
+
+**Rejected:** *keep the picker / always-play-the-same-sewer.* The point isn't to
+select a fixed level; it's an endless, never-predictable descent.
+
+---
+
+## D24 — Content-Security-Policy posture: defense-in-depth via invariants, not (yet) a meta CSP
+
+**Status:** Active (note; revisit if a runtime-CSP need arises).
+**Date:** 2026-05-29 (review SEC-2)
+
+bone-buster ships no `Content-Security-Policy` meta tag today. The XSS/exfil
+surface is instead held down by hard invariants enforced in `commit-gate.mjs`:
+
+- **No network at runtime** — a ban_pattern blocks `fetch`/`XMLHttpRequest`/
+  `WebSocket`/`EventSource` across `src/**` + `app/**` (the no-backend invariant;
+  all assets are first-party bundle via the `A()` helper). Nothing can exfil.
+- **No HTML injection** — a ban_pattern blocks `dangerouslySetInnerHTML`
+  (CI-8). The only external input is the URL flags, parsed through the pure,
+  unit-pinned `urlFlags.ts` boundary (length-capped per M-6/SEC-1).
+
+**Why:** a meta CSP on a Vike-prerendered + Capacitor `file://` app is awkward
+(inline bootstrap scripts, the WebView origin) and would mostly restate
+invariants the gate already enforces at author time. The gate fails the build;
+a CSP only fails at runtime. **Revisit** if we ever add a runtime network call,
+third-party embed, or user-authored content — at which point a real CSP header
+(set at the Pages/edge layer, not a meta tag) becomes the right control.
+
+---
+
+## D25 — Seed identity is DEPTH+PHRASE for geometry, pressure for the biome skin (STRUCT1/STRUCT5)
+
+**Status:** Locked. Shipped (feat/overhaul2). **Refines D21 + D23.**
+**Date:** 2026-05-28 (user-directed); shipped 2026-05-30.
+
+The two procedural axes are owned by DIFFERENT seeds and answer different
+questions:
+
+- **Geometry = (PHRASE, DEPTH).** The maze topology forks off both: depth 0 is
+  the legacy `createMapPrng(phrase)` stream verbatim (byte-identity / canonical
+  anchor); depth ≥1 forks `forkStream(phrase, "MAZE-<depth>")`. So the same
+  phrase yields a deterministic maze SEQUENCE down the endless descent, not a
+  single repeated map. (`mapPrngForDepth` in `src/engine/gridGen.ts`.)
+- **Biome skin = pressure pick (event PRNG).** Which biome "wears" a given
+  geometry is chosen per level by the STRUCT5 weighted-pressure pick off the
+  device-buried EVENT seed (advanced + persisted each pick), NOT derived from the
+  phrase. The same phrase can therefore wear different biomes across runs — that
+  is intentional run variance. (`pickBiome` + `Shell.advanceBiome`.)
+
+This refines D21's "same phrase → same map": it is now precisely "same phrase +
+depth → same GEOMETRY." The phrase no longer pins the biome; pressure does.
+
+**Why:** geometry is the shareable, reproducible identity (a phrase is a map
+seed you can hand to a friend); the biome skin + combat variance are per-run
+texture that should NOT be locked to the phrase, else every run of a shared seed
+is identical and the "never-predictable descent" (D23) collapses. Splitting the
+two seeds makes "same map, different run" and "same run-feel, new map" orthogonal.
+
+**Rejected:** *phrase owns biome too (single-seed identity).* Simpler, but makes
+a shared phrase fully deterministic including biome order — kills run variance
+and the pressure system's reason to exist.
 
 ---
 
