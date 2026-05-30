@@ -800,6 +800,26 @@ export function BoneBusterScene({
 		}
 	});
 
+	// Shared nearest-live-enemy distance² (camera→enemy, world units = tiles).
+	// The EMF reader, spirit box, and EVP recorder all need it; computing it ONCE
+	// per frame here (priority -1 → runs before the consumers below) replaces what
+	// were three identical O(enemies) scans. Consumers read the ref + apply their
+	// own radius/cooldown gates (review BP-1 / perf#2).
+	const nearestEnemyDistSqRef = useRef(Number.POSITIVE_INFINITY);
+	useFrame(() => {
+		let best = Number.POSITIVE_INFINITY;
+		if (active) {
+			for (const enemy of enemiesRef.current) {
+				if (enemy.dead) continue;
+				const ex = enemy.position.x - camera.position.x;
+				const ez = enemy.position.y - camera.position.z;
+				const d = ex * ex + ez * ez;
+				if (d < best) best = d;
+			}
+		}
+		nearestEnemyDistSqRef.current = best;
+	}, -1);
+
 	// PB5 step-2 — EMF reader per-frame nearest-enemy distance dispatch.
 	// Throttled to 100 ms (≈10 Hz) so HUD re-renders stay cheap; the chip
 	// animation interpolates smoothly between the discrete level steps.
@@ -812,17 +832,9 @@ export function BoneBusterScene({
 		const now = performance.now();
 		if (now - lastEmfDispatchRef.current < 100) return;
 		lastEmfDispatchRef.current = now;
-		// Nearest-enemy distance in tiles. Camera position is world units;
-		// 1 tile = 1 world unit in Bone Buster's coordinate space (TILE
-		// constant), so the raw Euclidean distance IS the tile count.
-		let bestDistSq = Number.POSITIVE_INFINITY;
-		for (const enemy of enemiesRef.current) {
-			if (enemy.dead) continue;
-			const ex = enemy.position.x - camera.position.x;
-			const ez = enemy.position.y - camera.position.z;
-			const d = ex * ex + ez * ez;
-			if (d < bestDistSq) bestDistSq = d;
-		}
+		// Nearest-enemy distance in tiles (1 tile = 1 world unit), from the shared
+		// per-frame scan above.
+		const bestDistSq = nearestEnemyDistSqRef.current;
 		const dist = Number.isFinite(bestDistSq) ? Math.sqrt(bestDistSq) : Number.POSITIVE_INFINITY;
 		const level = pickEmfReading(dist);
 		// Skip the dispatch when the level hasn't changed since the last
@@ -834,13 +846,11 @@ export function BoneBusterScene({
 		dispatch({ type: "emfReading", level });
 	});
 
-	// PC2 — Spirit-box per-frame proximity check + cooldown-gated
-	// response dispatch. Walks the same enemiesRef pool as the EMF
-	// dispatch above; when the nearest live enemy is within
-	// SPIRIT_BOX_TRIGGER_RADIUS tiles and the cooldown has expired,
-	// picks a deterministic phoneme keyed off (mapSeedNum, triggerIndex)
-	// and emits the typed event. The HUD bubble subscribes; the audio
-	// sting (future commit) can subscribe to the same event.
+	// PC2 — Spirit-box per-frame proximity check + cooldown-gated response
+	// dispatch. Reads the shared nearest-enemy distance²; when the nearest live
+	// enemy is within SPIRIT_BOX_TRIGGER_RADIUS tiles and the cooldown has
+	// expired, picks a deterministic phoneme keyed off (mapSeedNum, triggerIndex)
+	// and emits the typed event. The HUD bubble subscribes.
 	const lastSpiritBoxTriggerAtRef = useRef(0);
 	const spiritBoxTriggerCountRef = useRef(0);
 	useFrame(() => {
@@ -848,15 +858,7 @@ export function BoneBusterScene({
 		const now = performance.now();
 		if (now - lastSpiritBoxTriggerAtRef.current < SPIRIT_BOX_COOLDOWN_MS) return;
 		const radiusSq = SPIRIT_BOX_TRIGGER_RADIUS * SPIRIT_BOX_TRIGGER_RADIUS;
-		let nearestSq = Number.POSITIVE_INFINITY;
-		for (const enemy of enemiesRef.current) {
-			if (enemy.dead) continue;
-			const ex = enemy.position.x - camera.position.x;
-			const ez = enemy.position.y - camera.position.z;
-			const d = ex * ex + ez * ez;
-			if (d < nearestSq) nearestSq = d;
-		}
-		if (nearestSq > radiusSq) return;
+		if (nearestEnemyDistSqRef.current > radiusSq) return;
 		lastSpiritBoxTriggerAtRef.current = now;
 		const phoneme = pickSpiritBoxPhoneme(mapSeedNum, spiritBoxTriggerCountRef.current);
 		spiritBoxTriggerCountRef.current += 1;
@@ -867,7 +869,7 @@ export function BoneBusterScene({
 	// unlike the EMF/spirit-box pickups); when a live enemy comes within
 	// EVP_CAPTURE_RADIUS and the cooldown has elapsed, it captures a deterministic
 	// residue cue (keyed off mapSeedNum + capture index) and emits the typed
-	// event for the HUD playback chip.
+	// event for the HUD playback chip. Reads the shared nearest-enemy distance².
 	const lastEvpCaptureAtRef = useRef(0);
 	const evpCaptureCountRef = useRef(0);
 	useFrame(() => {
@@ -875,15 +877,7 @@ export function BoneBusterScene({
 		const now = performance.now();
 		if (now - lastEvpCaptureAtRef.current < EVP_COOLDOWN_MS) return;
 		const radiusSq = EVP_CAPTURE_RADIUS * EVP_CAPTURE_RADIUS;
-		let nearestSq = Number.POSITIVE_INFINITY;
-		for (const enemy of enemiesRef.current) {
-			if (enemy.dead) continue;
-			const ex = enemy.position.x - camera.position.x;
-			const ez = enemy.position.y - camera.position.z;
-			const d = ex * ex + ez * ez;
-			if (d < nearestSq) nearestSq = d;
-		}
-		if (nearestSq > radiusSq) return;
+		if (nearestEnemyDistSqRef.current > radiusSq) return;
 		lastEvpCaptureAtRef.current = now;
 		const cue = pickEvpCue(mapSeedNum, evpCaptureCountRef.current);
 		evpCaptureCountRef.current += 1;

@@ -46,12 +46,15 @@ describe("T1 — POL1 score wiring", () => {
 	});
 
 	it("HUD score chip is gated by score > 0", async () => {
-		// Reads BoneBusterHUD.tsx and confirms the score-chip render is
-		// inside a `score > 0` check. Pre-T1 this gate was inline
-		// boolean logic; if anyone removes it the SCORE chip would
-		// render "SCORE 0" on every fresh run.
-		const hudSrc = await readFile(resolve(__dirname, "../../../app/views/HUD.tsx"), "utf-8");
-		expect(hudSrc).toMatch(/state\.score\s*>\s*0/);
+		// The SCORE chip lives in RunReadout (extracted from HUD.tsx). Confirms
+		// the render is inside a `score > 0` check so a fresh run (score 0) never
+		// shows "SCORE 0". The runReadout.browser.test.tsx also pins this at the
+		// render level; this source guard catches an accidental gate removal.
+		const src = await readFile(
+			resolve(__dirname, "../../../app/views/hudOverlays/RunReadout.tsx"),
+			"utf-8",
+		);
+		expect(src).toMatch(/score\s*>\s*0/);
 	});
 
 	it("LOOT_BONUSES constants are readonly (compile-time)", () => {
