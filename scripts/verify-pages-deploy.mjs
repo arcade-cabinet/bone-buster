@@ -96,12 +96,20 @@ console.log("Clicked NEW GAME → skill-level picker");
 const hurtMePlenty = page.getByRole("button", { name: /HURT ME PLENTY/i });
 await hurtMePlenty.waitFor({ timeout: 10_000 });
 await hurtMePlenty.click();
-console.log("Clicked HURT ME PLENTY → level picker");
+console.log("Clicked HURT ME PLENTY → seed pane");
 
-const randomBtn = page.getByRole("button", { name: /^RANDOM$/i });
-await randomBtn.waitFor({ timeout: 10_000 });
-await randomBtn.click();
-console.log("Clicked RANDOM");
+// SEED3 landing flow: the skill picker advances to a seed pane (editable phrase
+// + a randomize button), then BEGIN starts the run. (Was a single RANDOM button
+// on the old level picker, removed when LevelChoice was dropped in STRUCT1.)
+const randomizeBtn = page.getByRole("button", { name: /RANDOMIZE/i });
+await randomizeBtn.waitFor({ timeout: 10_000 });
+await randomizeBtn.click();
+console.log("Clicked RANDOMIZE → seed phrase filled");
+
+const beginBtn = page.getByRole("button", { name: /^BEGIN$/i });
+await beginBtn.waitFor({ timeout: 10_000 });
+await beginBtn.click();
+console.log("Clicked BEGIN → starting run");
 
 await page.locator("[data-testid='bonebuster-hp']").waitFor({ timeout: 30_000 });
 console.log("In-game HUD mounted");
