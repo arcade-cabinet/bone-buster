@@ -330,8 +330,8 @@ export function BoneBusterShell() {
 	const map: BoneBusterMap = useMemo(
 		// STRUCT1 — geometry forks off (phrase, depth); the pressure-picked
 		// biome drives the archetype skin + per-biome shape over it.
-		() => buildMap(seedPhrase, depth, biome, settings.difficulty),
-		[seedPhrase, depth, biome, settings.difficulty],
+		() => buildMap(seedPhrase, depth, biome),
+		[seedPhrase, depth, biome],
 	);
 	// D8 — alliterative level name. Rolls from the current biome's pool via
 	// the NAME-tagged PRNG (seed-stable). The depth mixes into the seed so

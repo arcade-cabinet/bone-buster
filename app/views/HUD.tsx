@@ -1,6 +1,7 @@
 import { addBoneBusterListener, dispatch } from "@engine/events";
 import { WEAPON_ORDER, WEAPONS, type WeaponId } from "@shared/weapons";
 import type { GameState } from "@store/gameState";
+import { prestigeTier } from "@store/runStats";
 import type { Difficulty } from "@store/settings";
 import {
 	BONE_BUSTER_PALETTE,
@@ -12,6 +13,7 @@ import {
 	TYPE,
 } from "@styles/tokens/index";
 import { HUDOverlays } from "@views/hudOverlays/HUDOverlays";
+import { RunReadout } from "@views/hudOverlays/RunReadout";
 import { motion } from "framer-motion";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -147,44 +149,11 @@ export function BoneBusterHUD({
 				>
 					{state.kills} / {state.totalEnemies}
 				</motion.div>
-				{state.score > 0 && (
-					<motion.div
-						data-testid="bonebuster-score"
-						style={{
-							marginTop: 4,
-							fontFamily: FONT_FAMILY.display,
-							fontSize: "var(--obx-hud-fs-readout, 14px)",
-							fontWeight: FONT_WEIGHT.regular,
-							letterSpacing: LETTER_SPACING.display,
-							color: ROLE.actionKey,
-						}}
-						key={state.score}
-						initial={{ scale: 1.4 }}
-						animate={{ scale: 1 }}
-						transition={{ type: "spring", stiffness: 320, damping: 18 }}
-					>
-						SCORE {state.score}
-					</motion.div>
-				)}
-				{state.run.runTotalSecrets > 0 && (
-					<motion.div
-						data-testid="bonebuster-secrets"
-						style={{
-							marginTop: 4,
-							fontFamily: FONT_FAMILY.display,
-							fontSize: "var(--obx-hud-fs-readout, 14px)",
-							fontWeight: FONT_WEIGHT.regular,
-							letterSpacing: LETTER_SPACING.display,
-							color: ROLE.actionKey,
-						}}
-						key={state.run.runTotalSecrets}
-						initial={{ scale: 1.4 }}
-						animate={{ scale: 1 }}
-						transition={{ type: "spring", stiffness: 320, damping: 18 }}
-					>
-						SECRETS {state.run.runTotalSecrets}
-					</motion.div>
-				)}
+				<RunReadout
+					score={state.score}
+					secrets={state.run.runTotalSecrets}
+					levelsCleared={state.run.runLevelsCleared}
+				/>
 				<div
 					data-testid="bonebuster-key"
 					style={{
@@ -450,7 +419,9 @@ function formatRunStats(state: GameState): string {
 	const scoreSegment = score > 0 ? `  •  ${score} SCORE` : "";
 	const secrets = state.run.runTotalSecrets;
 	const secretsSegment = secrets > 0 ? `  •  ${secrets} SECRET${secrets === 1 ? "" : "S"}` : "";
-	return `${cleared} LEVEL${cleared === 1 ? "" : "S"} CLEARED  •  TIME ${time}  •  ${kills} KILLS  •  ${dmg} DMG TAKEN${scoreSegment}${secretsSegment}`;
+	const prestige = prestigeTier(cleared);
+	const prestigeSegment = prestige > 0 ? `  •  PRESTIGE ${prestige}` : "";
+	return `${cleared} LEVEL${cleared === 1 ? "" : "S"} CLEARED  •  TIME ${time}  •  ${kills} KILLS  •  ${dmg} DMG TAKEN${scoreSegment}${secretsSegment}${prestigeSegment}`;
 }
 
 const STICK_RADIUS = 56;

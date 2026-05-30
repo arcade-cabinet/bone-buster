@@ -1,5 +1,4 @@
 import type { BoneBusterGridMap } from "@engine/mapTypes";
-import type { Difficulty } from "@store/settings";
 import { generateBiomeMap } from "@world/biomes/registry";
 import type { PropArchetype } from "@world/scatter/propPool";
 
@@ -16,14 +15,14 @@ import type { PropArchetype } from "@world/scatter/propPool";
  * map is generated. refLevels survive only as biome STYLE prototypes + test
  * fixtures (`loadRefLevel`), never the runtime path.
  *
- * `difficulty` is accepted for call-site parity (and future STRUCT3 depth
- * scaling); the grid generator doesn't read it today.
+ * Procedural depth scaling is owned by STRUCT3 (`difficultyForDepth(depth)`)
+ * inside the generator — the player-facing `Difficulty` slider is a separate
+ * concern and is NOT a generation input here.
  */
 export function buildMap(
 	seedPhrase: string,
 	depth: number,
 	biome: PropArchetype,
-	_difficulty: Difficulty = "hurtMePlenty",
 ): BoneBusterGridMap {
 	// STRUCT2 — route through the biome registry so each biome's generator is the
 	// single composition point (shape + scatter + enemy mix + skin + future
