@@ -195,6 +195,13 @@ async function captureViaCDP(
 	outPath: string,
 	snapshotName: string | null,
 	maxDiffPixelRatio = 0.02,
+	// VIS-AUTO — assert the IN-GAME 3D pose only on the real-GPU darwin runner.
+	// Linux CI's headless GL composites the 3D scene differently (the original
+	// capture-only rationale), so a committed Linux baseline would lock in a
+	// runner-specific frame. The pose stays capture-only on Linux (artifact still
+	// written for human review); the asserted in-game gate lives on darwin. The
+	// 2D landing pose is deterministic on both, so it asserts everywhere.
+	assertOnLinux = true,
 ): Promise<void> {
 	const session = await page.context().newCDPSession(page);
 	let buf: Buffer;
@@ -222,7 +229,8 @@ async function captureViaCDP(
 	// peak-vs-trough strobe capture differs by ~70%). The artifact is still
 	// written for human review; the structural-drift gate lives on the 3
 	// deterministic single-frame poses below.
-	if (snapshotName !== null) {
+	const skipForLinux = !assertOnLinux && process.platform === "linux";
+	if (snapshotName !== null && !skipForLinux) {
 		expect(buf).toMatchSnapshot(snapshotName, { maxDiffPixelRatio });
 	}
 }
@@ -318,7 +326,16 @@ test.describe("OBJEXOOM screenshots (N1)", () => {
 			// runId bump) fully fade, so the golden is chip-free + stable rather
 			// than diffing a fading overlay at an unstable capture moment.
 			await page.waitForTimeout(2400);
-			await captureViaCDP(page, `${OUT_DIR}/ingame-flashlight-on.png`, "ingame-flood.png", 0.04);
+			// assertOnLinux=false — the in-game 3D pose asserts only on the real-GPU
+			// darwin runner; Linux CI headless-GL renders the scene differently, so
+			// it stays capture-only there (no runner-specific Linux baseline).
+			await captureViaCDP(
+				page,
+				`${OUT_DIR}/ingame-flashlight-on.png`,
+				"ingame-flood.png",
+				0.04,
+				false,
+			);
 		});
 	});
 
