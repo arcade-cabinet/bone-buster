@@ -1,45 +1,48 @@
-import { isGridMap, isSectorMap } from "@engine/mapTypes";
-import type { LevelChoice } from "@store/settings";
+import { isGridMap } from "@engine/mapTypes";
+import { CANONICAL_SEED_PHRASE } from "@engine/seedPhrase";
 import { buildMap } from "@world/buildMap";
 import { describe, expect, it } from "vitest";
 
-describe("bonebuster buildMap (A6)", () => {
-	it("level='procedural' returns a deterministic grid map", () => {
-		const a = buildMap("gen-12345", "procedural");
-		const b = buildMap("gen-12345", "procedural");
+describe("bonebuster buildMap (STRUCT1 — fully procedural depth+phrase)", () => {
+	it("returns a deterministic grid map for (phrase, depth, biome)", () => {
+		const a = buildMap("gen-12345", 0, "corridor");
+		const b = buildMap("gen-12345", 0, "corridor");
 		expect(isGridMap(a)).toBe(true);
 		expect(a.kind).toBe("grid");
 		expect(a.playerSpawn).toEqual(b.playerSpawn);
+		expect(JSON.stringify(a)).toBe(JSON.stringify(b));
 	});
 
 	it("seed changes produce different procedural maps", () => {
-		const a = buildMap("gen-12345", "procedural");
-		const b = buildMap("gen-67890", "procedural");
+		const a = buildMap("gen-12345", 0, "corridor");
+		const b = buildMap("gen-67890", 0, "corridor");
 		expect(a.playerSpawn).not.toEqual(b.playerSpawn);
 	});
 
-	for (const level of [1, 2, 3, 4, 5] as const) {
-		it(`level=${level} returns a sector map (E1M${level})`, () => {
-			const map = buildMap("gen-0", level satisfies LevelChoice);
-			expect(isSectorMap(map)).toBe(true);
-			if (!isSectorMap(map)) throw new Error("unreachable");
-			expect(map.sectors.length).toBeGreaterThan(0);
-		});
-
-		it(`level=${level} ignores the seed argument`, () => {
-			const a = buildMap("gen-1", level satisfies LevelChoice);
-			const b = buildMap("bm-999_999", level satisfies LevelChoice);
-			if (!isSectorMap(a) || !isSectorMap(b)) throw new Error("unreachable");
-			expect(a.sectors).toEqual(b.sectors);
-		});
-	}
-
-	it("each ref level has ≥1 enemy and a player spawn", () => {
-		for (const level of [1, 2, 3, 4, 5] as const) {
-			const map = buildMap("gen-0", level);
-			expect(map.enemySpawns.length).toBeGreaterThanOrEqual(1);
-			expect(Number.isFinite(map.playerSpawn.x)).toBe(true);
-			expect(Number.isFinite(map.playerSpawn.y)).toBe(true);
+	it("the biome param drives the map archetype skin", () => {
+		for (const biome of ["corridor", "arena", "courtyard", "sewer", "library"] as const) {
+			const map = buildMap("gen-12345", 0, biome);
+			expect(map.archetype).toBe(biome);
 		}
+	});
+
+	it("depth forks the geometry — same phrase, different depth → different maze", () => {
+		const d0 = buildMap("gen-12345", 0, "corridor");
+		const d1 = buildMap("gen-12345", 1, "corridor");
+		if (!isGridMap(d0) || !isGridMap(d1)) throw new Error("expected grid maps");
+		expect(JSON.stringify(d0.cells)).not.toBe(JSON.stringify(d1.cells));
+	});
+
+	it("depth-0 + canonical phrase + corridor preserves the canonical baseline", () => {
+		const map = buildMap(CANONICAL_SEED_PHRASE, 0, "corridor");
+		expect(map.archetype).toBe("corridor");
+		expect(isGridMap(map)).toBe(true);
+	});
+
+	it("every built map has ≥1 enemy and a finite player spawn", () => {
+		const map = buildMap("gen-0", 0, "arena");
+		expect(map.enemySpawns.length).toBeGreaterThanOrEqual(1);
+		expect(Number.isFinite(map.playerSpawn.x)).toBe(true);
+		expect(Number.isFinite(map.playerSpawn.y)).toBe(true);
 	});
 });

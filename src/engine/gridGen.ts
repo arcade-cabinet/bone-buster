@@ -16,7 +16,7 @@ import type {
 	Vec2,
 } from "@engine/mapTypes";
 import { generateGridMaze } from "@engine/maze/MazeGenerator";
-import { createMapPrng, cyrb128 } from "@engine/rng";
+import { createMapPrng, cyrb128, forkStream } from "@engine/rng";
 import { TILE } from "@shared/constants";
 import type { PropArchetype } from "@world/scatter/propPool";
 
@@ -25,8 +25,50 @@ const cellCenter = (gx: number, gy: number): Vec2 => ({
 	y: (gy + 0.5) * TILE,
 });
 
-export function generateMap(seedPhrase: string, shape?: GenerateMapShape): BoneBusterGridMap {
-	const rand = createMapPrng(seedPhrase);
+const ARCHETYPE_NAMES_INLINE = [
+	"corridor",
+	"arena",
+	"courtyard",
+	"sewer",
+	"library",
+] as const satisfies readonly PropArchetype[];
+
+/**
+ * STRUCT1 (DEPTH+PHRASE identity, docs/specs/97) — options for `generateMap`.
+ *
+ * - `shape` — per-biome room-size/density override (was the bare 2nd arg).
+ * - `depth` — biomes cleared so far. Geometry forks per depth so the same
+ *   phrase yields a deterministic maze SEQUENCE down the descent. **Depth 0
+ *   (the default) maps to the legacy `createMapPrng(phrase)` seed verbatim**,
+ *   so the canonical screenshots + the generateMap byte-snapshot stay green;
+ *   depths ≥1 fork via `forkStream(phrase, "MAZE-<depth>")`.
+ * - `biome` — the pressure-picked biome whose character "wears" this geometry.
+ *   When omitted, the archetype falls back to `cyrb128(phrase)[0] % 5` (the
+ *   legacy phrase-derived archetype) so byte-identity holds for callers that
+ *   don't thread a biome (the snapshot guard).
+ */
+export type GenerateMapOptions = Readonly<{
+	shape?: GenerateMapShape;
+	depth?: number;
+	biome?: PropArchetype;
+}>;
+
+/**
+ * The map PRNG for a given (phrase, depth). Depth 0 reuses the historical
+ * `createMapPrng(phrase)` seed EXACTLY so depth-0 maps are byte-identical to
+ * the pre-STRUCT1 generation (canonical baseline). Depth ≥1 forks a fresh,
+ * deterministic per-depth stream off the same phrase.
+ */
+function mapPrngForDepth(seedPhrase: string, depth: number): () => number {
+	return depth === 0 ? createMapPrng(seedPhrase) : forkStream(seedPhrase, `MAZE-${depth}`);
+}
+
+export function generateMap(
+	seedPhrase: string,
+	options: GenerateMapOptions = {},
+): BoneBusterGridMap {
+	const { shape, depth = 0, biome } = options;
+	const rand = mapPrngForDepth(seedPhrase, depth);
 	// STRUCT1 — topology comes from the representation-agnostic MazeGenerator
 	// core. `rand` is threaded in so the draw order is continuous with the
 	// content draws below (byte-identical to the pre-extraction inline code;
@@ -62,14 +104,12 @@ export function generateMap(seedPhrase: string, shape?: GenerateMapShape): BoneB
 	// return value below using this same idx, keeping the one-source-of-truth
 	// invariant: CANONICAL_SEED_PHRASE → idx 0 → "corridor".
 	const ARCHETYPE_ENEMY_MULTIPLIER = [1.0, 1.4, 0.9, 1.1, 0.8] as const;
-	const ARCHETYPE_NAMES_INLINE = [
-		"corridor",
-		"arena",
-		"courtyard",
-		"sewer",
-		"library",
-	] as const satisfies readonly PropArchetype[];
-	const archetypeIdx = cyrb128(seedPhrase)[0] % 5;
+	// STRUCT1 — the biome (pressure-picked, threaded from buildMap) owns the
+	// archetype skin over this geometry. When no biome is supplied (the
+	// snapshot guard + any phrase-only caller), fall back to the legacy
+	// phrase-derived archetype so depth-0 byte-identity holds: CANONICAL phrase
+	// → cyrb128[0] % 5 → idx 0 → "corridor".
+	const archetypeIdx = biome ? ARCHETYPE_NAMES_INLINE.indexOf(biome) : cyrb128(seedPhrase)[0] % 5;
 	const archetype = at(ARCHETYPE_NAMES_INLINE, archetypeIdx);
 	const baseEnemyCount = Math.max(6, Math.floor(rooms.length * 1.2));
 	const totalEnemies = Math.min(

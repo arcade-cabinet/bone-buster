@@ -49,7 +49,7 @@ function ctx(over: Partial<GameReducerCtx> = {}): GameReducerCtx {
 	return {
 		now: 100_000,
 		tuning: DIFFICULTY_TUNING.hurtMePlenty,
-		settings: { soundEnabled: true, level: 1 },
+		settings: { soundEnabled: true },
 		seedLootKind: "treasure",
 		iframeUntil: 0,
 		acquired: new Set<string>(),
@@ -177,11 +177,11 @@ describe("gameReducer — win", () => {
 });
 
 describe("gameReducer — reachSpawn", () => {
-	it("advances to transitioning when more levels remain", () => {
+	it("advances to transitioning on every clear (endless descent)", () => {
 		const r = run(
 			baseState({ phase: "going_back", goingBackDeadlineMs: 5 }),
 			{ type: "reachSpawn" },
-			ctx({ settings: { soundEnabled: true, level: 1 } }),
+			ctx({ settings: { soundEnabled: true } }),
 		);
 		expect(r.state.status).toBe("transitioning");
 		expect(r.state.goingBackDeadlineMs).toBeNull();

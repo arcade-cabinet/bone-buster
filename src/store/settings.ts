@@ -5,8 +5,6 @@ export type Difficulty =
 	| "ultraViolence"
 	| "nightmare";
 
-export type LevelChoice = "procedural" | 1 | 2 | 3 | 4 | 5;
-
 // BC5 — touch-control mode. `auto` runs the broadened media-query
 // gate (covers desktops, tablets, foldables in unfolded mode, and
 // every phone form factor); `on` pins the touch HUD even on a
@@ -18,20 +16,17 @@ export type TouchControlMode = "auto" | "on" | "off";
 
 export type BoneBusterSettings = Readonly<{
 	difficulty: Difficulty;
-	level: LevelChoice;
 	soundEnabled: boolean;
 	mouseSensitivity: number; // 0.5 → 2.5
 	touchLookSensitivity: number; // 0.5 → 4
 	touchControls: TouchControlMode;
 }>;
 
-// H1 — reference levels are the default. Procedural mode is the
-// deliberate opt-in via the RANDOM chip on the landing's level pane.
-// Reason: hand-authored ref geometry is the canonical OBJEXOOM
-// gameplay; the procedural grid is a sandbox alternative.
+// STRUCT1 (D23) — the run is fully procedural + endless: no level picker.
+// Every run is a depth+phrase descent through pressure-picked biomes; the
+// New Game flow is difficulty → seed → start.
 export const DEFAULT_SETTINGS: BoneBusterSettings = {
 	difficulty: "hurtMePlenty",
-	level: 1,
 	soundEnabled: true,
 	mouseSensitivity: 1,
 	touchLookSensitivity: 1.6,
@@ -113,13 +108,4 @@ export const DIFFICULTY_BLURB: Record<Difficulty, string> = {
 	hurtMePlenty: "Balanced. The fair fight.",
 	ultraViolence: "More of them, hitting harder.",
 	nightmare: "They respawn? No. But they hit like it.",
-};
-
-export const LEVEL_LABEL: Record<LevelChoice, string> = {
-	procedural: "RANDOM",
-	1: "E1M1",
-	2: "E1M2",
-	3: "E1M3",
-	4: "E1M4",
-	5: "E1M5",
 };

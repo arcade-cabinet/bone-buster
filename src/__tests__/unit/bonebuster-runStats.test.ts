@@ -1,8 +1,7 @@
 import {
-	advanceLevel,
 	makeInitialRunStats,
-	nextStatusAfterTransition,
-	RUN_LENGTH,
+	PRESTIGE_INTERVAL,
+	prestigeTier,
 	runStatsReducer,
 } from "@store/runStats";
 import { describe, expect, it } from "vitest";
@@ -110,52 +109,30 @@ describe("bonebuster runStatsReducer (B2)", () => {
 	});
 });
 
-describe("bonebuster advanceLevel (B1/B4)", () => {
-	it("ref levels advance 1→2→3→4 (cleared 0..3)", () => {
-		expect(advanceLevel(1, 0)).toBe(2);
-		expect(advanceLevel(2, 1)).toBe(3);
-		expect(advanceLevel(3, 2)).toBe(4);
-		expect(advanceLevel(4, 3)).toBe(5);
+describe("bonebuster prestigeTier (STRUCT1 — endless + prestige)", () => {
+	it("PRESTIGE_INTERVAL is 5", () => {
+		expect(PRESTIGE_INTERVAL).toBe(5);
 	});
 
-	it("returns null when the run is complete (5 cleared)", () => {
-		expect(advanceLevel(5, 4)).toBeNull();
+	it("is tier 0 for the first interval of biomes", () => {
+		expect(prestigeTier(0)).toBe(0);
+		expect(prestigeTier(1)).toBe(0);
+		expect(prestigeTier(4)).toBe(0);
 	});
 
-	it("procedural mode keeps `procedural` until the run is complete", () => {
-		expect(advanceLevel("procedural", 0)).toBe("procedural");
-		expect(advanceLevel("procedural", 1)).toBe("procedural");
-		expect(advanceLevel("procedural", 3)).toBe("procedural");
-		expect(advanceLevel("procedural", 4)).toBeNull();
+	it("bumps a tier every PRESTIGE_INTERVAL biomes cleared", () => {
+		expect(prestigeTier(5)).toBe(1);
+		expect(prestigeTier(9)).toBe(1);
+		expect(prestigeTier(10)).toBe(2);
+		expect(prestigeTier(27)).toBe(5);
 	});
 
-	it("RUN_LENGTH is 5", () => {
-		expect(RUN_LENGTH).toBe(5);
-	});
-});
-
-describe("bonebuster nextStatusAfterTransition (PT1E)", () => {
-	it("returns 'playing' when there's a next level in the campaign", () => {
-		expect(nextStatusAfterTransition(1, 0)).toBe("playing");
-		expect(nextStatusAfterTransition(2, 1)).toBe("playing");
-		expect(nextStatusAfterTransition(3, 2)).toBe("playing");
-		expect(nextStatusAfterTransition(4, 3)).toBe("playing");
-	});
-
-	it("returns 'won' when the final refLevel is cleared", () => {
-		// settings.level=5 (E1M5) with cleared=4 → advanceLevel
-		// returns null → status must be 'won' (not bounced back to
-		// 'playing' which would leave the player frozen on the same
-		// map with phase=going_back + lastReachedSpawnAt=true).
-		expect(nextStatusAfterTransition(5, 4)).toBe("won");
-	});
-
-	it("returns 'won' for procedural mode after RUN_LENGTH clears", () => {
-		expect(nextStatusAfterTransition("procedural", 4)).toBe("won");
-	});
-
-	it("returns 'playing' for procedural mode mid-run", () => {
-		expect(nextStatusAfterTransition("procedural", 0)).toBe("playing");
-		expect(nextStatusAfterTransition("procedural", 3)).toBe("playing");
+	it("is monotonic non-decreasing in depth", () => {
+		let prev = 0;
+		for (let depth = 0; depth < 60; depth += 1) {
+			const tier = prestigeTier(depth);
+			expect(tier).toBeGreaterThanOrEqual(prev);
+			prev = tier;
+		}
 	});
 });

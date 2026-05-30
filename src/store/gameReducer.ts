@@ -22,8 +22,8 @@ import { assertNever } from "@shared/assertNever";
 import { WEAPONS, type WeaponId } from "@shared/weapons";
 import { GOING_BACK_BUDGET_MS } from "@store/gameConstants";
 import type { GameState } from "@store/gameState";
-import { advanceLevel, runStatsReducer } from "@store/runStats";
-import type { DifficultyTuning, LevelChoice } from "@store/settings";
+import { runStatsReducer } from "@store/runStats";
+import type { DifficultyTuning } from "@store/settings";
 import { LOOT_BONUSES } from "@world/loot";
 
 /** Fade overlay kinds (mirror of Shell's FadeKind without importing the React side). */
@@ -63,7 +63,7 @@ export type GameAction =
 export type GameReducerCtx = Readonly<{
 	now: number;
 	tuning: DifficultyTuning;
-	settings: { soundEnabled: boolean; level: LevelChoice };
+	settings: { soundEnabled: boolean };
 	seedLootKind: "bottles" | "books" | "treasure";
 	iframeUntil: number;
 	acquired: Set<string>;
@@ -256,7 +256,6 @@ function reduceReachSpawn(state: GameState, ctx: GameReducerCtx): GameReducerRes
 		// status guard), so preserve that ordering.
 		return { state, effects: [fade], iframeUntil: ctx.iframeUntil, consumed: false };
 	}
-	const advanced = advanceLevel(ctx.settings.level, state.run.runLevelsCleared);
 	const clearedRun = runStatsReducer(state.run, {
 		type: "clearLevel",
 		killsThisLevel: 0,
@@ -267,7 +266,10 @@ function reduceReachSpawn(state: GameState, ctx: GameReducerCtx): GameReducerRes
 		state: {
 			...state,
 			run: clearedRun,
-			status: advanced === null ? "won" : "transitioning",
+			// STRUCT1 (D23, endless) — clearing a level ALWAYS transitions to the
+			// next biome. There is no campaign "won" terminus; death is the only
+			// end. The transition hook advances depth + pressure-picks the biome.
+			status: "transitioning",
 			// POL37 — clear the deadline; countdown hides.
 			goingBackDeadlineMs: null,
 		},

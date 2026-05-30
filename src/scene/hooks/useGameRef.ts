@@ -39,7 +39,7 @@ import {
 	gameReducer,
 } from "@store/gameReducer";
 import type { FadeKind, GameRef, GameState } from "@store/gameState";
-import type { BoneBusterSettings, DifficultyTuning, LevelChoice } from "@store/settings";
+import type { BoneBusterSettings, DifficultyTuning } from "@store/settings";
 import { pickLootKind } from "@world/loot";
 import { useRef } from "react";
 
@@ -51,7 +51,6 @@ export type UseGameRefDeps = Readonly<{
 	settings: BoneBusterSettings;
 	tuning: DifficultyTuning;
 	seedPhrase: string;
-	level: LevelChoice;
 }>;
 
 export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
@@ -111,7 +110,7 @@ export function useGameRef(deps: UseGameRefDeps): React.RefObject<GameRef> {
 		const result = gameReducer(stateRef.current, action, {
 			now: performance.now(),
 			tuning,
-			settings: { soundEnabled: settings.soundEnabled, level: settings.level },
+			settings: { soundEnabled: settings.soundEnabled },
 			// COV12 — loot kind is seed-derived; computed here (not in the pure
 			// reducer) and passed via ctx so the reducer stays free of the RNG.
 			seedLootKind: pickLootKind(cyrb128(seedPhrase)[2] >>> 0),

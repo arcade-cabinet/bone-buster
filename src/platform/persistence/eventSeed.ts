@@ -16,9 +16,18 @@
  */
 
 import { advanceEventSeed, createEventPrng, createFreshEventSeed } from "@engine/rng";
-import { readPref, writePref } from "@platform/persistence/preferences";
+import {
+	readJsonPref,
+	readPref,
+	writeJsonPref,
+	writePref,
+} from "@platform/persistence/preferences";
+import { ARCHETYPE_NAMES } from "@world/archetype";
+import { type BiomePressure, initialBiomePressure } from "@world/biomePressure";
+import type { PropArchetype } from "@world/scatter/propPool";
 
 const EVENT_SEED_KEY = "eventPrngSeed";
+const BIOME_PRESSURE_KEY = "biomePressure";
 
 /**
  * Read the buried event seed, minting + persisting a fresh one on first
@@ -42,4 +51,37 @@ export async function advanceAndPersistEventSeed(currentSeed: string): Promise<s
 	const next = advanceEventSeed(createEventPrng(currentSeed));
 	await writePref(EVENT_SEED_KEY, next);
 	return next;
+}
+
+/**
+ * STRUCT5 — coerce a persisted/foreign blob into a complete BiomePressure map.
+ * Any missing or non-numeric biome falls back to 0 (fresh), so a partial blob
+ * (e.g. one written before a biome was added) hydrates cleanly instead of
+ * leaving an `undefined` pressure that would break the weighted pick.
+ */
+function coerceBiomePressure(raw: unknown): BiomePressure {
+	const out = initialBiomePressure();
+	if (raw === null || typeof raw !== "object") return out;
+	const r = raw as Record<string, unknown>;
+	for (const b of ARCHETYPE_NAMES as readonly PropArchetype[]) {
+		const v = r[b];
+		if (typeof v === "number" && Number.isFinite(v)) out[b] = v;
+	}
+	return out;
+}
+
+/**
+ * STRUCT5 — read the device-persistent biome-pressure map (event domain). On
+ * first launch (no blob) returns a fresh `initialBiomePressure()`. Pressure is
+ * per-RUN variance state, not map identity, so it lives alongside the event
+ * seed in Preferences — never in the seed phrase.
+ */
+export async function loadBiomePressure(): Promise<BiomePressure> {
+	const raw = await readJsonPref<unknown>(BIOME_PRESSURE_KEY);
+	return coerceBiomePressure(raw);
+}
+
+/** STRUCT5 — persist the advanced biome-pressure map after a pick. */
+export async function saveBiomePressure(pressure: BiomePressure): Promise<void> {
+	await writeJsonPref(BIOME_PRESSURE_KEY, pressure);
 }

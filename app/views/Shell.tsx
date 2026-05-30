@@ -17,7 +17,12 @@ import { addBoneBusterListener, dispatch } from "@engine/events";
 import type { BoneBusterMap } from "@engine/mapTypes";
 import { createEventPrng, createFreshEventSeed, cyrb128 } from "@engine/rng";
 import { CANONICAL_SEED_PHRASE, randomSeedPhrase } from "@engine/seedPhrase";
-import { advanceAndPersistEventSeed, loadEventSeed } from "@platform/persistence/eventSeed";
+import {
+	advanceAndPersistEventSeed,
+	loadBiomePressure,
+	loadEventSeed,
+	saveBiomePressure,
+} from "@platform/persistence/eventSeed";
 import { loadSettings, saveSettings } from "@platform/persistence/settingsStore";
 import { Canvas } from "@react-three/fiber";
 import { PLAYER_MAX_HP } from "@shared/constants";
@@ -53,9 +58,11 @@ import {
 	readArchetypeFromUrl,
 	readSeedPhraseFromUrl,
 } from "@views/urlFlags";
-import { applyArchetypeOverride } from "@world/archetype";
+import { applyArchetypeOverride, archetypeForPhrase } from "@world/archetype";
+import { type BiomePressure, initialBiomePressure, pickBiome } from "@world/biomePressure";
 import { buildMap } from "@world/buildMap";
-import { pickLevelName, WELCOME_WING_NAME } from "@world/levelNames";
+import { pickLevelName } from "@world/levelNames";
+import type { PropArchetype } from "@world/scatter/propPool";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGameRef } from "../../src/scene/hooks/useGameRef";
@@ -194,14 +201,48 @@ export function BoneBusterShell() {
 			eventSeedRef.current = next;
 		});
 	}, []);
-	// INF3 — when `?bonebusterArchetype` is present, switch the level to
-	// procedural so the seed rewrite (and thus the archetype pick)
-	// actually drives map generation. Without this override the default
-	// `level: 1` would load the baked refLevel 0 (corridor) and the
-	// archetype flag would silently no-op.
-	const [settings, setSettings] = useState<BoneBusterSettings>(() =>
-		readArchetypeFromUrl() ? { ...DEFAULT_SETTINGS, level: "procedural" } : DEFAULT_SETTINGS,
-	);
+	const [settings, setSettings] = useState<BoneBusterSettings>(DEFAULT_SETTINGS);
+	// STRUCT1/STRUCT5 — the CURRENT biome skin (pressure-picked) + the
+	// device-persistent biome-pressure map. The biome is the archetype that
+	// "wears" the depth-keyed geometry; it's chosen by `pickBiome` off the
+	// event PRNG at New Game and again on each level clear (the transition
+	// hook). Seeded initially from the phrase's archetype so the canonical
+	// phrase still reads as corridor at depth 0 (pins the canonical baseline
+	// before any roll). `pressure` advances with each pick + persists.
+	const [biome, setBiome] = useState<PropArchetype>(() => archetypeForPhrase(seedPhrase));
+	// STRUCT1 — the current descent DEPTH (= biomes cleared so far). Drives the
+	// per-depth geometry fork. Kept in lockstep with `run.runLevelsCleared`:
+	// New Game resets it to 0, the transition hook bumps it on each clear. It's
+	// a separate state (not read off `state.run`) so the map useMemo can sit
+	// above the GameState declaration without an ordering cycle.
+	const [depth, setDepth] = useState(0);
+	const pressureRef = useRef<BiomePressure>(initialBiomePressure());
+	// STRUCT5 — hydrate the persisted biome pressure once on mount (device
+	// state, not game state). The current biome stays phrase-seeded until the
+	// next New Game / transition pick consumes the pressure.
+	useEffect(() => {
+		let cancelled = false;
+		void loadBiomePressure().then((p) => {
+			if (!cancelled) pressureRef.current = p;
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+	// STRUCT5 — pressure-pick the next biome off the event PRNG, advance +
+	// persist the pressure map, and set it as the current biome. Used both at
+	// New Game (kicks the descent off a fresh pressure map) and on each level
+	// clear (the transition hook). The pick uses the device event seed — biome
+	// order is per-run variance, NOT map identity, so it never touches the phrase.
+	const advanceBiome = useCallback(() => {
+		const seed = eventSeedRef.current ?? createFreshEventSeed();
+		const rng = createEventPrng(seed);
+		const { biome: next, pressure } = pickBiome(pressureRef.current, rng);
+		pressureRef.current = pressure;
+		setBiome(next);
+		void saveBiomePressure(pressure);
+		return next;
+	}, []);
 	// STO1a — track whether the async load-from-Preferences pass has
 	// resolved. Used to gate the save-on-change effect so the bootstrap
 	// load doesn't trigger a redundant write of DEFAULT_SETTINGS back
@@ -217,12 +258,9 @@ export function BoneBusterShell() {
 		preloadTier1Critical();
 	}, []);
 
-	// STO1a — async-hydrate persisted settings on mount. The override
-	// for `?bonebusterArchetype` still wins (URL flag → procedural) so
-	// the test/debug harness can short-circuit the persisted value
-	// without first clearing storage. If no blob exists, the loaded
-	// value equals DEFAULT_SETTINGS and the setSettings call is a
-	// no-op against initial state — no extra render.
+	// STO1a — async-hydrate persisted settings on mount. If no blob
+	// exists, the loaded value equals DEFAULT_SETTINGS and the
+	// setSettings call is a no-op against initial state — no extra render.
 	useEffect(() => {
 		let cancelled = false;
 		void (async () => {
@@ -235,8 +273,7 @@ export function BoneBusterShell() {
 			// during the async window (e.g. `__bonebuster.setDifficulty`
 			// called from a playtest script BEFORE this load resolved).
 			if (persisted !== null) {
-				const archetypeOverride = readArchetypeFromUrl();
-				setSettings(archetypeOverride ? { ...persisted, level: "procedural" } : persisted);
+				setSettings(persisted);
 			}
 			settingsHydratedRef.current = true;
 		})();
@@ -261,21 +298,17 @@ export function BoneBusterShell() {
 	// Canvas. Discriminated by null (ok) vs a reason object (error → modal).
 	const [assetError, setAssetError] = useState<AssetErrorReason | null>(null);
 	const map: BoneBusterMap = useMemo(
-		// I4 — difficulty plumbed through so ManyEnemies (class 9) expands
-		// per the ref formula. Procedural maps don't read it.
-		() => buildMap(seedPhrase, settings.level, settings.difficulty),
-		[seedPhrase, settings.level, settings.difficulty],
+		// STRUCT1 — geometry forks off (phrase, depth); the pressure-picked
+		// biome drives the archetype skin + per-biome shape over it.
+		() => buildMap(seedPhrase, depth, biome, settings.difficulty),
+		[seedPhrase, depth, biome, settings.difficulty],
 	);
-	// D8 — alliterative level name. refLevel(0) tutorial (LEVEL_CHOICE 1)
-	// is fixed at "Welcome Wing"; every other map rolls from its
-	// archetype's pool via the NAME-tagged PRNG so the name is stable
-	// across reloads of the same seed.
+	// D8 — alliterative level name. Rolls from the current biome's pool via
+	// the NAME-tagged PRNG (seed-stable). The depth mixes into the seed so
+	// successive levels of the same descent get distinct names.
 	const levelName = useMemo(
-		() =>
-			settings.level === 1
-				? WELCOME_WING_NAME
-				: pickLevelName(map.archetype, cyrb128(seedPhrase)[3]),
-		[settings.level, map.archetype, seedPhrase],
+		() => pickLevelName(map.archetype, cyrb128(seedPhrase)[3] ^ depth),
+		[map.archetype, seedPhrase, depth],
 	);
 
 	const tuning = DIFFICULTY_TUNING[settings.difficulty];
@@ -365,7 +398,6 @@ export function BoneBusterShell() {
 		settings,
 		tuning,
 		seedPhrase,
-		level: settings.level,
 	});
 
 	const updateSettings = useCallback((patch: Partial<BoneBusterSettings>) => {
@@ -376,6 +408,12 @@ export function BoneBusterShell() {
 		// ERR1 — clear any stale asset error from a prior run so a fresh start
 		// doesn't ghost-modal over a level that hasn't tried to load yet.
 		setAssetError(null);
+		// STRUCT1/STRUCT5 — a New Game restarts the descent at depth 0 and
+		// pressure-picks the opening biome off a FRESH pressure map (every
+		// biome equally stale). This is the only place the descent resets.
+		setDepth(0);
+		pressureRef.current = initialBiomePressure();
+		advanceBiome();
 		if (settings.soundEnabled) {
 			// A5 — SFX-critical (weapons, ambient, hit/death stings) blocks
 			// the start sequence; music synth allocation deferred to
@@ -430,7 +468,7 @@ export function BoneBusterShell() {
 			phase: "out",
 			goingBackDeadlineMs: null,
 		});
-	}, [settings.soundEnabled, settings.difficulty, maxHp, map.enemySpawns.length]);
+	}, [settings.soundEnabled, settings.difficulty, maxHp, map.enemySpawns.length, advanceBiome]);
 
 	const onReturnToLanding = useCallback(() => {
 		stopAmbient();
@@ -477,11 +515,9 @@ export function BoneBusterShell() {
 			setRunId((id) => id + 1);
 		}
 	}, [state.status]);
-	const hasPausedRun =
-		state.status === "landing" &&
-		state.run.runStartAt > 0 &&
-		state.hp > 0 &&
-		state.run.runLevelsCleared < 5;
+	// STRUCT1 (endless) — a run is resumable whenever it's mid-flight and the
+	// player is alive. There's no campaign length cap to bound it against.
+	const hasPausedRun = state.status === "landing" && state.run.runStartAt > 0 && state.hp > 0;
 
 	const onQuit = useCallback(() => {
 		stopAmbient();
@@ -641,7 +677,8 @@ export function BoneBusterShell() {
 						totalKills: state.run.runTotalKills,
 						totalDamageTaken: state.run.runTotalDamageTaken,
 						totalSecrets: state.run.runTotalSecrets,
-						level: settings.level,
+						// STRUCT1 — the descent identity is the seed phrase now.
+						levelSet: seedPhrase,
 						outcome: state.status === "won" ? "won" : "died",
 					},
 					Date.now(),
@@ -650,10 +687,15 @@ export function BoneBusterShell() {
 				// run-history is a nice-to-have; never block gameplay on it
 			}
 		})();
-	}, [state.status, state.run, settings.level]);
+	}, [state.status, state.run, seedPhrase]);
 
-	// B1/B4 — level-transition lifecycle (hold-for-fade → advance/re-roll →
-	// reset the per-level slice → "playing"/"won") lives in useLevelTransition.
+	// STRUCT1 — bump the descent depth (the geometry forks per depth). Kept in
+	// lockstep with run.runLevelsCleared, which the reducer already incremented
+	// on the clear that triggered this transition.
+	const advanceDepth = useCallback(() => setDepth((d) => d + 1), []);
+
+	// STRUCT1 — level-transition lifecycle (hold-for-fade → advance depth +
+	// biome → reset the per-level slice → "playing") lives in useLevelTransition.
 	// `freshLevelSlice` is the HP/ammo/key/tools reset merged over prev; run
 	// stats are preserved by NOT including them here.
 	const freshLevelSlice = useCallback(
@@ -676,11 +718,9 @@ export function BoneBusterShell() {
 	);
 	useLevelTransition({
 		status: state.status,
-		runLevelsCleared: state.run.runLevelsCleared,
-		level: settings.level,
 		setState,
-		setSettings,
-		rollSeedPhrase,
+		advanceDepth,
+		advanceBiome,
 		freshLevelSlice,
 	});
 
@@ -760,8 +800,8 @@ export function BoneBusterShell() {
 				gameRef.current.onWin();
 			},
 			// PT1B — short-circuit to the win state so playtest/e2e can verify
-			// the MissionCompleteCeremony renders without grinding through
-			// all RUN_LENGTH levels (which has its own engine timing quirks).
+			// the MissionCompleteCeremony renders without grinding through a long
+			// descent (the endless run never naturally reaches "won").
 			forceMissionComplete: () => {
 				setState((prev) => ({ ...prev, status: "won" }));
 			},
@@ -934,7 +974,7 @@ export function BoneBusterShell() {
 									    reset between levels. Without this, Section B level
 									    transitions silently inherit dead state from level 1. */}
 									<BoneBusterScene
-										key={`${settings.level}-${seedPhrase}-${map.seedPhrase}`}
+										key={`${depth}-${biome}-${seedPhrase}-${map.seedPhrase}`}
 										map={map}
 										active={state.status === "playing"}
 										hasKey={state.hasKey}

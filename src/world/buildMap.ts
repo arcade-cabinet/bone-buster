@@ -1,43 +1,34 @@
 import { generateMap } from "@engine/gridGen";
-import type { BoneBusterMap } from "@engine/mapTypes";
-import { cyrb128 } from "@engine/rng";
-import type { Difficulty, LevelChoice } from "@store/settings";
-import { ARCHETYPE_NAMES } from "@world/archetype";
+import type { BoneBusterGridMap } from "@engine/mapTypes";
+import type { Difficulty } from "@store/settings";
 import { getArchetypeMapShape } from "@world/archetypeMapShape";
-import { loadRefLevel } from "@world/refLevel";
+import type { PropArchetype } from "@world/scatter/propPool";
 
 /**
- * Builds the active map from settings. "procedural" yields a seeded
- * generated grid map; numeric choices 1..5 load decoded reference levels
- * E1M1..E1M5 (RefLevelIndex 0..4).
+ * STRUCT1 (D23 / docs/specs/97) — build the active map fully procedurally.
  *
- * I4 — difficulty is passed through so reference-level `ManyEnemies`
- * (class 9) markers can expand into `DIFFICULTY*5 + 5 + count*π|0`
- * enemies per the ref formula instead of a fixed 2.
+ * Identity is DEPTH+PHRASE: geometry forks off `(seedPhrase, depth)` so the
+ * same phrase yields a deterministic maze SEQUENCE down the descent (depth =
+ * biomes cleared so far). The `biome` is chosen SEPARATELY by the STRUCT5
+ * pressure pick (event PRNG, per run) and drives the per-biome shape override +
+ * the archetype skin worn over that geometry.
  *
- * E13 step-5 — procedural maps get a per-archetype shape override so
- * sector-density / size range varies per archetype. RefLevels stay
- * unchanged (their geometry is decoded from the reference clone).
+ * The old `LevelChoice` branch (numeric 1..5 → `loadRefLevel`) is gone — every
+ * map is generated. refLevels survive only as biome STYLE prototypes + test
+ * fixtures (`loadRefLevel`), never the runtime path.
+ *
+ * `difficulty` is accepted for call-site parity (and future STRUCT3 depth
+ * scaling); the grid generator doesn't read it today.
  */
 export function buildMap(
 	seedPhrase: string,
-	level: LevelChoice,
-	difficulty: Difficulty = "hurtMePlenty",
-): BoneBusterMap {
-	if (level === "procedural") {
-		// CONV3 — this is the ONE place we recompute the archetype index,
-		// because `getArchetypeMapShape` needs it BEFORE `generateMap` runs
-		// to pick the per-archetype sector density. `generateMap` re-derives
-		// the same `cyrb128(seedPhrase)[0] % len` internally and writes it
-		// onto the returned map's `archetype` field.
-		const archetypeIdx = cyrb128(seedPhrase)[0] % ARCHETYPE_NAMES.length;
-		const archetype = ARCHETYPE_NAMES[archetypeIdx];
-		if (archetype === undefined)
-			throw new RangeError(
-				`buildMap: archetype index ${archetypeIdx} of ${ARCHETYPE_NAMES.length}`,
-			);
-		return generateMap(seedPhrase, getArchetypeMapShape(archetype));
-	}
-	const refIdx = (level - 1) as 0 | 1 | 2 | 3 | 4;
-	return loadRefLevel(refIdx, difficulty);
+	depth: number,
+	biome: PropArchetype,
+	_difficulty: Difficulty = "hurtMePlenty",
+): BoneBusterGridMap {
+	return generateMap(seedPhrase, {
+		shape: getArchetypeMapShape(biome),
+		depth,
+		biome,
+	});
 }
