@@ -83,6 +83,21 @@ with local screenshot verification. Capture+expand PRD/directive as findings arr
 - [x] STRUCT4 Log-scaled weapon UPGRADE progression. SYSTEM DONE: `src/shared/weaponUpgrade.ts` — `effectiveWeaponSpec(base, tier)` applies log-scaled fire-rate / damage / multi-shot (pellets) / tighter-spread per tier (tier 0 = base EXACTLY → canonical unchanged), MAX_WEAPON_TIER=5. `weaponTiers: Record<WeaponId, number>` on GameState; `upgradeWeapon` GameAction (PREP-BP2 assertNever forced the reducer case) → `reduceUpgradeWeapon` bumps an owned weapon's tier (capped, no-op if unowned) + fires `weaponUpgraded` event. Wired into fire: resolveFire applies `effectiveWeaponSpec(WEAPONS[w], weaponTier)` before skin profiles (threaded Shell state → Scene prop → ctx). `onUpgradeWeapon` GameRef + `__bonebuster.upgradeWeapon` debug hook. 9 tests (6 upgrade math + 3 reducer bump/no-op/cap); canonical byte-identical (tier-0=base). TAIL DONE: `weaponUpgrade` PickupKind spawns DEPTH-SCALED (depth 0 → none, keeps the byte-snapshot; cadence `max(1, 4-floor(depth/2))` so deeper = more upgrades) → on collect bumps the ACTIVE weapon's tier; chevron-stack pickup mesh; HUD weapon chip shows a ★N tier badge. Live-verified: upgradeWeapon("pistol")×2 → pistol tier 2, HUD shows "2 PISTOL ★2", 0 errors. 1381 unit + 22 browser + 5 e2e green (canonical unchanged — drop+badge gated on depth>0/tier>0). [PRD STRUCT4]
 - [x] STRUCT5 Weighted biome-selection pressure system. `pickBiome(pressure, eventRng)` (src/world/biomePressure.ts) ranks biomes by pressure (levels-since-played) + weighted-picks 50/30/15/5 over the rank; stalest favored, next never predictable; advances pressure (picked→0, others+1). Persisted in the event domain (loadBiomePressure/saveBiomePressure); New Game → initialBiomePressure + opening biome; each clear → pickBiome off the event RNG. 6 unit tests (favoring/advancement/all-reachable/determinism). Wired into the run flow as part of the STRUCT1b migration. [PRD STRUCT5]
 
+### Step 4 — PARKED PRD items now IN SCOPE (one branch, after OVERHAUL2)
+
+User-directed (2026-05-30): cover ALL PRDs in this branch — nothing out of scope.
+The PRD "Parked" section's actionable items (ghost-hunting follow-ups) ship here.
+(Bespoke logo = the PRD itself declares the current SVG "good enough"; mobile-perf
+required-gate = enterprise-governed ruleset, not repo-settable — both genuinely
+not-actionable, documented in PRD §Parked.)
+- [ ] GH-TAPE Ghost-hunting follow-up: tape-recorder cue capture — a placeable/triggered EVP recorder that captures a deterministic per-seed phoneme cue (mirror pickSpiritBoxPhoneme), surfaced as a HUD playback chip. [PRD §Parked ghost-hunting]
+- [ ] GH-WALKIE Ghost-hunting follow-up: walkie-talkie squelch audio — a proximity-driven static/squelch SFX cue (Howler) that intensifies near aggro'd enemies, owned-tool-gated like EMF/spirit-box. [PRD §Parked ghost-hunting]
+- [ ] GH-TRAIL Ghost-hunting follow-up: ghost-trail particle layer — a faint per-enemy motion-trail particle field (InstancedMesh, dispose-on-despawn) that reads as a spectral wake; UV-reveal-aware. [PRD §Parked ghost-hunting]
+
+### Step 5 — comprehensive-review TAIL (one branch)
+
+- [ ] REVIEW-TAIL Run `comprehensive-review:full-review` fully-automated over the whole branch diff (src/ + app/ + the OVERHAUL2 + ghost-hunting changes); carry EVERY finding forward into fixes ON THIS BRANCH (no new PR); re-verify; then the branch is merge-ready. [user-directed tail]
+
 ## Queue — PRIORITY: family PRNG + seedphrase (one branch)
 
 User-directed (2026-05-28): adopt the `~/src/arcade-cabinet` family seed
