@@ -5,7 +5,7 @@
  * pure, these are plain input→output assertions with no React.
  */
 
-import { WEAPONS } from "@shared/weapons";
+import { WEAPON_ORDER, WEAPONS } from "@shared/weapons";
 import { GOING_BACK_BUDGET_MS } from "@store/gameConstants";
 import { type GameAction, type GameReducerCtx, gameReducer } from "@store/gameReducer";
 import type { GameState } from "@store/gameState";
@@ -303,6 +303,19 @@ describe("gameReducer — collectPickup (CR-F8 table)", () => {
 			kind: "dispatch",
 			event: { type: "weaponAcquired", weapon: "chaingun" },
 		});
+	});
+
+	it("HUD3 — an in-world weapon pickup grows the own-only HUD bar (WEAPON_ORDER filter)", () => {
+		// The HUD2 weapon bar renders WEAPON_ORDER.filter(id => ownedWeapons[id]).
+		// Start = blade + pistol (2 chips); after a chaingun-ammo pickup the bar
+		// must include chaingun (3 chips) — the in-world-pickup → arsenal → HUD
+		// loop (PRD HUD3).
+		const before = WEAPON_ORDER.filter((id) => baseState().ownedWeapons[id]);
+		expect(before).toEqual(["melee", "pistol"]);
+		const r = run(baseState({ weapon: "pistol" }), { type: "collectPickup", kind: "chaingunAmmo" });
+		const after = WEAPON_ORDER.filter((id) => r.state.ownedWeapons[id]);
+		expect(after).toContain("chaingun");
+		expect(after.length).toBe(before.length + 1);
 	});
 
 	it("weapon-ammo: does NOT auto-swap away from a non-pistol weapon", () => {
