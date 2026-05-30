@@ -102,7 +102,11 @@ export type PickupKind =
 	//   bottles  → +5 health (potion stash)
 	//   books    → +chaingun + shotgun ammo (knowledge → reload)
 	//   treasure → +score (shipped as a 50-point one-shot bonus)
-	| "loot";
+	| "loot"
+	// STRUCT4 — weapon upgrade drop. On collect, bumps the upgrade tier of the
+	// player's ACTIVE weapon (effectiveWeaponSpec: fire rate / damage / multi-
+	// shot / spread). Spawns scaling with descent depth (deeper → more likely).
+	| "weaponUpgrade";
 
 export type PickupSpawn = Readonly<{
 	kind: PickupKind;

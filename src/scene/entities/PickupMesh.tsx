@@ -255,6 +255,30 @@ export function PickupMesh({
 			{pickup.kind === "spiritBox" && <SpiritBoxPickupMesh />}
 			{pickup.kind === "uvFlashlight" && <UvFlashlightPickupMesh />}
 			{pickup.kind === "crucifix" && <CrucifixPickupMesh />}
+			{pickup.kind === "weaponUpgrade" && <WeaponUpgradePickupMesh />}
+		</group>
+	);
+}
+
+/**
+ * STRUCT4 — weapon-upgrade pickup body. A bright chevron stack ("level up"
+ * glyph) so the drop reads as a power-up at a glance, in the action-pickup tone.
+ * Two stacked cones pointing up; the per-mount group + halo handle the bob/glow.
+ */
+function WeaponUpgradePickupMesh() {
+	return (
+		<group>
+			{[0, 0.18].map((y, i) => (
+				<mesh key={`chevron-${y}`} position={[0, y, 0]}>
+					<coneGeometry args={[0.22 - i * 0.04, 0.12, 4]} />
+					<meshStandardMaterial
+						color={ROLE.actionPickup}
+						emissive={ROLE.actionPickup}
+						emissiveIntensity={0.9}
+						roughness={0.3}
+					/>
+				</mesh>
+			))}
 		</group>
 	);
 }

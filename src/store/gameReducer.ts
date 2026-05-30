@@ -90,6 +90,7 @@ const AMMO_INCREMENT: Record<
 	| "spiritBox"
 	| "uvFlashlight"
 	| "crucifix"
+	| "weaponUpgrade"
 > = {
 	health: "health",
 	chaingunAmmo: { weapon: "chaingun", amount: WEAPONS.chaingun.pickupAmmo },
@@ -101,6 +102,7 @@ const AMMO_INCREMENT: Record<
 	spiritBox: "spiritBox",
 	uvFlashlight: "uvFlashlight",
 	crucifix: "crucifix",
+	weaponUpgrade: "weaponUpgrade",
 };
 
 /**
@@ -327,6 +329,15 @@ function reduceCollectPickup(
 		effects.push({ kind: "audio", sound: "flashlightClick" });
 		effects.push({ kind: "dispatch", event: { type: "flashlightAcquired" } });
 		return ok({ ...state, hasFlashlight: true });
+	}
+	if (action === "weaponUpgrade") {
+		// STRUCT4 — upgrade the ACTIVE weapon (the one the player is wielding when
+		// they grab the drop), capped at MAX_WEAPON_TIER. No-op if already maxed.
+		const w = state.weapon;
+		if (state.weaponTiers[w] >= MAX_WEAPON_TIER) return ok(state);
+		const tier = state.weaponTiers[w] + 1;
+		effects.push({ kind: "dispatch", event: { type: "weaponUpgraded", weapon: w, tier } });
+		return ok({ ...state, weaponTiers: { ...state.weaponTiers, [w]: tier } });
 	}
 	if (action === "emfReader") return ok({ ...state, hasEmfReader: true });
 	if (action === "spiritBox") return ok({ ...state, hasSpiritBox: true });

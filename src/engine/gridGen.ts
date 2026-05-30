@@ -185,12 +185,20 @@ export function generateMap(
 	// resets per level alongside the other tool flags; the player
 	// re-builds a small crucifix stockpile on each eligible map.
 	const wantsCrucifix = seedNum % 7 === 0;
+	// STRUCT4 — weapon-upgrade drop, frequency SCALING WITH DEPTH. depth 0 → none
+	// (keeps the canonical/byte-snapshot pool unchanged); from depth 1 a drop
+	// appears every `max(1, 4 - floor(depth/2))`-th seed, so deeper runs surface
+	// upgrades more often (the endless-play progression). Guards the canonical
+	// baseline because `depth === 0` short-circuits before touching `reserved`.
+	const upgradeCadence = Math.max(1, 4 - Math.floor(depth / 2));
+	const wantsUpgrade = depth > 0 && seedNum % upgradeCadence === 0;
 	const reserved: PickupKind[] = ["chaingunAmmo", "shotgunAmmo"];
 	if (wantsFlame) reserved.push("flamethrowerAmmo");
 	if (wantsEmf) reserved.push("emfReader");
 	if (wantsSpiritBox) reserved.push("spiritBox");
 	if (wantsUv) reserved.push("uvFlashlight");
 	if (wantsCrucifix) reserved.push("crucifix");
+	if (wantsUpgrade) reserved.push("weaponUpgrade");
 	const pickupSpawns: PickupSpawn[] = pickupCandidates
 		.slice(0, pickupTotal)
 		.map((position, idx) => {

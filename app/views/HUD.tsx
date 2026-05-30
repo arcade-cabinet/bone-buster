@@ -222,6 +222,9 @@ export function BoneBusterHUD({
 				{WEAPON_ORDER.filter((id) => state.ownedWeapons[id]).map((id) => {
 					const active = state.weapon === id;
 					const spec = WEAPONS[id];
+					// STRUCT4 — upgrade tier badge. 0 = no badge; ≥1 shows "★N" in the
+					// action-pickup tone so the player sees how upgraded each weapon is.
+					const tier = state.weaponTiers[id] ?? 0;
 					return (
 						<button
 							key={id}
@@ -236,13 +239,25 @@ export function BoneBusterHUD({
 								onSelectWeapon(id);
 							}}
 							style={weaponChipStyle(active, true, spec.muzzleColor)}
-							aria-label={`Select ${spec.label}`}
+							aria-label={`Select ${spec.label}${tier > 0 ? ` (tier ${tier})` : ""}`}
 							aria-pressed={active}
 						>
 							<span style={{ fontSize: "var(--obx-hud-fs-label, 10px)", opacity: 0.7 }}>
 								{spec.hudHotkey}
 							</span>{" "}
 							{spec.label}
+							{tier > 0 && (
+								<span
+									style={{
+										marginLeft: 6,
+										fontSize: "var(--obx-hud-fs-label, 10px)",
+										color: ROLE.actionPickup,
+										fontWeight: FONT_WEIGHT.bold,
+									}}
+								>
+									★{tier}
+								</span>
+							)}
 						</button>
 					);
 				})}
