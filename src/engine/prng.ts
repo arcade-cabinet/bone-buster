@@ -99,6 +99,10 @@ export const COSMETIC_TAGS = {
 	CHAINGUN: 0xc043484e,
 	PLANT: 0xc0504c4e,
 	PHONEME: 0xc0504e4d,
+	// GH-TAPE — EVP cue picks. Distinct from PHONEME (spirit box) so the two
+	// tools' cosmetic streams are DE-correlated: at the same capture/trigger
+	// index they no longer draw the same pool offset.
+	EVP: 0xc0455650,
 	MISC: 0xc04d5343,
 } as const;
 

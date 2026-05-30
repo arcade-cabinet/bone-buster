@@ -207,7 +207,7 @@ export function BoneBusterHUD({
 								if (touchMode) return;
 								onSelectWeapon(id);
 							}}
-							style={weaponChipStyle(active, true, spec.muzzleColor)}
+							style={weaponChipStyle(active, spec.muzzleColor)}
 							aria-label={`Select ${spec.label}${tier > 0 ? ` (tier ${tier})` : ""}`}
 							aria-pressed={active}
 						>
@@ -776,7 +776,13 @@ function ctaButton(bg: string, primary: boolean): CSSProperties {
 	};
 }
 
-export function weaponChipStyle(active: boolean, owned: boolean, accent: string): CSSProperties {
+/**
+ * Style for a weapon chip in the HUD bottom strip. The strip is OWNED-ONLY
+ * (HUD2 — `WEAPON_ORDER.filter(ownedWeapons)`), so every chip is owned; the
+ * only state axis is active vs owned-inactive. (The earlier locked/unowned
+ * variant was dropped with the own-only filter — review QUAL-L3.)
+ */
+export function weaponChipStyle(active: boolean, accent: string): CSSProperties {
 	return {
 		padding: "6px 10px",
 		borderRadius: 10,
@@ -787,29 +793,16 @@ export function weaponChipStyle(active: boolean, owned: boolean, accent: string)
 		fontSize: "var(--obx-hud-fs-label, 11px)",
 		fontWeight: FONT_WEIGHT.semibold,
 		letterSpacing: LETTER_SPACING.hudChip,
-		// D1 — locked chips render with no border at all (was
-		// `1px solid transparent`, which reserved layout space and
-		// signaled border-ness to a screen reader). Active chips keep
-		// the accent ring; owned-inactive chips keep a transparent
-		// ring so all owned slots align to the same metrics.
-		border: !owned ? "none" : active ? `1px solid ${accent}` : "1px solid transparent",
-		background: active
-			? `${accent}22`
-			: owned
-				? // scale-step: weapon-row backgrounds use highest-contrast
-					// parchment (50) at tiny alpha (0d/05) for a subtle off-state
-					// fill — no semantic ROLE captures "weapon-slot row tint".
-					`${SCALE.parchment[50]}0d`
-				: `${SCALE.parchment[50]}05`,
-		color: owned ? ROLE.textPrimary : ROLE.textMuted,
-		opacity: owned ? 1 : 0.5,
-		// D1 — locked chips read as status indicators, not as disabled
-		// controls. `not-allowed` was DOM-correct (the button IS
-		// disabled) but the visual treatment now says "you don't own
-		// this yet" rather than "you tried to click a dead control."
-		// DOOM's HUD weapon row uses this exact pattern — digits 2-7
-		// always visible, dim when un-owned.
-		cursor: owned ? "pointer" : "default",
+		// Active chips keep the accent ring; owned-inactive chips keep a
+		// transparent ring so all owned slots align to the same metrics.
+		border: active ? `1px solid ${accent}` : "1px solid transparent",
+		// scale-step: weapon-row backgrounds use highest-contrast parchment
+		// (50) at tiny alpha for a subtle off-state fill — no semantic ROLE
+		// captures "weapon-slot row tint".
+		background: active ? `${accent}22` : `${SCALE.parchment[50]}0d`,
+		color: ROLE.textPrimary,
+		opacity: 1,
+		cursor: "pointer",
 		pointerEvents: "auto",
 	};
 }

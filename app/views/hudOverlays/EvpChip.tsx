@@ -28,21 +28,24 @@ export function EvpChip() {
 	const [capture, setCapture] = useState<Capture | null>(null);
 
 	useEffect(() => {
+		let mounted = true;
 		let counter = 0;
 		let activeId = 0;
 		const pending = new Set<number>();
 		const off = addBoneBusterListener("evpCaptured", (evt) => {
+			if (!mounted) return;
 			counter += 1;
 			const id = counter;
 			activeId = id;
 			setCapture({ id, cue: evt.cue });
 			const handle = window.setTimeout(() => {
 				pending.delete(handle);
-				if (activeId === id) setCapture(null);
+				if (mounted && activeId === id) setCapture(null);
 			}, HOLD_MS);
 			pending.add(handle);
 		});
 		return () => {
+			mounted = false;
 			off();
 			for (const h of pending) window.clearTimeout(h);
 			pending.clear();

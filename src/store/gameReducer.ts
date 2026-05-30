@@ -332,14 +332,12 @@ function reduceCollectPickup(
 	}
 	if (action === "weaponUpgrade") {
 		// STRUCT4 — upgrade the ACTIVE weapon (the one the player is wielding when
-		// they grab the drop), capped at MAX_WEAPON_TIER. No-op if already maxed
-		// OR not owned (review STRUCT2#2 — match reduceUpgradeWeapon's guard so the
-		// two upgrade paths stay consistent if weapon-acquisition logic changes).
-		const w = state.weapon;
-		if (!state.ownedWeapons[w] || state.weaponTiers[w] >= MAX_WEAPON_TIER) return ok(state);
-		const tier = state.weaponTiers[w] + 1;
-		effects.push({ kind: "dispatch", event: { type: "weaponUpgraded", weapon: w, tier } });
-		return ok({ ...state, weaponTiers: { ...state.weaponTiers, [w]: tier } });
+		// they grab the drop). `bumpWeaponTier` owns the cap/ownership guard so this
+		// pickup arm and the explicit `upgradeWeapon` action can never desync.
+		const bump = bumpWeaponTier(state, state.weapon);
+		if (!bump) return ok(state);
+		effects.push({ kind: "dispatch", event: bump.event });
+		return ok(bump.next);
 	}
 	if (action === "emfReader") return ok({ ...state, hasEmfReader: true });
 	if (action === "spiritBox") return ok({ ...state, hasSpiritBox: true });
@@ -381,23 +379,40 @@ function reduceCollectPickup(
 }
 
 /**
- * STRUCT4 — bump the upgrade tier of an OWNED weapon (no-op if unowned or
- * already at MAX_WEAPON_TIER). Fires a `weaponUpgraded` event so the HUD can
- * flash the new tier. The tier feeds `effectiveWeaponSpec` at fire time.
+ * STRUCT4 — the single cap/ownership-guarded weapon-tier bump. Returns the next
+ * GameState + the `weaponUpgraded` event, or `null` when the weapon is unowned
+ * or already at MAX_WEAPON_TIER. Both upgrade paths (the `weaponUpgrade` pickup
+ * arm and the explicit `upgradeWeapon` action) route through this so the guard
+ * and the +1 can never drift apart.
+ */
+function bumpWeaponTier(
+	state: GameState,
+	weapon: WeaponId,
+): { next: GameState; event: { type: "weaponUpgraded"; weapon: WeaponId; tier: number } } | null {
+	const current = state.weaponTiers[weapon];
+	if (!state.ownedWeapons[weapon] || current >= MAX_WEAPON_TIER) return null;
+	const tier = current + 1;
+	return {
+		next: { ...state, weaponTiers: { ...state.weaponTiers, [weapon]: tier } },
+		event: { type: "weaponUpgraded", weapon, tier },
+	};
+}
+
+/**
+ * STRUCT4 — explicit `upgradeWeapon` action handler. Thin wrapper over
+ * `bumpWeaponTier` that adapts the result to a GameReducerResult; the tier feeds
+ * `effectiveWeaponSpec` at fire time.
  */
 function reduceUpgradeWeapon(
 	state: GameState,
 	weapon: WeaponId,
 	ctx: GameReducerCtx,
 ): GameReducerResult {
-	const current = state.weaponTiers[weapon];
-	if (!state.ownedWeapons[weapon] || current >= MAX_WEAPON_TIER) {
-		return noChange(state, ctx.iframeUntil);
-	}
-	const nextTier = current + 1;
+	const bump = bumpWeaponTier(state, weapon);
+	if (!bump) return noChange(state, ctx.iframeUntil);
 	return {
-		state: { ...state, weaponTiers: { ...state.weaponTiers, [weapon]: nextTier } },
-		effects: [{ kind: "dispatch", event: { type: "weaponUpgraded", weapon, tier: nextTier } }],
+		state: bump.next,
+		effects: [{ kind: "dispatch", event: bump.event }],
 		iframeUntil: ctx.iframeUntil,
 		consumed: false,
 	};

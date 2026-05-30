@@ -155,7 +155,7 @@ export const EVP_COOLDOWN_MS = 3_000;
  * given seed records the same sequence for QA + playtests.
  */
 export function pickEvpCue(seed: number, captureIndex: number): string {
-	return pickCosmetic(seed, COSMETIC_TAGS.PHONEME, captureIndex, EVP_CUES);
+	return pickCosmetic(seed, COSMETIC_TAGS.EVP, captureIndex, EVP_CUES);
 }
 
 /**
