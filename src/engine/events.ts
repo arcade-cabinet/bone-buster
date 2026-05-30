@@ -293,6 +293,16 @@ export interface SpiritBoxResponseEvent {
 }
 
 /**
+ * GH-TAPE — the EVP tape recorder captured a residue cue near a live enemy. The
+ * HUD playback chip renders the captured fragment for a beat. Same Scene→HUD
+ * decoupling as spiritBoxResponse; the cue is deterministic per (seed, capture).
+ */
+export interface EvpCapturedEvent {
+	type: "evpCaptured";
+	cue: string;
+}
+
+/**
  * PC4 — Player pressed `9` to place a crucifix. Scene listens for
  * this, decrements `state.crucifixes`, and pushes a new
  * CrucifixInstance into the active list. Key-input layer dispatches;
@@ -347,6 +357,7 @@ export type BoneBusterEvent =
 	| EnemyKilledEvent
 	| EmfReadingEvent
 	| SpiritBoxResponseEvent
+	| EvpCapturedEvent
 	| CrucifixPlaceEvent
 	| AssetErrorEvent;
 

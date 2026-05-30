@@ -71,6 +71,7 @@ import {
 	WeaponSwapDip,
 	WeaponViewmodel,
 } from "../../src/scene";
+import { GhostTrailField } from "../../src/scene/effects/GhostTrailField";
 import { EntityMeshes } from "../../src/scene/fields/EntityMeshes";
 import { ScatterFields } from "../../src/scene/fields/ScatterFields";
 import { resolveFire } from "../../src/scene/tick/fireResolution";
@@ -80,7 +81,10 @@ import { pickChaingunProfile } from "../../src/world/chaingunSkins";
 import {
 	CRUCIFIX_LIFETIME_MS,
 	type CrucifixInstance,
+	EVP_CAPTURE_RADIUS,
+	EVP_COOLDOWN_MS,
 	pickEmfReading,
+	pickEvpCue,
 	pickSpiritBoxPhoneme,
 	SPIRIT_BOX_COOLDOWN_MS,
 	SPIRIT_BOX_TRIGGER_RADIUS,
@@ -859,6 +863,33 @@ export function BoneBusterScene({
 		dispatch({ type: "spiritBoxResponse", phoneme });
 	});
 
+	// GH-TAPE — EVP tape recorder. Always passively recording (no ownership gate,
+	// unlike the EMF/spirit-box pickups); when a live enemy comes within
+	// EVP_CAPTURE_RADIUS and the cooldown has elapsed, it captures a deterministic
+	// residue cue (keyed off mapSeedNum + capture index) and emits the typed
+	// event for the HUD playback chip.
+	const lastEvpCaptureAtRef = useRef(0);
+	const evpCaptureCountRef = useRef(0);
+	useFrame(() => {
+		if (!active) return;
+		const now = performance.now();
+		if (now - lastEvpCaptureAtRef.current < EVP_COOLDOWN_MS) return;
+		const radiusSq = EVP_CAPTURE_RADIUS * EVP_CAPTURE_RADIUS;
+		let nearestSq = Number.POSITIVE_INFINITY;
+		for (const enemy of enemiesRef.current) {
+			if (enemy.dead) continue;
+			const ex = enemy.position.x - camera.position.x;
+			const ez = enemy.position.y - camera.position.z;
+			const d = ex * ex + ez * ez;
+			if (d < nearestSq) nearestSq = d;
+		}
+		if (nearestSq > radiusSq) return;
+		lastEvpCaptureAtRef.current = now;
+		const cue = pickEvpCue(mapSeedNum, evpCaptureCountRef.current);
+		evpCaptureCountRef.current += 1;
+		dispatch({ type: "evpCaptured", cue });
+	});
+
 	// POL44 — muzzle-light decay at positive priority. The fire event
 	// handler (registered on a different useFrame's frame timing) can
 	// land EITHER before or after the main default-priority useFrame.
@@ -1046,6 +1077,8 @@ export function BoneBusterScene({
 
 			<BulletField bulletsRef={bulletsRef} register={bulletMeshes} />
 			<ParticleBurstField />
+			{/* GH-TRAIL — faint spectral wake per live enemy (UV-aware). */}
+			<GhostTrailField enemiesRef={enemiesRef} hasUvFlashlight={hasUvFlashlight} />
 			<BodyPartField archetype={archetype} />
 			<ReturnToSpawnBearingWriter spawnX={map.playerSpawn.x} spawnY={map.playerSpawn.y} />
 			<ShellEjectField />

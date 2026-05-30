@@ -13,9 +13,13 @@ import {
 	type CrucifixInstance,
 	EMF_TOKEN,
 	type EmfReading,
+	EVP_CAPTURE_RADIUS,
+	EVP_COOLDOWN_MS,
+	EVP_CUES,
 	isEnemyCrucified,
 	isInUvCone,
 	pickEmfReading,
+	pickEvpCue,
 	pickSpiritBoxPhoneme,
 	SPIRIT_BOX_COOLDOWN_MS,
 	SPIRIT_BOX_PHONEMES,
@@ -162,6 +166,36 @@ describe("PC2 — spirit-box phoneme pool + picker", () => {
 
 	it("SPIRIT_BOX_COOLDOWN_MS is at least 1 second so the HUD has time to read", () => {
 		expect(SPIRIT_BOX_COOLDOWN_MS).toBeGreaterThanOrEqual(1000);
+	});
+});
+
+describe("GH-TAPE — EVP recorder cue pool + picker", () => {
+	it("ships ≥8 distinct cues", () => {
+		expect(EVP_CUES.length).toBeGreaterThanOrEqual(8);
+		expect(new Set(EVP_CUES).size).toBe(EVP_CUES.length);
+	});
+
+	it("pickEvpCue is deterministic per (seed, captureIndex) + always in-pool", () => {
+		expect(pickEvpCue(42, 0)).toBe(pickEvpCue(42, 0));
+		expect(pickEvpCue(42, 3)).toBe(pickEvpCue(42, 3));
+		for (let s = 0; s < 15; s += 1) {
+			for (let t = 0; t < 4; t += 1) expect(EVP_CUES).toContain(pickEvpCue(s, t));
+		}
+	});
+
+	it("seed 0 → cue[0] (canonical baseline, mirrors the phoneme picker)", () => {
+		expect(pickEvpCue(0, 0)).toBe(EVP_CUES[0]);
+	});
+
+	it("consecutive captures vary (captureIndex is honored)", () => {
+		const seen = new Set<string>();
+		for (let t = 0; t < 30; t += 1) seen.add(pickEvpCue(7, t));
+		expect(seen.size).toBeGreaterThan(1);
+	});
+
+	it("EVP_CAPTURE_RADIUS + EVP_COOLDOWN_MS are sane", () => {
+		expect(EVP_CAPTURE_RADIUS).toBeGreaterThan(0);
+		expect(EVP_COOLDOWN_MS).toBeGreaterThanOrEqual(1000);
 	});
 });
 

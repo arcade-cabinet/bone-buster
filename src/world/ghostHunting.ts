@@ -125,6 +125,40 @@ export function pickSpiritBoxPhoneme(seed: number, triggerIndex: number): string
 }
 
 /**
+ * GH-TAPE — EVP tape-recorder cue lexicon. Where the spirit box plays a live
+ * single-word "voice," the tape recorder captures a RECORDED fragment — a
+ * short whispered phrase the player reviews on the HUD playback chip. Distinct
+ * tone from the spirit-box threat words (these read as captured residue, not a
+ * live warning), so the two tools feel different in play.
+ */
+export const EVP_CUES: readonly string[] = [
+	"...help...",
+	"...it's here...",
+	"...don't...",
+	"...so cold...",
+	"...behind you...",
+	"...get out...",
+	"...too late...",
+	"...i see you...",
+	"...marrow...",
+	"...still here...",
+];
+
+/** Capture radius — the recorder only captures within this many tiles of a live enemy. */
+export const EVP_CAPTURE_RADIUS = 7;
+/** Minimum ms between two captures so the recorder doesn't spam the playback chip. */
+export const EVP_COOLDOWN_MS = 3_000;
+
+/**
+ * GH-TAPE — deterministic per-(seed, capture index) EVP cue. seed=0 → cue[0]
+ * (canonical baseline). Mirrors pickSpiritBoxPhoneme's reproducibility so a
+ * given seed records the same sequence for QA + playtests.
+ */
+export function pickEvpCue(seed: number, captureIndex: number): string {
+	return pickCosmetic(seed, COSMETIC_TAGS.PHONEME, captureIndex, EVP_CUES);
+}
+
+/**
  * PC3 — UV flashlight tuning constants. The cone matches the existing
  * Flashlight (POL28) shape so the two lights occupy the same on-screen
  * footprint — the player navigates with one, reveals with the other.

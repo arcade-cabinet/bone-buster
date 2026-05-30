@@ -3,6 +3,7 @@ import type { Difficulty } from "@store/settings";
 import { BossBanner } from "@views/hudOverlays/BossBanner";
 import { DifficultyChip } from "@views/hudOverlays/DifficultyChip";
 import { EmfChip } from "@views/hudOverlays/EmfChip";
+import { EvpChip } from "@views/hudOverlays/EvpChip";
 import { GoingBackOverlay } from "@views/hudOverlays/GoingBackOverlay";
 import { KeyPickupCeremony } from "@views/hudOverlays/KeyPickupCeremony";
 import { KillBanner } from "@views/hudOverlays/KillBanner";
@@ -67,6 +68,8 @@ export function HUDOverlays({
 			<KillBanner />
 			{state.hasEmfReader && <EmfChip />}
 			{state.hasSpiritBox && <SpiritBoxBubble />}
+			{/* GH-TAPE — the EVP recorder is always passively recording (no owner gate). */}
+			<EvpChip />
 		</>
 	);
 }
