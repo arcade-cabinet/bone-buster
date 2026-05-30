@@ -332,9 +332,11 @@ function reduceCollectPickup(
 	}
 	if (action === "weaponUpgrade") {
 		// STRUCT4 — upgrade the ACTIVE weapon (the one the player is wielding when
-		// they grab the drop), capped at MAX_WEAPON_TIER. No-op if already maxed.
+		// they grab the drop), capped at MAX_WEAPON_TIER. No-op if already maxed
+		// OR not owned (review STRUCT2#2 — match reduceUpgradeWeapon's guard so the
+		// two upgrade paths stay consistent if weapon-acquisition logic changes).
 		const w = state.weapon;
-		if (state.weaponTiers[w] >= MAX_WEAPON_TIER) return ok(state);
+		if (!state.ownedWeapons[w] || state.weaponTiers[w] >= MAX_WEAPON_TIER) return ok(state);
 		const tier = state.weaponTiers[w] + 1;
 		effects.push({ kind: "dispatch", event: { type: "weaponUpgraded", weapon: w, tier } });
 		return ok({ ...state, weaponTiers: { ...state.weaponTiers, [w]: tier } });

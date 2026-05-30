@@ -338,6 +338,29 @@ describe("gameReducer — collectPickup (CR-F8 table)", () => {
 		expect(r.effects).toHaveLength(0);
 	});
 
+	it("STRUCT4 — weaponUpgrade pickup bumps the ACTIVE weapon's tier", () => {
+		const r = run(baseState({ weapon: "pistol" }), {
+			type: "collectPickup",
+			kind: "weaponUpgrade",
+		});
+		expect(r.state.weaponTiers.pistol).toBe(1);
+		expect(r.effects).toContainEqual({
+			kind: "dispatch",
+			event: { type: "weaponUpgraded", weapon: "pistol", tier: 1 },
+		});
+	});
+
+	it("STRUCT4 — weaponUpgrade pickup is a no-op if the active weapon is unowned (guard parity)", () => {
+		// Contrived: active weapon not in ownedWeapons (can't happen in normal
+		// play, but the guard must match reduceUpgradeWeapon's).
+		const s = baseState({
+			weapon: "chaingun",
+			ownedWeapons: { ...baseState().ownedWeapons, chaingun: false },
+		});
+		const r = run(s, { type: "collectPickup", kind: "weaponUpgrade" });
+		expect(r.state.weaponTiers.chaingun).toBe(0);
+	});
+
 	it("STRUCT4 — upgradeWeapon caps at MAX_WEAPON_TIER", () => {
 		const maxed = baseState({
 			ownedWeapons: { ...baseState().ownedWeapons, chaingun: true },

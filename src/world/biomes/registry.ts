@@ -59,5 +59,11 @@ export function generateBiomeMap(
 	seedPhrase: string,
 	depth: number,
 ): BoneBusterGridMap {
-	return BIOMES[biome].generate(seedPhrase, depth);
+	// The `BIOMES` record is built from ARCHETYPE_NAMES via a cast; if a future
+	// PropArchetype name is added to the type before its ARCHETYPE_NAMES entry,
+	// the lookup is undefined. Guard so that's a clear error, not a cryptic
+	// `Cannot read properties of undefined` at .generate (review STRUCT2#1).
+	const gen = BIOMES[biome];
+	if (!gen) throw new RangeError(`generateBiomeMap: no generator registered for biome "${biome}"`);
+	return gen.generate(seedPhrase, depth);
 }
